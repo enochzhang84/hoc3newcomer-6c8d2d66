@@ -377,7 +377,7 @@ function AdminPage() {
                 regs.filter((r) => r.referrer_type === "friend" && r.invited_by?.trim()),
                 (r) => r.invited_by!.trim()
               )}
-              chart
+              rank
             />
           </div>
         </section>
