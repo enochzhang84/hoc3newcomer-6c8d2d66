@@ -85,6 +85,8 @@ function AdminPage() {
   const [initLoading, setInitLoading] = useState(false);
   const [logs, setLogs] = useState<{ time: string; actor: string; action: string }[]>([]);
   const [statusFilter, setStatusFilter] = useState<"all" | "未联系" | "已联系">("all");
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 5;
 
   const LOG_KEY = "admin_action_logs";
   const loadLogs = useCallback(() => {
