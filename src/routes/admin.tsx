@@ -199,7 +199,7 @@ function AdminPage() {
     return list.map((r) => ({
       姓名中: r.name,
       姓名英: r.name_en ?? "",
-      区别: r.district ?? "",
+      跟进状态: r.district === "已联系" ? "已联系" : "未联系",
       性别: r.gender ?? "",
       年龄段: r.age_group ?? "",
       电话: r.phone ?? "",
