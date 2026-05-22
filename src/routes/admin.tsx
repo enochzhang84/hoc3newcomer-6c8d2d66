@@ -789,6 +789,88 @@ function AdminPage() {
           )}
         </section>
 
+        {/* 教会活动 (Events / QR) */}
+        <section className="bg-card border border-border/50 rounded-2xl p-6">
+          <h2 className="font-serif text-xl mb-4">教会活动</h2>
+          <div className="flex flex-wrap gap-2 mb-4">
+            <Button onClick={addEvent}>生成新二维码</Button>
+          </div>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {events.map((ev) => {
+              const url = `${origin}/register?event=${ev.qr_token}`;
+              return (
+                <div key={ev.id} className="border border-border/50 rounded-xl p-4 flex items-center justify-between gap-4">
+                  <div className="min-w-0">
+                    <p className="font-medium truncate">{ev.name}</p>
+                    <p className="text-xs text-muted-foreground truncate">{url}</p>
+                  </div>
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button size="sm" variant="outline">二维码</Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>{ev.name}</DialogTitle>
+                      </DialogHeader>
+                      <div className="flex flex-col items-center gap-4 py-4">
+                        <QRCodeSVG value={url} size={280} level="H" />
+                        <p className="text-xs text-muted-foreground break-all text-center">{url}</p>
+                        <Button
+                          variant="outline"
+                          onClick={() => {
+                            navigator.clipboard.writeText(url);
+                            toast.success("链接已复制");
+                          }}
+                        >
+                          复制链接
+                        </Button>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+
+        {/* 教会服侍 */}
+        <section className="bg-card border border-border/50 rounded-2xl p-6">
+          <h2 className="font-serif text-xl mb-4">教会服侍</h2>
+          <div className="grid sm:grid-cols-2 gap-6">
+            {/* 服侍申请 QR */}
+            <div className="border border-border/50 rounded-xl p-4 flex flex-col items-center gap-3">
+              <p className="font-medium">服侍申请</p>
+              {origin && (
+                <QRCodeSVG value={`${origin}/serve-apply`} size={180} level="H" />
+              )}
+              <p className="text-xs text-muted-foreground break-all text-center">{origin}/serve-apply</p>
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    navigator.clipboard.writeText(`${origin}/serve-apply`);
+                    toast.success("链接已复制");
+                  }}
+                >
+                  复制链接
+                </Button>
+                <Button size="sm" onClick={() => setServiceListOpen(true)}>
+                  查看信息 ({serviceApps.length})
+                </Button>
+              </div>
+            </div>
+
+            {/* 预留位置 */}
+            <div className="border border-dashed border-border/50 rounded-xl p-4 flex flex-col items-center justify-center gap-3 min-h-[260px] text-muted-foreground">
+              <div className="w-[180px] h-[180px] rounded-lg bg-muted/30 flex items-center justify-center text-sm">
+                预留位置
+              </div>
+              <p className="text-xs">待添加</p>
+            </div>
+          </div>
+        </section>
+
         {/* Admin / Users */}
         <section className="bg-card border border-border/50 rounded-2xl p-6">
           <div className="flex items-center justify-between mb-4">
