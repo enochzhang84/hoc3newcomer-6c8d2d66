@@ -42,47 +42,89 @@ export type Database = {
         Row: {
           address: string | null
           age_group: string | null
+          city: string | null
           created_at: string
+          district: string | null
+          email: string | null
           event_id: string | null
+          faith: string | null
+          faith_other: string | null
+          faith_years: number | null
           gender: string | null
           id: string
           invited_by: string | null
           is_first_visit: boolean | null
+          marital_status: string | null
           name: string
+          name_en: string | null
           notes: string | null
           phone: string | null
+          referrer_other: string | null
+          referrer_type: string | null
           source: string
+          spouse_name: string | null
           wants_followup: boolean | null
+          wants_info: boolean | null
+          wants_visit: boolean | null
+          zip: string | null
         }
         Insert: {
           address?: string | null
           age_group?: string | null
+          city?: string | null
           created_at?: string
+          district?: string | null
+          email?: string | null
           event_id?: string | null
+          faith?: string | null
+          faith_other?: string | null
+          faith_years?: number | null
           gender?: string | null
           id?: string
           invited_by?: string | null
           is_first_visit?: boolean | null
+          marital_status?: string | null
           name: string
+          name_en?: string | null
           notes?: string | null
           phone?: string | null
+          referrer_other?: string | null
+          referrer_type?: string | null
           source?: string
+          spouse_name?: string | null
           wants_followup?: boolean | null
+          wants_info?: boolean | null
+          wants_visit?: boolean | null
+          zip?: string | null
         }
         Update: {
           address?: string | null
           age_group?: string | null
+          city?: string | null
           created_at?: string
+          district?: string | null
+          email?: string | null
           event_id?: string | null
+          faith?: string | null
+          faith_other?: string | null
+          faith_years?: number | null
           gender?: string | null
           id?: string
           invited_by?: string | null
           is_first_visit?: boolean | null
+          marital_status?: string | null
           name?: string
+          name_en?: string | null
           notes?: string | null
           phone?: string | null
+          referrer_other?: string | null
+          referrer_type?: string | null
           source?: string
+          spouse_name?: string | null
           wants_followup?: boolean | null
+          wants_info?: boolean | null
+          wants_visit?: boolean | null
+          zip?: string | null
         }
         Relationships: [
           {
