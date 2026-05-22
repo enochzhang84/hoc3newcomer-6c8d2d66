@@ -23,6 +23,7 @@ import {
 import { Card } from "@/components/ui/card";
 import { Plus, Pencil, Trash2, ImagePlus, X } from "lucide-react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/message-board")({
   component: MessageBoardPage,
@@ -30,8 +31,6 @@ export const Route = createFileRoute("/message-board")({
     meta: [{ title: "留言板" }],
   }),
 });
-
-const STORAGE_KEY = "lovable-message-board-list";
 
 type Message = {
   id: string;
@@ -41,52 +40,92 @@ type Message = {
   updatedAt: number;
 };
 
-function loadMessages(): Message[] {
-  if (typeof window === "undefined") return [];
-  try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return [];
-    const data = JSON.parse(raw);
-    return Array.isArray(data) ? data : [];
-  } catch {
-    return [];
-  }
-}
+type Row = {
+  id: string;
+  title: string;
+  content: string | null;
+  images: string[] | null;
+  updated_at: string;
+};
 
-function saveMessages(list: Message[]) {
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+function rowToMessage(r: Row): Message {
+  return {
+    id: r.id,
+    title: r.title,
+    content: r.content ?? "",
+    images: r.images ?? [],
+    updatedAt: new Date(r.updated_at).getTime(),
+  };
 }
 
 function MessageBoardPage() {
   const [messages, setMessages] = useState<Message[]>([]);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [editorOpen, setEditorOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draftTitle, setDraftTitle] = useState("");
   const [draftContent, setDraftContent] = useState("");
   const [draftImages, setDraftImages] = useState<string[]>([]);
+  const [saving, setSaving] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [viewerId, setViewerId] = useState<string | null>(null);
   const [lightbox, setLightbox] = useState<string | null>(null);
 
-  useEffect(() => {
-    setMessages(loadMessages());
-  }, []);
+  const fetchMessages = async () => {
+    const { data, error } = await supabase
+      .from("messages")
+      .select("id, title, content, images, updated_at")
+      .order("updated_at", { ascending: false });
+    if (error) {
+      toast.error("加载失败:" + error.message);
+      return;
+    }
+    setMessages((data as Row[]).map(rowToMessage));
+  };
 
   useEffect(() => {
-    const onStorage = (e: StorageEvent) => {
-      if (e.key === STORAGE_KEY) {
-        setMessages(loadMessages());
+    let mounted = true;
+    (async () => {
+      await fetchMessages();
+      const { data: sess } = await supabase.auth.getSession();
+      const uid = sess.session?.user.id;
+      if (uid) {
+        const { data: roles } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", uid);
+        if (mounted) setIsAdmin(roles?.some((r) => r.role === "admin") ?? false);
       }
+      if (mounted) setLoading(false);
+    })();
+
+    const channel = supabase
+      .channel("messages-rt")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "messages" },
+        () => {
+          fetchMessages();
+        },
+      )
+      .subscribe();
+
+    return () => {
+      mounted = false;
+      supabase.removeChannel(channel);
     };
-    window.addEventListener("storage", onStorage);
-    return () => window.removeEventListener("storage", onStorage);
   }, []);
 
   const selected = messages.find((m) => m.id === selectedId) ?? null;
   const viewing = messages.find((m) => m.id === viewerId) ?? null;
 
   const openCreate = () => {
+    if (!isAdmin) {
+      toast.error("请用管理员账号登录后再操作");
+      return;
+    }
     setEditingId(null);
     setDraftTitle("");
     setDraftContent("");
@@ -95,6 +134,10 @@ function MessageBoardPage() {
   };
 
   const openEdit = () => {
+    if (!isAdmin) {
+      toast.error("请用管理员账号登录后再操作");
+      return;
+    }
     if (!selected) {
       toast.error("请先选择一条留言");
       return;
@@ -106,42 +149,49 @@ function MessageBoardPage() {
     setEditorOpen(true);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     const title = draftTitle.trim();
     if (!title) {
       toast.error("请输入标题");
       return;
     }
-    let next: Message[];
-    if (editingId) {
-      next = messages.map((m) =>
-        m.id === editingId
-          ? { ...m, title, content: draftContent, images: draftImages, updatedAt: Date.now() }
-          : m,
-      );
-    } else {
-      const newMsg: Message = {
-        id: crypto.randomUUID(),
-        title,
-        content: draftContent,
-        images: draftImages,
-        updatedAt: Date.now(),
-      };
-      next = [newMsg, ...messages];
-      setSelectedId(newMsg.id);
-    }
-    setMessages(next);
+    setSaving(true);
     try {
-      saveMessages(next);
-    } catch {
-      toast.error("保存失败,图片可能过大,请减少图片数量或尺寸");
-      return;
+      if (editingId) {
+        const { error } = await supabase
+          .from("messages")
+          .update({
+            title,
+            content: draftContent,
+            images: draftImages,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", editingId);
+        if (error) throw error;
+      } else {
+        const { data, error } = await supabase
+          .from("messages")
+          .insert({ title, content: draftContent, images: draftImages })
+          .select("id")
+          .single();
+        if (error) throw error;
+        if (data?.id) setSelectedId(data.id);
+      }
+      await fetchMessages();
+      setEditorOpen(false);
+      toast.success("已保存");
+    } catch (e: any) {
+      toast.error("保存失败:" + (e?.message ?? "未知错误"));
+    } finally {
+      setSaving(false);
     }
-    setEditorOpen(false);
-    toast.success("已保存");
   };
 
   const askDelete = () => {
+    if (!isAdmin) {
+      toast.error("请用管理员账号登录后再操作");
+      return;
+    }
     if (!selected) {
       toast.error("请先选择一条留言");
       return;
@@ -149,11 +199,14 @@ function MessageBoardPage() {
     setDeleteOpen(true);
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (!selected) return;
-    const next = messages.filter((m) => m.id !== selected.id);
-    setMessages(next);
-    saveMessages(next);
+    const { error } = await supabase.from("messages").delete().eq("id", selected.id);
+    if (error) {
+      toast.error("删除失败:" + error.message);
+      return;
+    }
+    await fetchMessages();
     setSelectedId(null);
     setDeleteOpen(false);
     toast.success("已删除");
@@ -291,7 +344,8 @@ function MessageBoardPage() {
         )}
 
         <p className="text-xs text-muted-foreground">
-          内容保存在本浏览器,关闭页面后下次打开仍然可见。双击留言可进入浏览模式。
+          内容保存在云端数据库,所有设备实时同步。双击留言可进入浏览模式。
+          {!isAdmin && !loading && " 当前为只读模式,登录管理员账号后可创建/编辑/删除。"}
         </p>
       </main>
 
@@ -377,7 +431,9 @@ function MessageBoardPage() {
             <Button variant="outline" onClick={() => setEditorOpen(false)}>
               取消
             </Button>
-            <Button onClick={handleSave}>保存</Button>
+            <Button onClick={handleSave} disabled={saving}>
+              {saving ? "保存中..." : "保存"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
