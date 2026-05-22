@@ -68,7 +68,6 @@ function AdminPage() {
   const [filterDate, setFilterDate] = useState<Date | undefined>(undefined);
   const [dateFilterMode, setDateFilterMode] = useState<"after" | "before">("after");
   const [dateOpen, setDateOpen] = useState(false);
-  const [previewOpen, setPreviewOpen] = useState(false);
   const [origin, setOrigin] = useState("");
   const [users, setUsers] = useState<AppUser[]>([]);
   const [usersLoading, setUsersLoading] = useState(false);
@@ -409,7 +408,7 @@ function AdminPage() {
                 onChange={(e) => setSearch(e.target.value)}
                 className="w-56"
               />
-              <Button variant="outline" onClick={() => setPreviewOpen(true)}>
+              <Button variant="outline" onClick={() => window.open("/admin/preview", "_blank")}>
                 今日预览
               </Button>
               <Button onClick={exportExcel} disabled={filtered.length === 0}>
@@ -765,77 +764,6 @@ function AdminPage() {
           </DialogContent>
         </Dialog>
 
-        {/* Today Preview Dialog */}
-        <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle className="text-center text-xl font-serif">基督三家欢迎你</DialogTitle>
-            </DialogHeader>
-            {(() => {
-              const now = new Date();
-              const start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-              const end = new Date(start);
-              end.setDate(end.getDate() + 1);
-              const todayRegs = regs.filter((r) => {
-                const d = new Date(r.created_at);
-                return d >= start && d < end;
-              });
-              return (
-                <div className="py-2">
-                  {todayRegs.length === 0 ? (
-                    <p className="text-center text-muted-foreground py-8">今天暂无新登记</p>
-                  ) : (
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="text-left border-b border-border/60 text-muted-foreground">
-                          <th className="py-2 px-2">登记日期</th>
-                          <th className="py-2 px-2">姓名(中)</th>
-                          <th className="py-2 px-2">姓名(英)</th>
-                          <th className="py-2 px-2">信仰</th>
-                          <th className="py-2 px-2">介绍人</th>
-                          <th className="py-2 px-2">备注</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {todayRegs.map((r) => (
-                          <tr key={r.id} className="border-b border-border/30 hover:bg-muted/30">
-                            <td className="py-2 px-2 whitespace-nowrap">
-                              {new Date(r.created_at).toLocaleDateString("zh-CN", { month: "2-digit", day: "2-digit" })}
-                            </td>
-                            <td className="py-2 px-2 font-medium">{r.name}</td>
-                            <td className="py-2 px-2">{r.name_en ?? "—"}</td>
-                            <td className="py-2 px-2">
-                              {r.faith === "christian"
-                                ? `基督徒${r.faith_years ? ` ${r.faith_years}年` : ""}`
-                                : r.faith === "seeker"
-                                  ? "慕道友"
-                                  : r.faith === "other"
-                                    ? `其他${r.faith_other ? `:${r.faith_other}` : ""}`
-                                    : "—"}
-                            </td>
-                            <td className="py-2 px-2">
-                              {r.referrer_type === "self"
-                                ? "自己"
-                                : r.referrer_type === "friend"
-                                  ? `亲友:${r.invited_by ?? ""}`
-                                  : r.referrer_type === "other"
-                                    ? `其他:${r.referrer_other ?? ""}`
-                                    : "—"}
-                            </td>
-                            <td className="py-2 px-2">{r.notes ?? "—"}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  )}
-                </div>
-              );
-            })()}
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setPreviewOpen(false)}>关闭</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
       </main>
     </div>
   );
