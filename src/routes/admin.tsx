@@ -675,108 +675,137 @@ function AdminPage() {
           </div>
 
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="text-left border-b border-border/60 text-muted-foreground">
-                  <th className="py-2 px-2">时间</th>
-                  <th className="py-2 px-2">姓名(中)</th>
-                  <th className="py-2 px-2">姓名(英)</th>
-                  <th className="py-2 px-2">
-                    <select
-                      value={statusFilter}
-                      onChange={(e) => setStatusFilter(e.target.value as "all" | "未联系" | "已联系")}
-                      className="bg-transparent border border-border/60 rounded px-1 py-0.5 text-xs cursor-pointer"
-                      title="跟进状态筛选"
-                    >
-                      <option value="all">跟进状态 ▾</option>
-                      <option value="未联系">未联系</option>
-                      <option value="已联系">已联系</option>
-                    </select>
-                  </th>
-                  <th className="py-2 px-2">性别</th>
-                  <th className="py-2 px-2">年龄</th>
-                  <th className="py-2 px-2">电话</th>
-                  <th className="py-2 px-2">电邮</th>
-                  <th className="py-2 px-2">地址</th>
-                  <th className="py-2 px-2">City/ZIP</th>
-                  <th className="py-2 px-2">信仰</th>
-                  <th className="py-2 px-2">婚姻</th>
-                  <th className="py-2 px-2">介绍人</th>
-                  <th className="py-2 px-2">标记</th>
-                  <th className="py-2 px-2">活动</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map((r) => (
-                  <tr key={r.id} className="border-b border-border/30 hover:bg-muted/30">
-                    <td className="py-2 px-2 text-muted-foreground whitespace-nowrap">
-                      {new Date(r.created_at).toLocaleString("zh-CN", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" })}
-                    </td>
-                    <td className="py-2 px-2 font-medium">{r.name}</td>
-                    <td className="py-2 px-2">{r.name_en ?? "—"}</td>
-                    <td className="py-2 px-2">
+            <div className="max-h-[420px] overflow-y-auto rounded-lg border border-border/50">
+              <table className="w-full text-sm">
+                <thead className="sticky top-0 z-10">
+                  <tr className="text-left border-b border-border/60 text-muted-foreground bg-muted/80 backdrop-blur-sm">
+                    <th className="py-2 px-2">时间</th>
+                    <th className="py-2 px-2">姓名(中)</th>
+                    <th className="py-2 px-2">姓名(英)</th>
+                    <th className="py-2 px-2">
                       <select
-                        value={r.district === "已联系" ? "已联系" : "未联系"}
-                        onChange={(e) => updateStatus(r, e.target.value as "未联系" | "已联系")}
-                        className={`bg-transparent border border-border/60 rounded px-1 py-0.5 text-xs cursor-pointer ${r.district === "已联系" ? "text-primary" : "text-muted-foreground"}`}
+                        value={statusFilter}
+                        onChange={(e) => setStatusFilter(e.target.value as "all" | "未联系" | "已联系")}
+                        className="bg-transparent border border-border/60 rounded px-1 py-0.5 text-xs cursor-pointer"
+                        title="跟进状态筛选"
                       >
-                        <option value="未联系">未联系 ▾</option>
+                        <option value="all">跟进状态 ▾</option>
+                        <option value="未联系">未联系</option>
                         <option value="已联系">已联系</option>
                       </select>
-                    </td>
-                    <td className="py-2 px-2">{r.gender ?? "—"}</td>
-                    <td className="py-2 px-2">{r.age_group ?? "—"}</td>
-                    <td className="py-2 px-2">{r.phone ?? "—"}</td>
-                    <td className="py-2 px-2">{r.email ?? "—"}</td>
-                    <td className="py-2 px-2">{r.address ?? "—"}</td>
-                    <td className="py-2 px-2 whitespace-nowrap">{[r.city, r.zip].filter(Boolean).join(" / ") || "—"}</td>
-                    <td className="py-2 px-2">
-                      {r.faith === "christian"
-                        ? `基督徒${r.faith_years ? ` ${r.faith_years}年` : ""}`
-                        : r.faith === "seeker"
-                          ? "慕道友"
-                          : r.faith === "other"
-                            ? `其他${r.faith_other ? `:${r.faith_other}` : ""}`
-                            : "—"}
-                    </td>
-                    <td className="py-2 px-2">
-                      {r.marital_status === "married"
-                        ? `已婚${r.spouse_name ? `(${r.spouse_name})` : ""}`
-                        : r.marital_status === "single"
-                          ? "单身"
-                          : "—"}
-                    </td>
-                    <td className="py-2 px-2">
-                      {r.referrer_type === "self"
-                        ? "自己"
-                        : r.referrer_type === "friend"
-                          ? `亲友:${r.invited_by ?? ""}`
-                          : r.referrer_type === "other"
-                            ? `其他:${r.referrer_other ?? ""}`
-                            : "—"}
-                    </td>
-                    <td className="py-2 px-2 space-x-1 whitespace-nowrap">
-                      {r.wants_visit && <Tag>欢迎探访</Tag>}
-                      {r.wants_info && <Tag tone="accent">需资料</Tag>}
-                    </td>
-                    <td className="py-2 px-2 text-muted-foreground">{r.event_id ? eventMap[r.event_id] : "—"}</td>
-                    <td className="py-2 px-2 text-right space-x-3 whitespace-nowrap">
-                      <button onClick={() => { setEditForm({ ...r }); setEditOpen(true); }} className="text-xs text-primary hover:underline">编辑</button>
-                      <button onClick={() => deleteReg(r.id)} className="text-xs text-destructive hover:underline">删除</button>
-                    </td>
+                    </th>
+                    <th className="py-2 px-2">性别</th>
+                    <th className="py-2 px-2">年龄</th>
+                    <th className="py-2 px-2">电话</th>
+                    <th className="py-2 px-2">电邮</th>
+                    <th className="py-2 px-2">地址</th>
+                    <th className="py-2 px-2">City/ZIP</th>
+                    <th className="py-2 px-2">信仰</th>
+                    <th className="py-2 px-2">婚姻</th>
+                    <th className="py-2 px-2">介绍人</th>
+                    <th className="py-2 px-2">标记</th>
+                    <th className="py-2 px-2">活动</th>
+                    <th></th>
                   </tr>
-                ))}
-                {filtered.length === 0 && (
-                  <tr>
-                    <td colSpan={16} className="py-12 text-center text-muted-foreground">
-                      暂无登记记录
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {paginated.map((r) => (
+                    <tr key={r.id} className="border-b border-border/30 hover:bg-muted/30">
+                      <td className="py-2 px-2 text-muted-foreground whitespace-nowrap">
+                        {new Date(r.created_at).toLocaleString("zh-CN", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" })}
+                      </td>
+                      <td className="py-2 px-2 font-medium">{r.name}</td>
+                      <td className="py-2 px-2">{r.name_en ?? "—"}</td>
+                      <td className="py-2 px-2">
+                        <select
+                          value={r.district === "已联系" ? "已联系" : "未联系"}
+                          onChange={(e) => updateStatus(r, e.target.value as "未联系" | "已联系")}
+                          className={`bg-transparent border border-border/60 rounded px-1 py-0.5 text-xs cursor-pointer ${r.district === "已联系" ? "text-primary" : "text-muted-foreground"}`}
+                        >
+                          <option value="未联系">未联系 ▾</option>
+                          <option value="已联系">已联系</option>
+                        </select>
+                      </td>
+                      <td className="py-2 px-2">{r.gender ?? "—"}</td>
+                      <td className="py-2 px-2">{r.age_group ?? "—"}</td>
+                      <td className="py-2 px-2">{r.phone ?? "—"}</td>
+                      <td className="py-2 px-2">{r.email ?? "—"}</td>
+                      <td className="py-2 px-2">{r.address ?? "—"}</td>
+                      <td className="py-2 px-2 whitespace-nowrap">{[r.city, r.zip].filter(Boolean).join(" / ") || "—"}</td>
+                      <td className="py-2 px-2">
+                        {r.faith === "christian"
+                          ? `基督徒${r.faith_years ? ` ${r.faith_years}年` : ""}`
+                          : r.faith === "seeker"
+                            ? "慕道友"
+                            : r.faith === "other"
+                              ? `其他${r.faith_other ? `:${r.faith_other}` : ""}`
+                              : "—"}
+                      </td>
+                      <td className="py-2 px-2">
+                        {r.marital_status === "married"
+                          ? `已婚${r.spouse_name ? `(${r.spouse_name})` : ""}`
+                          : r.marital_status === "single"
+                            ? "单身"
+                            : "—"}
+                      </td>
+                      <td className="py-2 px-2">
+                        {r.referrer_type === "self"
+                          ? "自己"
+                          : r.referrer_type === "friend"
+                            ? `亲友:${r.invited_by ?? ""}`
+                            : r.referrer_type === "other"
+                              ? `其他:${r.referrer_other ?? ""}`
+                              : "—"}
+                      </td>
+                      <td className="py-2 px-2 space-x-1 whitespace-nowrap">
+                        {r.wants_visit && <Tag>欢迎探访</Tag>}
+                        {r.wants_info && <Tag tone="accent">需资料</Tag>}
+                      </td>
+                      <td className="py-2 px-2 text-muted-foreground">{r.event_id ? eventMap[r.event_id] : "—"}</td>
+                      <td className="py-2 px-2 text-right space-x-3 whitespace-nowrap">
+                        <button onClick={() => { setEditForm({ ...r }); setEditOpen(true); }} className="text-xs text-primary hover:underline">编辑</button>
+                        <button onClick={() => deleteReg(r.id)} className="text-xs text-destructive hover:underline">删除</button>
+                      </td>
+                    </tr>
+                  ))}
+                  {paginated.length === 0 && (
+                    <tr>
+                      <td colSpan={16} className="py-12 text-center text-muted-foreground">
+                        暂无登记记录
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
+
+          {/* Pagination */}
+          {filtered.length > 0 && (
+            <div className="flex items-center justify-between mt-4">
+              <p className="text-xs text-muted-foreground">
+                共 {filtered.length} 条，第 {page}/{totalPages} 页
+              </p>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={page <= 1}
+                >
+                  上一页
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={page >= totalPages}
+                >
+                  下一页
+                </Button>
+              </div>
+            </div>
+          )}
         </section>
 
         {/* Admin / Users */}
