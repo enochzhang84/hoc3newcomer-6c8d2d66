@@ -413,7 +413,8 @@ function AdminPage() {
               label="性别"
               total={regs.length}
               items={groupCounts(regs, (r) =>
-                r.gender === "male" ? "男" : r.gender === "female" ? "女" : "未填"
+                r.gender === "男" || r.gender === "male" ? "男" :
+                r.gender === "女" || r.gender === "female" ? "女" : "未填"
               )}
               chart
             />
@@ -1124,7 +1125,14 @@ function StatBreakdown({
                 <div key={it.key} className="text-xs">
                   <div className="flex justify-between text-muted-foreground mb-0.5">
                     <span className="truncate pr-2">{it.key}</span>
-                    <span className="text-foreground tabular-nums">{it.count}</span>
+                    <span className="text-foreground tabular-nums">
+                      {it.count}
+                      {total > 0 && (
+                        <span className="text-muted-foreground ml-1">
+                          ({Math.round((it.count / total) * 100)}%)
+                        </span>
+                      )}
+                    </span>
                   </div>
                   <div className="h-1.5 bg-muted rounded-full overflow-hidden">
                     <div
