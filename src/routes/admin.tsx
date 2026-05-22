@@ -11,13 +11,25 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 type Reg = {
   id: string;
   name: string;
+  name_en: string | null;
+  district: string | null;
   phone: string | null;
+  email: string | null;
   gender: string | null;
   age_group: string | null;
   address: string | null;
+  city: string | null;
+  zip: string | null;
+  faith: string | null;
+  faith_years: number | null;
+  faith_other: string | null;
+  marital_status: string | null;
+  spouse_name: string | null;
+  referrer_type: string | null;
   invited_by: string | null;
-  is_first_visit: boolean | null;
-  wants_followup: boolean | null;
+  referrer_other: string | null;
+  wants_visit: boolean | null;
+  wants_info: boolean | null;
   notes: string | null;
   source: string;
   created_at: string;
@@ -151,7 +163,7 @@ function AdminPage() {
     <div className="min-h-screen bg-background">
       <header className="border-b border-border/60 bg-card/50">
         <div className="container mx-auto px-6 py-4 flex items-center justify-between">
-          <Link to="/" className="font-serif text-xl">恩典教会 · 后台</Link>
+          <Link to="/" className="font-serif text-xl">基督之家第三家 · 后台</Link>
           <Button
             variant="ghost"
             size="sm"
@@ -169,8 +181,8 @@ function AdminPage() {
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <Stat label="总登记数" value={regs.length} />
-          <Stat label="首次到访" value={regs.filter((r) => r.is_first_visit).length} />
-          <Stat label="待跟进" value={regs.filter((r) => r.wants_followup).length} />
+          <Stat label="希望探访" value={regs.filter((r) => r.wants_visit).length} />
+          <Stat label="需要资料" value={regs.filter((r) => r.wants_info).length} />
           <Stat label="活动数" value={events.length} />
         </div>
 
