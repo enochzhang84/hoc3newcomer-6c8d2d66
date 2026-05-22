@@ -982,14 +982,17 @@ function StatBreakdown({
   items,
   trend,
   chart,
+  rank,
 }: {
   label: string;
   total: number;
   items?: { key: string; count: number }[];
   trend?: number;
   chart?: boolean;
+  rank?: boolean;
 }) {
   const max = items && items.length > 0 ? Math.max(...items.map((i) => i.count), 1) : 1;
+  const medals = ["🥇", "🥈", "🥉"];
   return (
     <div className="bg-card border border-border/50 rounded-2xl p-5 h-full flex flex-col">
       <div className="text-sm text-muted-foreground">{label}</div>
@@ -1007,7 +1010,17 @@ function StatBreakdown({
       </div>
       {items && items.length > 0 && (
         <div className="flex-1 min-h-0 mt-3 overflow-y-auto">
-          {chart ? (
+          {rank ? (
+            <div className="space-y-1">
+              {items.slice(0, 5).map((it, idx) => (
+                <div key={it.key} className="flex items-center gap-2 text-sm">
+                  <span className="text-base">{medals[idx] || `${idx + 1}.`}</span>
+                  <span className="truncate text-foreground">{it.key}</span>
+                  <span className="ml-auto text-xs text-muted-foreground tabular-nums">{it.count}人</span>
+                </div>
+              ))}
+            </div>
+          ) : chart ? (
             <div className="space-y-1.5">
               {items.map((it) => (
                 <div key={it.key} className="text-xs">
