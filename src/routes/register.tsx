@@ -140,7 +140,7 @@ function RegisterPage() {
           </Field>
 
           <div className="grid sm:grid-cols-2 gap-4">
-            <Field label="姓名(中文)" required>
+            <Field label="姓名(中文)">
               <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
             </Field>
             <Field label="姓名(英文)">
