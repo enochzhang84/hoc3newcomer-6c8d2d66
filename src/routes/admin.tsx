@@ -879,6 +879,12 @@ function AdminPage() {
             >
               操作日志
             </Button>
+            <Button
+              variant="destructive"
+              onClick={() => setInitOpen(true)}
+            >
+              系统初始化
+            </Button>
           </div>
         </section>
 
