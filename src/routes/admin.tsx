@@ -149,12 +149,18 @@ function AdminPage() {
   }
 
   const eventMap = Object.fromEntries(events.map((e) => [e.id, e.name]));
-  const filtered = regs.filter(
-    (r) =>
+  const filtered = regs.filter((r) => {
+    const matchesSearch =
       !search ||
       r.name.toLowerCase().includes(search.toLowerCase()) ||
-      (r.phone ?? "").includes(search),
-  );
+      (r.phone ?? "").includes(search);
+    if (!filterDate) return matchesSearch;
+    const d = new Date(r.created_at);
+    const start = new Date(filterDate);
+    start.setHours(0, 0, 0, 0);
+    const matchesDate = dateFilterMode === "after" ? d >= start : d < start;
+    return matchesSearch && matchesDate;
+  });
 
   function exportExcel() {
     const rows = filtered.map((r) => ({
