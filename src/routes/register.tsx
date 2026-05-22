@@ -135,10 +135,6 @@ function RegisterPage() {
         </div>
 
         <form onSubmit={handleSubmit} className="bg-card border border-border/50 rounded-2xl p-6 md:p-8 space-y-5 shadow-sm">
-          <Field label="区别(选填)">
-            <Input value={form.district} onChange={(e) => setForm({ ...form, district: e.target.value })} placeholder="例如:北区 / 团契名称" />
-          </Field>
-
           <div className="grid sm:grid-cols-2 gap-4">
             <Field label="姓名(中文)">
               <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
