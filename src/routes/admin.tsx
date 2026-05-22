@@ -266,11 +266,18 @@ function AdminPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-left border-b border-border/60 text-muted-foreground">
-                  <th className="py-2 px-2">姓名</th>
-                  <th className="py-2 px-2">电话</th>
+                  <th className="py-2 px-2">姓名(中)</th>
+                  <th className="py-2 px-2">姓名(英)</th>
+                  <th className="py-2 px-2">区别</th>
                   <th className="py-2 px-2">性别</th>
                   <th className="py-2 px-2">年龄</th>
-                  <th className="py-2 px-2">邀请人</th>
+                  <th className="py-2 px-2">电话</th>
+                  <th className="py-2 px-2">电邮</th>
+                  <th className="py-2 px-2">地址</th>
+                  <th className="py-2 px-2">City/ZIP</th>
+                  <th className="py-2 px-2">信仰</th>
+                  <th className="py-2 px-2">婚姻</th>
+                  <th className="py-2 px-2">介绍人</th>
                   <th className="py-2 px-2">标记</th>
                   <th className="py-2 px-2">活动</th>
                   <th className="py-2 px-2">时间</th>
@@ -281,11 +288,40 @@ function AdminPage() {
                 {filtered.map((r) => (
                   <tr key={r.id} className="border-b border-border/30 hover:bg-muted/30">
                     <td className="py-2 px-2 font-medium">{r.name}</td>
-                    <td className="py-2 px-2">{r.phone ?? "—"}</td>
+                    <td className="py-2 px-2">{r.name_en ?? "—"}</td>
+                    <td className="py-2 px-2">{r.district ?? "—"}</td>
                     <td className="py-2 px-2">{r.gender ?? "—"}</td>
                     <td className="py-2 px-2">{r.age_group ?? "—"}</td>
-                    <td className="py-2 px-2">{r.invited_by ?? "—"}</td>
-                    <td className="py-2 px-2 space-x-1">
+                    <td className="py-2 px-2">{r.phone ?? "—"}</td>
+                    <td className="py-2 px-2">{r.email ?? "—"}</td>
+                    <td className="py-2 px-2">{r.address ?? "—"}</td>
+                    <td className="py-2 px-2 whitespace-nowrap">{[r.city, r.zip].filter(Boolean).join(" / ") || "—"}</td>
+                    <td className="py-2 px-2">
+                      {r.faith === "christian"
+                        ? `基督徒${r.faith_years ? ` ${r.faith_years}年` : ""}`
+                        : r.faith === "seeker"
+                          ? "慕道友"
+                          : r.faith === "other"
+                            ? `其他${r.faith_other ? `:${r.faith_other}` : ""}`
+                            : "—"}
+                    </td>
+                    <td className="py-2 px-2">
+                      {r.marital_status === "married"
+                        ? `已婚${r.spouse_name ? `(${r.spouse_name})` : ""}`
+                        : r.marital_status === "single"
+                          ? "单身"
+                          : "—"}
+                    </td>
+                    <td className="py-2 px-2">
+                      {r.referrer_type === "self"
+                        ? "自己"
+                        : r.referrer_type === "friend"
+                          ? `亲友:${r.invited_by ?? ""}`
+                          : r.referrer_type === "other"
+                            ? `其他:${r.referrer_other ?? ""}`
+                            : "—"}
+                    </td>
+                    <td className="py-2 px-2 space-x-1 whitespace-nowrap">
                       {r.wants_visit && <Tag>欢迎探访</Tag>}
                       {r.wants_info && <Tag tone="accent">需资料</Tag>}
                     </td>
@@ -300,7 +336,7 @@ function AdminPage() {
                 ))}
                 {filtered.length === 0 && (
                   <tr>
-                    <td colSpan={9} className="py-12 text-center text-muted-foreground">
+                    <td colSpan={16} className="py-12 text-center text-muted-foreground">
                       暂无登记记录
                     </td>
                   </tr>
