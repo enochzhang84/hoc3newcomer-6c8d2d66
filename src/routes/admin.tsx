@@ -969,7 +969,7 @@ function AdminPage() {
 
 function Stat({ label, value }: { label: string; value: number }) {
   return (
-    <div className="bg-card border border-border/50 rounded-2xl p-5">
+    <div className="bg-card border border-border/50 rounded-2xl p-5 h-full flex flex-col justify-center">
       <div className="text-3xl font-serif text-foreground">{value}</div>
       <div className="text-sm text-muted-foreground mt-1">{label}</div>
     </div>
@@ -991,7 +991,7 @@ function StatBreakdown({
 }) {
   const max = items && items.length > 0 ? Math.max(...items.map((i) => i.count), 1) : 1;
   return (
-    <div className="bg-card border border-border/50 rounded-2xl p-5">
+    <div className="bg-card border border-border/50 rounded-2xl p-5 h-full flex flex-col">
       <div className="text-sm text-muted-foreground">{label}</div>
       <div className="flex items-baseline gap-2 mt-1">
         <div className="text-2xl font-serif text-foreground">{total}</div>
@@ -1006,33 +1006,35 @@ function StatBreakdown({
         )}
       </div>
       {items && items.length > 0 && (
-        chart ? (
-          <div className="mt-3 space-y-1.5">
-            {items.map((it) => (
-              <div key={it.key} className="text-xs">
-                <div className="flex justify-between text-muted-foreground mb-0.5">
+        <div className="flex-1 min-h-0 mt-3 overflow-y-auto">
+          {chart ? (
+            <div className="space-y-1.5">
+              {items.map((it) => (
+                <div key={it.key} className="text-xs">
+                  <div className="flex justify-between text-muted-foreground mb-0.5">
+                    <span className="truncate pr-2">{it.key}</span>
+                    <span className="text-foreground tabular-nums">{it.count}</span>
+                  </div>
+                  <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-primary rounded-full transition-all"
+                      style={{ width: `${(it.count / max) * 100}%` }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="space-y-0.5">
+              {items.map((it) => (
+                <div key={it.key} className="flex justify-between text-xs text-muted-foreground">
                   <span className="truncate pr-2">{it.key}</span>
                   <span className="text-foreground tabular-nums">{it.count}</span>
                 </div>
-                <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-primary rounded-full transition-all"
-                    style={{ width: `${(it.count / max) * 100}%` }}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="mt-2 space-y-0.5">
-            {items.map((it) => (
-              <div key={it.key} className="flex justify-between text-xs text-muted-foreground">
-                <span className="truncate pr-2">{it.key}</span>
-                <span className="text-foreground tabular-nums">{it.count}</span>
-              </div>
-            ))}
-          </div>
-        )
+              ))}
+            </div>
+          )}
+        </div>
       )}
     </div>
   );
