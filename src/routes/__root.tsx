@@ -80,6 +80,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:title", content: "教会新人登记系统" },
+      { name: "twitter:description", content: "欢迎来到我们的教会 — 扫码登记,与您建立联系" },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/30847a12-4ef6-4bd2-90a4-96a0143b7f6e/id-preview-b352fe13--03600c21-6ac2-4e92-8f55-87607a91ce41.lovable.app-1779417548772.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/30847a12-4ef6-4bd2-90a4-96a0143b7f6e/id-preview-b352fe13--03600c21-6ac2-4e92-8f55-87607a91ce41.lovable.app-1779417548772.png" },
     ],
     links: [
       {
