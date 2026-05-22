@@ -53,6 +53,17 @@ type Event = { id: string; name: string; qr_token: string; is_active: boolean };
 
 type AppUser = { id: string; email: string; created_at: string; roles: string[] };
 
+type ServiceApp = {
+  id: string;
+  name: string;
+  gender: string | null;
+  phone: string | null;
+  wechat: string | null;
+  service_project: string;
+  notes: string | null;
+  created_at: string;
+};
+
 export const Route = createFileRoute("/admin")({
   component: AdminPage,
 });
@@ -73,6 +84,8 @@ function AdminPage() {
   const [users, setUsers] = useState<AppUser[]>([]);
   const [usersLoading, setUsersLoading] = useState(false);
   const [messagesCount, setMessagesCount] = useState(0);
+  const [serviceApps, setServiceApps] = useState<ServiceApp[]>([]);
+  const [serviceListOpen, setServiceListOpen] = useState(false);
 
   const fetchUsersFn = useServerFn(listUsersWithRoles);
   const setUserAdminFn = useServerFn(setUserAdmin);
@@ -124,12 +137,14 @@ function AdminPage() {
   useEffect(() => setOrigin(window.location.origin), []);
 
   const loadData = useCallback(async () => {
-    const [{ data: r }, { data: e }] = await Promise.all([
+    const [{ data: r }, { data: e }, { data: s }] = await Promise.all([
       supabase.from("registrations").select("*").order("created_at", { ascending: false }),
       supabase.from("events").select("*").order("created_at", { ascending: true }),
+      supabase.from("service_applications").select("*").order("created_at", { ascending: false }),
     ]);
     setRegs(r ?? []);
     setEvents(e ?? []);
+    setServiceApps((s ?? []) as ServiceApp[]);
   }, []);
 
   const loadMessagesCount = useCallback(async () => {
