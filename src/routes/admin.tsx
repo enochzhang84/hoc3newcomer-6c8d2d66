@@ -128,6 +128,13 @@ function AdminPage() {
     setEvents(e ?? []);
   }, []);
 
+  const loadMessagesCount = useCallback(async () => {
+    const { count } = await supabase
+      .from("messages")
+      .select("id", { count: "exact", head: true });
+    setMessagesCount(count ?? 0);
+  }, []);
+
   useEffect(() => {
     (async () => {
       const { data: session } = await supabase.auth.getSession();
@@ -147,9 +154,24 @@ function AdminPage() {
       if (admin) {
         loadData();
         loadUsers();
+        loadMessagesCount();
       }
     })();
-  }, [navigate, loadData, loadUsers]);
+  }, [navigate, loadData, loadUsers, loadMessagesCount]);
+
+  // Realtime update of message count badge
+  useEffect(() => {
+    if (!isAdmin) return;
+    const ch = supabase
+      .channel("messages-count")
+      .on("postgres_changes", { event: "*", schema: "public", table: "messages" }, () => {
+        loadMessagesCount();
+      })
+      .subscribe();
+    return () => {
+      supabase.removeChannel(ch);
+    };
+  }, [isAdmin, loadMessagesCount]);
 
   // Realtime auto-update of new registrations
   useEffect(() => {
