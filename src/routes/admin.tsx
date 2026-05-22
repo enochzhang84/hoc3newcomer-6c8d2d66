@@ -181,7 +181,9 @@ function AdminPage() {
       !search ||
       r.name.toLowerCase().includes(search.toLowerCase()) ||
       (r.phone ?? "").includes(search);
-    if (!filterDate) return matchesSearch;
+    const status = r.district === "已联系" ? "已联系" : "未联系";
+    const matchesStatus = statusFilter === "all" || status === statusFilter;
+    if (!filterDate) return matchesSearch && matchesStatus;
     // Compare in browser local timezone (e.g. America/Los_Angeles)
     const d = new Date(r.created_at);
     const start = new Date(filterDate.getFullYear(), filterDate.getMonth(), filterDate.getDate(), 0, 0, 0, 0);
@@ -190,7 +192,7 @@ function AdminPage() {
       dateFilterMode === "day" ? d >= start && d < end :
       dateFilterMode === "after" ? d >= end :
       d < start;
-    return matchesSearch && matchesDate;
+    return matchesSearch && matchesDate && matchesStatus;
   });
 
   function buildExcelRows(list: Reg[]) {
