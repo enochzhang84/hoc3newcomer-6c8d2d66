@@ -7,8 +7,13 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
 import { QRCodeSVG } from "qrcode.react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Checkbox } from "@/components/ui/checkbox";
 import { listUsersWithRoles, setUserAdmin, deleteUser } from "@/lib/users.functions";
+import { updateRegistration } from "@/lib/registrations.functions";
 
 type Reg = {
   id: string;
@@ -61,6 +66,9 @@ function AdminPage() {
   const fetchUsersFn = useServerFn(listUsersWithRoles);
   const setUserAdminFn = useServerFn(setUserAdmin);
   const deleteUserFn = useServerFn(deleteUser);
+  const updateRegFn = useServerFn(updateRegistration);
+  const [editOpen, setEditOpen] = useState(false);
+  const [editForm, setEditForm] = useState<Reg | null>(null);
 
   const loadUsers = useCallback(async () => {
     setUsersLoading(true);
@@ -189,6 +197,48 @@ function AdminPage() {
     else {
       setRegs((prev) => prev.filter((r) => r.id !== id));
       toast.success("已删除");
+    }
+  }
+
+  async function saveEdit() {
+    if (!editForm) return;
+    if (!editForm.name.trim()) {
+      toast.error("请填写中文姓名");
+      return;
+    }
+    try {
+      await updateRegFn({
+        data: {
+          id: editForm.id,
+          name: editForm.name.trim(),
+          name_en: editForm.name_en?.trim() || null,
+          district: editForm.district?.trim() || null,
+          gender: editForm.gender || null,
+          age_group: editForm.age_group || null,
+          address: editForm.address?.trim() || null,
+          city: editForm.city?.trim() || null,
+          zip: editForm.zip?.trim() || null,
+          phone: editForm.phone?.trim() || null,
+          email: editForm.email?.trim() || null,
+          faith: editForm.faith || null,
+          faith_years: editForm.faith === "christian" && editForm.faith_years ? Number(editForm.faith_years) : null,
+          faith_other: editForm.faith === "other" ? editForm.faith_other?.trim() || null : null,
+          marital_status: editForm.marital_status || null,
+          spouse_name: editForm.marital_status === "married" ? editForm.spouse_name?.trim() || null : null,
+          referrer_type: editForm.referrer_type || null,
+          invited_by: editForm.referrer_type === "friend" ? editForm.invited_by?.trim() || null : null,
+          referrer_other: editForm.referrer_type === "other" ? editForm.referrer_other?.trim() || null : null,
+          wants_visit: editForm.wants_visit ?? false,
+          wants_info: editForm.wants_info ?? false,
+          notes: editForm.notes?.trim() || null,
+        },
+      });
+      setEditOpen(false);
+      setEditForm(null);
+      toast.success("已保存");
+      loadData();
+    } catch (e) {
+      toast.error("保存失败:" + (e as Error).message);
     }
   }
 
@@ -352,7 +402,8 @@ function AdminPage() {
                     <td className="py-2 px-2 text-muted-foreground whitespace-nowrap">
                       {new Date(r.created_at).toLocaleString("zh-CN", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" })}
                     </td>
-                    <td className="py-2 px-2 text-right">
+                    <td className="py-2 px-2 text-right space-x-3 whitespace-nowrap">
+                      <button onClick={() => { setEditForm({ ...r }); setEditOpen(true); }} className="text-xs text-primary hover:underline">编辑</button>
                       <button onClick={() => deleteReg(r.id)} className="text-xs text-destructive hover:underline">删除</button>
                     </td>
                   </tr>
@@ -470,6 +521,166 @@ function AdminPage() {
             </table>
           </div>
         </section>
+
+        {/* Edit Dialog */}
+        <Dialog open={editOpen} onOpenChange={setEditOpen}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>编辑登记</DialogTitle>
+            </DialogHeader>
+            {editForm && (
+              <div className="space-y-5 py-2">
+                <div className="space-y-2">
+                  <Label>区别(选填)</Label>
+                  <Input value={editForm.district ?? ""} onChange={(e) => setEditForm((prev) => prev ? { ...prev, district: e.target.value } : prev)} placeholder="例如:北区 / 团契名称" />
+                </div>
+
+                <div className="grid sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>姓名(中文) <span className="text-destructive">*</span></Label>
+                    <Input value={editForm.name} onChange={(e) => setEditForm((prev) => prev ? { ...prev, name: e.target.value } : prev)} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>姓名(英文)</Label>
+                    <Input value={editForm.name_en ?? ""} onChange={(e) => setEditForm((prev) => prev ? { ...prev, name_en: e.target.value } : prev)} />
+                  </div>
+                </div>
+
+                <div className="grid sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>性别</Label>
+                    <RadioGroup value={editForm.gender ?? ""} onValueChange={(v) => setEditForm((prev) => prev ? { ...prev, gender: v } : prev)} className="flex gap-4 pt-2">
+                      {["男", "女"].map((g) => (
+                        <label key={g} className="flex items-center gap-2 cursor-pointer">
+                          <RadioGroupItem value={g} /> <span className="text-sm">{g}</span>
+                        </label>
+                      ))}
+                    </RadioGroup>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>年龄段</Label>
+                    <RadioGroup value={editForm.age_group ?? ""} onValueChange={(v) => setEditForm((prev) => prev ? { ...prev, age_group: v } : prev)} className="flex flex-wrap gap-3 pt-2">
+                      {["60岁以上", "40-60岁", "20-39岁"].map((a) => (
+                        <label key={a} className="flex items-center gap-2 cursor-pointer">
+                          <RadioGroupItem value={a} /> <span className="text-sm">{a}</span>
+                        </label>
+                      ))}
+                    </RadioGroup>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>地址</Label>
+                  <Input value={editForm.address ?? ""} onChange={(e) => setEditForm((prev) => prev ? { ...prev, address: e.target.value } : prev)} />
+                </div>
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="col-span-2 space-y-2">
+                    <Label>City</Label>
+                    <Input value={editForm.city ?? ""} onChange={(e) => setEditForm((prev) => prev ? { ...prev, city: e.target.value } : prev)} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>ZIP</Label>
+                    <Input value={editForm.zip ?? ""} onChange={(e) => setEditForm((prev) => prev ? { ...prev, zip: e.target.value } : prev)} />
+                  </div>
+                </div>
+
+                <div className="grid sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>电话</Label>
+                    <Input type="tel" value={editForm.phone ?? ""} onChange={(e) => setEditForm((prev) => prev ? { ...prev, phone: e.target.value } : prev)} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>电邮地址</Label>
+                    <Input type="email" value={editForm.email ?? ""} onChange={(e) => setEditForm((prev) => prev ? { ...prev, email: e.target.value } : prev)} />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>信仰</Label>
+                  <RadioGroup value={editForm.faith ?? ""} onValueChange={(v) => setEditForm((prev) => prev ? { ...prev, faith: v } : prev)} className="flex flex-wrap gap-4 pt-2">
+                    {[
+                      { v: "christian", l: "基督徒" },
+                      { v: "seeker", l: "慕道友" },
+                      { v: "other", l: "其他" },
+                    ].map((o) => (
+                      <label key={o.v} className="flex items-center gap-2 cursor-pointer">
+                        <RadioGroupItem value={o.v} /> <span className="text-sm">{o.l}</span>
+                      </label>
+                    ))}
+                  </RadioGroup>
+                  {editForm.faith === "christian" && (
+                    <div className="pt-3 flex items-center gap-2">
+                      <span className="text-sm text-muted-foreground">信主</span>
+                      <Input type="number" min={0} value={editForm.faith_years ?? ""} onChange={(e) => setEditForm((prev) => prev ? { ...prev, faith_years: e.target.value ? Number(e.target.value) : null } : prev)} className="w-24" />
+                      <span className="text-sm text-muted-foreground">年</span>
+                    </div>
+                  )}
+                  {editForm.faith === "other" && (
+                    <Input className="mt-3" placeholder="请说明" value={editForm.faith_other ?? ""} onChange={(e) => setEditForm((prev) => prev ? { ...prev, faith_other: e.target.value } : prev)} />
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label>婚姻</Label>
+                  <RadioGroup value={editForm.marital_status ?? ""} onValueChange={(v) => setEditForm((prev) => prev ? { ...prev, marital_status: v } : prev)} className="flex flex-wrap gap-4 pt-2">
+                    {[
+                      { v: "married", l: "已婚" },
+                      { v: "single", l: "单身" },
+                    ].map((o) => (
+                      <label key={o.v} className="flex items-center gap-2 cursor-pointer">
+                        <RadioGroupItem value={o.v} /> <span className="text-sm">{o.l}</span>
+                      </label>
+                    ))}
+                  </RadioGroup>
+                  {editForm.marital_status === "married" && (
+                    <Input className="mt-3" placeholder="配偶姓名" value={editForm.spouse_name ?? ""} onChange={(e) => setEditForm((prev) => prev ? { ...prev, spouse_name: e.target.value } : prev)} />
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label>介绍人</Label>
+                  <RadioGroup value={editForm.referrer_type ?? ""} onValueChange={(v) => setEditForm((prev) => prev ? { ...prev, referrer_type: v } : prev)} className="flex flex-wrap gap-4 pt-2">
+                    {[
+                      { v: "self", l: "自己" },
+                      { v: "friend", l: "亲友" },
+                      { v: "other", l: "其他" },
+                    ].map((o) => (
+                      <label key={o.v} className="flex items-center gap-2 cursor-pointer">
+                        <RadioGroupItem value={o.v} /> <span className="text-sm">{o.l}</span>
+                      </label>
+                    ))}
+                  </RadioGroup>
+                  {editForm.referrer_type === "friend" && (
+                    <Input className="mt-3" placeholder="亲友姓名" value={editForm.invited_by ?? ""} onChange={(e) => setEditForm((prev) => prev ? { ...prev, invited_by: e.target.value } : prev)} />
+                  )}
+                  {editForm.referrer_type === "other" && (
+                    <Input className="mt-3" placeholder="请说明" value={editForm.referrer_other ?? ""} onChange={(e) => setEditForm((prev) => prev ? { ...prev, referrer_other: e.target.value } : prev)} />
+                  )}
+                </div>
+
+                <div className="space-y-3 pt-2 border-t border-border/50">
+                  <label className="flex items-center gap-3 cursor-pointer pt-3">
+                    <Checkbox checked={editForm.wants_visit ?? false} onCheckedChange={(v) => setEditForm((prev) => prev ? { ...prev, wants_visit: !!v } : prev)} />
+                    <span className="text-sm">我欢迎教会牧者探访我</span>
+                  </label>
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <Checkbox checked={editForm.wants_info ?? false} onCheckedChange={(v) => setEditForm((prev) => prev ? { ...prev, wants_info: !!v } : prev)} />
+                    <span className="text-sm">我需要教会的资料及联络</span>
+                  </label>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>备注 / 代祷事项(选填)</Label>
+                  <Textarea value={editForm.notes ?? ""} onChange={(e) => setEditForm((prev) => prev ? { ...prev, notes: e.target.value } : prev)} rows={3} />
+                </div>
+              </div>
+            )}
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setEditOpen(false)}>取消</Button>
+              <Button onClick={saveEdit}>保存</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </main>
     </div>
   );
