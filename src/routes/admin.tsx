@@ -954,6 +954,183 @@ function AdminPage() {
           </div>
         </section>
 
+        {/* 人数统计 */}
+        <section className="bg-card border border-border/50 rounded-2xl p-6">
+          <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+            <h2 className="font-serif text-xl">人数统计</h2>
+            <Button size="sm" variant="outline" onClick={loadData}>刷新</Button>
+          </div>
+          <p className="text-xs text-muted-foreground mb-4">
+            手动录入每周到会人数。今日总人数 = 大堂敬拜 + 儿童主日学学生 + 儿童主日学老师。今日新人 来自登记名单当日数据。
+          </p>
+
+          {(() => {
+            const w = parseInt(attWorship || "0", 10) || 0;
+            const s = parseInt(attStudents || "0", 10) || 0;
+            const t = parseInt(attTeachers || "0", 10) || 0;
+            const total = w + s + t;
+            const newcomers = regs.filter((r) => r.created_at.slice(0, 10) === attDate).length;
+            return (
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-5 gap-3 items-end mb-4">
+                  <div>
+                    <Label className="text-xs">日期</Label>
+                    <Input type="date" value={attDate} onChange={(e) => setAttDate(e.target.value)} />
+                  </div>
+                  <div>
+                    <Label className="text-xs">大堂敬拜人数</Label>
+                    <Input type="number" min={0} value={attWorship} onChange={(e) => setAttWorship(e.target.value)} placeholder="0" />
+                  </div>
+                  <div>
+                    <Label className="text-xs">儿童主日学学生</Label>
+                    <Input type="number" min={0} value={attStudents} onChange={(e) => setAttStudents(e.target.value)} placeholder="0" />
+                  </div>
+                  <div>
+                    <Label className="text-xs">儿童主日学老师</Label>
+                    <Input type="number" min={0} value={attTeachers} onChange={(e) => setAttTeachers(e.target.value)} placeholder="0" />
+                  </div>
+                  <Button
+                    onClick={async () => {
+                      if (!attDate) { toast.error("请选择日期"); return; }
+                      const payload = {
+                        record_date: attDate,
+                        worship_count: w,
+                        children_students: s,
+                        children_teachers: t,
+                      };
+                      const { error } = await supabase
+                        .from("attendance_records")
+                        .upsert(payload, { onConflict: "record_date" });
+                      if (error) { toast.error(error.message); return; }
+                      toast.success("已保存");
+                      logAction(`保存了 ${attDate} 的人数统计`);
+                      loadData();
+                    }}
+                  >保存 / 更新</Button>
+                </div>
+
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+                  <div className="rounded-xl border border-border/50 p-3">
+                    <div className="text-xs text-muted-foreground">大堂敬拜</div>
+                    <div className="text-2xl font-serif">{w}</div>
+                  </div>
+                  <div className="rounded-xl border border-border/50 p-3">
+                    <div className="text-xs text-muted-foreground">儿童学生 + 老师</div>
+                    <div className="text-2xl font-serif">{s + t}</div>
+                  </div>
+                  <div className="rounded-xl border border-primary/40 bg-primary/5 p-3">
+                    <div className="text-xs text-muted-foreground">今日总人数</div>
+                    <div className="text-2xl font-serif">{total}</div>
+                  </div>
+                  <div className="rounded-xl border border-border/50 p-3">
+                    <div className="text-xs text-muted-foreground">今日新人</div>
+                    <div className="text-2xl font-serif">{newcomers}</div>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap gap-2 mb-3">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const text =
+                        `【主日聚会人数统计】\n` +
+                        `日期：${attDate}\n` +
+                        `大堂敬拜：${w} 人\n` +
+                        `儿童主日学（学生）：${s} 人\n` +
+                        `儿童主日学（老师）：${t} 人\n` +
+                        `今日总人数：${total} 人\n` +
+                        `今日新人：${newcomers} 人`;
+                      setAttText(text);
+                    }}
+                  >生成文本</Button>
+                  <Button
+                    size="sm"
+                    disabled={!attText}
+                    onClick={async () => {
+                      try {
+                        await navigator.clipboard.writeText(attText);
+                        toast.success("已复制，可粘贴到微信");
+                      } catch {
+                        toast.error("复制失败，请手动选中复制");
+                      }
+                    }}
+                  >复制文本</Button>
+                </div>
+                {attText && (
+                  <Textarea
+                    readOnly
+                    value={attText}
+                    rows={8}
+                    className="font-mono text-sm"
+                    onClick={(e) => (e.target as HTMLTextAreaElement).select()}
+                  />
+                )}
+              </>
+            );
+          })()}
+
+          {attendance.length > 0 && (
+            <div className="mt-6">
+              <h3 className="text-sm font-medium mb-2">历史记录</h3>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="text-left border-b border-border/60 text-muted-foreground">
+                      <th className="py-2 px-2">日期</th>
+                      <th className="py-2 px-2">大堂</th>
+                      <th className="py-2 px-2">儿童学生</th>
+                      <th className="py-2 px-2">儿童老师</th>
+                      <th className="py-2 px-2">总人数</th>
+                      <th className="py-2 px-2">操作</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {attendance.slice(0, 12).map((a) => {
+                      const tot = a.worship_count + a.children_students + a.children_teachers;
+                      return (
+                        <tr key={a.id} className="border-b border-border/40">
+                          <td className="py-2 px-2">{a.record_date}</td>
+                          <td className="py-2 px-2">{a.worship_count}</td>
+                          <td className="py-2 px-2">{a.children_students}</td>
+                          <td className="py-2 px-2">{a.children_teachers}</td>
+                          <td className="py-2 px-2 font-medium">{tot}</td>
+                          <td className="py-2 px-2 flex gap-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                setAttDate(a.record_date);
+                                setAttWorship(String(a.worship_count));
+                                setAttStudents(String(a.children_students));
+                                setAttTeachers(String(a.children_teachers));
+                              }}
+                            >编辑</Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={async () => {
+                                if (!confirm(`删除 ${a.record_date} 的记录?`)) return;
+                                const { error } = await supabase
+                                  .from("attendance_records")
+                                  .delete()
+                                  .eq("id", a.id);
+                                if (error) { toast.error(error.message); return; }
+                                toast.success("已删除");
+                                loadData();
+                              }}
+                            >删除</Button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </section>
+
         {/* Admin / Users */}
         <section className="bg-card border border-border/50 rounded-2xl p-6">
           <div className="flex items-center justify-between mb-4">
