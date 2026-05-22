@@ -382,6 +382,13 @@ function AdminPage() {
         <div className="container mx-auto px-6 py-4 flex items-center justify-between">
           <Link to="/" className="font-serif text-xl">基督之家第三家 · 后台</Link>
           <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => window.open("https://hoc3.org/wp2021/home/", "_blank", "noopener,noreferrer")}
+            >
+              基督三家主页
+            </Button>
             <Link to="/register" target="_blank">
               <Button size="sm">手动录入</Button>
             </Link>
