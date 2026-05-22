@@ -505,8 +505,16 @@ function AdminPage() {
             <div
               onDoubleClick={() => window.open("/message-board", "_blank")}
               title="双击打开留言板"
-              className="border border-border/50 rounded-xl p-4 flex flex-col items-start gap-3 cursor-pointer hover:border-primary/60 transition-colors select-none"
+              className="relative border border-border/50 rounded-xl p-4 flex flex-col items-start gap-3 cursor-pointer hover:border-primary/60 transition-colors select-none"
             >
+              {messagesCount > 0 && (
+                <span
+                  className="absolute -top-2 -right-2 min-w-[22px] h-[22px] px-1.5 rounded-full bg-red-500 text-white text-xs font-semibold flex items-center justify-center shadow-md ring-2 ring-background"
+                  title={`${messagesCount} 条留言`}
+                >
+                  {messagesCount > 99 ? "99+" : messagesCount}
+                </span>
+              )}
               <p className="text-sm text-muted-foreground">留言板(双击打开新页面编辑)</p>
               <Button
                 variant="outline"
