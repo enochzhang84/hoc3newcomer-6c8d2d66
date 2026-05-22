@@ -67,6 +67,7 @@ function MessageBoardPage() {
   const [draftImages, setDraftImages] = useState<string[]>([]);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [viewerId, setViewerId] = useState<string | null>(null);
+  const [lightbox, setLightbox] = useState<string | null>(null);
 
   useEffect(() => {
     setMessages(loadMessages());
@@ -412,13 +413,18 @@ function MessageBoardPage() {
               {viewing.images && viewing.images.length > 0 && (
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                   {viewing.images.map((src, i) => (
-                    <a key={i} href={src} target="_blank" rel="noreferrer">
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => setLightbox(src)}
+                      className="block w-full"
+                    >
                       <img
                         src={src}
                         alt=""
-                        className="w-full h-40 object-cover rounded border hover:opacity-90"
+                        className="w-full h-40 object-cover rounded border hover:opacity-90 cursor-zoom-in"
                       />
-                    </a>
+                    </button>
                   ))}
                 </div>
               )}
@@ -443,6 +449,23 @@ function MessageBoardPage() {
             </Button>
             <Button onClick={() => setViewerId(null)}>关闭</Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!lightbox} onOpenChange={(o) => !o && setLightbox(null)}>
+        <DialogContent className="max-w-[95vw] max-h-[95vh] p-2 sm:p-4 bg-black/90 border-none">
+          <DialogHeader className="sr-only">
+            <DialogTitle>查看图片</DialogTitle>
+          </DialogHeader>
+          {lightbox && (
+            <div className="flex items-center justify-center w-full h-full">
+              <img
+                src={lightbox}
+                alt=""
+                className="max-w-full max-h-[85vh] object-contain"
+              />
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>
