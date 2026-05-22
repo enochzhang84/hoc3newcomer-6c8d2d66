@@ -72,6 +72,7 @@ function AdminPage() {
   const [origin, setOrigin] = useState("");
   const [users, setUsers] = useState<AppUser[]>([]);
   const [usersLoading, setUsersLoading] = useState(false);
+  const [messagesCount, setMessagesCount] = useState(0);
 
   const fetchUsersFn = useServerFn(listUsersWithRoles);
   const setUserAdminFn = useServerFn(setUserAdmin);
