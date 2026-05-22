@@ -16,7 +16,7 @@ type Reg = {
   created_at: string;
 };
 
-export const Route = createFileRoute("/admin/preview")({
+export const Route = createFileRoute("/today-preview")({
   component: PreviewPage,
 });
 

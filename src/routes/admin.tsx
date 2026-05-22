@@ -408,7 +408,7 @@ function AdminPage() {
                 onChange={(e) => setSearch(e.target.value)}
                 className="w-56"
               />
-              <Button variant="outline" onClick={() => window.open("/admin/preview", "_blank")}>
+              <Button variant="outline" onClick={() => window.open("/today-preview", "_blank")}>
                 今日预览
               </Button>
               <Button onClick={exportExcel} disabled={filtered.length === 0}>
