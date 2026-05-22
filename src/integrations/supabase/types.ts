@@ -163,6 +163,39 @@ export type Database = {
           },
         ]
       }
+      service_applications: {
+        Row: {
+          created_at: string
+          gender: string | null
+          id: string
+          name: string
+          notes: string | null
+          phone: string | null
+          service_project: string
+          wechat: string | null
+        }
+        Insert: {
+          created_at?: string
+          gender?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          phone?: string | null
+          service_project: string
+          wechat?: string | null
+        }
+        Update: {
+          created_at?: string
+          gender?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          service_project?: string
+          wechat?: string | null
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
