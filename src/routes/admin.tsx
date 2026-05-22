@@ -1150,9 +1150,18 @@ function AdminPage() {
                     .from("registrations")
                     .delete()
                     .not("id", "is", null);
-                  setInitLoading(false);
                   if (error) {
+                    setInitLoading(false);
                     toast.error("初始化失败: " + error.message);
+                    return;
+                  }
+                  const { error: evErr } = await supabase
+                    .from("events")
+                    .delete()
+                    .not("id", "is", null);
+                  setInitLoading(false);
+                  if (evErr) {
+                    toast.error("清空活动失败: " + evErr.message);
                     return;
                   }
                   logAction(`系统初始化（清空了 ${regs.length} 条登记）`);
