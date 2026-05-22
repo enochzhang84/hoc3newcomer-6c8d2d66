@@ -167,8 +167,8 @@ function AdminPage() {
     return matchesSearch && matchesDate;
   });
 
-  function exportExcel() {
-    const rows = filtered.map((r) => ({
+  function buildExcelRows(list: Reg[]) {
+    return list.map((r) => ({
       姓名中: r.name,
       姓名英: r.name_en ?? "",
       区别: r.district ?? "",
@@ -191,13 +191,25 @@ function AdminPage() {
       活动: r.event_id ? eventMap[r.event_id] ?? "" : "",
       登记时间: new Date(r.created_at).toLocaleString("zh-CN"),
     }));
+  }
+
+  function exportRows(list: Reg[], filenamePrefix: string) {
+    const rows = buildExcelRows(list);
     const ws = XLSX.utils.json_to_sheet(rows);
     ws["!cols"] = Object.keys(rows[0] ?? {}).map(() => ({ wch: 14 }));
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "新人登记");
     const date = new Date().toISOString().slice(0, 10);
-    XLSX.writeFile(wb, `新人登记_${date}.xlsx`);
+    XLSX.writeFile(wb, `${filenamePrefix}_${date}.xlsx`);
     toast.success(`已导出 ${rows.length} 条记录`);
+  }
+
+  function exportExcel() {
+    exportRows(filtered, "新人登记");
+  }
+
+  function exportAllExcel() {
+    exportRows(regs, "新人登记_全部");
   }
 
   async function addEvent() {
