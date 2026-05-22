@@ -743,6 +743,24 @@ function AdminPage() {
           </div>
         </section>
 
+        {/* System Tools */}
+        <section className="bg-card border border-border/50 rounded-2xl p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-serif text-xl">系统工具栏</h2>
+          </div>
+          <p className="text-xs text-muted-foreground mb-4">
+            管理员可用的系统级工具。日志记录管理员在本浏览器上的操作（编辑、删除、权限变更等）。
+          </p>
+          <div className="flex flex-wrap gap-3">
+            <Button
+              variant="outline"
+              onClick={() => { loadLogs(); setLogsOpen(true); }}
+            >
+              操作日志
+            </Button>
+          </div>
+        </section>
+
         {/* Edit Dialog */}
         <Dialog open={editOpen} onOpenChange={setEditOpen}>
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
