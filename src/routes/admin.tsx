@@ -81,6 +81,7 @@ function AdminPage() {
   const [editForm, setEditForm] = useState<Reg | null>(null);
   const [logsOpen, setLogsOpen] = useState(false);
   const [logs, setLogs] = useState<{ time: string; actor: string; action: string }[]>([]);
+  const [statusFilter, setStatusFilter] = useState<"all" | "未联系" | "已联系">("all");
 
   const LOG_KEY = "admin_action_logs";
   const loadLogs = useCallback(() => {
@@ -180,7 +181,9 @@ function AdminPage() {
       !search ||
       r.name.toLowerCase().includes(search.toLowerCase()) ||
       (r.phone ?? "").includes(search);
-    if (!filterDate) return matchesSearch;
+    const status = r.district === "已联系" ? "已联系" : "未联系";
+    const matchesStatus = statusFilter === "all" || status === statusFilter;
+    if (!filterDate) return matchesSearch && matchesStatus;
     // Compare in browser local timezone (e.g. America/Los_Angeles)
     const d = new Date(r.created_at);
     const start = new Date(filterDate.getFullYear(), filterDate.getMonth(), filterDate.getDate(), 0, 0, 0, 0);
@@ -189,14 +192,14 @@ function AdminPage() {
       dateFilterMode === "day" ? d >= start && d < end :
       dateFilterMode === "after" ? d >= end :
       d < start;
-    return matchesSearch && matchesDate;
+    return matchesSearch && matchesDate && matchesStatus;
   });
 
   function buildExcelRows(list: Reg[]) {
     return list.map((r) => ({
       姓名中: r.name,
       姓名英: r.name_en ?? "",
-      区别: r.district ?? "",
+      跟进状态: r.district === "已联系" ? "已联系" : "未联系",
       性别: r.gender ?? "",
       年龄段: r.age_group ?? "",
       电话: r.phone ?? "",
@@ -299,6 +302,43 @@ function AdminPage() {
       loadData();
     } catch (e) {
       toast.error("保存失败:" + (e as Error).message);
+    }
+  }
+
+  async function updateStatus(r: Reg, status: "未联系" | "已联系") {
+    const prev = r.district;
+    setRegs((list) => list.map((x) => (x.id === r.id ? { ...x, district: status } : x)));
+    try {
+      await updateRegFn({
+        data: {
+          id: r.id,
+          name: r.name,
+          name_en: r.name_en ?? null,
+          district: status,
+          gender: r.gender ?? null,
+          age_group: r.age_group ?? null,
+          address: r.address ?? null,
+          city: r.city ?? null,
+          zip: r.zip ?? null,
+          phone: r.phone ?? null,
+          email: r.email ?? null,
+          faith: r.faith ?? null,
+          faith_years: r.faith_years ?? null,
+          faith_other: r.faith_other ?? null,
+          marital_status: r.marital_status ?? null,
+          spouse_name: r.spouse_name ?? null,
+          referrer_type: r.referrer_type ?? null,
+          invited_by: r.invited_by ?? null,
+          referrer_other: r.referrer_other ?? null,
+          wants_visit: r.wants_visit ?? false,
+          wants_info: r.wants_info ?? false,
+          notes: r.notes ?? null,
+        },
+      });
+      logAction(`更新了 ${r.name} 跟进状态: ${status}`);
+    } catch (e) {
+      setRegs((list) => list.map((x) => (x.id === r.id ? { ...x, district: prev } : x)));
+      toast.error("更新失败:" + (e as Error).message);
     }
   }
 
@@ -557,9 +597,21 @@ function AdminPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-left border-b border-border/60 text-muted-foreground">
+                  <th className="py-2 px-2">时间</th>
                   <th className="py-2 px-2">姓名(中)</th>
                   <th className="py-2 px-2">姓名(英)</th>
-                  <th className="py-2 px-2">区别</th>
+                  <th className="py-2 px-2">
+                    <select
+                      value={statusFilter}
+                      onChange={(e) => setStatusFilter(e.target.value as "all" | "未联系" | "已联系")}
+                      className="bg-transparent border border-border/60 rounded px-1 py-0.5 text-xs cursor-pointer"
+                      title="跟进状态筛选"
+                    >
+                      <option value="all">跟进状态 ▾</option>
+                      <option value="未联系">未联系</option>
+                      <option value="已联系">已联系</option>
+                    </select>
+                  </th>
                   <th className="py-2 px-2">性别</th>
                   <th className="py-2 px-2">年龄</th>
                   <th className="py-2 px-2">电话</th>
@@ -571,16 +623,27 @@ function AdminPage() {
                   <th className="py-2 px-2">介绍人</th>
                   <th className="py-2 px-2">标记</th>
                   <th className="py-2 px-2">活动</th>
-                  <th className="py-2 px-2">时间</th>
                   <th></th>
                 </tr>
               </thead>
               <tbody>
                 {filtered.map((r) => (
                   <tr key={r.id} className="border-b border-border/30 hover:bg-muted/30">
+                    <td className="py-2 px-2 text-muted-foreground whitespace-nowrap">
+                      {new Date(r.created_at).toLocaleString("zh-CN", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" })}
+                    </td>
                     <td className="py-2 px-2 font-medium">{r.name}</td>
                     <td className="py-2 px-2">{r.name_en ?? "—"}</td>
-                    <td className="py-2 px-2">{r.district ?? "—"}</td>
+                    <td className="py-2 px-2">
+                      <select
+                        value={r.district === "已联系" ? "已联系" : "未联系"}
+                        onChange={(e) => updateStatus(r, e.target.value as "未联系" | "已联系")}
+                        className={`bg-transparent border border-border/60 rounded px-1 py-0.5 text-xs cursor-pointer ${r.district === "已联系" ? "text-primary" : "text-muted-foreground"}`}
+                      >
+                        <option value="未联系">未联系 ▾</option>
+                        <option value="已联系">已联系</option>
+                      </select>
+                    </td>
                     <td className="py-2 px-2">{r.gender ?? "—"}</td>
                     <td className="py-2 px-2">{r.age_group ?? "—"}</td>
                     <td className="py-2 px-2">{r.phone ?? "—"}</td>
@@ -617,9 +680,6 @@ function AdminPage() {
                       {r.wants_info && <Tag tone="accent">需资料</Tag>}
                     </td>
                     <td className="py-2 px-2 text-muted-foreground">{r.event_id ? eventMap[r.event_id] : "—"}</td>
-                    <td className="py-2 px-2 text-muted-foreground whitespace-nowrap">
-                      {new Date(r.created_at).toLocaleString("zh-CN", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" })}
-                    </td>
                     <td className="py-2 px-2 text-right space-x-3 whitespace-nowrap">
                       <button onClick={() => { setEditForm({ ...r }); setEditOpen(true); }} className="text-xs text-primary hover:underline">编辑</button>
                       <button onClick={() => deleteReg(r.id)} className="text-xs text-destructive hover:underline">删除</button>
@@ -770,8 +830,15 @@ function AdminPage() {
             {editForm && (
               <div className="space-y-5 py-2">
                 <div className="space-y-2">
-                  <Label>区别(选填)</Label>
-                  <Input value={editForm.district ?? ""} onChange={(e) => setEditForm((prev) => prev ? { ...prev, district: e.target.value } : prev)} placeholder="例如:北区 / 团契名称" />
+                  <Label>跟进状态</Label>
+                  <select
+                    value={editForm.district === "已联系" ? "已联系" : "未联系"}
+                    onChange={(e) => setEditForm((prev) => prev ? { ...prev, district: e.target.value } : prev)}
+                    className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm"
+                  >
+                    <option value="未联系">未联系</option>
+                    <option value="已联系">已联系</option>
+                  </select>
                 </div>
 
                 <div className="grid sm:grid-cols-2 gap-4">
