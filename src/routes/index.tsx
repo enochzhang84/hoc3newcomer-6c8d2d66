@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { QRCodeSVG } from "qrcode.react";
+import logo from "@/assets/logo.png";
 
 export const Route = createFileRoute("/")({
   component: Index,
@@ -32,8 +33,8 @@ function Index() {
       <header className="border-b border-border/60">
         <div className="container mx-auto flex items-center justify-between px-6 py-5">
           <div className="flex items-center gap-2">
-            <div className="h-9 w-9 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-lg">✝</div>
-            <span className="font-serif text-xl tracking-wide text-foreground">恩典教会</span>
+            <img src={logo} alt="基督之家第三家" className="h-10 w-10 object-contain" />
+            <span className="font-serif text-xl tracking-wide text-foreground">基督之家第三家</span>
           </div>
           <Link to="/admin">
             <Button variant="ghost" size="sm">管理后台</Button>
