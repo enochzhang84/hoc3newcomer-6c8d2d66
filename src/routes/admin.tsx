@@ -1,5 +1,6 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState, useCallback } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,6 +8,7 @@ import { toast } from "sonner";
 import * as XLSX from "xlsx";
 import { QRCodeSVG } from "qrcode.react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { listUsersWithRoles, setUserAdmin, deleteUser } from "@/lib/users.functions";
 
 type Reg = {
   id: string;
@@ -38,6 +40,8 @@ type Reg = {
 
 type Event = { id: string; name: string; qr_token: string; is_active: boolean };
 
+type AppUser = { id: string; email: string; created_at: string; roles: string[] };
+
 export const Route = createFileRoute("/admin")({
   component: AdminPage,
 });
@@ -46,10 +50,29 @@ function AdminPage() {
   const navigate = useNavigate();
   const [checking, setChecking] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [regs, setRegs] = useState<Reg[]>([]);
   const [events, setEvents] = useState<Event[]>([]);
   const [search, setSearch] = useState("");
   const [origin, setOrigin] = useState("");
+  const [users, setUsers] = useState<AppUser[]>([]);
+  const [usersLoading, setUsersLoading] = useState(false);
+
+  const fetchUsersFn = useServerFn(listUsersWithRoles);
+  const setUserAdminFn = useServerFn(setUserAdmin);
+  const deleteUserFn = useServerFn(deleteUser);
+
+  const loadUsers = useCallback(async () => {
+    setUsersLoading(true);
+    try {
+      const data = await fetchUsersFn();
+      setUsers(data);
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setUsersLoading(false);
+    }
+  }, [fetchUsersFn]);
 
   useEffect(() => setOrigin(window.location.origin), []);
 
@@ -69,6 +92,7 @@ function AdminPage() {
         navigate({ to: "/login" });
         return;
       }
+      setCurrentUserId(session.session.user.id);
       const { data: roles } = await supabase
         .from("user_roles")
         .select("role")
@@ -76,9 +100,12 @@ function AdminPage() {
       const admin = roles?.some((r) => r.role === "admin") ?? false;
       setIsAdmin(admin);
       setChecking(false);
-      if (admin) loadData();
+      if (admin) {
+        loadData();
+        loadUsers();
+      }
     })();
-  }, [navigate, loadData]);
+  }, [navigate, loadData, loadUsers]);
 
   // Realtime auto-update of new registrations
   useEffect(() => {
