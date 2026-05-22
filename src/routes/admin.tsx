@@ -65,6 +65,16 @@ type ServiceApp = {
   created_at: string;
 };
 
+type AttendanceRecord = {
+  id: string;
+  record_date: string;
+  worship_count: number;
+  children_students: number;
+  children_teachers: number;
+  notes: string | null;
+  created_at: string;
+};
+
 export const Route = createFileRoute("/admin")({
   component: AdminPage,
 });
