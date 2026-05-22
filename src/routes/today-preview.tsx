@@ -91,7 +91,9 @@ function PreviewPage() {
       const { start, end } = getTodayRangeForSanFrancisco();
       const { data } = await supabase
         .from("registrations")
-        .select("id,name,name_en,faith,faith_years,faith_other,referrer_type,invited_by,referrer_other,notes,created_at")
+        .select(
+          "id,name,name_en,faith,faith_years,faith_other,referrer_type,invited_by,referrer_other,notes,created_at",
+        )
         .gte("created_at", start)
         .lt("created_at", end)
         .order("created_at", { ascending: false });
@@ -100,14 +102,21 @@ function PreviewPage() {
     })();
   }, [navigate]);
 
-  const today = new Date().toLocaleDateString("zh-CN", { timeZone: SAN_FRANCISCO_TIME_ZONE, year: "numeric", month: "long", day: "numeric" });
+  const today = new Date().toLocaleDateString("zh-CN", {
+    timeZone: SAN_FRANCISCO_TIME_ZONE,
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
 
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-6 py-10 max-w-5xl">
         <header className="text-center mb-8 pb-6 border-b border-border/60">
           <h1 className="font-serif text-4xl mb-2">基督三家欢迎你</h1>
-          <p className="text-muted-foreground">{today} · 今日新登记 {regs.length} 人</p>
+          <p className="text-muted-foreground">
+            {today} · 今日新登记 {regs.length} 人
+          </p>
         </header>
 
         <div className="flex justify-end gap-2 mb-4 print:hidden">
@@ -146,7 +155,13 @@ function PreviewPage() {
                 {regs.map((r) => (
                   <tr key={r.id} className="border-b border-border/30">
                     <td className="py-3 px-3 whitespace-nowrap text-muted-foreground">
-                      {new Date(r.created_at).toLocaleString("zh-CN", { timeZone: SAN_FRANCISCO_TIME_ZONE, month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" })}
+                      {new Date(r.created_at).toLocaleString("zh-CN", {
+                        timeZone: SAN_FRANCISCO_TIME_ZONE,
+                        month: "2-digit",
+                        day: "2-digit",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
                     </td>
                     <td className="py-3 px-3 font-medium">{r.name}</td>
                     <td className="py-3 px-3">{r.name_en ?? "—"}</td>
