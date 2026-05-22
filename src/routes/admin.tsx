@@ -516,6 +516,24 @@ function AdminPage() {
               )}
               rank
             />
+            <StatBreakdown
+              label="跟进状态"
+              total={regs.length}
+              items={[
+                { key: "已跟进", count: regs.filter((r) => r.follow_up_person?.trim()).length },
+                { key: "未跟进", count: regs.filter((r) => !r.follow_up_person?.trim()).length },
+              ]}
+              chart
+            />
+            <StatBreakdown
+              label="跟进人排行"
+              total={regs.filter((r) => r.follow_up_person?.trim()).length}
+              items={groupCounts(
+                regs.filter((r) => r.follow_up_person?.trim()),
+                (r) => r.follow_up_person!.trim()
+              )}
+              rank
+            />
           </div>
         </section>
 
