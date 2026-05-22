@@ -830,8 +830,15 @@ function AdminPage() {
             {editForm && (
               <div className="space-y-5 py-2">
                 <div className="space-y-2">
-                  <Label>区别(选填)</Label>
-                  <Input value={editForm.district ?? ""} onChange={(e) => setEditForm((prev) => prev ? { ...prev, district: e.target.value } : prev)} placeholder="例如:北区 / 团契名称" />
+                  <Label>跟进状态</Label>
+                  <select
+                    value={editForm.district === "已联系" ? "已联系" : "未联系"}
+                    onChange={(e) => setEditForm((prev) => prev ? { ...prev, district: e.target.value } : prev)}
+                    className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm"
+                  >
+                    <option value="未联系">未联系</option>
+                    <option value="已联系">已联系</option>
+                  </select>
                 </div>
 
                 <div className="grid sm:grid-cols-2 gap-4">
