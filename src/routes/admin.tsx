@@ -399,16 +399,36 @@ function AdminPage() {
           <Stat label="活动数" value={events.length} />
           </div>
           <div className="grid grid-cols-2 md:grid-cols-6 gap-4 mt-4">
-            <StatBreakdown
-              label="本周登记"
-              total={countSince(regs, startOfWeek())}
-              trend={countSince(regs, startOfWeek()) - countBetween(regs, prevStartOfWeek(), startOfWeek())}
-            />
-            <StatBreakdown
-              label="本月登记"
-              total={countSince(regs, startOfMonth())}
-              trend={countSince(regs, startOfMonth()) - countBetween(regs, prevStartOfMonth(), startOfMonth())}
-            />
+            {(() => {
+              const thisWeek = countSince(regs, startOfWeek());
+              const lastWeek = countBetween(regs, prevStartOfWeek(), startOfWeek());
+              const thisMonth = countSince(regs, startOfMonth());
+              const lastMonth = countBetween(regs, prevStartOfMonth(), startOfMonth());
+              return (
+                <>
+                  <StatBreakdown
+                    label="本周登记"
+                    total={thisWeek + lastWeek}
+                    items={[
+                      { key: "本周", count: thisWeek },
+                      { key: "上周", count: lastWeek },
+                    ]}
+                    trend={thisWeek - lastWeek}
+                    chart
+                  />
+                  <StatBreakdown
+                    label="本月登记"
+                    total={thisMonth + lastMonth}
+                    items={[
+                      { key: "本月", count: thisMonth },
+                      { key: "上月", count: lastMonth },
+                    ]}
+                    trend={thisMonth - lastMonth}
+                    chart
+                  />
+                </>
+              );
+            })()}
             <StatBreakdown
               label="性别"
               total={regs.length}
