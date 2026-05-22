@@ -921,6 +921,47 @@ function AdminPage() {
           </DialogContent>
         </Dialog>
 
+        {/* Logs Dialog */}
+        <Dialog open={logsOpen} onOpenChange={setLogsOpen}>
+          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>操作日志</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-1 text-sm">
+              {logs.length === 0 ? (
+                <p className="text-muted-foreground py-6 text-center">暂无日志</p>
+              ) : (
+                logs.map((l, i) => {
+                  const d = new Date(l.time);
+                  const md = `${String(d.getMonth() + 1).padStart(2, "0")}/${String(d.getDate()).padStart(2, "0")}`;
+                  const hm = `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+                  return (
+                    <div key={i} className="flex gap-3 py-1.5 border-b border-border/30 last:border-0">
+                      <span className="text-muted-foreground tabular-nums whitespace-nowrap">{md} {hm}</span>
+                      <span className="font-medium whitespace-nowrap">{l.actor}</span>
+                      <span className="text-foreground/80">{l.action}</span>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  if (!confirm("确认清空所有日志?")) return;
+                  localStorage.removeItem(LOG_KEY);
+                  setLogs([]);
+                  toast.success("日志已清空");
+                }}
+              >
+                清空日志
+              </Button>
+              <Button onClick={() => setLogsOpen(false)}>关闭</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
       </main>
     </div>
   );
