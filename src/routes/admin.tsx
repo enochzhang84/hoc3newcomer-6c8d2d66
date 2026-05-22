@@ -53,6 +53,17 @@ type Event = { id: string; name: string; qr_token: string; is_active: boolean };
 
 type AppUser = { id: string; email: string; created_at: string; roles: string[] };
 
+type ServiceApp = {
+  id: string;
+  name: string;
+  gender: string | null;
+  phone: string | null;
+  wechat: string | null;
+  service_project: string;
+  notes: string | null;
+  created_at: string;
+};
+
 export const Route = createFileRoute("/admin")({
   component: AdminPage,
 });
@@ -73,6 +84,8 @@ function AdminPage() {
   const [users, setUsers] = useState<AppUser[]>([]);
   const [usersLoading, setUsersLoading] = useState(false);
   const [messagesCount, setMessagesCount] = useState(0);
+  const [serviceApps, setServiceApps] = useState<ServiceApp[]>([]);
+  const [serviceListOpen, setServiceListOpen] = useState(false);
 
   const fetchUsersFn = useServerFn(listUsersWithRoles);
   const setUserAdminFn = useServerFn(setUserAdmin);
@@ -124,12 +137,14 @@ function AdminPage() {
   useEffect(() => setOrigin(window.location.origin), []);
 
   const loadData = useCallback(async () => {
-    const [{ data: r }, { data: e }] = await Promise.all([
+    const [{ data: r }, { data: e }, { data: s }] = await Promise.all([
       supabase.from("registrations").select("*").order("created_at", { ascending: false }),
       supabase.from("events").select("*").order("created_at", { ascending: true }),
+      supabase.from("service_applications").select("*").order("created_at", { ascending: false }),
     ]);
     setRegs(r ?? []);
     setEvents(e ?? []);
+    setServiceApps((s ?? []) as ServiceApp[]);
   }, []);
 
   const loadMessagesCount = useCallback(async () => {
@@ -501,50 +516,6 @@ function AdminPage() {
           </div>
         </section>
 
-        {/* Events / QR */}
-        <section className="bg-card border border-border/50 rounded-2xl p-6">
-          <h2 className="font-serif text-xl mb-4">活动与二维码</h2>
-          <div className="flex flex-wrap gap-2 mb-4">
-            <Button onClick={addEvent}>生成新二维码</Button>
-          </div>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {events.map((ev) => {
-              const url = `${origin}/register?event=${ev.qr_token}`;
-              return (
-                <div key={ev.id} className="border border-border/50 rounded-xl p-4 flex items-center justify-between gap-4">
-                  <div className="min-w-0">
-                    <p className="font-medium truncate">{ev.name}</p>
-                    <p className="text-xs text-muted-foreground truncate">{url}</p>
-                  </div>
-                  <Dialog>
-                    <DialogTrigger asChild>
-                      <Button size="sm" variant="outline">二维码</Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>{ev.name}</DialogTitle>
-                      </DialogHeader>
-                      <div className="flex flex-col items-center gap-4 py-4">
-                        <QRCodeSVG value={url} size={280} level="H" />
-                        <p className="text-xs text-muted-foreground break-all text-center">{url}</p>
-                        <Button
-                          variant="outline"
-                          onClick={() => {
-                            navigator.clipboard.writeText(url);
-                            toast.success("链接已复制");
-                          }}
-                        >
-                          复制链接
-                        </Button>
-                      </div>
-                    </DialogContent>
-                  </Dialog>
-                </div>
-              );
-            })}
-          </div>
-        </section>
-
         {/* Media / Projection */}
         <section className="bg-card border border-border/50 rounded-2xl p-6">
           <h2 className="font-serif text-xl mb-4">影音投影</h2>
@@ -816,6 +787,88 @@ function AdminPage() {
               </div>
             </div>
           )}
+        </section>
+
+        {/* 教会活动 (Events / QR) */}
+        <section className="bg-card border border-border/50 rounded-2xl p-6">
+          <h2 className="font-serif text-xl mb-4">教会活动</h2>
+          <div className="flex flex-wrap gap-2 mb-4">
+            <Button onClick={addEvent}>生成新二维码</Button>
+          </div>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {events.map((ev) => {
+              const url = `${origin}/register?event=${ev.qr_token}`;
+              return (
+                <div key={ev.id} className="border border-border/50 rounded-xl p-4 flex items-center justify-between gap-4">
+                  <div className="min-w-0">
+                    <p className="font-medium truncate">{ev.name}</p>
+                    <p className="text-xs text-muted-foreground truncate">{url}</p>
+                  </div>
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button size="sm" variant="outline">二维码</Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>{ev.name}</DialogTitle>
+                      </DialogHeader>
+                      <div className="flex flex-col items-center gap-4 py-4">
+                        <QRCodeSVG value={url} size={280} level="H" />
+                        <p className="text-xs text-muted-foreground break-all text-center">{url}</p>
+                        <Button
+                          variant="outline"
+                          onClick={() => {
+                            navigator.clipboard.writeText(url);
+                            toast.success("链接已复制");
+                          }}
+                        >
+                          复制链接
+                        </Button>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+
+        {/* 教会服侍 */}
+        <section className="bg-card border border-border/50 rounded-2xl p-6">
+          <h2 className="font-serif text-xl mb-4">教会服侍</h2>
+          <div className="grid sm:grid-cols-2 gap-6">
+            {/* 服侍申请 QR */}
+            <div className="border border-border/50 rounded-xl p-4 flex flex-col items-center gap-3">
+              <p className="font-medium">服侍申请</p>
+              {origin && (
+                <QRCodeSVG value={`${origin}/serve-apply`} size={180} level="H" />
+              )}
+              <p className="text-xs text-muted-foreground break-all text-center">{origin}/serve-apply</p>
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    navigator.clipboard.writeText(`${origin}/serve-apply`);
+                    toast.success("链接已复制");
+                  }}
+                >
+                  复制链接
+                </Button>
+                <Button size="sm" onClick={() => setServiceListOpen(true)}>
+                  查看信息 ({serviceApps.length})
+                </Button>
+              </div>
+            </div>
+
+            {/* 预留位置 */}
+            <div className="border border-dashed border-border/50 rounded-xl p-4 flex flex-col items-center justify-center gap-3 min-h-[260px] text-muted-foreground">
+              <div className="w-[180px] h-[180px] rounded-lg bg-muted/30 flex items-center justify-center text-sm">
+                预留位置
+              </div>
+              <p className="text-xs">待添加</p>
+            </div>
+          </div>
         </section>
 
         {/* Admin / Users */}
@@ -1110,6 +1163,73 @@ function AdminPage() {
             <DialogFooter>
               <Button variant="outline" onClick={() => setEditOpen(false)}>取消</Button>
               <Button onClick={saveEdit}>保存</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Logs Dialog */}
+        <Dialog open={serviceListOpen} onOpenChange={setServiceListOpen}>
+          <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>服侍申请名单</DialogTitle>
+            </DialogHeader>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-left border-b border-border/60 text-muted-foreground">
+                    <th className="py-2 px-2">时间</th>
+                    <th className="py-2 px-2">姓名</th>
+                    <th className="py-2 px-2">性别</th>
+                    <th className="py-2 px-2">电话</th>
+                    <th className="py-2 px-2">微信</th>
+                    <th className="py-2 px-2">服侍项目</th>
+                    <th className="py-2 px-2">备注</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {serviceApps.map((s) => (
+                    <tr key={s.id} className="border-b border-border/30 hover:bg-muted/30">
+                      <td className="py-2 px-2 text-muted-foreground whitespace-nowrap">
+                        {new Date(s.created_at).toLocaleString("zh-CN", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" })}
+                      </td>
+                      <td className="py-2 px-2 font-medium">{s.name}</td>
+                      <td className="py-2 px-2">{s.gender ?? "—"}</td>
+                      <td className="py-2 px-2">{s.phone ?? "—"}</td>
+                      <td className="py-2 px-2">{s.wechat ?? "—"}</td>
+                      <td className="py-2 px-2">{s.service_project}</td>
+                      <td className="py-2 px-2 text-muted-foreground">{s.notes ?? "—"}</td>
+                      <td className="py-2 px-2 text-right">
+                        <button
+                          onClick={async () => {
+                            if (!confirm(`确认删除 ${s.name} 的申请?`)) return;
+                            const { error } = await supabase.from("service_applications").delete().eq("id", s.id);
+                            if (error) toast.error(error.message);
+                            else {
+                              setServiceApps((prev) => prev.filter((x) => x.id !== s.id));
+                              logAction(`删除了服侍申请 ${s.name}`);
+                              toast.success("已删除");
+                            }
+                          }}
+                          className="text-xs text-destructive hover:underline"
+                        >
+                          删除
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                  {serviceApps.length === 0 && (
+                    <tr>
+                      <td colSpan={8} className="py-8 text-center text-muted-foreground">
+                        暂无服侍申请
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+            <DialogFooter>
+              <Button onClick={() => setServiceListOpen(false)}>关闭</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>

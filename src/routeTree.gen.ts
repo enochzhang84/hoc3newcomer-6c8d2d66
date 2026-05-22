@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TodayPreviewRouteImport } from './routes/today-preview'
+import { Route as ServeApplyRouteImport } from './routes/serve-apply'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as MessageBoardRouteImport } from './routes/message-board'
@@ -21,6 +22,11 @@ import { Route as IndexRouteImport } from './routes/index'
 const TodayPreviewRoute = TodayPreviewRouteImport.update({
   id: '/today-preview',
   path: '/today-preview',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ServeApplyRoute = ServeApplyRouteImport.update({
+  id: '/serve-apply',
+  path: '/serve-apply',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
@@ -67,6 +73,7 @@ export interface FileRoutesByFullPath {
   '/message-board': typeof MessageBoardRoute
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/serve-apply': typeof ServeApplyRoute
   '/today-preview': typeof TodayPreviewRoute
 }
 export interface FileRoutesByTo {
@@ -77,6 +84,7 @@ export interface FileRoutesByTo {
   '/message-board': typeof MessageBoardRoute
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/serve-apply': typeof ServeApplyRoute
   '/today-preview': typeof TodayPreviewRoute
 }
 export interface FileRoutesById {
@@ -88,6 +96,7 @@ export interface FileRoutesById {
   '/message-board': typeof MessageBoardRoute
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/serve-apply': typeof ServeApplyRoute
   '/today-preview': typeof TodayPreviewRoute
 }
 export interface FileRouteTypes {
@@ -100,6 +109,7 @@ export interface FileRouteTypes {
     | '/message-board'
     | '/register'
     | '/reset-password'
+    | '/serve-apply'
     | '/today-preview'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -110,6 +120,7 @@ export interface FileRouteTypes {
     | '/message-board'
     | '/register'
     | '/reset-password'
+    | '/serve-apply'
     | '/today-preview'
   id:
     | '__root__'
@@ -120,6 +131,7 @@ export interface FileRouteTypes {
     | '/message-board'
     | '/register'
     | '/reset-password'
+    | '/serve-apply'
     | '/today-preview'
   fileRoutesById: FileRoutesById
 }
@@ -131,6 +143,7 @@ export interface RootRouteChildren {
   MessageBoardRoute: typeof MessageBoardRoute
   RegisterRoute: typeof RegisterRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  ServeApplyRoute: typeof ServeApplyRoute
   TodayPreviewRoute: typeof TodayPreviewRoute
 }
 
@@ -141,6 +154,13 @@ declare module '@tanstack/react-router' {
       path: '/today-preview'
       fullPath: '/today-preview'
       preLoaderRoute: typeof TodayPreviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/serve-apply': {
+      id: '/serve-apply'
+      path: '/serve-apply'
+      fullPath: '/serve-apply'
+      preLoaderRoute: typeof ServeApplyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/reset-password': {
@@ -203,6 +223,7 @@ const rootRouteChildren: RootRouteChildren = {
   MessageBoardRoute: MessageBoardRoute,
   RegisterRoute: RegisterRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  ServeApplyRoute: ServeApplyRoute,
   TodayPreviewRoute: TodayPreviewRoute,
 }
 export const routeTree = rootRouteImport
