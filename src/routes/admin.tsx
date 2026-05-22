@@ -147,13 +147,11 @@ function AdminPage() {
   }
 
   async function addEvent() {
-    if (!newEventName.trim()) return;
-    const { error } = await supabase.from("events").insert({ name: newEventName.trim() });
+    const { error } = await supabase.from("events").insert({ name: "新人登记" });
     if (error) toast.error(error.message);
     else {
-      setNewEventName("");
       loadData();
-      toast.success("活动已创建");
+      toast.success("新二维码已生成");
     }
   }
 
