@@ -441,6 +441,7 @@ function AdminPage() {
                 r.gender === "女" || r.gender === "female" ? "女" : "未填"
               )}
               chart
+              genderSubset={regs}
             />
             <StatBreakdown
               label="年龄"
