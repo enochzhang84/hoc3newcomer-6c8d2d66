@@ -306,7 +306,7 @@ function AdminPage() {
           <Stat label="需要资料" value={regs.filter((r) => r.wants_info).length} />
           <Stat label="活动数" value={events.length} />
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mt-4">
+          <div className="grid grid-cols-2 md:grid-cols-6 gap-4 mt-4">
             <StatBreakdown
               label="本周登记"
               total={countSince(regs, startOfWeek())}
@@ -334,6 +334,14 @@ function AdminPage() {
                 r.faith === "christian" ? "基督徒" :
                 r.faith === "seeker" ? "慕道友" :
                 r.faith === "other" ? "其他" : "未填"
+              )}
+            />
+            <StatBreakdown
+              label="邀请人"
+              total={regs.filter((r) => r.referrer_type === "friend" && r.invited_by?.trim()).length}
+              items={groupCounts(
+                regs.filter((r) => r.referrer_type === "friend" && r.invited_by?.trim()),
+                (r) => r.invited_by!.trim()
               )}
             />
           </div>
