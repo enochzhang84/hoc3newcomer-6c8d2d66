@@ -81,6 +81,8 @@ function AdminPage() {
   const [editOpen, setEditOpen] = useState(false);
   const [editForm, setEditForm] = useState<Reg | null>(null);
   const [logsOpen, setLogsOpen] = useState(false);
+  const [initOpen, setInitOpen] = useState(false);
+  const [initLoading, setInitLoading] = useState(false);
   const [logs, setLogs] = useState<{ time: string; actor: string; action: string }[]>([]);
   const [statusFilter, setStatusFilter] = useState<"all" | "未联系" | "已联系">("all");
 
@@ -877,6 +879,12 @@ function AdminPage() {
             >
               操作日志
             </Button>
+            <Button
+              variant="destructive"
+              onClick={() => setInitOpen(true)}
+            >
+              系统初始化
+            </Button>
           </div>
         </section>
 
@@ -1084,6 +1092,64 @@ function AdminPage() {
                 清空日志
               </Button>
               <Button onClick={() => setLogsOpen(false)}>关闭</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* System Init Dialog */}
+        <Dialog open={initOpen} onOpenChange={(o) => { if (!initLoading) setInitOpen(o); }}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>系统初始化</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-3 py-2 text-sm">
+              <p className="text-destructive font-medium">
+                初始化前请先导出录用名单！
+              </p>
+              <p className="text-muted-foreground">
+                此操作将清空所有新人登记记录，并把系统更新为全新状态。该操作不可撤销。
+              </p>
+              <p className="text-muted-foreground">
+                当前共有 <span className="font-semibold text-foreground">{regs.length}</span> 条登记记录。
+              </p>
+            </div>
+            <DialogFooter className="flex-col sm:flex-row gap-2">
+              <Button
+                variant="outline"
+                disabled={initLoading}
+                onClick={() => exportAllExcel()}
+              >
+                导出全部名单 Excel
+              </Button>
+              <Button
+                variant="destructive"
+                disabled={initLoading}
+                onClick={async () => {
+                  setInitLoading(true);
+                  const { error } = await supabase
+                    .from("registrations")
+                    .delete()
+                    .not("id", "is", null);
+                  setInitLoading(false);
+                  if (error) {
+                    toast.error("初始化失败: " + error.message);
+                    return;
+                  }
+                  logAction(`系统初始化（清空了 ${regs.length} 条登记）`);
+                  toast.success("系统已初始化");
+                  setInitOpen(false);
+                  loadData();
+                }}
+              >
+                {initLoading ? "正在初始化..." : "确定初始化"}
+              </Button>
+              <Button
+                variant="secondary"
+                disabled={initLoading}
+                onClick={() => setInitOpen(false)}
+              >
+                取消初始化
+              </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
