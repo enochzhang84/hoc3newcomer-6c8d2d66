@@ -81,6 +81,8 @@ function AdminPage() {
   const [editOpen, setEditOpen] = useState(false);
   const [editForm, setEditForm] = useState<Reg | null>(null);
   const [logsOpen, setLogsOpen] = useState(false);
+  const [initOpen, setInitOpen] = useState(false);
+  const [initLoading, setInitLoading] = useState(false);
   const [logs, setLogs] = useState<{ time: string; actor: string; action: string }[]>([]);
   const [statusFilter, setStatusFilter] = useState<"all" | "未联系" | "已联系">("all");
 
