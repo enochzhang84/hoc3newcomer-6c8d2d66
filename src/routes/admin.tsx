@@ -597,9 +597,21 @@ function AdminPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-left border-b border-border/60 text-muted-foreground">
+                  <th className="py-2 px-2">时间</th>
                   <th className="py-2 px-2">姓名(中)</th>
                   <th className="py-2 px-2">姓名(英)</th>
-                  <th className="py-2 px-2">区别</th>
+                  <th className="py-2 px-2">
+                    <select
+                      value={statusFilter}
+                      onChange={(e) => setStatusFilter(e.target.value as "all" | "未联系" | "已联系")}
+                      className="bg-transparent border border-border/60 rounded px-1 py-0.5 text-xs cursor-pointer"
+                      title="跟进状态筛选"
+                    >
+                      <option value="all">跟进状态 ▾</option>
+                      <option value="未联系">未联系</option>
+                      <option value="已联系">已联系</option>
+                    </select>
+                  </th>
                   <th className="py-2 px-2">性别</th>
                   <th className="py-2 px-2">年龄</th>
                   <th className="py-2 px-2">电话</th>
@@ -611,16 +623,27 @@ function AdminPage() {
                   <th className="py-2 px-2">介绍人</th>
                   <th className="py-2 px-2">标记</th>
                   <th className="py-2 px-2">活动</th>
-                  <th className="py-2 px-2">时间</th>
                   <th></th>
                 </tr>
               </thead>
               <tbody>
                 {filtered.map((r) => (
                   <tr key={r.id} className="border-b border-border/30 hover:bg-muted/30">
+                    <td className="py-2 px-2 text-muted-foreground whitespace-nowrap">
+                      {new Date(r.created_at).toLocaleString("zh-CN", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" })}
+                    </td>
                     <td className="py-2 px-2 font-medium">{r.name}</td>
                     <td className="py-2 px-2">{r.name_en ?? "—"}</td>
-                    <td className="py-2 px-2">{r.district ?? "—"}</td>
+                    <td className="py-2 px-2">
+                      <select
+                        value={r.district === "已联系" ? "已联系" : "未联系"}
+                        onChange={(e) => updateStatus(r, e.target.value as "未联系" | "已联系")}
+                        className={`bg-transparent border border-border/60 rounded px-1 py-0.5 text-xs cursor-pointer ${r.district === "已联系" ? "text-primary" : "text-muted-foreground"}`}
+                      >
+                        <option value="未联系">未联系 ▾</option>
+                        <option value="已联系">已联系</option>
+                      </select>
+                    </td>
                     <td className="py-2 px-2">{r.gender ?? "—"}</td>
                     <td className="py-2 px-2">{r.age_group ?? "—"}</td>
                     <td className="py-2 px-2">{r.phone ?? "—"}</td>
@@ -657,9 +680,6 @@ function AdminPage() {
                       {r.wants_info && <Tag tone="accent">需资料</Tag>}
                     </td>
                     <td className="py-2 px-2 text-muted-foreground">{r.event_id ? eventMap[r.event_id] : "—"}</td>
-                    <td className="py-2 px-2 text-muted-foreground whitespace-nowrap">
-                      {new Date(r.created_at).toLocaleString("zh-CN", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" })}
-                    </td>
                     <td className="py-2 px-2 text-right space-x-3 whitespace-nowrap">
                       <button onClick={() => { setEditForm({ ...r }); setEditOpen(true); }} className="text-xs text-primary hover:underline">编辑</button>
                       <button onClick={() => deleteReg(r.id)} className="text-xs text-destructive hover:underline">删除</button>
