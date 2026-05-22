@@ -404,6 +404,8 @@ function AdminPage() {
               const lastWeek = countBetween(regs, prevStartOfWeek(), startOfWeek());
               const thisMonth = countSince(regs, startOfMonth());
               const lastMonth = countBetween(regs, prevStartOfMonth(), startOfMonth());
+              const weekRegs = regs.filter((r) => new Date(r.created_at) >= startOfWeek());
+              const monthRegs = regs.filter((r) => new Date(r.created_at) >= startOfMonth());
               return (
                 <>
                   <StatBreakdown
@@ -415,6 +417,7 @@ function AdminPage() {
                     ]}
                     trend={thisWeek - lastWeek}
                     chart
+                    genderSubset={weekRegs}
                   />
                   <StatBreakdown
                     label="本月登记"
@@ -425,6 +428,7 @@ function AdminPage() {
                     ]}
                     trend={thisMonth - lastMonth}
                     chart
+                    genderSubset={monthRegs}
                   />
                 </>
               );
@@ -443,6 +447,7 @@ function AdminPage() {
               total={regs.length}
               items={groupCounts(regs, (r) => r.age_group ?? "未填")}
               chart
+              genderSubset={regs}
             />
             <StatBreakdown
               label="信仰"
@@ -453,6 +458,7 @@ function AdminPage() {
                 r.faith === "other" ? "其他" : "未填"
               )}
               chart
+              genderSubset={regs}
             />
             <StatBreakdown
               label="邀请人"
