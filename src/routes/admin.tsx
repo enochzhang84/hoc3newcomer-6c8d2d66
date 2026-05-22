@@ -305,6 +305,43 @@ function AdminPage() {
     }
   }
 
+  async function updateStatus(r: Reg, status: "未联系" | "已联系") {
+    const prev = r.district;
+    setRegs((list) => list.map((x) => (x.id === r.id ? { ...x, district: status } : x)));
+    try {
+      await updateRegFn({
+        data: {
+          id: r.id,
+          name: r.name,
+          name_en: r.name_en ?? null,
+          district: status,
+          gender: r.gender ?? null,
+          age_group: r.age_group ?? null,
+          address: r.address ?? null,
+          city: r.city ?? null,
+          zip: r.zip ?? null,
+          phone: r.phone ?? null,
+          email: r.email ?? null,
+          faith: r.faith ?? null,
+          faith_years: r.faith_years ?? null,
+          faith_other: r.faith_other ?? null,
+          marital_status: r.marital_status ?? null,
+          spouse_name: r.spouse_name ?? null,
+          referrer_type: r.referrer_type ?? null,
+          invited_by: r.invited_by ?? null,
+          referrer_other: r.referrer_other ?? null,
+          wants_visit: r.wants_visit ?? false,
+          wants_info: r.wants_info ?? false,
+          notes: r.notes ?? null,
+        },
+      });
+      logAction(`更新了 ${r.name} 跟进状态: ${status}`);
+    } catch (e) {
+      setRegs((list) => list.map((x) => (x.id === r.id ? { ...x, district: prev } : x)));
+      toast.error("更新失败:" + (e as Error).message);
+    }
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border/60 bg-card/50">
