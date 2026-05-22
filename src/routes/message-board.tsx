@@ -66,6 +66,7 @@ function MessageBoardPage() {
   const [draftContent, setDraftContent] = useState("");
   const [draftImages, setDraftImages] = useState<string[]>([]);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [viewerId, setViewerId] = useState<string | null>(null);
 
   useEffect(() => {
     setMessages(loadMessages());
@@ -82,6 +83,7 @@ function MessageBoardPage() {
   }, []);
 
   const selected = messages.find((m) => m.id === selectedId) ?? null;
+  const viewing = messages.find((m) => m.id === viewerId) ?? null;
 
   const openCreate = () => {
     setEditingId(null);
@@ -249,6 +251,10 @@ function MessageBoardPage() {
                 <Card
                   key={m.id}
                   onClick={() => setSelectedId(m.id)}
+                  onDoubleClick={() => {
+                    setSelectedId(m.id);
+                    setViewerId(m.id);
+                  }}
                   className={`cursor-pointer p-4 transition-colors hover:bg-accent/40 ${
                     active ? "border-primary ring-1 ring-primary" : ""
                   }`}
@@ -284,7 +290,7 @@ function MessageBoardPage() {
         )}
 
         <p className="text-xs text-muted-foreground">
-          内容保存在本浏览器,关闭页面后下次打开仍然可见。
+          内容保存在本浏览器,关闭页面后下次打开仍然可见。双击留言可进入浏览模式。
         </p>
       </main>
 
@@ -389,6 +395,56 @@ function MessageBoardPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={!!viewerId} onOpenChange={(o) => !o && setViewerId(null)}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>{viewing?.title ?? "浏览留言"}</DialogTitle>
+          </DialogHeader>
+          {viewing && (
+            <div className="space-y-4">
+              <div className="text-xs text-muted-foreground">
+                更新时间:{new Date(viewing.updatedAt).toLocaleString()}
+              </div>
+              <div className="whitespace-pre-wrap text-sm leading-relaxed">
+                {viewing.content || "(无内容)"}
+              </div>
+              {viewing.images && viewing.images.length > 0 && (
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {viewing.images.map((src, i) => (
+                    <a key={i} href={src} target="_blank" rel="noreferrer">
+                      <img
+                        src={src}
+                        alt=""
+                        className="w-full h-40 object-cover rounded border hover:opacity-90"
+                      />
+                    </a>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                if (viewing) {
+                  setSelectedId(viewing.id);
+                  setViewerId(null);
+                  setEditingId(viewing.id);
+                  setDraftTitle(viewing.title);
+                  setDraftContent(viewing.content);
+                  setDraftImages(viewing.images ?? []);
+                  setEditorOpen(true);
+                }
+              }}
+            >
+              编辑
+            </Button>
+            <Button onClick={() => setViewerId(null)}>关闭</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
