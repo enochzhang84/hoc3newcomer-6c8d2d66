@@ -201,6 +201,11 @@ function AdminPage() {
     };
   }, [isAdmin]);
 
+  // Reset page when filters change
+  useEffect(() => {
+    setPage(1);
+  }, [search, filterDate, statusFilter, dateFilterMode]);
+
   if (checking) return <div className="min-h-screen flex items-center justify-center text-muted-foreground">加载中...</div>;
   if (!isAdmin) {
     return (
@@ -233,11 +238,6 @@ function AdminPage() {
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
-
-  // Reset page when filters change
-  useEffect(() => {
-    setPage(1);
-  }, [search, filterDate, statusFilter, dateFilterMode]);
 
   function buildExcelRows(list: Reg[]) {
     return list.map((r) => ({
