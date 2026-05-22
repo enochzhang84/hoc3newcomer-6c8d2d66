@@ -68,6 +68,7 @@ function AdminPage() {
   const [filterDate, setFilterDate] = useState<Date | undefined>(undefined);
   const [dateFilterMode, setDateFilterMode] = useState<"after" | "before">("after");
   const [dateOpen, setDateOpen] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
   const [origin, setOrigin] = useState("");
   const [users, setUsers] = useState<AppUser[]>([]);
   const [usersLoading, setUsersLoading] = useState(false);
