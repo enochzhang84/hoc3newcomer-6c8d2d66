@@ -62,6 +62,7 @@ function AdminPage() {
   const [checking, setChecking] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [currentUserEmail, setCurrentUserEmail] = useState<string>("");
   const [regs, setRegs] = useState<Reg[]>([]);
   const [events, setEvents] = useState<Event[]>([]);
   const [search, setSearch] = useState("");
@@ -78,6 +79,29 @@ function AdminPage() {
   const updateRegFn = useServerFn(updateRegistration);
   const [editOpen, setEditOpen] = useState(false);
   const [editForm, setEditForm] = useState<Reg | null>(null);
+  const [logsOpen, setLogsOpen] = useState(false);
+  const [logs, setLogs] = useState<{ time: string; actor: string; action: string }[]>([]);
+
+  const LOG_KEY = "admin_action_logs";
+  const loadLogs = useCallback(() => {
+    try {
+      const raw = localStorage.getItem(LOG_KEY);
+      setLogs(raw ? JSON.parse(raw) : []);
+    } catch {
+      setLogs([]);
+    }
+  }, []);
+  const logAction = useCallback((action: string) => {
+    try {
+      const raw = localStorage.getItem(LOG_KEY);
+      const arr: { time: string; actor: string; action: string }[] = raw ? JSON.parse(raw) : [];
+      arr.unshift({ time: new Date().toISOString(), actor: currentUserEmail || "管理员", action });
+      // cap at 500 entries
+      localStorage.setItem(LOG_KEY, JSON.stringify(arr.slice(0, 500)));
+    } catch {
+      // ignore
+    }
+  }, [currentUserEmail]);
 
   const loadUsers = useCallback(async () => {
     setUsersLoading(true);
@@ -110,6 +134,7 @@ function AdminPage() {
         return;
       }
       setCurrentUserId(session.session.user.id);
+      setCurrentUserEmail(session.session.user.email ?? "");
       const { data: roles } = await supabase
         .from("user_roles")
         .select("role")
@@ -223,10 +248,12 @@ function AdminPage() {
 
   async function deleteReg(id: string) {
     if (!confirm("确认删除此登记?")) return;
+    const target = regs.find((r) => r.id === id);
     const { error } = await supabase.from("registrations").delete().eq("id", id);
     if (error) toast.error(error.message);
     else {
       setRegs((prev) => prev.filter((r) => r.id !== id));
+      logAction(`删除了登记 ${target?.name ?? id}`);
       toast.success("已删除");
     }
   }
@@ -266,6 +293,7 @@ function AdminPage() {
       });
       setEditOpen(false);
       setEditForm(null);
+      logAction(`编辑了资料 ${editForm.name.trim()}`);
       toast.success("已保存");
       loadData();
     } catch (e) {
