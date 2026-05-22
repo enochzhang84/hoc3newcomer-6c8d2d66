@@ -99,6 +99,13 @@ function AdminPage() {
   const [serviceListOpen, setServiceListOpen] = useState(false);
   const [editingFollowUpId, setEditingFollowUpId] = useState<string | null>(null);
   const [followUpDraft, setFollowUpDraft] = useState("");
+  const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
+  const todayStr = format(new Date(), "yyyy-MM-dd");
+  const [attDate, setAttDate] = useState<string>(todayStr);
+  const [attWorship, setAttWorship] = useState<string>("");
+  const [attStudents, setAttStudents] = useState<string>("");
+  const [attTeachers, setAttTeachers] = useState<string>("");
+  const [attText, setAttText] = useState<string>("");
 
   const fetchUsersFn = useServerFn(listUsersWithRoles);
   const setUserAdminFn = useServerFn(setUserAdmin);
