@@ -47,6 +47,7 @@ type Reg = {
   source: string;
   created_at: string;
   event_id: string | null;
+  follow_up_person: string | null;
 };
 
 type Event = { id: string; name: string; qr_token: string; is_active: boolean };
@@ -86,6 +87,8 @@ function AdminPage() {
   const [messagesCount, setMessagesCount] = useState(0);
   const [serviceApps, setServiceApps] = useState<ServiceApp[]>([]);
   const [serviceListOpen, setServiceListOpen] = useState(false);
+  const [editingFollowUpId, setEditingFollowUpId] = useState<string | null>(null);
+  const [followUpDraft, setFollowUpDraft] = useState("");
 
   const fetchUsersFn = useServerFn(listUsersWithRoles);
   const setUserAdminFn = useServerFn(setUserAdmin);
@@ -275,7 +278,7 @@ function AdminPage() {
       需要资料: r.wants_info ? "是" : "否",
       备注: r.notes ?? "",
       来源: r.source === "qr" ? "扫码" : "手动",
-      活动: r.event_id ? eventMap[r.event_id] ?? "" : "",
+      跟进人: r.follow_up_person ?? "",
       登记时间: new Date(r.created_at).toLocaleString("zh-CN"),
     }));
   }
@@ -685,7 +688,7 @@ function AdminPage() {
                     <th className="py-2 px-2">婚姻</th>
                     <th className="py-2 px-2">介绍人</th>
                     <th className="py-2 px-2">标记</th>
-                    <th className="py-2 px-2">活动</th>
+                    <th className="py-2 px-2">跟进人</th>
                     <th></th>
                   </tr>
                 </thead>
@@ -742,7 +745,50 @@ function AdminPage() {
                         {r.wants_visit && <Tag>欢迎探访</Tag>}
                         {r.wants_info && <Tag tone="accent">需资料</Tag>}
                       </td>
-                      <td className="py-2 px-2 text-muted-foreground">{r.event_id ? eventMap[r.event_id] : "—"}</td>
+                      <td className="py-2 px-2">
+                        {editingFollowUpId === r.id ? (
+                          <input
+                            autoFocus
+                            value={followUpDraft}
+                            onChange={(e) => setFollowUpDraft(e.target.value)}
+                            onKeyDown={async (e) => {
+                              if (e.key === "Enter") {
+                                const val = followUpDraft.trim();
+                                const { error } = await supabase
+                                  .from("registrations")
+                                  .update({ follow_up_person: val || null })
+                                  .eq("id", r.id);
+                                if (error) toast.error(error.message);
+                                else {
+                                  setRegs((prev) => prev.map((x) => x.id === r.id ? { ...x, follow_up_person: val || null } : x));
+                                  setEditingFollowUpId(null);
+                                  toast.success("已保存");
+                                }
+                              } else if (e.key === "Escape") {
+                                setEditingFollowUpId(null);
+                              }
+                            }}
+                            onBlur={() => setEditingFollowUpId(null)}
+                            className="bg-transparent border border-border/60 rounded px-1 py-0.5 text-xs w-20"
+                            placeholder="姓名"
+                          />
+                        ) : (
+                          <div className="flex items-center gap-2">
+                            <span className={r.follow_up_person ? "" : "text-muted-foreground"}>
+                              {r.follow_up_person || "—"}
+                            </span>
+                            <button
+                              onClick={() => {
+                                setFollowUpDraft(r.follow_up_person ?? "");
+                                setEditingFollowUpId(r.id);
+                              }}
+                              className="text-xs text-primary hover:underline"
+                            >
+                              编辑
+                            </button>
+                          </div>
+                        )}
+                      </td>
                       <td className="py-2 px-2 text-right space-x-3 whitespace-nowrap">
                         <button onClick={() => { setEditForm({ ...r }); setEditOpen(true); }} className="text-xs text-primary hover:underline">编辑</button>
                         <button onClick={() => deleteReg(r.id)} className="text-xs text-destructive hover:underline">删除</button>
