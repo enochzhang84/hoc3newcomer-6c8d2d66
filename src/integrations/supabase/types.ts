@@ -77,6 +77,7 @@ export type Database = {
           faith: string | null
           faith_other: string | null
           faith_years: number | null
+          follow_up_person: string | null
           gender: string | null
           id: string
           invited_by: string | null
@@ -106,6 +107,7 @@ export type Database = {
           faith?: string | null
           faith_other?: string | null
           faith_years?: number | null
+          follow_up_person?: string | null
           gender?: string | null
           id?: string
           invited_by?: string | null
@@ -135,6 +137,7 @@ export type Database = {
           faith?: string | null
           faith_other?: string | null
           faith_years?: number | null
+          follow_up_person?: string | null
           gender?: string | null
           id?: string
           invited_by?: string | null

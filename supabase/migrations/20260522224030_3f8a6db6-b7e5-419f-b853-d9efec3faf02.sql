@@ -1,0 +1,1 @@
+ALTER TABLE public.registrations ADD COLUMN follow_up_person text;
