@@ -231,6 +231,14 @@ function AdminPage() {
     return matchesSearch && matchesDate && matchesStatus;
   });
 
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+  // Reset page when filters change
+  useEffect(() => {
+    setPage(1);
+  }, [search, filterDate, statusFilter, dateFilterMode]);
+
   function buildExcelRows(list: Reg[]) {
     return list.map((r) => ({
       姓名中: r.name,
