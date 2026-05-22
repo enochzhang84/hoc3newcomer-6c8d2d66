@@ -368,6 +368,108 @@ function AdminPage() {
             </table>
           </div>
         </section>
+
+        {/* Admin / Users */}
+        <section className="bg-card border border-border/50 rounded-2xl p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-serif text-xl">管理员权限</h2>
+            <Button size="sm" variant="outline" onClick={loadUsers} disabled={usersLoading}>
+              {usersLoading ? "刷新中..." : "刷新"}
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground mb-4">
+            管理员可登录后台查看名单、导出 Excel、管理二维码。新注册用户默认为普通用户，需在此授予权限。
+          </p>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left border-b border-border/60 text-muted-foreground">
+                  <th className="py-2 px-2">邮箱</th>
+                  <th className="py-2 px-2">角色</th>
+                  <th className="py-2 px-2">注册时间</th>
+                  <th className="py-2 px-2 text-right">操作</th>
+                </tr>
+              </thead>
+              <tbody>
+                {users.map((u) => {
+                  const isUserAdmin = u.roles.includes("admin");
+                  const isSelf = u.id === currentUserId;
+                  return (
+                    <tr key={u.id} className="border-b border-border/30 hover:bg-muted/30">
+                      <td className="py-2 px-2 font-medium">
+                        {u.email} {isSelf && <span className="text-xs text-muted-foreground">(我)</span>}
+                      </td>
+                      <td className="py-2 px-2">
+                        {isUserAdmin ? <Tag>管理员</Tag> : <span className="text-muted-foreground text-xs">普通用户</span>}
+                      </td>
+                      <td className="py-2 px-2 text-muted-foreground whitespace-nowrap">
+                        {new Date(u.created_at).toLocaleDateString("zh-CN")}
+                      </td>
+                      <td className="py-2 px-2 text-right space-x-3 whitespace-nowrap">
+                        {isUserAdmin ? (
+                          <button
+                            disabled={isSelf}
+                            onClick={async () => {
+                              if (!confirm(`撤销 ${u.email} 的管理员权限?`)) return;
+                              try {
+                                await setUserAdminFn({ data: { userId: u.id, makeAdmin: false } });
+                                toast.success("已撤销管理员权限");
+                                loadUsers();
+                              } catch (e) {
+                                toast.error((e as Error).message);
+                              }
+                            }}
+                            className="text-xs text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed"
+                          >
+                            撤销管理员
+                          </button>
+                        ) : (
+                          <button
+                            onClick={async () => {
+                              try {
+                                await setUserAdminFn({ data: { userId: u.id, makeAdmin: true } });
+                                toast.success("已授予管理员权限");
+                                loadUsers();
+                              } catch (e) {
+                                toast.error((e as Error).message);
+                              }
+                            }}
+                            className="text-xs text-primary hover:underline"
+                          >
+                            设为管理员
+                          </button>
+                        )}
+                        <button
+                          disabled={isSelf}
+                          onClick={async () => {
+                            if (!confirm(`确认删除用户 ${u.email}? 此操作不可撤销。`)) return;
+                            try {
+                              await deleteUserFn({ data: { userId: u.id } });
+                              toast.success("用户已删除");
+                              loadUsers();
+                            } catch (e) {
+                              toast.error((e as Error).message);
+                            }
+                          }}
+                          className="text-xs text-destructive hover:underline disabled:opacity-30 disabled:cursor-not-allowed"
+                        >
+                          删除
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+                {users.length === 0 && !usersLoading && (
+                  <tr>
+                    <td colSpan={4} className="py-8 text-center text-muted-foreground">
+                      暂无用户
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </section>
       </main>
     </div>
   );
