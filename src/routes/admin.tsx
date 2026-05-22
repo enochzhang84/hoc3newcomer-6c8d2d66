@@ -306,6 +306,37 @@ function AdminPage() {
           <Stat label="需要资料" value={regs.filter((r) => r.wants_info).length} />
           <Stat label="活动数" value={events.length} />
           </div>
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mt-4">
+            <StatBreakdown
+              label="本周登记"
+              total={countSince(regs, startOfWeek())}
+            />
+            <StatBreakdown
+              label="本月登记"
+              total={countSince(regs, startOfMonth())}
+            />
+            <StatBreakdown
+              label="性别"
+              total={regs.length}
+              items={groupCounts(regs, (r) =>
+                r.gender === "male" ? "男" : r.gender === "female" ? "女" : "未填"
+              )}
+            />
+            <StatBreakdown
+              label="年龄"
+              total={regs.length}
+              items={groupCounts(regs, (r) => r.age_group ?? "未填")}
+            />
+            <StatBreakdown
+              label="信仰"
+              total={regs.length}
+              items={groupCounts(regs, (r) =>
+                r.faith === "christian" ? "基督徒" :
+                r.faith === "seeker" ? "慕道友" :
+                r.faith === "other" ? "其他" : "未填"
+              )}
+            />
+          </div>
         </section>
 
         {/* Events / QR */}
@@ -838,6 +869,60 @@ function Stat({ label, value }: { label: string; value: number }) {
       <div className="text-sm text-muted-foreground mt-1">{label}</div>
     </div>
   );
+}
+
+function StatBreakdown({
+  label,
+  total,
+  items,
+}: {
+  label: string;
+  total: number;
+  items?: { key: string; count: number }[];
+}) {
+  return (
+    <div className="bg-card border border-border/50 rounded-2xl p-5">
+      <div className="text-sm text-muted-foreground">{label}</div>
+      <div className="text-2xl font-serif text-foreground mt-1">{total}</div>
+      {items && items.length > 0 && (
+        <div className="mt-2 space-y-0.5">
+          {items.map((it) => (
+            <div key={it.key} className="flex justify-between text-xs text-muted-foreground">
+              <span className="truncate pr-2">{it.key}</span>
+              <span className="text-foreground tabular-nums">{it.count}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function startOfWeek() {
+  const d = new Date();
+  const day = d.getDay(); // 0=Sun
+  const diff = (day + 6) % 7; // Monday as week start
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate() - diff, 0, 0, 0, 0);
+}
+
+function startOfMonth() {
+  const d = new Date();
+  return new Date(d.getFullYear(), d.getMonth(), 1, 0, 0, 0, 0);
+}
+
+function countSince(list: Reg[], since: Date) {
+  return list.filter((r) => new Date(r.created_at) >= since).length;
+}
+
+function groupCounts(list: Reg[], keyFn: (r: Reg) => string) {
+  const map = new Map<string, number>();
+  for (const r of list) {
+    const k = keyFn(r);
+    map.set(k, (map.get(k) ?? 0) + 1);
+  }
+  return Array.from(map.entries())
+    .map(([key, count]) => ({ key, count }))
+    .sort((a, b) => b.count - a.count);
 }
 
 function Tag({ children, tone = "primary" }: { children: React.ReactNode; tone?: "primary" | "accent" }) {
