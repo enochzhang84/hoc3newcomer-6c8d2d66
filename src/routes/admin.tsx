@@ -336,7 +336,71 @@ function AdminPage() {
         <section className="bg-card border border-border/50 rounded-2xl p-6">
           <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
             <h2 className="font-serif text-xl">登记名单</h2>
-            <div className="flex gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
+              <Popover open={dateOpen} onOpenChange={setDateOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className={cn(
+                      "gap-1",
+                      filterDate && "border-primary text-primary"
+                    )}
+                  >
+                    <CalendarIcon className="size-4" />
+                    {filterDate ? format(filterDate, "MM/dd", { locale: zhCN }) : "日期筛选"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-3" align="end">
+                  <Calendar
+                    mode="single"
+                    selected={filterDate}
+                    onSelect={setFilterDate}
+                    initialFocus
+                    className="p-3 pointer-events-auto"
+                  />
+                  <div className="border-t border-border/60 mt-2 pt-2">
+                    <RadioGroup
+                      value={dateFilterMode}
+                      onValueChange={(v) => setDateFilterMode(v as "after" | "before")}
+                      className="flex gap-4 px-1"
+                    >
+                      <div className="flex items-center gap-1.5">
+                        <RadioGroupItem value="after" id="after" />
+                        <Label htmlFor="after" className="text-xs cursor-pointer">新录入</Label>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <RadioGroupItem value="before" id="before" />
+                        <Label htmlFor="before" className="text-xs cursor-pointer">以前录入</Label>
+                      </div>
+                    </RadioGroup>
+                  </div>
+                  <div className="flex justify-between mt-2 pt-2 border-t border-border/60">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setFilterDate(undefined);
+                        setDateOpen(false);
+                      }}
+                    >
+                      清除
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={() => setDateOpen(false)}
+                      disabled={!filterDate}
+                    >
+                      应用
+                    </Button>
+                  </div>
+                </PopoverContent>
+              </Popover>
+              {filterDate && (
+                <span className="text-xs text-muted-foreground">
+                  {dateFilterMode === "after" ? "≥" : "<"} {format(filterDate, "yyyy-MM-dd", { locale: zhCN })}
+                </span>
+              )}
               <Input
                 placeholder="搜索姓名或电话"
                 value={search}
