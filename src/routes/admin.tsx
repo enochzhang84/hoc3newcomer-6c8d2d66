@@ -1168,6 +1168,73 @@ function AdminPage() {
         </Dialog>
 
         {/* Logs Dialog */}
+        <Dialog open={serviceListOpen} onOpenChange={setServiceListOpen}>
+          <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>服侍申请名单</DialogTitle>
+            </DialogHeader>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-left border-b border-border/60 text-muted-foreground">
+                    <th className="py-2 px-2">时间</th>
+                    <th className="py-2 px-2">姓名</th>
+                    <th className="py-2 px-2">性别</th>
+                    <th className="py-2 px-2">电话</th>
+                    <th className="py-2 px-2">微信</th>
+                    <th className="py-2 px-2">服侍项目</th>
+                    <th className="py-2 px-2">备注</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {serviceApps.map((s) => (
+                    <tr key={s.id} className="border-b border-border/30 hover:bg-muted/30">
+                      <td className="py-2 px-2 text-muted-foreground whitespace-nowrap">
+                        {new Date(s.created_at).toLocaleString("zh-CN", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" })}
+                      </td>
+                      <td className="py-2 px-2 font-medium">{s.name}</td>
+                      <td className="py-2 px-2">{s.gender ?? "—"}</td>
+                      <td className="py-2 px-2">{s.phone ?? "—"}</td>
+                      <td className="py-2 px-2">{s.wechat ?? "—"}</td>
+                      <td className="py-2 px-2">{s.service_project}</td>
+                      <td className="py-2 px-2 text-muted-foreground">{s.notes ?? "—"}</td>
+                      <td className="py-2 px-2 text-right">
+                        <button
+                          onClick={async () => {
+                            if (!confirm(`确认删除 ${s.name} 的申请?`)) return;
+                            const { error } = await supabase.from("service_applications").delete().eq("id", s.id);
+                            if (error) toast.error(error.message);
+                            else {
+                              setServiceApps((prev) => prev.filter((x) => x.id !== s.id));
+                              logAction(`删除了服侍申请 ${s.name}`);
+                              toast.success("已删除");
+                            }
+                          }}
+                          className="text-xs text-destructive hover:underline"
+                        >
+                          删除
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                  {serviceApps.length === 0 && (
+                    <tr>
+                      <td colSpan={8} className="py-8 text-center text-muted-foreground">
+                        暂无服侍申请
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+            <DialogFooter>
+              <Button onClick={() => setServiceListOpen(false)}>关闭</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Logs Dialog */}
         <Dialog open={logsOpen} onOpenChange={setLogsOpen}>
           <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
             <DialogHeader>
