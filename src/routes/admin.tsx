@@ -131,10 +131,19 @@ function AdminPage() {
   }, []);
 
   const loadMessagesCount = useCallback(async () => {
-    const { count } = await supabase
+    const lastSeen = Number(localStorage.getItem("messages_last_seen") ?? 0);
+    const { data } = await supabase
       .from("messages")
-      .select("id", { count: "exact", head: true });
-    setMessagesCount(count ?? 0);
+      .select("updated_at");
+    const unread = (data ?? []).filter(
+      (m) => new Date(m.updated_at).getTime() > lastSeen,
+    ).length;
+    setMessagesCount(unread);
+  }, []);
+
+  const markMessagesSeen = useCallback(() => {
+    localStorage.setItem("messages_last_seen", String(Date.now()));
+    setMessagesCount(0);
   }, []);
 
   useEffect(() => {
@@ -533,7 +542,10 @@ function AdminPage() {
               </Button>
             </div>
             <div
-              onDoubleClick={() => window.open("/message-board", "_blank")}
+              onDoubleClick={() => {
+                markMessagesSeen();
+                window.open("/message-board", "_blank");
+              }}
               title="双击打开留言板"
               className="relative border border-border/50 rounded-xl p-4 flex flex-col items-start gap-3 cursor-pointer hover:border-primary/60 transition-colors select-none"
             >
@@ -550,6 +562,7 @@ function AdminPage() {
                 variant="outline"
                 onClick={(e) => {
                   e.stopPropagation();
+                  markMessagesSeen();
                   window.open("/message-board", "_blank");
                 }}
               >
