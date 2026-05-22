@@ -12,6 +12,11 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { CalendarIcon } from "lucide-react";
+import { format } from "date-fns";
+import { zhCN } from "date-fns/locale";
 import { listUsersWithRoles, setUserAdmin, deleteUser } from "@/lib/users.functions";
 import { updateRegistration } from "@/lib/registrations.functions";
 
