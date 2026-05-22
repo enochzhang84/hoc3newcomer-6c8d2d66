@@ -1102,6 +1102,7 @@ function StatBreakdown({
   trend,
   chart,
   rank,
+  genderSubset,
 }: {
   label: string;
   total: number;
@@ -1109,9 +1110,15 @@ function StatBreakdown({
   trend?: number;
   chart?: boolean;
   rank?: boolean;
+  genderSubset?: Reg[];
 }) {
   const max = items && items.length > 0 ? Math.max(...items.map((i) => i.count), 1) : 1;
   const medals = ["🥇", "🥈", "🥉"];
+  const male = genderSubset ? genderSubset.filter((r) => r.gender === "男" || r.gender === "male").length : 0;
+  const female = genderSubset ? genderSubset.filter((r) => r.gender === "女" || r.gender === "female").length : 0;
+  const gTotal = male + female;
+  const malePct = gTotal > 0 ? Math.round((male / gTotal) * 100) : 0;
+  const femalePct = gTotal > 0 ? 100 - malePct : 0;
   return (
     <div className="bg-card border border-border/50 rounded-2xl p-5 h-full flex flex-col">
       <div className="text-sm text-muted-foreground">{label}</div>
@@ -1173,6 +1180,24 @@ function StatBreakdown({
               ))}
             </div>
           )}
+        </div>
+      )}
+      {genderSubset && (
+        <div className="mt-3 pt-3 border-t border-border/40 text-xs space-y-1">
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">男 / 女</span>
+            <span className="text-foreground tabular-nums">{male} / {female}</span>
+          </div>
+          {gTotal > 0 && (
+            <div className="flex h-1.5 rounded-full overflow-hidden bg-muted">
+              <div className="bg-sky-500" style={{ width: `${malePct}%` }} />
+              <div className="bg-pink-500" style={{ width: `${femalePct}%` }} />
+            </div>
+          )}
+          <div className="flex justify-between text-muted-foreground tabular-nums">
+            <span>{malePct}%</span>
+            <span>{femalePct}%</span>
+          </div>
         </div>
       )}
     </div>
