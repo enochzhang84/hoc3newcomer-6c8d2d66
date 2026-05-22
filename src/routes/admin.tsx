@@ -516,50 +516,6 @@ function AdminPage() {
           </div>
         </section>
 
-        {/* Events / QR */}
-        <section className="bg-card border border-border/50 rounded-2xl p-6">
-          <h2 className="font-serif text-xl mb-4">活动与二维码</h2>
-          <div className="flex flex-wrap gap-2 mb-4">
-            <Button onClick={addEvent}>生成新二维码</Button>
-          </div>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {events.map((ev) => {
-              const url = `${origin}/register?event=${ev.qr_token}`;
-              return (
-                <div key={ev.id} className="border border-border/50 rounded-xl p-4 flex items-center justify-between gap-4">
-                  <div className="min-w-0">
-                    <p className="font-medium truncate">{ev.name}</p>
-                    <p className="text-xs text-muted-foreground truncate">{url}</p>
-                  </div>
-                  <Dialog>
-                    <DialogTrigger asChild>
-                      <Button size="sm" variant="outline">二维码</Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>{ev.name}</DialogTitle>
-                      </DialogHeader>
-                      <div className="flex flex-col items-center gap-4 py-4">
-                        <QRCodeSVG value={url} size={280} level="H" />
-                        <p className="text-xs text-muted-foreground break-all text-center">{url}</p>
-                        <Button
-                          variant="outline"
-                          onClick={() => {
-                            navigator.clipboard.writeText(url);
-                            toast.success("链接已复制");
-                          }}
-                        >
-                          复制链接
-                        </Button>
-                      </div>
-                    </DialogContent>
-                  </Dialog>
-                </div>
-              );
-            })}
-          </div>
-        </section>
-
         {/* Media / Projection */}
         <section className="bg-card border border-border/50 rounded-2xl p-6">
           <h2 className="font-serif text-xl mb-4">影音投影</h2>
