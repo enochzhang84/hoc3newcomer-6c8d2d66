@@ -344,7 +344,8 @@ function MessageBoardPage() {
         )}
 
         <p className="text-xs text-muted-foreground">
-          内容保存在本浏览器,关闭页面后下次打开仍然可见。双击留言可进入浏览模式。
+          内容保存在云端数据库,所有设备实时同步。双击留言可进入浏览模式。
+          {!isAdmin && !loading && " 当前为只读模式,登录管理员账号后可创建/编辑/删除。"}
         </p>
       </main>
 
@@ -430,7 +431,9 @@ function MessageBoardPage() {
             <Button variant="outline" onClick={() => setEditorOpen(false)}>
               取消
             </Button>
-            <Button onClick={handleSave}>保存</Button>
+            <Button onClick={handleSave} disabled={saving}>
+              {saving ? "保存中..." : "保存"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
