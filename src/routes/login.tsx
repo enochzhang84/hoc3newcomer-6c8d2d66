@@ -12,7 +12,6 @@ export const Route = createFileRoute("/login")({
 
 function LoginPage() {
   const navigate = useNavigate();
-  const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -26,22 +25,9 @@ function LoginPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
-    if (mode === "signup") {
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: { emailRedirectTo: `${window.location.origin}/admin` },
-      });
-      if (error) toast.error(error.message);
-      else {
-        toast.success("注册成功,正在登录...");
-        navigate({ to: "/admin" });
-      }
-    } else {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) toast.error(error.message);
-      else navigate({ to: "/admin" });
-    }
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) toast.error(error.message);
+    else navigate({ to: "/admin" });
     setLoading(false);
   }
 
@@ -51,9 +37,7 @@ function LoginPage() {
         <Link to="/" className="text-sm text-muted-foreground hover:text-foreground">← 返回首页</Link>
         <div className="mt-6 mb-8 text-center">
           <h1 className="font-serif text-4xl text-foreground">管理后台</h1>
-          <p className="text-muted-foreground text-sm mt-2">
-            {mode === "signin" ? "登录以查看登记名单" : "首次使用?创建管理员账号"}
-          </p>
+          <p className="text-muted-foreground text-sm mt-2">登录以查看登记名单</p>
         </div>
 
         <form onSubmit={handleSubmit} className="bg-card border border-border/50 rounded-2xl p-8 space-y-4 shadow-sm">
@@ -66,27 +50,15 @@ function LoginPage() {
             <Input type="password" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} />
           </div>
           <Button type="submit" disabled={loading} className="w-full rounded-full" size="lg">
-            {loading ? "处理中..." : mode === "signin" ? "登录" : "注册并登录"}
+            {loading ? "处理中..." : "登录"}
           </Button>
-          <button
-            type="button"
-            onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
-            className="w-full text-sm text-muted-foreground hover:text-foreground"
+          <Link
+            to="/forgot-password"
+            className="block w-full text-center text-sm text-muted-foreground hover:text-foreground"
           >
-            {mode === "signin" ? "首次使用?创建账号 →" : "已有账号?登录 →"}
-          </button>
-          {mode === "signin" && (
-            <Link
-              to="/forgot-password"
-              className="block w-full text-center text-sm text-muted-foreground hover:text-foreground"
-            >
-              忘记密码?
-            </Link>
-          )}
+            忘记密码?
+          </Link>
         </form>
-        <p className="text-xs text-muted-foreground text-center mt-4">
-          首位注册的用户将自动成为管理员
-        </p>
       </div>
     </div>
   );
