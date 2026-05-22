@@ -413,7 +413,8 @@ function AdminPage() {
               label="性别"
               total={regs.length}
               items={groupCounts(regs, (r) =>
-                r.gender === "male" ? "男" : r.gender === "female" ? "女" : "未填"
+                r.gender === "男" || r.gender === "male" ? "男" :
+                r.gender === "女" || r.gender === "female" ? "女" : "未填"
               )}
               chart
             />
