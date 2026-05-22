@@ -116,14 +116,23 @@ function AdminPage() {
 
   function exportExcel() {
     const rows = filtered.map((r) => ({
-      姓名: r.name,
-      电话: r.phone ?? "",
+      姓名中: r.name,
+      姓名英: r.name_en ?? "",
+      区别: r.district ?? "",
       性别: r.gender ?? "",
       年龄段: r.age_group ?? "",
+      电话: r.phone ?? "",
+      电邮: r.email ?? "",
       地址: r.address ?? "",
-      邀请人: r.invited_by ?? "",
-      首次到访: r.is_first_visit ? "是" : "否",
-      需要跟进: r.wants_followup ? "是" : "否",
+      City: r.city ?? "",
+      ZIP: r.zip ?? "",
+      信仰: r.faith === "christian" ? "基督徒" : r.faith === "seeker" ? "慕道友" : r.faith === "other" ? `其他:${r.faith_other ?? ""}` : "",
+      信主年数: r.faith_years ?? "",
+      婚姻: r.marital_status === "married" ? "已婚" : r.marital_status === "single" ? "单身" : "",
+      配偶: r.spouse_name ?? "",
+      介绍人: r.referrer_type === "self" ? "自己" : r.referrer_type === "friend" ? `亲友:${r.invited_by ?? ""}` : r.referrer_type === "other" ? `其他:${r.referrer_other ?? ""}` : "",
+      欢迎探访: r.wants_visit ? "是" : "否",
+      需要资料: r.wants_info ? "是" : "否",
       备注: r.notes ?? "",
       来源: r.source === "qr" ? "扫码" : "手动",
       活动: r.event_id ? eventMap[r.event_id] ?? "" : "",
@@ -277,8 +286,8 @@ function AdminPage() {
                     <td className="py-2 px-2">{r.age_group ?? "—"}</td>
                     <td className="py-2 px-2">{r.invited_by ?? "—"}</td>
                     <td className="py-2 px-2 space-x-1">
-                      {r.is_first_visit && <Tag>首次</Tag>}
-                      {r.wants_followup && <Tag tone="accent">需跟进</Tag>}
+                      {r.wants_visit && <Tag>欢迎探访</Tag>}
+                      {r.wants_info && <Tag tone="accent">需资料</Tag>}
                     </td>
                     <td className="py-2 px-2 text-muted-foreground">{r.event_id ? eventMap[r.event_id] : "—"}</td>
                     <td className="py-2 px-2 text-muted-foreground whitespace-nowrap">
