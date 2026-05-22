@@ -18,7 +18,7 @@ function LoginPage() {
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
-      if (data.session) navigate({ to: "/admin" });
+      if (data.session) window.location.assign("/admin");
     });
   }, [navigate]);
 
@@ -27,7 +27,7 @@ function LoginPage() {
     setLoading(true);
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) toast.error(error.message);
-    else navigate({ to: "/admin" });
+    else window.location.assign("/admin");
     setLoading(false);
   }
 
