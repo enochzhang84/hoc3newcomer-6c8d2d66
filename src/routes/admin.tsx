@@ -81,6 +81,7 @@ function AdminPage() {
   const [editForm, setEditForm] = useState<Reg | null>(null);
   const [logsOpen, setLogsOpen] = useState(false);
   const [logs, setLogs] = useState<{ time: string; actor: string; action: string }[]>([]);
+  const [statusFilter, setStatusFilter] = useState<"all" | "未联系" | "已联系">("all");
 
   const LOG_KEY = "admin_action_logs";
   const loadLogs = useCallback(() => {
