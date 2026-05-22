@@ -6,13 +6,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/serve-apply")({
@@ -116,16 +109,16 @@ function ServeApplyPage() {
 
           <div className="space-y-2">
             <Label className="text-sm">服侍项目 <span className="text-destructive">*</span></Label>
-            <Select value={form.service_project} onValueChange={(v) => setForm({ ...form, service_project: v })}>
-              <SelectTrigger>
-                <SelectValue placeholder="请选择服侍项目" />
-              </SelectTrigger>
-              <SelectContent>
-                {PROJECTS.map((p) => (
-                  <SelectItem key={p} value={p}>{p}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <select
+              value={form.service_project}
+              onChange={(e) => setForm({ ...form, service_project: e.target.value })}
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+            >
+              <option value="">请选择服侍项目</option>
+              {PROJECTS.map((p) => (
+                <option key={p} value={p}>{p}</option>
+              ))}
+            </select>
           </div>
 
           <div className="space-y-2">
