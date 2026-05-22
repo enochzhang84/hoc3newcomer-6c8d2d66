@@ -173,16 +173,21 @@ function AdminPage() {
       <header className="border-b border-border/60 bg-card/50">
         <div className="container mx-auto px-6 py-4 flex items-center justify-between">
           <Link to="/" className="font-serif text-xl">基督之家第三家 · 后台</Link>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={async () => {
-              await supabase.auth.signOut();
-              navigate({ to: "/login" });
-            }}
-          >
-            退出
-          </Button>
+          <div className="flex items-center gap-2">
+            <Link to="/register" target="_blank">
+              <Button size="sm">手动录入</Button>
+            </Link>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={async () => {
+                await supabase.auth.signOut();
+                navigate({ to: "/login" });
+              }}
+            >
+              退出
+            </Button>
+          </div>
         </div>
       </header>
 
