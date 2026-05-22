@@ -49,7 +49,6 @@ function AdminPage() {
   const [regs, setRegs] = useState<Reg[]>([]);
   const [events, setEvents] = useState<Event[]>([]);
   const [search, setSearch] = useState("");
-  const [newEventName, setNewEventName] = useState("");
   const [origin, setOrigin] = useState("");
 
   useEffect(() => setOrigin(window.location.origin), []);
