@@ -75,6 +75,14 @@ function LoginPage() {
           >
             {mode === "signin" ? "首次使用?创建账号 →" : "已有账号?登录 →"}
           </button>
+          {mode === "signin" && (
+            <Link
+              to="/forgot-password"
+              className="block w-full text-center text-sm text-muted-foreground hover:text-foreground"
+            >
+              忘记密码?
+            </Link>
+          )}
         </form>
         <p className="text-xs text-muted-foreground text-center mt-4">
           首位注册的用户将自动成为管理员
