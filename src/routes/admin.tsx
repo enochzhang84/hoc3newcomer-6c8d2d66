@@ -352,6 +352,38 @@ function AdminPage() {
           </div>
         </section>
 
+        {/* Media / Projection */}
+        <section className="bg-card border border-border/50 rounded-2xl p-6">
+          <h2 className="font-serif text-xl mb-4">影音投影</h2>
+          <div className="grid sm:grid-cols-2 gap-4">
+            <div className="border border-border/50 rounded-xl p-4 flex flex-col items-start gap-3">
+              <p className="text-sm text-muted-foreground">今日新登记预览(适合投影)</p>
+              <Button
+                variant="outline"
+                onClick={() => window.open("/today-preview", "_blank")}
+              >
+                今日预览
+              </Button>
+            </div>
+            <div
+              onDoubleClick={() => window.open("/message-board", "_blank")}
+              title="双击打开留言板"
+              className="border border-border/50 rounded-xl p-4 flex flex-col items-start gap-3 cursor-pointer hover:border-primary/60 transition-colors select-none"
+            >
+              <p className="text-sm text-muted-foreground">留言板(双击打开新页面编辑)</p>
+              <Button
+                variant="outline"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  window.open("/message-board", "_blank");
+                }}
+              >
+                打开留言板
+              </Button>
+            </div>
+          </div>
+        </section>
+
         {/* Registrations */}
         <section className="bg-card border border-border/50 rounded-2xl p-6">
           <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
