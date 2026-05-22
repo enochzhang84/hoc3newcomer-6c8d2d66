@@ -16,6 +16,62 @@ type Reg = {
   created_at: string;
 };
 
+const SAN_FRANCISCO_TIME_ZONE = "America/Los_Angeles";
+
+function getTimeZoneParts(date: Date, timeZone: string) {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(date);
+
+  return {
+    year: Number(parts.find((part) => part.type === "year")?.value),
+    month: Number(parts.find((part) => part.type === "month")?.value),
+    day: Number(parts.find((part) => part.type === "day")?.value),
+  };
+}
+
+function getOffsetMs(date: Date, timeZone: string) {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    hour12: false,
+    hourCycle: "h23",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  }).formatToParts(date);
+
+  const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  const zonedAsUtc = Date.UTC(
+    Number(values.year),
+    Number(values.month) - 1,
+    Number(values.day),
+    Number(values.hour),
+    Number(values.minute),
+    Number(values.second),
+  );
+
+  return zonedAsUtc - date.getTime();
+}
+
+function zonedMidnightToUtc(year: number, month: number, day: number, timeZone: string) {
+  const utcGuess = new Date(Date.UTC(year, month - 1, day, 0, 0, 0));
+  return new Date(utcGuess.getTime() - getOffsetMs(utcGuess, timeZone));
+}
+
+function getTodayRangeForSanFrancisco() {
+  const { year, month, day } = getTimeZoneParts(new Date(), SAN_FRANCISCO_TIME_ZONE);
+  return {
+    start: zonedMidnightToUtc(year, month, day, SAN_FRANCISCO_TIME_ZONE).toISOString(),
+    end: zonedMidnightToUtc(year, month, day + 1, SAN_FRANCISCO_TIME_ZONE).toISOString(),
+  };
+}
+
 export const Route = createFileRoute("/today-preview")({
   component: PreviewPage,
 });
@@ -32,9 +88,7 @@ function PreviewPage() {
         navigate({ to: "/login" });
         return;
       }
-      const now = new Date();
-      const start = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
-      const end = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1).toISOString();
+      const { start, end } = getTodayRangeForSanFrancisco();
       const { data } = await supabase
         .from("registrations")
         .select("id,name,name_en,faith,faith_years,faith_other,referrer_type,invited_by,referrer_other,notes,created_at")
@@ -46,7 +100,7 @@ function PreviewPage() {
     })();
   }, [navigate]);
 
-  const today = new Date().toLocaleDateString("zh-CN", { year: "numeric", month: "long", day: "numeric" });
+  const today = new Date().toLocaleDateString("zh-CN", { timeZone: SAN_FRANCISCO_TIME_ZONE, year: "numeric", month: "long", day: "numeric" });
 
   return (
     <div className="min-h-screen bg-background">
@@ -92,7 +146,7 @@ function PreviewPage() {
                 {regs.map((r) => (
                   <tr key={r.id} className="border-b border-border/30">
                     <td className="py-3 px-3 whitespace-nowrap text-muted-foreground">
-                      {new Date(r.created_at).toLocaleString("zh-CN", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" })}
+                      {new Date(r.created_at).toLocaleString("zh-CN", { timeZone: SAN_FRANCISCO_TIME_ZONE, month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" })}
                     </td>
                     <td className="py-3 px-3 font-medium">{r.name}</td>
                     <td className="py-3 px-3">{r.name_en ?? "—"}</td>
