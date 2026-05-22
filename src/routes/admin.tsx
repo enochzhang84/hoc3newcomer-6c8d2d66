@@ -969,7 +969,7 @@ function AdminPage() {
 
 function Stat({ label, value }: { label: string; value: number }) {
   return (
-    <div className="bg-card border border-border/50 rounded-2xl p-5">
+    <div className="bg-card border border-border/50 rounded-2xl p-5 h-full flex flex-col justify-center">
       <div className="text-3xl font-serif text-foreground">{value}</div>
       <div className="text-sm text-muted-foreground mt-1">{label}</div>
     </div>
