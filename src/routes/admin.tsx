@@ -66,7 +66,7 @@ function AdminPage() {
   const [events, setEvents] = useState<Event[]>([]);
   const [search, setSearch] = useState("");
   const [filterDate, setFilterDate] = useState<Date | undefined>(undefined);
-  const [dateFilterMode, setDateFilterMode] = useState<"after" | "before">("after");
+  const [dateFilterMode, setDateFilterMode] = useState<"day" | "after" | "before">("day");
   const [dateOpen, setDateOpen] = useState(false);
   const [origin, setOrigin] = useState("");
   const [users, setUsers] = useState<AppUser[]>([]);
@@ -156,10 +156,14 @@ function AdminPage() {
       r.name.toLowerCase().includes(search.toLowerCase()) ||
       (r.phone ?? "").includes(search);
     if (!filterDate) return matchesSearch;
+    // Compare in browser local timezone (e.g. America/Los_Angeles)
     const d = new Date(r.created_at);
-    const start = new Date(filterDate);
-    start.setHours(0, 0, 0, 0);
-    const matchesDate = dateFilterMode === "after" ? d >= start : d < start;
+    const start = new Date(filterDate.getFullYear(), filterDate.getMonth(), filterDate.getDate(), 0, 0, 0, 0);
+    const end = new Date(filterDate.getFullYear(), filterDate.getMonth(), filterDate.getDate() + 1, 0, 0, 0, 0);
+    const matchesDate =
+      dateFilterMode === "day" ? d >= start && d < end :
+      dateFilterMode === "after" ? d >= end :
+      d < start;
     return matchesSearch && matchesDate;
   });
 
@@ -363,16 +367,20 @@ function AdminPage() {
                   <div className="border-t border-border/60 mt-2 pt-2">
                     <RadioGroup
                       value={dateFilterMode}
-                      onValueChange={(v) => setDateFilterMode(v as "after" | "before")}
+                      onValueChange={(v) => setDateFilterMode(v as "day" | "after" | "before")}
                       className="flex gap-4 px-1"
                     >
                       <div className="flex items-center gap-1.5">
+                        <RadioGroupItem value="day" id="day" />
+                        <Label htmlFor="day" className="text-xs cursor-pointer">当日</Label>
+                      </div>
+                      <div className="flex items-center gap-1.5">
                         <RadioGroupItem value="after" id="after" />
-                        <Label htmlFor="after" className="text-xs cursor-pointer">新录入</Label>
+                        <Label htmlFor="after" className="text-xs cursor-pointer">之后</Label>
                       </div>
                       <div className="flex items-center gap-1.5">
                         <RadioGroupItem value="before" id="before" />
-                        <Label htmlFor="before" className="text-xs cursor-pointer">以前录入</Label>
+                        <Label htmlFor="before" className="text-xs cursor-pointer">以前</Label>
                       </div>
                     </RadioGroup>
                   </div>
@@ -399,7 +407,7 @@ function AdminPage() {
               </Popover>
               {filterDate && (
                 <span className="text-xs text-muted-foreground">
-                  {dateFilterMode === "after" ? "≥" : "<"} {format(filterDate, "yyyy-MM-dd", { locale: zhCN })}
+                  {dateFilterMode === "day" ? "=" : dateFilterMode === "after" ? ">" : "<"} {format(filterDate, "yyyy-MM-dd", { locale: zhCN })}
                 </span>
               )}
               <Input
