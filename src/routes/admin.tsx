@@ -64,6 +64,9 @@ function AdminPage() {
   const [regs, setRegs] = useState<Reg[]>([]);
   const [events, setEvents] = useState<Event[]>([]);
   const [search, setSearch] = useState("");
+  const [filterDate, setFilterDate] = useState<Date | undefined>(undefined);
+  const [dateFilterMode, setDateFilterMode] = useState<"after" | "before">("after");
+  const [dateOpen, setDateOpen] = useState(false);
   const [origin, setOrigin] = useState("");
   const [users, setUsers] = useState<AppUser[]>([]);
   const [usersLoading, setUsersLoading] = useState(false);
