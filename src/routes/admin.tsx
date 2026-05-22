@@ -49,7 +49,6 @@ function AdminPage() {
   const [regs, setRegs] = useState<Reg[]>([]);
   const [events, setEvents] = useState<Event[]>([]);
   const [search, setSearch] = useState("");
-  const [newEventName, setNewEventName] = useState("");
   const [origin, setOrigin] = useState("");
 
   useEffect(() => setOrigin(window.location.origin), []);
@@ -148,13 +147,11 @@ function AdminPage() {
   }
 
   async function addEvent() {
-    if (!newEventName.trim()) return;
-    const { error } = await supabase.from("events").insert({ name: newEventName.trim() });
+    const { error } = await supabase.from("events").insert({ name: "新人登记" });
     if (error) toast.error(error.message);
     else {
-      setNewEventName("");
       loadData();
-      toast.success("活动已创建");
+      toast.success("新二维码已生成");
     }
   }
 
@@ -204,13 +201,7 @@ function AdminPage() {
         <section className="bg-card border border-border/50 rounded-2xl p-6">
           <h2 className="font-serif text-xl mb-4">活动与二维码</h2>
           <div className="flex flex-wrap gap-2 mb-4">
-            <Input
-              placeholder="新活动名称(例如:复活节崇拜)"
-              value={newEventName}
-              onChange={(e) => setNewEventName(e.target.value)}
-              className="max-w-xs"
-            />
-            <Button onClick={addEvent}>新建活动</Button>
+            <Button onClick={addEvent}>生成新二维码</Button>
           </div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {events.map((ev) => {
