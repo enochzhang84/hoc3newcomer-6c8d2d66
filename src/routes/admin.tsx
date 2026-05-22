@@ -310,10 +310,12 @@ function AdminPage() {
             <StatBreakdown
               label="本周登记"
               total={countSince(regs, startOfWeek())}
+              trend={countSince(regs, startOfWeek()) - countBetween(regs, prevStartOfWeek(), startOfWeek())}
             />
             <StatBreakdown
               label="本月登记"
               total={countSince(regs, startOfMonth())}
+              trend={countSince(regs, startOfMonth()) - countBetween(regs, prevStartOfMonth(), startOfMonth())}
             />
             <StatBreakdown
               label="性别"
@@ -321,11 +323,13 @@ function AdminPage() {
               items={groupCounts(regs, (r) =>
                 r.gender === "male" ? "男" : r.gender === "female" ? "女" : "未填"
               )}
+              chart
             />
             <StatBreakdown
               label="年龄"
               total={regs.length}
               items={groupCounts(regs, (r) => r.age_group ?? "未填")}
+              chart
             />
             <StatBreakdown
               label="信仰"
@@ -335,6 +339,7 @@ function AdminPage() {
                 r.faith === "seeker" ? "慕道友" :
                 r.faith === "other" ? "其他" : "未填"
               )}
+              chart
             />
             <StatBreakdown
               label="邀请人"
@@ -343,6 +348,7 @@ function AdminPage() {
                 regs.filter((r) => r.referrer_type === "friend" && r.invited_by?.trim()),
                 (r) => r.invited_by!.trim()
               )}
+              chart
             />
           </div>
         </section>
@@ -883,24 +889,59 @@ function StatBreakdown({
   label,
   total,
   items,
+  trend,
+  chart,
 }: {
   label: string;
   total: number;
   items?: { key: string; count: number }[];
+  trend?: number;
+  chart?: boolean;
 }) {
+  const max = items && items.length > 0 ? Math.max(...items.map((i) => i.count), 1) : 1;
   return (
     <div className="bg-card border border-border/50 rounded-2xl p-5">
       <div className="text-sm text-muted-foreground">{label}</div>
-      <div className="text-2xl font-serif text-foreground mt-1">{total}</div>
+      <div className="flex items-baseline gap-2 mt-1">
+        <div className="text-2xl font-serif text-foreground">{total}</div>
+        {typeof trend === "number" && (
+          <span
+            className={`text-xs tabular-nums ${
+              trend > 0 ? "text-emerald-600" : trend < 0 ? "text-red-600" : "text-muted-foreground"
+            }`}
+          >
+            {trend > 0 ? "↑" : trend < 0 ? "↓" : "→"} {trend > 0 ? "+" : ""}{trend}
+          </span>
+        )}
+      </div>
       {items && items.length > 0 && (
-        <div className="mt-2 space-y-0.5">
-          {items.map((it) => (
-            <div key={it.key} className="flex justify-between text-xs text-muted-foreground">
-              <span className="truncate pr-2">{it.key}</span>
-              <span className="text-foreground tabular-nums">{it.count}</span>
-            </div>
-          ))}
-        </div>
+        chart ? (
+          <div className="mt-3 space-y-1.5">
+            {items.map((it) => (
+              <div key={it.key} className="text-xs">
+                <div className="flex justify-between text-muted-foreground mb-0.5">
+                  <span className="truncate pr-2">{it.key}</span>
+                  <span className="text-foreground tabular-nums">{it.count}</span>
+                </div>
+                <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-primary rounded-full transition-all"
+                    style={{ width: `${(it.count / max) * 100}%` }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="mt-2 space-y-0.5">
+            {items.map((it) => (
+              <div key={it.key} className="flex justify-between text-xs text-muted-foreground">
+                <span className="truncate pr-2">{it.key}</span>
+                <span className="text-foreground tabular-nums">{it.count}</span>
+              </div>
+            ))}
+          </div>
+        )
       )}
     </div>
   );
@@ -918,8 +959,25 @@ function startOfMonth() {
   return new Date(d.getFullYear(), d.getMonth(), 1, 0, 0, 0, 0);
 }
 
+function prevStartOfWeek() {
+  const s = startOfWeek();
+  return new Date(s.getFullYear(), s.getMonth(), s.getDate() - 7, 0, 0, 0, 0);
+}
+
+function prevStartOfMonth() {
+  const d = new Date();
+  return new Date(d.getFullYear(), d.getMonth() - 1, 1, 0, 0, 0, 0);
+}
+
 function countSince(list: Reg[], since: Date) {
   return list.filter((r) => new Date(r.created_at) >= since).length;
+}
+
+function countBetween(list: Reg[], from: Date, to: Date) {
+  return list.filter((r) => {
+    const t = new Date(r.created_at);
+    return t >= from && t < to;
+  }).length;
 }
 
 function groupCounts(list: Reg[], keyFn: (r: Reg) => string) {
