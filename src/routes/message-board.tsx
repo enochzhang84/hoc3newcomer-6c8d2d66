@@ -21,7 +21,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Card } from "@/components/ui/card";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { Plus, Pencil, Trash2, ImagePlus, X } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/message-board")({
@@ -37,6 +37,7 @@ type Message = {
   id: string;
   title: string;
   content: string;
+  images?: string[];
   updatedAt: number;
 };
 
@@ -63,6 +64,7 @@ function MessageBoardPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draftTitle, setDraftTitle] = useState("");
   const [draftContent, setDraftContent] = useState("");
+  const [draftImages, setDraftImages] = useState<string[]>([]);
   const [deleteOpen, setDeleteOpen] = useState(false);
 
   useEffect(() => {
@@ -85,6 +87,7 @@ function MessageBoardPage() {
     setEditingId(null);
     setDraftTitle("");
     setDraftContent("");
+    setDraftImages([]);
     setEditorOpen(true);
   };
 
@@ -96,6 +99,7 @@ function MessageBoardPage() {
     setEditingId(selected.id);
     setDraftTitle(selected.title);
     setDraftContent(selected.content);
+    setDraftImages(selected.images ?? []);
     setEditorOpen(true);
   };
 
@@ -109,7 +113,7 @@ function MessageBoardPage() {
     if (editingId) {
       next = messages.map((m) =>
         m.id === editingId
-          ? { ...m, title, content: draftContent, updatedAt: Date.now() }
+          ? { ...m, title, content: draftContent, images: draftImages, updatedAt: Date.now() }
           : m,
       );
     } else {
@@ -117,13 +121,19 @@ function MessageBoardPage() {
         id: crypto.randomUUID(),
         title,
         content: draftContent,
+        images: draftImages,
         updatedAt: Date.now(),
       };
       next = [newMsg, ...messages];
       setSelectedId(newMsg.id);
     }
     setMessages(next);
-    saveMessages(next);
+    try {
+      saveMessages(next);
+    } catch {
+      toast.error("保存失败,图片可能过大,请减少图片数量或尺寸");
+      return;
+    }
     setEditorOpen(false);
     toast.success("已保存");
   };
@@ -144,6 +154,62 @@ function MessageBoardPage() {
     setSelectedId(null);
     setDeleteOpen(false);
     toast.success("已删除");
+  };
+
+  const readFileAsDataUrl = (file: File) =>
+    new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = () => reject(reader.error);
+      reader.readAsDataURL(file);
+    });
+
+  const compressImage = async (file: File, maxDim = 1600, quality = 0.8): Promise<string> => {
+    const dataUrl = await readFileAsDataUrl(file);
+    if (!file.type.startsWith("image/")) return dataUrl;
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        let { width, height } = img;
+        if (width > maxDim || height > maxDim) {
+          const scale = Math.min(maxDim / width, maxDim / height);
+          width = Math.round(width * scale);
+          height = Math.round(height * scale);
+        }
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return resolve(dataUrl);
+        ctx.drawImage(img, 0, 0, width, height);
+        try {
+          resolve(canvas.toDataURL("image/jpeg", quality));
+        } catch {
+          resolve(dataUrl);
+        }
+      };
+      img.onerror = () => resolve(dataUrl);
+      img.src = dataUrl;
+    });
+  };
+
+  const handleImageFiles = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    const list = Array.from(files).filter((f) => f.type.startsWith("image/"));
+    if (list.length === 0) {
+      toast.error("请选择图片文件");
+      return;
+    }
+    try {
+      const results = await Promise.all(list.map((f) => compressImage(f)));
+      setDraftImages((prev) => [...prev, ...results]);
+    } catch {
+      toast.error("图片处理失败");
+    }
+  };
+
+  const removeDraftImage = (idx: number) => {
+    setDraftImages((prev) => prev.filter((_, i) => i !== idx));
   };
 
   return (
@@ -191,6 +257,23 @@ function MessageBoardPage() {
                   <div className="mt-2 text-sm text-muted-foreground whitespace-pre-wrap line-clamp-4">
                     {m.content || "(无内容)"}
                   </div>
+                  {m.images && m.images.length > 0 && (
+                    <div className="mt-2 flex flex-wrap gap-1">
+                      {m.images.slice(0, 4).map((src, i) => (
+                        <img
+                          key={i}
+                          src={src}
+                          alt=""
+                          className="h-14 w-14 rounded object-cover border"
+                        />
+                      ))}
+                      {m.images.length > 4 && (
+                        <span className="text-xs text-muted-foreground self-end">
+                          +{m.images.length - 4}
+                        </span>
+                      )}
+                    </div>
+                  )}
                   <div className="mt-3 text-xs text-muted-foreground">
                     {new Date(m.updatedAt).toLocaleString()}
                   </div>
@@ -206,7 +289,7 @@ function MessageBoardPage() {
       </main>
 
       <Dialog open={editorOpen} onOpenChange={setEditorOpen}>
-        <DialogContent>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{editingId ? "编辑留言" : "创建留言"}</DialogTitle>
           </DialogHeader>
@@ -222,6 +305,66 @@ function MessageBoardPage() {
               onChange={(e) => setDraftContent(e.target.value)}
               className="min-h-[220px]"
             />
+            <div className="space-y-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <label className="inline-flex">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    className="hidden"
+                    onChange={(e) => {
+                      handleImageFiles(e.target.files);
+                      e.target.value = "";
+                    }}
+                  />
+                  <span className="inline-flex items-center gap-2 px-3 h-9 rounded-md border bg-background text-sm cursor-pointer hover:bg-accent">
+                    <ImagePlus className="h-4 w-4" /> 选择图片
+                  </span>
+                </label>
+                <label className="inline-flex sm:hidden">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    className="hidden"
+                    onChange={(e) => {
+                      handleImageFiles(e.target.files);
+                      e.target.value = "";
+                    }}
+                  />
+                  <span className="inline-flex items-center gap-2 px-3 h-9 rounded-md border bg-background text-sm cursor-pointer hover:bg-accent">
+                    <ImagePlus className="h-4 w-4" /> 拍照
+                  </span>
+                </label>
+                {draftImages.length > 0 && (
+                  <span className="text-xs text-muted-foreground">
+                    已添加 {draftImages.length} 张
+                  </span>
+                )}
+              </div>
+              {draftImages.length > 0 && (
+                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                  {draftImages.map((src, i) => (
+                    <div key={i} className="relative group">
+                      <img
+                        src={src}
+                        alt=""
+                        className="w-full h-24 object-cover rounded border"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeDraftImage(i)}
+                        className="absolute top-1 right-1 bg-background/90 border rounded-full p-0.5 hover:bg-destructive hover:text-destructive-foreground"
+                        aria-label="删除"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditorOpen(false)}>
