@@ -354,6 +354,13 @@ function AdminPage() {
           <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
             <h2 className="font-serif text-xl">登记名单</h2>
             <div className="flex items-center gap-2 flex-wrap">
+              <Button
+                variant={filterDate ? "outline" : "default"}
+                size="sm"
+                onClick={() => setFilterDate(undefined)}
+              >
+                全部名单
+              </Button>
               <Popover open={dateOpen} onOpenChange={setDateOpen}>
                 <PopoverTrigger asChild>
                   <Button
@@ -433,6 +440,9 @@ function AdminPage() {
               </Button>
               <Button onClick={exportExcel} disabled={filtered.length === 0}>
                 导出 Excel
+              </Button>
+              <Button onClick={exportAllExcel} disabled={regs.length === 0} variant="outline">
+                导出全部 Excel
               </Button>
             </div>
           </div>
