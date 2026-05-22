@@ -89,6 +89,16 @@ function PreviewPage() {
           navigate({ to: "/login" });
           return;
         }
+        const { data: roleData } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", session.session.user.id)
+          .eq("role", "admin")
+          .maybeSingle();
+        if (!roleData) {
+          navigate({ to: "/login" });
+          return;
+        }
         const { start, end } = getTodayRangeForSanFrancisco();
         console.log("[today-preview] range", { start, end });
         const { data, error } = await supabase
