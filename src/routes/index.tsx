@@ -12,10 +12,8 @@ export const Route = createFileRoute("/")({
 
 function Index() {
   const [event, setEvent] = useState<{ name: string; qr_token: string } | null>(null);
-  const [origin, setOrigin] = useState("");
 
   useEffect(() => {
-    setOrigin(window.location.origin);
     supabase
       .from("events")
       .select("name, qr_token")
@@ -26,7 +24,8 @@ function Index() {
       .then(({ data }) => setEvent(data));
   }, []);
 
-  const url = event ? `${origin}/register?event=${event.qr_token}` : "";
+  const PUBLISHED_ORIGIN = "https://hoc3newcomer.lovable.app";
+  const url = event ? `${PUBLISHED_ORIGIN}/register?event=${event.qr_token}` : "";
 
   return (
     <div className="min-h-screen bg-background">
