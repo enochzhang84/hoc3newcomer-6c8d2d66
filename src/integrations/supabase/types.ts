@@ -14,16 +14,122 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      events: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          qr_token: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          qr_token?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          qr_token?: string
+        }
+        Relationships: []
+      }
+      registrations: {
+        Row: {
+          address: string | null
+          age_group: string | null
+          created_at: string
+          event_id: string | null
+          gender: string | null
+          id: string
+          invited_by: string | null
+          is_first_visit: boolean | null
+          name: string
+          notes: string | null
+          phone: string | null
+          source: string
+          wants_followup: boolean | null
+        }
+        Insert: {
+          address?: string | null
+          age_group?: string | null
+          created_at?: string
+          event_id?: string | null
+          gender?: string | null
+          id?: string
+          invited_by?: string | null
+          is_first_visit?: boolean | null
+          name: string
+          notes?: string | null
+          phone?: string | null
+          source?: string
+          wants_followup?: boolean | null
+        }
+        Update: {
+          address?: string | null
+          age_group?: string | null
+          created_at?: string
+          event_id?: string | null
+          gender?: string | null
+          id?: string
+          invited_by?: string | null
+          is_first_visit?: boolean | null
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          source?: string
+          wants_followup?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "registrations_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +256,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "user"],
+    },
   },
 } as const
