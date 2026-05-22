@@ -83,22 +83,31 @@ function PreviewPage() {
 
   useEffect(() => {
     (async () => {
-      const { data: session } = await supabase.auth.getSession();
-      if (!session.session) {
-        navigate({ to: "/login" });
-        return;
+      try {
+        const { data: session } = await supabase.auth.getSession();
+        if (!session.session) {
+          navigate({ to: "/login" });
+          return;
+        }
+        const { start, end } = getTodayRangeForSanFrancisco();
+        console.log("[today-preview] range", { start, end });
+        const { data, error } = await supabase
+          .from("registrations")
+          .select(
+            "id,name,name_en,faith,faith_years,faith_other,referrer_type,invited_by,referrer_other,notes,created_at",
+          )
+          .gte("created_at", start)
+          .lt("created_at", end)
+          .order("created_at", { ascending: false });
+        if (error) {
+          console.error("[today-preview] query error", error);
+        }
+        setRegs((data ?? []) as Reg[]);
+      } catch (e) {
+        console.error("[today-preview] fetch failed", e);
+      } finally {
+        setLoading(false);
       }
-      const { start, end } = getTodayRangeForSanFrancisco();
-      const { data } = await supabase
-        .from("registrations")
-        .select(
-          "id,name,name_en,faith,faith_years,faith_other,referrer_type,invited_by,referrer_other,notes,created_at",
-        )
-        .gte("created_at", start)
-        .lt("created_at", end)
-        .order("created_at", { ascending: false });
-      setRegs((data ?? []) as Reg[]);
-      setLoading(false);
     })();
   }, [navigate]);
 
