@@ -242,6 +242,7 @@ function AdminPage() {
     if (error) toast.error(error.message);
     else {
       loadData();
+      logAction("生成了新二维码");
       toast.success("新二维码已生成");
     }
   }
@@ -681,6 +682,7 @@ function AdminPage() {
                               if (!confirm(`撤销 ${u.email} 的管理员权限?`)) return;
                               try {
                                 await setUserAdminFn({ data: { userId: u.id, makeAdmin: false } });
+                                logAction(`撤销了 ${u.email} 的管理员权限`);
                                 toast.success("已撤销管理员权限");
                                 loadUsers();
                               } catch (e) {
@@ -696,6 +698,7 @@ function AdminPage() {
                             onClick={async () => {
                               try {
                                 await setUserAdminFn({ data: { userId: u.id, makeAdmin: true } });
+                                logAction(`授予了 ${u.email} 管理员权限`);
                                 toast.success("已授予管理员权限");
                                 loadUsers();
                               } catch (e) {
@@ -713,6 +716,7 @@ function AdminPage() {
                             if (!confirm(`确认删除用户 ${u.email}? 此操作不可撤销。`)) return;
                             try {
                               await deleteUserFn({ data: { userId: u.id } });
+                              logAction(`删除了用户 ${u.email}`);
                               toast.success("用户已删除");
                               loadUsers();
                             } catch (e) {
