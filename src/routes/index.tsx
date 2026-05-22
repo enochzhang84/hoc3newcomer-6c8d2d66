@@ -31,13 +31,13 @@ function Index() {
     <div className="min-h-screen bg-background">
       <header className="border-b border-border/60">
         <div className="container mx-auto flex items-center justify-between px-6 py-5">
-          <Link to="/admin" className="flex items-center gap-2">
+          <a href="/admin" className="flex items-center gap-2">
             <img src={logo} alt="基督之家第三家" className="h-10 w-10 object-contain" />
             <span className="font-serif text-xl tracking-wide text-foreground">基督之家第三家</span>
-          </Link>
-          <Link to="/admin">
+          </a>
+          <a href="/admin">
             <Button variant="ghost" size="sm">管理后台</Button>
-          </Link>
+          </a>
         </div>
       </header>
 
