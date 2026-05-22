@@ -298,12 +298,15 @@ function AdminPage() {
 
       <main className="container mx-auto px-6 py-8 space-y-8">
         {/* Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <section>
+          <h2 className="font-serif text-xl mb-4">数据统计</h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <Stat label="总登记数" value={regs.length} />
           <Stat label="希望探访" value={regs.filter((r) => r.wants_visit).length} />
           <Stat label="需要资料" value={regs.filter((r) => r.wants_info).length} />
           <Stat label="活动数" value={events.length} />
-        </div>
+          </div>
+        </section>
 
         {/* Events / QR */}
         <section className="bg-card border border-border/50 rounded-2xl p-6">
