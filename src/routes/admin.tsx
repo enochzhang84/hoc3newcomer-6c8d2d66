@@ -62,6 +62,7 @@ function AdminPage() {
   const [checking, setChecking] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [currentUserEmail, setCurrentUserEmail] = useState<string>("");
   const [regs, setRegs] = useState<Reg[]>([]);
   const [events, setEvents] = useState<Event[]>([]);
   const [search, setSearch] = useState("");
@@ -78,6 +79,29 @@ function AdminPage() {
   const updateRegFn = useServerFn(updateRegistration);
   const [editOpen, setEditOpen] = useState(false);
   const [editForm, setEditForm] = useState<Reg | null>(null);
+  const [logsOpen, setLogsOpen] = useState(false);
+  const [logs, setLogs] = useState<{ time: string; actor: string; action: string }[]>([]);
+
+  const LOG_KEY = "admin_action_logs";
+  const loadLogs = useCallback(() => {
+    try {
+      const raw = localStorage.getItem(LOG_KEY);
+      setLogs(raw ? JSON.parse(raw) : []);
+    } catch {
+      setLogs([]);
+    }
+  }, []);
+  const logAction = useCallback((action: string) => {
+    try {
+      const raw = localStorage.getItem(LOG_KEY);
+      const arr: { time: string; actor: string; action: string }[] = raw ? JSON.parse(raw) : [];
+      arr.unshift({ time: new Date().toISOString(), actor: currentUserEmail || "管理员", action });
+      // cap at 500 entries
+      localStorage.setItem(LOG_KEY, JSON.stringify(arr.slice(0, 500)));
+    } catch {
+      // ignore
+    }
+  }, [currentUserEmail]);
 
   const loadUsers = useCallback(async () => {
     setUsersLoading(true);
@@ -110,6 +134,7 @@ function AdminPage() {
         return;
       }
       setCurrentUserId(session.session.user.id);
+      setCurrentUserEmail(session.session.user.email ?? "");
       const { data: roles } = await supabase
         .from("user_roles")
         .select("role")
@@ -217,16 +242,19 @@ function AdminPage() {
     if (error) toast.error(error.message);
     else {
       loadData();
+      logAction("生成了新二维码");
       toast.success("新二维码已生成");
     }
   }
 
   async function deleteReg(id: string) {
     if (!confirm("确认删除此登记?")) return;
+    const target = regs.find((r) => r.id === id);
     const { error } = await supabase.from("registrations").delete().eq("id", id);
     if (error) toast.error(error.message);
     else {
       setRegs((prev) => prev.filter((r) => r.id !== id));
+      logAction(`删除了登记 ${target?.name ?? id}`);
       toast.success("已删除");
     }
   }
@@ -266,6 +294,7 @@ function AdminPage() {
       });
       setEditOpen(false);
       setEditForm(null);
+      logAction(`编辑了资料 ${editForm.name.trim()}`);
       toast.success("已保存");
       loadData();
     } catch (e) {
@@ -653,6 +682,7 @@ function AdminPage() {
                               if (!confirm(`撤销 ${u.email} 的管理员权限?`)) return;
                               try {
                                 await setUserAdminFn({ data: { userId: u.id, makeAdmin: false } });
+                                logAction(`撤销了 ${u.email} 的管理员权限`);
                                 toast.success("已撤销管理员权限");
                                 loadUsers();
                               } catch (e) {
@@ -668,6 +698,7 @@ function AdminPage() {
                             onClick={async () => {
                               try {
                                 await setUserAdminFn({ data: { userId: u.id, makeAdmin: true } });
+                                logAction(`授予了 ${u.email} 管理员权限`);
                                 toast.success("已授予管理员权限");
                                 loadUsers();
                               } catch (e) {
@@ -685,6 +716,7 @@ function AdminPage() {
                             if (!confirm(`确认删除用户 ${u.email}? 此操作不可撤销。`)) return;
                             try {
                               await deleteUserFn({ data: { userId: u.id } });
+                              logAction(`删除了用户 ${u.email}`);
                               toast.success("用户已删除");
                               loadUsers();
                             } catch (e) {
@@ -708,6 +740,24 @@ function AdminPage() {
                 )}
               </tbody>
             </table>
+          </div>
+        </section>
+
+        {/* System Tools */}
+        <section className="bg-card border border-border/50 rounded-2xl p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-serif text-xl">系统工具栏</h2>
+          </div>
+          <p className="text-xs text-muted-foreground mb-4">
+            管理员可用的系统级工具。日志记录管理员在本浏览器上的操作（编辑、删除、权限变更等）。
+          </p>
+          <div className="flex flex-wrap gap-3">
+            <Button
+              variant="outline"
+              onClick={() => { loadLogs(); setLogsOpen(true); }}
+            >
+              操作日志
+            </Button>
           </div>
         </section>
 
@@ -867,6 +917,47 @@ function AdminPage() {
             <DialogFooter>
               <Button variant="outline" onClick={() => setEditOpen(false)}>取消</Button>
               <Button onClick={saveEdit}>保存</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Logs Dialog */}
+        <Dialog open={logsOpen} onOpenChange={setLogsOpen}>
+          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>操作日志</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-1 text-sm">
+              {logs.length === 0 ? (
+                <p className="text-muted-foreground py-6 text-center">暂无日志</p>
+              ) : (
+                logs.map((l, i) => {
+                  const d = new Date(l.time);
+                  const md = `${String(d.getMonth() + 1).padStart(2, "0")}/${String(d.getDate()).padStart(2, "0")}`;
+                  const hm = `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+                  return (
+                    <div key={i} className="flex gap-3 py-1.5 border-b border-border/30 last:border-0">
+                      <span className="text-muted-foreground tabular-nums whitespace-nowrap">{md} {hm}</span>
+                      <span className="font-medium whitespace-nowrap">{l.actor}</span>
+                      <span className="text-foreground/80">{l.action}</span>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  if (!confirm("确认清空所有日志?")) return;
+                  localStorage.removeItem(LOG_KEY);
+                  setLogs([]);
+                  toast.success("日志已清空");
+                }}
+              >
+                清空日志
+              </Button>
+              <Button onClick={() => setLogsOpen(false)}>关闭</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
