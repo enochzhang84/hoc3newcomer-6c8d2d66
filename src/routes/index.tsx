@@ -107,24 +107,43 @@ function Index() {
       <main className="container mx-auto px-6 py-16">
         <div className="grid gap-12 md:grid-cols-2 items-center max-w-5xl mx-auto">
           <div>
-            <p className="text-sm uppercase tracking-[0.2em] text-accent-foreground/70 mb-4">Welcome Home</p>
-            <h1 className="font-serif text-5xl md:text-6xl leading-tight text-foreground mb-6">
-              欢迎来到<br />我们中间
-            </h1>
-            <p className="text-lg text-muted-foreground mb-8 leading-relaxed">
-              扫描下方二维码,或点击按钮完成登记。
-              我们想认识您,并与您一同走信仰的旅程。
-            </p>
-            <div className="flex gap-3">
-              {event && (
-                <Link to="/register" search={{ event: event.qr_token }}>
-                  <Button size="lg" className="rounded-full px-8">立即登记</Button>
-                </Link>
-              )}
+            <div className="flex items-center gap-3 mb-2">
+              <img src={logo} alt="基督之家第三家" className="h-12 w-12 object-contain" />
+              <div>
+                <h1 className="font-serif text-3xl text-foreground leading-none">基督之家</h1>
+                <p className="font-serif text-xl text-foreground mt-1">第三家</p>
+              </div>
+            </div>
+            <p className="text-sm text-muted-foreground mt-4">这家就是永生神的教会</p>
+            <p className="text-sm text-muted-foreground">真理的柱石和根基 (提前 3:15)</p>
+
+            <div className="mt-8 mb-6">
+              <p className="text-sm text-accent-foreground/80">今年主题</p>
+              <p className="font-serif text-2xl text-foreground mt-1">信靠顺服 · 活出基督</p>
+            </div>
+
+            <div className="space-y-2 text-sm text-foreground/90 border-t border-border/40 pt-5">
+              <div className="grid grid-cols-[6rem_4rem_1fr] gap-2">
+                <span className="text-muted-foreground">成人主日学</span><span>中文</span><span>9:30 am</span>
+                <span></span><span>英文</span><span>9:30 am</span>
+                <span className="text-muted-foreground">主日崇拜</span><span>中文</span><span>11:00 am</span>
+                <span></span><span>英文</span><span>11:00 am</span>
+                <span className="text-muted-foreground">儿童主日学</span><span>英文</span><span>11:00 am</span>
+              </div>
+              <div className="grid grid-cols-[6rem_1fr] gap-2 pt-3 border-t border-border/40 mt-3">
+                <span className="text-muted-foreground">教会电话</span><span>510 651-9631 / 9937</span>
+                <span className="text-muted-foreground">电邮</span><span>contact@hoc3.org</span>
+                <span className="text-muted-foreground">网址</span><span>hoc3.org</span>
+              </div>
+            </div>
+
+            <div className="mt-6 text-xs text-muted-foreground leading-relaxed">
+              <p className="font-medium text-foreground">The Home of Christ Church in Fremont</p>
+              <p>4248 Solar Way, Fremont, CA 94538</p>
             </div>
           </div>
 
-          <div className="flex justify-center">
+          <div className="flex flex-col items-center">
             <div className="bg-card p-8 rounded-2xl shadow-xl border border-border/40">
               {url ? (
                 <>
@@ -137,6 +156,11 @@ function Index() {
                 <div className="w-60 h-60 animate-pulse bg-muted rounded" />
               )}
             </div>
+            {event && (
+              <Link to="/register" search={{ event: event.qr_token }} className="mt-6">
+                <Button size="lg" className="rounded-full px-8">立即登记</Button>
+              </Link>
+            )}
           </div>
         </div>
       </main>

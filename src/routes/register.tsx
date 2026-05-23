@@ -111,9 +111,15 @@ function RegisterPage() {
         <div className="text-center max-w-md">
           <div className="text-6xl mb-6">🕊️</div>
           <h1 className="font-serif text-4xl text-foreground mb-4">愿主祝福您</h1>
-          <p className="text-muted-foreground mb-8">
+          <p className="text-muted-foreground mb-6">
             谢谢您完成登记。我们的同工会很快与您联系,期待再次见到您。
           </p>
+          <blockquote className="border-l-2 border-primary/40 pl-4 mx-auto max-w-sm text-left mb-8">
+            <p className="font-serif text-lg text-foreground leading-relaxed">
+              "凡劳苦担重担的人,可以到我这里来,我就使你们得安息。"
+            </p>
+            <footer className="text-sm text-muted-foreground mt-2">— 马太福音 11:28</footer>
+          </blockquote>
           <Link to="/">
             <Button variant="outline" className="rounded-full">返回首页</Button>
           </Link>
