@@ -52,6 +52,18 @@ type Reg = {
 
 type Event = { id: string; name: string; qr_token: string; is_active: boolean };
 
+function formatReferrer(r: Pick<Reg, "referrer_type" | "invited_by" | "referrer_other">): string {
+  switch (r.referrer_type) {
+    case "self": return "自己";
+    case "friend": return `亲友:${r.invited_by ?? ""}`;
+    case "wechat": return "微信/小红书";
+    case "youtube": return "YouTube";
+    case "missionary": return `宣教士:${r.invited_by ?? ""}`;
+    case "other": return `其他:${r.referrer_other ?? ""}`;
+    default: return "";
+  }
+}
+
 type AppUser = { id: string; email: string; created_at: string; roles: string[] };
 
 type ServiceApp = {
