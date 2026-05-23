@@ -876,13 +876,7 @@ function AdminPage() {
                             : "—"}
                       </td>
                       <td className="py-2 px-2">
-                        {r.referrer_type === "self"
-                          ? "自己"
-                          : r.referrer_type === "friend"
-                            ? `亲友:${r.invited_by ?? ""}`
-                            : r.referrer_type === "other"
-                              ? `其他:${r.referrer_other ?? ""}`
-                              : "—"}
+                        {formatReferrer(r) || "—"}
                       </td>
                       <td className="py-2 px-2 space-x-1 whitespace-nowrap">
                         {r.wants_visit && <Tag>欢迎探访</Tag>}
