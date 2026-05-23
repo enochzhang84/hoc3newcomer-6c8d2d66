@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TodayPreviewRouteImport } from './routes/today-preview'
+import { Route as SignupRouteImport } from './routes/signup'
 import { Route as ServeApplyRouteImport } from './routes/serve-apply'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as RegisterRouteImport } from './routes/register'
@@ -23,6 +24,11 @@ import { Route as TodayPublicTokenRouteImport } from './routes/today-public.$tok
 const TodayPreviewRoute = TodayPreviewRouteImport.update({
   id: '/today-preview',
   path: '/today-preview',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SignupRoute = SignupRouteImport.update({
+  id: '/signup',
+  path: '/signup',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ServeApplyRoute = ServeApplyRouteImport.update({
@@ -80,6 +86,7 @@ export interface FileRoutesByFullPath {
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
   '/serve-apply': typeof ServeApplyRoute
+  '/signup': typeof SignupRoute
   '/today-preview': typeof TodayPreviewRoute
   '/today-public/$token': typeof TodayPublicTokenRoute
 }
@@ -92,6 +99,7 @@ export interface FileRoutesByTo {
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
   '/serve-apply': typeof ServeApplyRoute
+  '/signup': typeof SignupRoute
   '/today-preview': typeof TodayPreviewRoute
   '/today-public/$token': typeof TodayPublicTokenRoute
 }
@@ -105,6 +113,7 @@ export interface FileRoutesById {
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
   '/serve-apply': typeof ServeApplyRoute
+  '/signup': typeof SignupRoute
   '/today-preview': typeof TodayPreviewRoute
   '/today-public/$token': typeof TodayPublicTokenRoute
 }
@@ -119,6 +128,7 @@ export interface FileRouteTypes {
     | '/register'
     | '/reset-password'
     | '/serve-apply'
+    | '/signup'
     | '/today-preview'
     | '/today-public/$token'
   fileRoutesByTo: FileRoutesByTo
@@ -131,6 +141,7 @@ export interface FileRouteTypes {
     | '/register'
     | '/reset-password'
     | '/serve-apply'
+    | '/signup'
     | '/today-preview'
     | '/today-public/$token'
   id:
@@ -143,6 +154,7 @@ export interface FileRouteTypes {
     | '/register'
     | '/reset-password'
     | '/serve-apply'
+    | '/signup'
     | '/today-preview'
     | '/today-public/$token'
   fileRoutesById: FileRoutesById
@@ -156,6 +168,7 @@ export interface RootRouteChildren {
   RegisterRoute: typeof RegisterRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   ServeApplyRoute: typeof ServeApplyRoute
+  SignupRoute: typeof SignupRoute
   TodayPreviewRoute: typeof TodayPreviewRoute
   TodayPublicTokenRoute: typeof TodayPublicTokenRoute
 }
@@ -167,6 +180,13 @@ declare module '@tanstack/react-router' {
       path: '/today-preview'
       fullPath: '/today-preview'
       preLoaderRoute: typeof TodayPreviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/signup': {
+      id: '/signup'
+      path: '/signup'
+      fullPath: '/signup'
+      preLoaderRoute: typeof SignupRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/serve-apply': {
@@ -244,19 +264,10 @@ const rootRouteChildren: RootRouteChildren = {
   RegisterRoute: RegisterRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   ServeApplyRoute: ServeApplyRoute,
+  SignupRoute: SignupRoute,
   TodayPreviewRoute: TodayPreviewRoute,
   TodayPublicTokenRoute: TodayPublicTokenRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

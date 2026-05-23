@@ -18,7 +18,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
 import { zhCN } from "date-fns/locale";
-import { listUsersWithRoles, setUserAdmin, deleteUser } from "@/lib/users.functions";
+import { listUsersWithRoles, setUserRole, deleteUser } from "@/lib/users.functions";
 import { updateRegistration } from "@/lib/registrations.functions";
 
 type Reg = {
@@ -108,7 +108,7 @@ function AdminPage() {
   const [attText, setAttText] = useState<string>("");
 
   const fetchUsersFn = useServerFn(listUsersWithRoles);
-  const setUserAdminFn = useServerFn(setUserAdmin);
+  const setUserRoleFn = useServerFn(setUserRole);
   const deleteUserFn = useServerFn(deleteUser);
   const updateRegFn = useServerFn(updateRegistration);
   const [editOpen, setEditOpen] = useState(false);
@@ -1163,7 +1163,12 @@ function AdminPage() {
             </Button>
           </div>
           <p className="text-xs text-muted-foreground mb-4">
-            管理员可登录后台查看名单、导出 Excel、管理二维码。新注册用户默认为普通用户，需在此授予权限。
+            新注册用户默认为「待审核」，须由主管理员在此分配角色后才能登录。
+            <br />
+            <span className="text-foreground/70">角色权限：</span>
+            <span className="ml-1">管理员 = 可修改所有设置；</span>
+            <span>一般用户 = 仅可查看系统（不可修改设置）；</span>
+            <span>访客 = 仅能登录 / 退出。</span>
           </p>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -1177,7 +1182,13 @@ function AdminPage() {
               </thead>
               <tbody>
                 {users.map((u) => {
-                  const isUserAdmin = u.roles.includes("admin");
+                  const currentRole = u.roles.includes("admin")
+                    ? "admin"
+                    : u.roles.includes("user")
+                      ? "user"
+                      : u.roles.includes("viewer")
+                        ? "viewer"
+                        : "";
                   const isSelf = u.id === currentUserId;
                   return (
                     <tr key={u.id} className="border-b border-border/30 hover:bg-muted/30">
@@ -1185,47 +1196,42 @@ function AdminPage() {
                         {u.email} {isSelf && <span className="text-xs text-muted-foreground">(我)</span>}
                       </td>
                       <td className="py-2 px-2">
-                        {isUserAdmin ? <Tag>管理员</Tag> : <span className="text-muted-foreground text-xs">普通用户</span>}
+                        <select
+                          value={currentRole}
+                          disabled={isSelf && currentRole === "admin"}
+                          onChange={async (e) => {
+                            const newRole = e.target.value as "" | "admin" | "user" | "viewer";
+                            const label =
+                              newRole === "admin" ? "管理员"
+                              : newRole === "user" ? "一般用户"
+                              : newRole === "viewer" ? "访客"
+                              : "待审核 (撤销权限)";
+                            if (!confirm(`将 ${u.email} 设置为「${label}」?`)) {
+                              return;
+                            }
+                            try {
+                              await setUserRoleFn({
+                                data: { userId: u.id, role: newRole === "" ? null : newRole },
+                              });
+                              logAction(`将 ${u.email} 角色设为 ${label}`);
+                              toast.success("已更新角色");
+                              loadUsers();
+                            } catch (err) {
+                              toast.error((err as Error).message);
+                            }
+                          }}
+                          className="text-xs bg-background border border-border rounded px-2 py-1"
+                        >
+                          <option value="">待审核</option>
+                          <option value="admin">管理员</option>
+                          <option value="user">一般用户</option>
+                          <option value="viewer">访客</option>
+                        </select>
                       </td>
                       <td className="py-2 px-2 text-muted-foreground whitespace-nowrap">
                         {new Date(u.created_at).toLocaleDateString("zh-CN")}
                       </td>
                       <td className="py-2 px-2 text-right space-x-3 whitespace-nowrap">
-                        {isUserAdmin ? (
-                          <button
-                            disabled={isSelf}
-                            onClick={async () => {
-                              if (!confirm(`撤销 ${u.email} 的管理员权限?`)) return;
-                              try {
-                                await setUserAdminFn({ data: { userId: u.id, makeAdmin: false } });
-                                logAction(`撤销了 ${u.email} 的管理员权限`);
-                                toast.success("已撤销管理员权限");
-                                loadUsers();
-                              } catch (e) {
-                                toast.error((e as Error).message);
-                              }
-                            }}
-                            className="text-xs text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed"
-                          >
-                            撤销管理员
-                          </button>
-                        ) : (
-                          <button
-                            onClick={async () => {
-                              try {
-                                await setUserAdminFn({ data: { userId: u.id, makeAdmin: true } });
-                                logAction(`授予了 ${u.email} 管理员权限`);
-                                toast.success("已授予管理员权限");
-                                loadUsers();
-                              } catch (e) {
-                                toast.error((e as Error).message);
-                              }
-                            }}
-                            className="text-xs text-primary hover:underline"
-                          >
-                            设为管理员
-                          </button>
-                        )}
                         <button
                           disabled={isSelf}
                           onClick={async () => {
