@@ -36,12 +36,20 @@ function Index() {
 
   const enterFullscreen = async () => {
     try {
+      const ua = navigator.userAgent;
+      const isIOS = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === "MacIntel" && (navigator as Navigator & { maxTouchPoints?: number }).maxTouchPoints! > 1);
+      if (isIOS) {
+        // iPad/iPhone Safari: native fullscreen shows a green close-X overlay.
+        // Skip requestFullscreen; rely on scroll trick + "Add to Home Screen" standalone mode.
+        window.scrollTo(0, 1);
+        setIsFullscreen(true);
+        return;
+      }
       const el = document.documentElement as HTMLElement & {
         webkitRequestFullscreen?: () => Promise<void>;
       };
       if (el.requestFullscreen) await el.requestFullscreen();
       else if (el.webkitRequestFullscreen) await el.webkitRequestFullscreen();
-      // iPad Safari fallback: hide URL bar by scrolling
       window.scrollTo(0, 1);
       setIsFullscreen(true);
     } catch (e) {
