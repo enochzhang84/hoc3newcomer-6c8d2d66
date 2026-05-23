@@ -200,8 +200,8 @@ function MessageBoardPage() {
   };
 
   const askDelete = () => {
-    if (!isAdmin) {
-      toast.error("请用管理员账号登录后再操作");
+    if (!canEdit) {
+      toast.error("访客无权操作，请使用一般用户或管理员账号");
       return;
     }
     if (!selected) {
@@ -357,7 +357,7 @@ function MessageBoardPage() {
 
         <p className="text-xs text-muted-foreground">
           内容保存在云端数据库,所有设备实时同步。双击留言可进入浏览模式。
-          {!isAdmin && !loading && " 当前为只读模式,登录管理员账号后可创建/编辑/删除。"}
+          {!canEdit && !loading && " 当前为只读模式（访客），一般用户或管理员可创建/编辑/删除。"}
         </p>
       </main>
 
