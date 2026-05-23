@@ -586,6 +586,8 @@ function AdminPage() {
           </div>
         </section>
 
+        {/* Read-only wrapper for non-admin: disables all form controls inside */}
+        <fieldset disabled={!isAdmin} className="contents">
         {/* Media / Projection */}
         <section className="bg-card border border-border/50 rounded-2xl p-6">
           <h2 className="font-serif text-xl mb-4">影音投影</h2>
@@ -1338,6 +1340,7 @@ function AdminPage() {
             </Button>
           </div>
         </section>
+        </fieldset>
 
         {/* Edit Dialog */}
         <Dialog open={editOpen} onOpenChange={setEditOpen}>
