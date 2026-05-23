@@ -377,7 +377,7 @@ function AdminPage() {
       信主年数: r.faith_years ?? "",
       婚姻: r.marital_status === "married" ? "已婚" : r.marital_status === "single" ? "单身" : "",
       配偶: r.spouse_name ?? "",
-      介绍人: r.referrer_type === "self" ? "自己" : r.referrer_type === "friend" ? `亲友:${r.invited_by ?? ""}` : r.referrer_type === "other" ? `其他:${r.referrer_other ?? ""}` : "",
+      介绍人: formatReferrer(r),
       欢迎探访: r.wants_visit ? "是" : "否",
       需要资料: r.wants_info ? "是" : "否",
       备注: r.notes ?? "",
