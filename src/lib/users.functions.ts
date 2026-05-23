@@ -14,10 +14,21 @@ async function assertAdmin(userId: string) {
   if (!data) throw new Error("Forbidden: admin only");
 }
 
+async function assertApprovedUser(userId: string) {
+  const { data, error } = await supabaseAdmin
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", userId)
+    .in("role", ["admin", "user", "viewer"])
+    .limit(1);
+  if (error) throw new Error(error.message);
+  if (!data || data.length === 0) throw new Error("Forbidden: approved users only");
+}
+
 export const listUsersWithRoles = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    await assertAdmin(context.userId);
+    await assertApprovedUser(context.userId);
 
     const { data: usersData, error: usersError } =
       await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 200 });
