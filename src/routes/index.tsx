@@ -16,6 +16,15 @@ export const Route = createFileRoute("/")({
 function Index() {
   const [event, setEvent] = useState<{ name: string; qr_token: string } | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isIPad, setIsIPad] = useState(false);
+
+  useEffect(() => {
+    const ua = navigator.userAgent;
+    const iPad =
+      /iPad/.test(ua) ||
+      (navigator.platform === "MacIntel" && (navigator.maxTouchPoints ?? 0) > 1);
+    setIsIPad(iPad);
+  }, []);
 
   useEffect(() => {
     supabase
@@ -81,13 +90,15 @@ function Index() {
               >
                 <img src={iconAdmin} alt="后台" className="h-5 w-5 object-contain" />
               </button>
-              <button
-                onClick={enterFullscreen}
-                title="全屏"
-                className="h-10 w-10 rounded-xl border border-border/60 bg-card hover:bg-accent flex items-center justify-center transition-colors"
-              >
-                <img src={iconFullscreen} alt="全屏" className="h-5 w-5 object-contain" />
-              </button>
+              {isIPad && (
+                <button
+                  onClick={enterFullscreen}
+                  title="全屏"
+                  className="h-10 w-10 rounded-xl border border-border/60 bg-card hover:bg-accent flex items-center justify-center transition-colors"
+                >
+                  <img src={iconFullscreen} alt="全屏" className="h-5 w-5 object-contain" />
+                </button>
+              )}
             </div>
           )}
         </div>
