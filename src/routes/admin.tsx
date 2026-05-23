@@ -204,18 +204,20 @@ function AdminPage() {
   }, []);
 
   useEffect(() => {
-    (async () => {
-      const { data: session } = await supabase.auth.getSession();
-      if (!session.session) {
+    let cancelled = false;
+    const handleSession = async (sess: { user: { id: string; email?: string | null } } | null) => {
+      if (cancelled) return;
+      if (!sess) {
         navigate({ to: "/login" });
         return;
       }
-      setCurrentUserId(session.session.user.id);
-      setCurrentUserEmail(session.session.user.email ?? "");
+      setCurrentUserId(sess.user.id);
+      setCurrentUserEmail(sess.user.email ?? "");
       const { data: roles } = await supabase
         .from("user_roles")
         .select("role")
-        .eq("user_id", session.session.user.id);
+        .eq("user_id", sess.user.id);
+      if (cancelled) return;
       const admin = roles?.some((r) => r.role === "admin") ?? false;
       const isUser = roles?.some((r) => r.role === "user") ?? false;
       const isViewer = roles?.some((r) => r.role === "viewer") ?? false;
@@ -229,7 +231,22 @@ function AdminPage() {
         loadMessagesCount();
         loadUsers();
       }
-    })();
+    };
+
+    // Subscribe first so we catch INITIAL_SESSION on slow mobile reloads
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+      handleSession(session ? { user: session.user } : null);
+    });
+
+    // Then fetch the existing session (covers cases where listener fires before subscribe completes)
+    supabase.auth.getSession().then(({ data }) => {
+      handleSession(data.session ? { user: data.session.user } : null);
+    });
+
+    return () => {
+      cancelled = true;
+      sub.subscription.unsubscribe();
+    };
   }, [navigate, loadData, loadUsers, loadMessagesCount]);
 
   // Realtime update of message count badge
