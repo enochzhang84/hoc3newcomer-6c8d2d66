@@ -12,7 +12,7 @@ export const Route = createFileRoute("/serve-apply")({
   component: ServeApplyPage,
 });
 
-const PROJECTS = ["迎宾接待", "厨房", "影音播放"];
+const PROJECTS = ["迎宾接待", "厨房事工", "影音播放", "儿童主日"];
 
 function ServeApplyPage() {
   const [submitting, setSubmitting] = useState(false);
