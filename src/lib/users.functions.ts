@@ -97,3 +97,43 @@ export const deleteUser = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+const roleSchema = z.enum(["admin", "user", "viewer"]);
+
+export const setUserRole = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z.object({
+      userId: z.string().uuid(),
+      role: roleSchema.nullable(), // null = revoke approval (pending)
+    }).parse(input),
+  )
+  .handler(async ({ context, data }) => {
+    await assertAdmin(context.userId);
+
+    // Prevent self-demotion that would lock out the last admin
+    if (data.userId === context.userId && data.role !== "admin") {
+      const { count } = await supabaseAdmin
+        .from("user_roles")
+        .select("*", { count: "exact", head: true })
+        .eq("role", "admin");
+      if ((count ?? 0) <= 1) {
+        throw new Error("至少需要保留一位管理员");
+      }
+    }
+
+    // Replace all roles for this user with the single chosen role
+    const { error: delErr } = await supabaseAdmin
+      .from("user_roles")
+      .delete()
+      .eq("user_id", data.userId);
+    if (delErr) throw new Error(delErr.message);
+
+    if (data.role) {
+      const { error: insErr } = await supabaseAdmin
+        .from("user_roles")
+        .insert({ user_id: data.userId, role: data.role });
+      if (insErr) throw new Error(insErr.message);
+    }
+    return { ok: true };
+  });
