@@ -658,6 +658,14 @@ function AdminPage() {
               rank
             />
           </div>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <Button
+              variant="outline"
+              onClick={() => window.open("/data-preview", "_blank", "noopener,noreferrer")}
+            >
+              数据预览(可打印)
+            </Button>
+          </div>
         </section>
 
         {/* Read-only wrapper for non-admin: disables all form controls inside */}
