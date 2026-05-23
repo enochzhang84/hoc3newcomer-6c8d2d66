@@ -5,6 +5,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { QRCodeSVG } from "qrcode.react";
 import logo from "@/assets/logo.png";
+import iconAdmin from "@/assets/icon-admin.png";
+import iconFullscreen from "@/assets/icon-fullscreen.png";
+import iconExitFullscreen from "@/assets/icon-exit-fullscreen.png";
 
 export const Route = createFileRoute("/")({
   component: Index,
@@ -12,6 +15,7 @@ export const Route = createFileRoute("/")({
 
 function Index() {
   const [event, setEvent] = useState<{ name: string; qr_token: string } | null>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   useEffect(() => {
     supabase
@@ -23,6 +27,39 @@ function Index() {
       .maybeSingle()
       .then(({ data }) => setEvent(data));
   }, []);
+
+  useEffect(() => {
+    const onChange = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener("fullscreenchange", onChange);
+    return () => document.removeEventListener("fullscreenchange", onChange);
+  }, []);
+
+  const enterFullscreen = async () => {
+    try {
+      const el = document.documentElement as HTMLElement & {
+        webkitRequestFullscreen?: () => Promise<void>;
+      };
+      if (el.requestFullscreen) await el.requestFullscreen();
+      else if (el.webkitRequestFullscreen) await el.webkitRequestFullscreen();
+      // iPad Safari fallback: hide URL bar by scrolling
+      window.scrollTo(0, 1);
+      setIsFullscreen(true);
+    } catch (e) {
+      window.scrollTo(0, 1);
+      setIsFullscreen(true);
+    }
+  };
+
+  const exitFullscreen = async () => {
+    try {
+      const d = document as Document & { webkitExitFullscreen?: () => Promise<void> };
+      if (document.fullscreenElement && document.exitFullscreen) await document.exitFullscreen();
+      else if (d.webkitExitFullscreen) await d.webkitExitFullscreen();
+      setIsFullscreen(false);
+    } catch {
+      setIsFullscreen(false);
+    }
+  };
 
   const PUBLISHED_ORIGIN = "https://hoc3newcomer.lovable.app";
   const url = event ? `${PUBLISHED_ORIGIN}/register?event=${event.qr_token}` : "";
