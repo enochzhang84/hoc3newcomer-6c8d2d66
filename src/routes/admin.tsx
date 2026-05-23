@@ -1190,6 +1190,8 @@ function AdminPage() {
                         ? "viewer"
                         : "";
                   const isSelf = u.id === currentUserId;
+                  const PROTECTED_ADMINS = ["hoc3nc@gmail.com", "charmzhangliang@gmail.com"];
+                  const isProtected = PROTECTED_ADMINS.includes(u.email.toLowerCase());
                   return (
                     <tr key={u.id} className="border-b border-border/30 hover:bg-muted/30">
                       <td className="py-2 px-2 font-medium">
@@ -1198,7 +1200,7 @@ function AdminPage() {
                       <td className="py-2 px-2">
                         <select
                           value={currentRole}
-                          disabled={isSelf && currentRole === "admin"}
+                          disabled={isProtected || (isSelf && currentRole === "admin")}
                           onChange={async (e) => {
                             const newRole = e.target.value as "" | "admin" | "user" | "viewer";
                             const label =
