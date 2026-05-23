@@ -18,7 +18,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
 import { zhCN } from "date-fns/locale";
-import { listUsersWithRoles, setUserAdmin, setUserRole, deleteUser } from "@/lib/users.functions";
+import { listUsersWithRoles, setUserRole, deleteUser } from "@/lib/users.functions";
 import { updateRegistration } from "@/lib/registrations.functions";
 
 type Reg = {
@@ -108,7 +108,6 @@ function AdminPage() {
   const [attText, setAttText] = useState<string>("");
 
   const fetchUsersFn = useServerFn(listUsersWithRoles);
-  const setUserAdminFn = useServerFn(setUserAdmin);
   const setUserRoleFn = useServerFn(setUserRole);
   const deleteUserFn = useServerFn(deleteUser);
   const updateRegFn = useServerFn(updateRegistration);
