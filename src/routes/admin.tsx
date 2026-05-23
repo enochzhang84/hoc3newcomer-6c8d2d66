@@ -1533,11 +1533,14 @@ function AdminPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label>介绍人</Label>
+                  <Label>如何知道我们教会</Label>
                   <RadioGroup value={editForm.referrer_type ?? ""} onValueChange={(v) => setEditForm((prev) => prev ? { ...prev, referrer_type: v } : prev)} className="flex flex-wrap gap-4 pt-2">
                     {[
                       { v: "self", l: "自己" },
                       { v: "friend", l: "亲友" },
+                      { v: "wechat", l: "微信/小红书" },
+                      { v: "youtube", l: "YouTube" },
+                      { v: "missionary", l: "宣教士" },
                       { v: "other", l: "其他" },
                     ].map((o) => (
                       <label key={o.v} className="flex items-center gap-2 cursor-pointer">
@@ -1547,6 +1550,9 @@ function AdminPage() {
                   </RadioGroup>
                   {editForm.referrer_type === "friend" && (
                     <Input className="mt-3" placeholder="亲友姓名" value={editForm.invited_by ?? ""} onChange={(e) => setEditForm((prev) => prev ? { ...prev, invited_by: e.target.value } : prev)} />
+                  )}
+                  {editForm.referrer_type === "missionary" && (
+                    <Input className="mt-3" placeholder="宣教士姓名" value={editForm.invited_by ?? ""} onChange={(e) => setEditForm((prev) => prev ? { ...prev, invited_by: e.target.value } : prev)} />
                   )}
                   {editForm.referrer_type === "other" && (
                     <Input className="mt-3" placeholder="请说明" value={editForm.referrer_other ?? ""} onChange={(e) => setEditForm((prev) => prev ? { ...prev, referrer_other: e.target.value } : prev)} />
