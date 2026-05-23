@@ -206,8 +206,14 @@ function AdminPage() {
   useEffect(() => {
     let cancelled = false;
     let initializing = false;
+    let resolved = false;
     const handleSession = (sess: { user: { id: string; email?: string | null } } | null) => {
       if (cancelled) return;
+      if (resolved && sess) {
+        // already handled; only react to sign-out below
+        return;
+      }
+      resolved = true;
       if (!sess) {
         navigate({ to: "/login" });
         return;
@@ -248,18 +254,41 @@ function AdminPage() {
       })();
     };
 
-    supabase.auth.getSession().then(({ data }) => {
-      if (!cancelled) handleSession(data.session ? { user: data.session.user } : null);
-    });
-
+    // Listen first — INITIAL_SESSION fires reliably even when getSession()
+    // hangs on the Web Locks API (mobile Chrome standard mode with cached session).
     const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED" || event === "USER_UPDATED") {
+      if (
+        event === "INITIAL_SESSION" ||
+        event === "SIGNED_IN" ||
+        event === "TOKEN_REFRESHED" ||
+        event === "USER_UPDATED"
+      ) {
         handleSession(session ? { user: session.user } : null);
-      }
-      if (event === "SIGNED_OUT") {
+      } else if (event === "SIGNED_OUT") {
+        resolved = false;
         handleSession(null);
       }
     });
+
+    // Fallback: race getSession against a timeout so we never block forever.
+    void (async () => {
+      try {
+        const result = await Promise.race([
+          supabase.auth.getSession(),
+          new Promise<null>((resolve) => setTimeout(() => resolve(null), 3000)),
+        ]);
+        if (cancelled || resolved) return;
+        if (result && "data" in result) {
+          handleSession(result.data.session ? { user: result.data.session.user } : null);
+        }
+        // If timed out, INITIAL_SESSION from the listener will handle it.
+      } catch {
+        if (!cancelled && !resolved) {
+          setChecking(false);
+          toast.error("登录状态加载超时，请刷新页面重试");
+        }
+      }
+    })();
 
     return () => {
       cancelled = true;
