@@ -141,18 +141,4 @@
     background-color: var(--color-background);
     color: var(--color-foreground);
   }
-
-  html.ios-kiosk-mode,
-  html.ios-kiosk-mode body {
-    min-height: 100dvh;
-    overflow: hidden;
-    overscroll-behavior: none;
-    touch-action: manipulation;
-  }
-
-  html.ios-kiosk-mode body {
-    position: fixed;
-    inset: 0;
-    width: 100%;
-  }
 }

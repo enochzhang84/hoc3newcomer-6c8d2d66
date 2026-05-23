@@ -17,15 +17,6 @@ function Index() {
   const [event, setEvent] = useState<{ name: string; qr_token: string } | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
-  const isIPadSafari = () => {
-    if (typeof navigator === "undefined") return false;
-    const touchPoints = (navigator as Navigator & { maxTouchPoints?: number }).maxTouchPoints ?? 0;
-    return (
-      /iPad|iPhone|iPod/.test(navigator.userAgent) ||
-      (navigator.platform === "MacIntel" && touchPoints > 1)
-    );
-  };
-
   useEffect(() => {
     supabase
       .from("events")
@@ -45,19 +36,12 @@ function Index() {
 
   const enterFullscreen = async () => {
     try {
-      if (isIPadSafari()) {
-        document.documentElement.classList.add("ios-kiosk-mode");
-        requestAnimationFrame(() =>
-          window.scrollTo({ top: 1, left: 0, behavior: "instant" as ScrollBehavior }),
-        );
-        setIsFullscreen(true);
-        return;
-      }
       const el = document.documentElement as HTMLElement & {
         webkitRequestFullscreen?: () => Promise<void>;
       };
       if (el.requestFullscreen) await el.requestFullscreen();
       else if (el.webkitRequestFullscreen) await el.webkitRequestFullscreen();
+      // iPad Safari fallback: hide URL bar by scrolling
       window.scrollTo(0, 1);
       setIsFullscreen(true);
     } catch (e) {
@@ -68,14 +52,6 @@ function Index() {
 
   const exitFullscreen = async () => {
     try {
-      if (isIPadSafari()) {
-        document.documentElement.classList.remove("ios-kiosk-mode");
-        requestAnimationFrame(() =>
-          window.scrollTo({ top: 0, left: 0, behavior: "instant" as ScrollBehavior }),
-        );
-        setIsFullscreen(false);
-        return;
-      }
       const d = document as Document & { webkitExitFullscreen?: () => Promise<void> };
       if (document.fullscreenElement && document.exitFullscreen) await document.exitFullscreen();
       else if (d.webkitExitFullscreen) await d.webkitExitFullscreen();
@@ -105,17 +81,15 @@ function Index() {
               <img src={iconAdmin} alt="后台" className="h-5 w-5 object-contain" />
             </button>
             <button
-              onPointerUp={enterFullscreen}
+              onClick={enterFullscreen}
               title="全屏"
-              type="button"
               className="h-10 w-10 rounded-xl border border-border/60 bg-card hover:bg-accent flex items-center justify-center transition-colors"
             >
               <img src={iconFullscreen} alt="全屏" className="h-5 w-5 object-contain" />
             </button>
             <button
-              onPointerUp={exitFullscreen}
+              onClick={exitFullscreen}
               title="退出全屏"
-              type="button"
               className="h-10 w-10 rounded-xl border border-border/60 bg-card hover:bg-accent flex items-center justify-center transition-colors"
             >
               <img src={iconExitFullscreen} alt="退出全屏" className="h-5 w-5 object-contain" />
@@ -127,23 +101,18 @@ function Index() {
       <main className="container mx-auto px-6 py-16">
         <div className="grid gap-12 md:grid-cols-2 items-center max-w-5xl mx-auto">
           <div>
-            <p className="text-sm uppercase tracking-[0.2em] text-accent-foreground/70 mb-4">
-              Welcome Home
-            </p>
+            <p className="text-sm uppercase tracking-[0.2em] text-accent-foreground/70 mb-4">Welcome Home</p>
             <h1 className="font-serif text-5xl md:text-6xl leading-tight text-foreground mb-6">
-              欢迎来到
-              <br />
-              我们中间
+              欢迎来到<br />我们中间
             </h1>
             <p className="text-lg text-muted-foreground mb-8 leading-relaxed">
-              扫描下方二维码,或点击按钮完成登记。 我们想认识您,并与您一同走信仰的旅程。
+              扫描下方二维码,或点击按钮完成登记。
+              我们想认识您,并与您一同走信仰的旅程。
             </p>
             <div className="flex gap-3">
               {event && (
                 <Link to="/register" search={{ event: event.qr_token }}>
-                  <Button size="lg" className="rounded-full px-8">
-                    立即登记
-                  </Button>
+                  <Button size="lg" className="rounded-full px-8">立即登记</Button>
                 </Link>
               )}
             </div>
