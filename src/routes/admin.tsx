@@ -459,9 +459,16 @@ function AdminPage() {
             >
               基督三家主页
             </Button>
-            <Link to="/register" target="_blank">
-              <Button size="sm">手动录入</Button>
-            </Link>
+            {isAdmin && (
+              <Link to="/register" target="_blank">
+                <Button size="sm">手动录入</Button>
+              </Link>
+            )}
+            {!isAdmin && (
+              <span className="text-xs px-2 py-1 rounded-md bg-muted text-muted-foreground">
+                只读模式（{userRole === "user" ? "一般用户" : "访客"}）
+              </span>
+            )}
             <Button
               variant="ghost"
               size="sm"
