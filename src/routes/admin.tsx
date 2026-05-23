@@ -52,6 +52,18 @@ type Reg = {
 
 type Event = { id: string; name: string; qr_token: string; is_active: boolean };
 
+function formatReferrer(r: Pick<Reg, "referrer_type" | "invited_by" | "referrer_other">): string {
+  switch (r.referrer_type) {
+    case "self": return "自己";
+    case "friend": return `亲友:${r.invited_by ?? ""}`;
+    case "wechat": return "微信/小红书";
+    case "youtube": return "YouTube";
+    case "missionary": return `宣教士:${r.invited_by ?? ""}`;
+    case "other": return `其他:${r.referrer_other ?? ""}`;
+    default: return "";
+  }
+}
+
 type AppUser = { id: string; email: string; created_at: string; roles: string[] };
 
 type ServiceApp = {
@@ -377,7 +389,7 @@ function AdminPage() {
       信主年数: r.faith_years ?? "",
       婚姻: r.marital_status === "married" ? "已婚" : r.marital_status === "single" ? "单身" : "",
       配偶: r.spouse_name ?? "",
-      介绍人: r.referrer_type === "self" ? "自己" : r.referrer_type === "friend" ? `亲友:${r.invited_by ?? ""}` : r.referrer_type === "other" ? `其他:${r.referrer_other ?? ""}` : "",
+      介绍人: formatReferrer(r),
       欢迎探访: r.wants_visit ? "是" : "否",
       需要资料: r.wants_info ? "是" : "否",
       备注: r.notes ?? "",
@@ -454,7 +466,7 @@ function AdminPage() {
           marital_status: editForm.marital_status || null,
           spouse_name: editForm.marital_status === "married" ? editForm.spouse_name?.trim() || null : null,
           referrer_type: editForm.referrer_type || null,
-          invited_by: editForm.referrer_type === "friend" ? editForm.invited_by?.trim() || null : null,
+          invited_by: (editForm.referrer_type === "friend" || editForm.referrer_type === "missionary") ? editForm.invited_by?.trim() || null : null,
           referrer_other: editForm.referrer_type === "other" ? editForm.referrer_other?.trim() || null : null,
           wants_visit: editForm.wants_visit ?? false,
           wants_info: editForm.wants_info ?? false,
@@ -645,6 +657,14 @@ function AdminPage() {
               )}
               rank
             />
+          </div>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <Button
+              variant="outline"
+              onClick={() => window.open("/data-preview", "_blank", "noopener,noreferrer")}
+            >
+              数据预览(可打印)
+            </Button>
           </div>
         </section>
 
@@ -864,13 +884,7 @@ function AdminPage() {
                             : "—"}
                       </td>
                       <td className="py-2 px-2">
-                        {r.referrer_type === "self"
-                          ? "自己"
-                          : r.referrer_type === "friend"
-                            ? `亲友:${r.invited_by ?? ""}`
-                            : r.referrer_type === "other"
-                              ? `其他:${r.referrer_other ?? ""}`
-                              : "—"}
+                        {formatReferrer(r) || "—"}
                       </td>
                       <td className="py-2 px-2 space-x-1 whitespace-nowrap">
                         {r.wants_visit && <Tag>欢迎探访</Tag>}
@@ -1527,11 +1541,14 @@ function AdminPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label>介绍人</Label>
+                  <Label>如何知道我们教会</Label>
                   <RadioGroup value={editForm.referrer_type ?? ""} onValueChange={(v) => setEditForm((prev) => prev ? { ...prev, referrer_type: v } : prev)} className="flex flex-wrap gap-4 pt-2">
                     {[
                       { v: "self", l: "自己" },
                       { v: "friend", l: "亲友" },
+                      { v: "wechat", l: "微信/小红书" },
+                      { v: "youtube", l: "YouTube" },
+                      { v: "missionary", l: "宣教士" },
                       { v: "other", l: "其他" },
                     ].map((o) => (
                       <label key={o.v} className="flex items-center gap-2 cursor-pointer">
@@ -1541,6 +1558,9 @@ function AdminPage() {
                   </RadioGroup>
                   {editForm.referrer_type === "friend" && (
                     <Input className="mt-3" placeholder="亲友姓名" value={editForm.invited_by ?? ""} onChange={(e) => setEditForm((prev) => prev ? { ...prev, invited_by: e.target.value } : prev)} />
+                  )}
+                  {editForm.referrer_type === "missionary" && (
+                    <Input className="mt-3" placeholder="宣教士姓名" value={editForm.invited_by ?? ""} onChange={(e) => setEditForm((prev) => prev ? { ...prev, invited_by: e.target.value } : prev)} />
                   )}
                   {editForm.referrer_type === "other" && (
                     <Input className="mt-3" placeholder="请说明" value={editForm.referrer_other ?? ""} onChange={(e) => setEditForm((prev) => prev ? { ...prev, referrer_other: e.target.value } : prev)} />

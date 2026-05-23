@@ -90,7 +90,7 @@ function RegisterPage() {
       marital_status: form.marital_status || null,
       spouse_name: form.marital_status === "married" ? form.spouse_name.trim() || null : null,
       referrer_type: form.referrer_type || null,
-      invited_by: form.referrer_type === "friend" ? form.invited_by.trim() || null : null,
+      invited_by: (form.referrer_type === "friend" || form.referrer_type === "missionary") ? form.invited_by.trim() || null : null,
       referrer_other: form.referrer_type === "other" ? form.referrer_other.trim() || null : null,
       wants_visit: form.wants_visit,
       wants_info: form.wants_info,
@@ -244,11 +244,14 @@ function RegisterPage() {
             )}
           </Field>
 
-          <Field label="介绍人">
+          <Field label="如何知道我们教会">
             <RadioGroup value={form.referrer_type} onValueChange={(v) => setForm({ ...form, referrer_type: v })} className="flex flex-wrap gap-4 pt-2">
               {[
                 { v: "self", l: "自己" },
                 { v: "friend", l: "亲友" },
+                { v: "wechat", l: "微信/小红书" },
+                { v: "youtube", l: "YouTube" },
+                { v: "missionary", l: "宣教士" },
                 { v: "other", l: "其他" },
               ].map((o) => (
                 <label key={o.v} className="flex items-center gap-2 cursor-pointer">
@@ -260,6 +263,14 @@ function RegisterPage() {
               <Input
                 className="mt-3"
                 placeholder="亲友姓名"
+                value={form.invited_by}
+                onChange={(e) => setForm({ ...form, invited_by: e.target.value })}
+              />
+            )}
+            {form.referrer_type === "missionary" && (
+              <Input
+                className="mt-3"
+                placeholder="宣教士姓名"
                 value={form.invited_by}
                 onChange={(e) => setForm({ ...form, invited_by: e.target.value })}
               />
