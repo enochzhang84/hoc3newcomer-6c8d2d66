@@ -97,9 +97,7 @@ function MessageBoardPage() {
           .select("role")
           .eq("user_id", uid);
         if (mounted)
-          setCanEdit(
-            roles?.some((r) => r.role === "admin" || r.role === "user") ?? false,
-          );
+          setCanEdit(roles?.some((r) => r.role === "admin") ?? false);
         // 进入留言板页面即视为已读，更新 last_messages_seen_at
         if (roles && roles.length > 0) {
           await supabase
@@ -357,7 +355,7 @@ function MessageBoardPage() {
 
         <p className="text-xs text-muted-foreground">
           内容保存在云端数据库,所有设备实时同步。双击留言可进入浏览模式。
-          {!canEdit && !loading && " 当前为只读模式（访客），一般用户或管理员可创建/编辑/删除。"}
+          {!canEdit && !loading && " 当前为只读模式,登录管理员账号后可创建/编辑/删除。"}
         </p>
       </main>
 
