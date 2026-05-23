@@ -985,7 +985,14 @@ function AdminPage() {
             const s = parseInt(attStudents || "0", 10) || 0;
             const t = parseInt(attTeachers || "0", 10) || 0;
             const total = w + s + t;
-            const newcomers = regs.filter((r) => r.created_at.slice(0, 10) === attDate).length;
+            const toLocalDate = (iso: string) => {
+              const d = new Date(iso);
+              const y = d.getFullYear();
+              const m = String(d.getMonth() + 1).padStart(2, "0");
+              const day = String(d.getDate()).padStart(2, "0");
+              return `${y}-${m}-${day}`;
+            };
+            const newcomers = regs.filter((r) => toLocalDate(r.created_at) === attDate).length;
             return (
               <>
                 <div className="grid grid-cols-1 md:grid-cols-5 gap-3 items-end mb-4">
