@@ -466,7 +466,7 @@ function AdminPage() {
           marital_status: editForm.marital_status || null,
           spouse_name: editForm.marital_status === "married" ? editForm.spouse_name?.trim() || null : null,
           referrer_type: editForm.referrer_type || null,
-          invited_by: editForm.referrer_type === "friend" ? editForm.invited_by?.trim() || null : null,
+          invited_by: (editForm.referrer_type === "friend" || editForm.referrer_type === "missionary") ? editForm.invited_by?.trim() || null : null,
           referrer_other: editForm.referrer_type === "other" ? editForm.referrer_other?.trim() || null : null,
           wants_visit: editForm.wants_visit ?? false,
           wants_info: editForm.wants_info ?? false,
