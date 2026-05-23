@@ -83,6 +83,7 @@ function AdminPage() {
   const navigate = useNavigate();
   const [checking, setChecking] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [userRole, setUserRoleState] = useState<"admin" | "user" | "viewer" | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [currentUserEmail, setCurrentUserEmail] = useState<string>("");
   const [regs, setRegs] = useState<Reg[]>([]);
@@ -216,12 +217,17 @@ function AdminPage() {
         .select("role")
         .eq("user_id", session.session.user.id);
       const admin = roles?.some((r) => r.role === "admin") ?? false;
+      const isUser = roles?.some((r) => r.role === "user") ?? false;
+      const isViewer = roles?.some((r) => r.role === "viewer") ?? false;
+      const role: "admin" | "user" | "viewer" | null =
+        admin ? "admin" : isUser ? "user" : isViewer ? "viewer" : null;
       setIsAdmin(admin);
+      setUserRoleState(role);
       setChecking(false);
-      if (admin) {
+      if (role) {
         loadData();
-        loadUsers();
         loadMessagesCount();
+        if (admin) loadUsers();
       }
     })();
   }, [navigate, loadData, loadUsers, loadMessagesCount]);
@@ -261,10 +267,10 @@ function AdminPage() {
   }, [search, filterDate, statusFilter, dateFilterMode]);
 
   if (checking) return <div className="min-h-screen flex items-center justify-center text-muted-foreground">加载中...</div>;
-  if (!isAdmin) {
+  if (!userRole) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-4">
-        <p className="text-muted-foreground">您当前账号不是管理员</p>
+        <p className="text-muted-foreground">您的账号尚未审核，请联系管理员授权</p>
         <Button onClick={async () => { await supabase.auth.signOut(); navigate({ to: "/login" }); }}>退出登录</Button>
       </div>
     );
@@ -453,9 +459,16 @@ function AdminPage() {
             >
               基督三家主页
             </Button>
-            <Link to="/register" target="_blank">
-              <Button size="sm">手动录入</Button>
-            </Link>
+            {isAdmin && (
+              <Link to="/register" target="_blank">
+                <Button size="sm">手动录入</Button>
+              </Link>
+            )}
+            {!isAdmin && (
+              <span className="text-xs px-2 py-1 rounded-md bg-muted text-muted-foreground">
+                只读模式（{userRole === "user" ? "一般用户" : "访客"}）
+              </span>
+            )}
             <Button
               variant="ghost"
               size="sm"
@@ -573,6 +586,8 @@ function AdminPage() {
           </div>
         </section>
 
+        {/* Read-only wrapper for non-admin: disables all form controls inside */}
+        <fieldset disabled={!isAdmin} className="contents">
         {/* Media / Projection */}
         <section className="bg-card border border-border/50 rounded-2xl p-6">
           <h2 className="font-serif text-xl mb-4">影音投影</h2>
@@ -1325,6 +1340,7 @@ function AdminPage() {
             </Button>
           </div>
         </section>
+        </fieldset>
 
         {/* Edit Dialog */}
         <Dialog open={editOpen} onOpenChange={setEditOpen}>
