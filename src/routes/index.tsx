@@ -17,6 +17,12 @@ function Index() {
   const [event, setEvent] = useState<{ name: string; qr_token: string } | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
+  const isIPadSafari = () => {
+    if (typeof navigator === "undefined") return false;
+    const touchPoints = (navigator as Navigator & { maxTouchPoints?: number }).maxTouchPoints ?? 0;
+    return /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && touchPoints > 1);
+  };
+
   useEffect(() => {
     supabase
       .from("events")
@@ -36,12 +42,9 @@ function Index() {
 
   const enterFullscreen = async () => {
     try {
-      const ua = navigator.userAgent;
-      const isIOS = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === "MacIntel" && (navigator as Navigator & { maxTouchPoints?: number }).maxTouchPoints! > 1);
-      if (isIOS) {
-        // iPad/iPhone Safari: native fullscreen shows a green close-X overlay.
-        // Skip requestFullscreen; rely on scroll trick + "Add to Home Screen" standalone mode.
-        window.scrollTo(0, 1);
+      if (isIPadSafari()) {
+        document.documentElement.classList.add("ios-kiosk-mode");
+        requestAnimationFrame(() => window.scrollTo({ top: 1, left: 0, behavior: "instant" as ScrollBehavior }));
         setIsFullscreen(true);
         return;
       }
@@ -60,12 +63,9 @@ function Index() {
 
   const exitFullscreen = async () => {
     try {
-      const ua = navigator.userAgent;
-      const isIOS = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === "MacIntel" && (navigator as Navigator & { maxTouchPoints?: number }).maxTouchPoints! > 1);
-      if (isIOS) {
-        // iPad/iPhone Safari: no native fullscreen was entered.
-        // Scroll back to top so Safari restores its toolbar.
-        window.scrollTo(0, 0);
+      if (isIPadSafari()) {
+        document.documentElement.classList.remove("ios-kiosk-mode");
+        requestAnimationFrame(() => window.scrollTo({ top: 0, left: 0, behavior: "instant" as ScrollBehavior }));
         setIsFullscreen(false);
         return;
       }
@@ -98,15 +98,17 @@ function Index() {
               <img src={iconAdmin} alt="后台" className="h-5 w-5 object-contain" />
             </button>
             <button
-              onClick={enterFullscreen}
+              onPointerUp={enterFullscreen}
               title="全屏"
+              type="button"
               className="h-10 w-10 rounded-xl border border-border/60 bg-card hover:bg-accent flex items-center justify-center transition-colors"
             >
               <img src={iconFullscreen} alt="全屏" className="h-5 w-5 object-contain" />
             </button>
             <button
-              onClick={exitFullscreen}
+              onPointerUp={exitFullscreen}
               title="退出全屏"
+              type="button"
               className="h-10 w-10 rounded-xl border border-border/60 bg-card hover:bg-accent flex items-center justify-center transition-colors"
             >
               <img src={iconExitFullscreen} alt="退出全屏" className="h-5 w-5 object-contain" />
