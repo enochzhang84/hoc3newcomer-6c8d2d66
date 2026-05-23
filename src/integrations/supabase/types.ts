@@ -232,6 +232,24 @@ export type Database = {
         }
         Relationships: []
       }
+      user_preferences: {
+        Row: {
+          last_messages_seen_at: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          last_messages_seen_at?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          last_messages_seen_at?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
