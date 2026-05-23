@@ -20,7 +20,10 @@ function Index() {
   const isIPadSafari = () => {
     if (typeof navigator === "undefined") return false;
     const touchPoints = (navigator as Navigator & { maxTouchPoints?: number }).maxTouchPoints ?? 0;
-    return /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && touchPoints > 1);
+    return (
+      /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+      (navigator.platform === "MacIntel" && touchPoints > 1)
+    );
   };
 
   useEffect(() => {
@@ -44,7 +47,9 @@ function Index() {
     try {
       if (isIPadSafari()) {
         document.documentElement.classList.add("ios-kiosk-mode");
-        requestAnimationFrame(() => window.scrollTo({ top: 1, left: 0, behavior: "instant" as ScrollBehavior }));
+        requestAnimationFrame(() =>
+          window.scrollTo({ top: 1, left: 0, behavior: "instant" as ScrollBehavior }),
+        );
         setIsFullscreen(true);
         return;
       }
@@ -65,7 +70,9 @@ function Index() {
     try {
       if (isIPadSafari()) {
         document.documentElement.classList.remove("ios-kiosk-mode");
-        requestAnimationFrame(() => window.scrollTo({ top: 0, left: 0, behavior: "instant" as ScrollBehavior }));
+        requestAnimationFrame(() =>
+          window.scrollTo({ top: 0, left: 0, behavior: "instant" as ScrollBehavior }),
+        );
         setIsFullscreen(false);
         return;
       }
@@ -120,18 +127,23 @@ function Index() {
       <main className="container mx-auto px-6 py-16">
         <div className="grid gap-12 md:grid-cols-2 items-center max-w-5xl mx-auto">
           <div>
-            <p className="text-sm uppercase tracking-[0.2em] text-accent-foreground/70 mb-4">Welcome Home</p>
+            <p className="text-sm uppercase tracking-[0.2em] text-accent-foreground/70 mb-4">
+              Welcome Home
+            </p>
             <h1 className="font-serif text-5xl md:text-6xl leading-tight text-foreground mb-6">
-              欢迎来到<br />我们中间
+              欢迎来到
+              <br />
+              我们中间
             </h1>
             <p className="text-lg text-muted-foreground mb-8 leading-relaxed">
-              扫描下方二维码,或点击按钮完成登记。
-              我们想认识您,并与您一同走信仰的旅程。
+              扫描下方二维码,或点击按钮完成登记。 我们想认识您,并与您一同走信仰的旅程。
             </p>
             <div className="flex gap-3">
               {event && (
                 <Link to="/register" search={{ event: event.qr_token }}>
-                  <Button size="lg" className="rounded-full px-8">立即登记</Button>
+                  <Button size="lg" className="rounded-full px-8">
+                    立即登记
+                  </Button>
                 </Link>
               )}
             </div>
