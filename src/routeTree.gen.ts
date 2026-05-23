@@ -18,6 +18,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as TodayPublicTokenRouteImport } from './routes/today-public.$token'
 
 const TodayPreviewRoute = TodayPreviewRouteImport.update({
   id: '/today-preview',
@@ -64,6 +65,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TodayPublicTokenRoute = TodayPublicTokenRouteImport.update({
+  id: '/today-public/$token',
+  path: '/today-public/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -75,6 +81,7 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/serve-apply': typeof ServeApplyRoute
   '/today-preview': typeof TodayPreviewRoute
+  '/today-public/$token': typeof TodayPublicTokenRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -86,6 +93,7 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/serve-apply': typeof ServeApplyRoute
   '/today-preview': typeof TodayPreviewRoute
+  '/today-public/$token': typeof TodayPublicTokenRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -98,6 +106,7 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/serve-apply': typeof ServeApplyRoute
   '/today-preview': typeof TodayPreviewRoute
+  '/today-public/$token': typeof TodayPublicTokenRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -111,6 +120,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/serve-apply'
     | '/today-preview'
+    | '/today-public/$token'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -122,6 +132,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/serve-apply'
     | '/today-preview'
+    | '/today-public/$token'
   id:
     | '__root__'
     | '/'
@@ -133,6 +144,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/serve-apply'
     | '/today-preview'
+    | '/today-public/$token'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -145,6 +157,7 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   ServeApplyRoute: typeof ServeApplyRoute
   TodayPreviewRoute: typeof TodayPreviewRoute
+  TodayPublicTokenRoute: typeof TodayPublicTokenRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -212,6 +225,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/today-public/$token': {
+      id: '/today-public/$token'
+      path: '/today-public/$token'
+      fullPath: '/today-public/$token'
+      preLoaderRoute: typeof TodayPublicTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -225,7 +245,18 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   ServeApplyRoute: ServeApplyRoute,
   TodayPreviewRoute: TodayPreviewRoute,
+  TodayPublicTokenRoute: TodayPublicTokenRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
