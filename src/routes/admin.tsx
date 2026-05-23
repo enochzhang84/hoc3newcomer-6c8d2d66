@@ -248,14 +248,17 @@ function AdminPage() {
       })();
     };
 
-    // Subscribe first so we catch INITIAL_SESSION on slow mobile reloads
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
-      handleSession(session ? { user: session.user } : null);
+    supabase.auth.getSession().then(({ data }) => {
+      if (!cancelled) handleSession(data.session ? { user: data.session.user } : null);
     });
 
-    // Then fetch the existing session (covers cases where listener fires before subscribe completes)
-    supabase.auth.getSession().then(({ data }) => {
-      handleSession(data.session ? { user: data.session.user } : null);
+    const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED" || event === "USER_UPDATED") {
+        handleSession(session ? { user: session.user } : null);
+      }
+      if (event === "SIGNED_OUT") {
+        handleSession(null);
+      }
     });
 
     return () => {
