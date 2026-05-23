@@ -383,13 +383,13 @@ function AdminPage() {
       电话: r.phone ?? "",
       电邮: r.email ?? "",
       地址: r.address ?? "",
-      City: r.city ?? "",
-      ZIP: r.zip ?? "",
+      城市: r.city ?? "",
+      邮编: r.zip ?? "",
       信仰: r.faith === "christian" ? "基督徒" : r.faith === "seeker" ? "慕道友" : r.faith === "other" ? `其他:${r.faith_other ?? ""}` : "",
       信主年数: r.faith_years ?? "",
       婚姻: r.marital_status === "married" ? "已婚" : r.marital_status === "single" ? "单身" : "",
       配偶: r.spouse_name ?? "",
-      介绍人: formatReferrer(r),
+      来到方式: formatReferrer(r),
       欢迎探访: r.wants_visit ? "是" : "否",
       需要资料: r.wants_info ? "是" : "否",
       备注: r.notes ?? "",
@@ -663,7 +663,7 @@ function AdminPage() {
               variant="outline"
               onClick={() => window.open("/data-preview", "_blank", "noopener,noreferrer")}
             >
-              数据预览(可打印)
+              导出数据
             </Button>
           </div>
         </section>
@@ -834,10 +834,10 @@ function AdminPage() {
                     <th className="py-2 px-2">电话</th>
                     <th className="py-2 px-2">电邮</th>
                     <th className="py-2 px-2">地址</th>
-                    <th className="py-2 px-2">City/ZIP</th>
+                    <th className="py-2 px-2">城市/邮编</th>
                     <th className="py-2 px-2">信仰</th>
                     <th className="py-2 px-2">婚姻</th>
-                    <th className="py-2 px-2">介绍人</th>
+                    <th className="py-2 px-2">来到方式</th>
                     <th className="py-2 px-2">标记</th>
                     <th className="py-2 px-2">跟进人</th>
                     <th></th>
@@ -1478,11 +1478,11 @@ function AdminPage() {
                 </div>
                 <div className="grid grid-cols-3 gap-4">
                   <div className="col-span-2 space-y-2">
-                    <Label>City</Label>
+                    <Label>城市</Label>
                     <Input value={editForm.city ?? ""} onChange={(e) => setEditForm((prev) => prev ? { ...prev, city: e.target.value } : prev)} />
                   </div>
                   <div className="space-y-2">
-                    <Label>ZIP</Label>
+                    <Label>邮编</Label>
                     <Input value={editForm.zip ?? ""} onChange={(e) => setEditForm((prev) => prev ? { ...prev, zip: e.target.value } : prev)} />
                   </div>
                 </div>
