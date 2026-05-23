@@ -94,6 +94,7 @@ function AdminPage() {
   const [origin, setOrigin] = useState("");
   const [users, setUsers] = useState<AppUser[]>([]);
   const [usersLoading, setUsersLoading] = useState(false);
+  const [pendingRoleSelections, setPendingRoleSelections] = useState<Record<string, "admin" | "user" | "viewer">>({});
   const [messagesCount, setMessagesCount] = useState(0);
   const [serviceApps, setServiceApps] = useState<ServiceApp[]>([]);
   const [serviceListOpen, setServiceListOpen] = useState(false);
