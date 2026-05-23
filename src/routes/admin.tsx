@@ -1192,17 +1192,28 @@ function AdminPage() {
                   const isSelf = u.id === currentUserId;
                   const PROTECTED_ADMINS = ["hoc3nc@gmail.com", "charmzhangliang@gmail.com"];
                   const isProtected = PROTECTED_ADMINS.includes(u.email.toLowerCase());
+                  const isPending = currentRole === "";
+                  const pendingRole = pendingRoleSelections[u.id] ?? "viewer";
                   return (
                     <tr key={u.id} className="border-b border-border/30 hover:bg-muted/30">
                       <td className="py-2 px-2 font-medium">
                         {u.email} {isSelf && <span className="text-xs text-muted-foreground">(我)</span>}
+                        {isPending && <span className="ml-2 text-xs text-amber-600">待审核</span>}
                       </td>
                       <td className="py-2 px-2">
                         <select
-                          value={currentRole}
+                          value={isPending ? pendingRole : currentRole}
                           disabled={isProtected || (isSelf && currentRole === "admin")}
                           onChange={async (e) => {
                             const newRole = e.target.value as "" | "admin" | "user" | "viewer";
+                            if (isPending) {
+                              // Just track selection; don't apply until 确定 clicked
+                              setPendingRoleSelections((prev) => ({
+                                ...prev,
+                                [u.id]: (newRole || "viewer") as "admin" | "user" | "viewer",
+                              }));
+                              return;
+                            }
                             const label =
                               newRole === "admin" ? "管理员"
                               : newRole === "user" ? "一般用户"
@@ -1224,7 +1235,7 @@ function AdminPage() {
                           }}
                           className="text-xs bg-background border border-border rounded px-2 py-1"
                         >
-                          <option value="">待审核</option>
+                          {!isPending && <option value="">待审核</option>}
                           <option value="admin">管理员</option>
                           <option value="user">一般用户</option>
                           <option value="viewer">访客</option>
@@ -1234,6 +1245,29 @@ function AdminPage() {
                         {new Date(u.created_at).toLocaleDateString("zh-CN")}
                       </td>
                       <td className="py-2 px-2 text-right space-x-3 whitespace-nowrap">
+                        {isPending && (
+                          <button
+                            onClick={async () => {
+                              const chosen = pendingRoleSelections[u.id] ?? "viewer";
+                              const label =
+                                chosen === "admin" ? "管理员"
+                                : chosen === "user" ? "一般用户"
+                                : "访客";
+                              if (!confirm(`通过 ${u.email} 的申请,并设为「${label}」?`)) return;
+                              try {
+                                await setUserRoleFn({ data: { userId: u.id, role: chosen } });
+                                logAction(`通过了 ${u.email} 的申请,角色: ${label}`);
+                                toast.success("已通过申请");
+                                loadUsers();
+                              } catch (e) {
+                                toast.error((e as Error).message);
+                              }
+                            }}
+                            className="text-xs text-emerald-600 hover:underline font-medium"
+                          >
+                            确定
+                          </button>
+                        )}
                         <button
                           disabled={isSelf || isProtected}
                           onClick={async () => {
