@@ -5,6 +5,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { QRCodeSVG } from "qrcode.react";
 import logo from "@/assets/logo.png";
+import iconAdmin from "@/assets/icon-admin.png";
+import iconFullscreen from "@/assets/icon-fullscreen.png";
+import iconExitFullscreen from "@/assets/icon-exit-fullscreen.png";
 
 export const Route = createFileRoute("/")({
   component: Index,
@@ -12,6 +15,7 @@ export const Route = createFileRoute("/")({
 
 function Index() {
   const [event, setEvent] = useState<{ name: string; qr_token: string } | null>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   useEffect(() => {
     supabase
@@ -24,6 +28,39 @@ function Index() {
       .then(({ data }) => setEvent(data));
   }, []);
 
+  useEffect(() => {
+    const onChange = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener("fullscreenchange", onChange);
+    return () => document.removeEventListener("fullscreenchange", onChange);
+  }, []);
+
+  const enterFullscreen = async () => {
+    try {
+      const el = document.documentElement as HTMLElement & {
+        webkitRequestFullscreen?: () => Promise<void>;
+      };
+      if (el.requestFullscreen) await el.requestFullscreen();
+      else if (el.webkitRequestFullscreen) await el.webkitRequestFullscreen();
+      // iPad Safari fallback: hide URL bar by scrolling
+      window.scrollTo(0, 1);
+      setIsFullscreen(true);
+    } catch (e) {
+      window.scrollTo(0, 1);
+      setIsFullscreen(true);
+    }
+  };
+
+  const exitFullscreen = async () => {
+    try {
+      const d = document as Document & { webkitExitFullscreen?: () => Promise<void> };
+      if (document.fullscreenElement && document.exitFullscreen) await document.exitFullscreen();
+      else if (d.webkitExitFullscreen) await d.webkitExitFullscreen();
+      setIsFullscreen(false);
+    } catch {
+      setIsFullscreen(false);
+    }
+  };
+
   const PUBLISHED_ORIGIN = "https://hoc3newcomer.lovable.app";
   const url = event ? `${PUBLISHED_ORIGIN}/register?event=${event.qr_token}` : "";
 
@@ -35,9 +72,29 @@ function Index() {
             <img src={logo} alt="基督之家第三家" className="h-10 w-10 object-contain" />
             <span className="font-serif text-xl tracking-wide text-foreground">基督之家第三家</span>
           </a>
-          <a href="/admin">
-            <Button variant="ghost" size="sm">管理后台</Button>
-          </a>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => window.location.assign("/login")}
+              title="进入后台"
+              className="h-10 w-10 rounded-xl border border-border/60 bg-card hover:bg-accent flex items-center justify-center transition-colors"
+            >
+              <img src={iconAdmin} alt="后台" className="h-5 w-5 object-contain" />
+            </button>
+            <button
+              onClick={enterFullscreen}
+              title="全屏"
+              className="h-10 w-10 rounded-xl border border-border/60 bg-card hover:bg-accent flex items-center justify-center transition-colors"
+            >
+              <img src={iconFullscreen} alt="全屏" className="h-5 w-5 object-contain" />
+            </button>
+            <button
+              onClick={exitFullscreen}
+              title="退出全屏"
+              className="h-10 w-10 rounded-xl border border-border/60 bg-card hover:bg-accent flex items-center justify-center transition-colors"
+            >
+              <img src={iconExitFullscreen} alt="退出全屏" className="h-5 w-5 object-contain" />
+            </button>
+          </div>
         </div>
       </header>
 
