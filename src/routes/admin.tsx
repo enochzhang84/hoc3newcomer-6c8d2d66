@@ -217,12 +217,17 @@ function AdminPage() {
         .select("role")
         .eq("user_id", session.session.user.id);
       const admin = roles?.some((r) => r.role === "admin") ?? false;
+      const isUser = roles?.some((r) => r.role === "user") ?? false;
+      const isViewer = roles?.some((r) => r.role === "viewer") ?? false;
+      const role: "admin" | "user" | "viewer" | null =
+        admin ? "admin" : isUser ? "user" : isViewer ? "viewer" : null;
       setIsAdmin(admin);
+      setUserRoleState(role);
       setChecking(false);
-      if (admin) {
+      if (role) {
         loadData();
-        loadUsers();
         loadMessagesCount();
+        if (admin) loadUsers();
       }
     })();
   }, [navigate, loadData, loadUsers, loadMessagesCount]);
@@ -262,10 +267,10 @@ function AdminPage() {
   }, [search, filterDate, statusFilter, dateFilterMode]);
 
   if (checking) return <div className="min-h-screen flex items-center justify-center text-muted-foreground">加载中...</div>;
-  if (!isAdmin) {
+  if (!userRole) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-4">
-        <p className="text-muted-foreground">您当前账号不是管理员</p>
+        <p className="text-muted-foreground">您的账号尚未审核，请联系管理员授权</p>
         <Button onClick={async () => { await supabase.auth.signOut(); navigate({ to: "/login" }); }}>退出登录</Button>
       </div>
     );
