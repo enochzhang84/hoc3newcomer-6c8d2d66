@@ -166,7 +166,7 @@ function PreviewPage() {
                   <th className="py-3 px-3">姓名(中)</th>
                   <th className="py-3 px-3">姓名(英)</th>
                   <th className="py-3 px-3">信仰</th>
-                  <th className="py-3 px-3">介绍人</th>
+                  <th className="py-3 px-3">来到方式</th>
                   <th className="py-3 px-3">备注</th>
                 </tr>
               </thead>

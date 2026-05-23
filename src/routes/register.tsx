@@ -170,11 +170,11 @@ function RegisterPage() {
           </Field>
           <div className="grid grid-cols-3 gap-4">
             <div className="col-span-2">
-              <Field label="City">
+              <Field label="城市">
                 <Input value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} />
               </Field>
             </div>
-            <Field label="ZIP">
+            <Field label="邮编">
               <Input value={form.zip} onChange={(e) => setForm({ ...form, zip: e.target.value })} />
             </Field>
           </div>
