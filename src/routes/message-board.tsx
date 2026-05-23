@@ -97,6 +97,15 @@ function MessageBoardPage() {
           .select("role")
           .eq("user_id", uid);
         if (mounted) setIsAdmin(roles?.some((r) => r.role === "admin") ?? false);
+        // 进入留言板页面即视为已读，更新 last_messages_seen_at
+        if (roles && roles.length > 0) {
+          await supabase
+            .from("user_preferences")
+            .upsert(
+              { user_id: uid, last_messages_seen_at: new Date().toISOString() },
+              { onConflict: "user_id" },
+            );
+        }
       }
       if (mounted) setLoading(false);
     })();
