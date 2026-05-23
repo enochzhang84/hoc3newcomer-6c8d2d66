@@ -227,14 +227,13 @@ function AdminPage() {
       if (role) {
         loadData();
         loadMessagesCount();
-        if (admin) loadUsers();
+        loadUsers();
       }
     })();
   }, [navigate, loadData, loadUsers, loadMessagesCount]);
 
   // Realtime update of message count badge
   useEffect(() => {
-    if (!isAdmin) return;
     const ch = supabase
       .channel("messages-count")
       .on("postgres_changes", { event: "*", schema: "public", table: "messages" }, () => {
@@ -244,11 +243,10 @@ function AdminPage() {
     return () => {
       supabase.removeChannel(ch);
     };
-  }, [isAdmin, loadMessagesCount]);
+  }, [loadMessagesCount]);
 
   // Realtime auto-update of new registrations
   useEffect(() => {
-    if (!isAdmin) return;
     const ch = supabase
       .channel("regs")
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "registrations" }, (payload) => {
@@ -259,7 +257,7 @@ function AdminPage() {
     return () => {
       supabase.removeChannel(ch);
     };
-  }, [isAdmin]);
+  }, []);
 
   // Reset page when filters change
   useEffect(() => {
