@@ -170,19 +170,35 @@ function AdminPage() {
   }, []);
 
   const loadMessagesCount = useCallback(async () => {
-    const lastSeen = Number(localStorage.getItem("messages_last_seen") ?? 0);
-    const { data } = await supabase
-      .from("messages")
-      .select("updated_at");
+    const { data: sess } = await supabase.auth.getSession();
+    const uid = sess.session?.user.id;
+    if (!uid) return;
+    const { data: pref } = await supabase
+      .from("user_preferences")
+      .select("last_messages_seen_at")
+      .eq("user_id", uid)
+      .maybeSingle();
+    const lastSeen = pref?.last_messages_seen_at
+      ? new Date(pref.last_messages_seen_at).getTime()
+      : 0;
+    const { data } = await supabase.from("messages").select("updated_at");
     const unread = (data ?? []).filter(
       (m) => new Date(m.updated_at).getTime() > lastSeen,
     ).length;
     setMessagesCount(unread);
   }, []);
 
-  const markMessagesSeen = useCallback(() => {
-    localStorage.setItem("messages_last_seen", String(Date.now()));
+  const markMessagesSeen = useCallback(async () => {
     setMessagesCount(0);
+    const { data: sess } = await supabase.auth.getSession();
+    const uid = sess.session?.user.id;
+    if (!uid) return;
+    await supabase
+      .from("user_preferences")
+      .upsert(
+        { user_id: uid, last_messages_seen_at: new Date().toISOString() },
+        { onConflict: "user_id" },
+      );
   }, []);
 
   useEffect(() => {
