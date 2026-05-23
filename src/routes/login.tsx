@@ -25,8 +25,27 @@ function LoginPage() {
     e.preventDefault();
     setLoading(true);
     const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) toast.error(error.message);
-    else window.location.assign("/admin");
+    if (error) {
+      toast.error(error.message);
+      setLoading(false);
+      return;
+    }
+    // Check approval: user must have at least one role assigned
+    const { data: sess } = await supabase.auth.getSession();
+    const uid = sess.session?.user.id;
+    if (uid) {
+      const { data: roles } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", uid);
+      if (!roles || roles.length === 0) {
+        await supabase.auth.signOut();
+        toast.error("您的账号尚未审核，请联系主管理员授权后再登录");
+        setLoading(false);
+        return;
+      }
+    }
+    window.location.assign("/admin");
     setLoading(false);
   }
 
@@ -56,6 +75,12 @@ function LoginPage() {
             className="block w-full text-center text-sm text-muted-foreground hover:text-foreground"
           >
             忘记密码?
+          </Link>
+          <Link
+            to="/signup"
+            className="block w-full text-center text-sm text-muted-foreground hover:text-foreground"
+          >
+            还没有账号? 注册
           </Link>
         </form>
       </div>
