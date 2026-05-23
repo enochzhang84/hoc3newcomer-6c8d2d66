@@ -60,6 +60,15 @@ function Index() {
 
   const exitFullscreen = async () => {
     try {
+      const ua = navigator.userAgent;
+      const isIOS = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === "MacIntel" && (navigator as Navigator & { maxTouchPoints?: number }).maxTouchPoints! > 1);
+      if (isIOS) {
+        // iPad/iPhone Safari: no native fullscreen was entered.
+        // Scroll back to top so Safari restores its toolbar.
+        window.scrollTo(0, 0);
+        setIsFullscreen(false);
+        return;
+      }
       const d = document as Document & { webkitExitFullscreen?: () => Promise<void> };
       if (document.fullscreenElement && document.exitFullscreen) await document.exitFullscreen();
       else if (d.webkitExitFullscreen) await d.webkitExitFullscreen();
