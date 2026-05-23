@@ -205,32 +205,47 @@ function AdminPage() {
 
   useEffect(() => {
     let cancelled = false;
-    const handleSession = async (sess: { user: { id: string; email?: string | null } } | null) => {
+    let initializing = false;
+    const handleSession = (sess: { user: { id: string; email?: string | null } } | null) => {
       if (cancelled) return;
       if (!sess) {
         navigate({ to: "/login" });
         return;
       }
+      if (initializing) return;
+      initializing = true;
       setCurrentUserId(sess.user.id);
       setCurrentUserEmail(sess.user.email ?? "");
-      const { data: roles } = await supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", sess.user.id);
-      if (cancelled) return;
-      const admin = roles?.some((r) => r.role === "admin") ?? false;
-      const isUser = roles?.some((r) => r.role === "user") ?? false;
-      const isViewer = roles?.some((r) => r.role === "viewer") ?? false;
-      const role: "admin" | "user" | "viewer" | null =
-        admin ? "admin" : isUser ? "user" : isViewer ? "viewer" : null;
-      setIsAdmin(admin);
-      setUserRoleState(role);
-      setChecking(false);
-      if (role) {
-        loadData();
-        loadMessagesCount();
-        loadUsers();
-      }
+      void (async () => {
+        try {
+          const { data: roles, error } = await supabase
+            .from("user_roles")
+            .select("role")
+            .eq("user_id", sess.user.id);
+          if (cancelled) return;
+          if (error) throw error;
+          const admin = roles?.some((r) => r.role === "admin") ?? false;
+          const isUser = roles?.some((r) => r.role === "user") ?? false;
+          const isViewer = roles?.some((r) => r.role === "viewer") ?? false;
+          const role: "admin" | "user" | "viewer" | null =
+            admin ? "admin" : isUser ? "user" : isViewer ? "viewer" : null;
+          setIsAdmin(admin);
+          setUserRoleState(role);
+          setChecking(false);
+          if (role) {
+            void loadData();
+            void loadMessagesCount();
+            void loadUsers();
+          }
+        } catch (e) {
+          if (!cancelled) {
+            toast.error("后台权限加载失败，请刷新后重试");
+            setChecking(false);
+          }
+        } finally {
+          initializing = false;
+        }
+      })();
     };
 
     // Subscribe first so we catch INITIAL_SESSION on slow mobile reloads
