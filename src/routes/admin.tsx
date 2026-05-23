@@ -1235,7 +1235,7 @@ function AdminPage() {
                       </td>
                       <td className="py-2 px-2 text-right space-x-3 whitespace-nowrap">
                         <button
-                          disabled={isSelf}
+                          disabled={isSelf || isProtected}
                           onClick={async () => {
                             if (!confirm(`确认删除用户 ${u.email}? 此操作不可撤销。`)) return;
                             try {
