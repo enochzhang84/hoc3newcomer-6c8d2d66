@@ -273,6 +273,15 @@ function AdminPage() {
     setSundayCheckins((data ?? []) as SundayCheckin[]);
   }, []);
 
+  const loadFellowshipCheckins = useCallback(async () => {
+    const { data } = await supabase
+      .from("fellowship_checkins")
+      .select("*")
+      .order("checkin_date", { ascending: false })
+      .order("created_at", { ascending: false });
+    setFellowshipCheckins((data ?? []) as FellowshipCheckin[]);
+  }, []);
+
   const loadMessagesCount = useCallback(async () => {
     const { data: sess } = await supabase.auth.getSession();
     const uid = sess.session?.user.id;
