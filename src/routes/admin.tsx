@@ -1690,25 +1690,22 @@ function AdminPage() {
           <div className="grid sm:grid-cols-2 gap-6">
             <div className="border border-border/50 rounded-xl p-4 flex flex-col items-center gap-3">
               <p className="font-medium">主日学签到</p>
-              {origin && (
-                <QRCodeSVG value={`${origin}/sunday-checkin`} size={200} level="H" />
+              {publicBase && (
+                <QRCodeSVG value={`${publicBase}/sunday-checkin`} size={200} level="H" />
               )}
               <p className="text-xs text-muted-foreground break-all text-center">
-                {origin}/sunday-checkin
+                {publicBase}/sunday-checkin
               </p>
               <div className="flex gap-2">
                 <Button
                   size="sm"
                   variant="outline"
                   onClick={() => {
-                    navigator.clipboard.writeText(`${origin}/sunday-checkin`);
+                    navigator.clipboard.writeText(`${publicBase}/sunday-checkin`);
                     toast.success("链接已复制");
                   }}
                 >
                   复制链接
-                </Button>
-                <Button size="sm" onClick={() => { loadSundayCheckins(); setCheckinsOpen(true); }}>
-                  查看签到 ({sundayCheckins.length})
                 </Button>
               </div>
             </div>
@@ -1728,6 +1725,90 @@ function AdminPage() {
               )}
             </div>
           </div>
+        </section>
+
+        <section className="bg-card border border-border/50 rounded-2xl p-6">
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+            <h2 className="font-serif text-xl">课程签到记录</h2>
+            <Button size="sm" variant="outline" onClick={() => loadSundayCheckins()}>
+              刷新
+            </Button>
+          </div>
+          {courses.filter((c) => c.is_active).length === 0 ? (
+            <p className="text-sm text-muted-foreground">暂无课程。添加课程后此处会自动生成标签页。</p>
+          ) : (
+            <Tabs
+              value={activeCourseTab || courses.find((c) => c.is_active)?.id || ""}
+              onValueChange={setActiveCourseTab}
+              className="w-full"
+            >
+              <TabsList className="h-auto flex flex-wrap gap-1 bg-muted/50 p-1">
+                {courses.filter((c) => c.is_active).map((c) => {
+                  const count = sundayCheckins.filter((k) => k.course_id === c.id).length;
+                  return (
+                    <TabsTrigger key={c.id} value={c.id} className="text-xs">
+                      {c.name} ({count})
+                    </TabsTrigger>
+                  );
+                })}
+              </TabsList>
+              {courses.filter((c) => c.is_active).map((c) => {
+                const rows = sundayCheckins.filter((k) => k.course_id === c.id);
+                return (
+                  <TabsContent key={c.id} value={c.id} className="mt-4">
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="text-left border-b border-border/60 text-muted-foreground">
+                            <th className="py-2 px-2">日期</th>
+                            <th className="py-2 px-2">姓名</th>
+                            <th className="py-2 px-2">电话/微信</th>
+                            <th className="py-2 px-2">邮件</th>
+                            <th className="py-2 px-2 text-right">操作</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {rows.map((k) => (
+                            <tr key={k.id} className="border-b border-border/30">
+                              <td className="py-2 px-2 whitespace-nowrap">{k.checkin_date}</td>
+                              <td className="py-2 px-2 font-medium">{k.name}</td>
+                              <td className="py-2 px-2">{k.contact ?? ""}</td>
+                              <td className="py-2 px-2">{k.email ?? ""}</td>
+                              <td className="py-2 px-2 text-right">
+                                <button
+                                  onClick={async () => {
+                                    if (!confirm(`删除 ${k.name} 的签到?`)) return;
+                                    const { error } = await supabase
+                                      .from("sunday_school_checkins")
+                                      .delete()
+                                      .eq("id", k.id);
+                                    if (error) return toast.error(error.message);
+                                    logAction(`删除主日学签到: ${k.name}`);
+                                    toast.success("已删除");
+                                    loadSundayCheckins();
+                                  }}
+                                  className="text-xs text-destructive hover:underline"
+                                >
+                                  删除
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                          {rows.length === 0 && (
+                            <tr>
+                              <td colSpan={5} className="py-8 text-center text-muted-foreground">
+                                暂无签到记录
+                              </td>
+                            </tr>
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </TabsContent>
+                );
+              })}
+            </Tabs>
+          )}
         </section>
             </TabsContent>
 
