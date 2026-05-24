@@ -729,7 +729,19 @@ function AdminPage() {
       </header>
 
       <main className="container mx-auto px-6 py-8 space-y-8">
-        {/* Stats */}
+        <Tabs defaultValue="stats" className="w-full">
+          <TabsList className="grid grid-cols-3 md:grid-cols-6 h-auto w-full mb-6">
+            <TabsTrigger value="stats">数据统计</TabsTrigger>
+            <TabsTrigger value="welcome">迎宾接待</TabsTrigger>
+            <TabsTrigger value="media">影音播放</TabsTrigger>
+            <TabsTrigger value="kitchen">厨房侍工</TabsTrigger>
+            <TabsTrigger value="sunday">主日学</TabsTrigger>
+            <TabsTrigger value="events">活动</TabsTrigger>
+          </TabsList>
+
+          <fieldset disabled={!isAdmin} className="contents">
+
+            <TabsContent value="stats" className="space-y-8 mt-0">
         <section>
           <h2 className="font-serif text-xl mb-4">数据统计</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -837,54 +849,9 @@ function AdminPage() {
             </Button>
           </div>
         </section>
+            </TabsContent>
 
-        {/* Read-only wrapper for non-admin: disables all form controls inside */}
-        <fieldset disabled={!isAdmin} className="contents">
-        {/* Media / Projection */}
-        <section className="bg-card border border-border/50 rounded-2xl p-6">
-          <h2 className="font-serif text-xl mb-4">影音投影</h2>
-          <div className="grid sm:grid-cols-2 gap-4">
-            <div className="border border-border/50 rounded-xl p-4 flex flex-col items-start gap-3">
-              <p className="text-sm text-muted-foreground">今日登记名单(适合投影)</p>
-              <Button
-                variant="outline"
-                onClick={() => window.open("/today-preview", "_blank")}
-              >
-                今日登记名单
-              </Button>
-            </div>
-            <div
-              onDoubleClick={() => {
-                markMessagesSeen();
-                window.open("/message-board", "_blank");
-              }}
-              title="双击打开留言板"
-              className="relative border border-border/50 rounded-xl p-4 flex flex-col items-start gap-3 cursor-pointer hover:border-primary/60 transition-colors select-none"
-            >
-              {messagesCount > 0 && (
-                <span
-                  className="absolute -top-2 -right-2 min-w-[22px] h-[22px] px-1.5 rounded-full bg-red-500 text-white text-xs font-semibold flex items-center justify-center shadow-md ring-2 ring-background"
-                  title={`${messagesCount} 条留言`}
-                >
-                  {messagesCount > 99 ? "99+" : messagesCount}
-                </span>
-              )}
-              <p className="text-sm text-muted-foreground">留言板(双击打开新页面编辑)</p>
-              <Button
-                variant="outline"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  markMessagesSeen();
-                  window.open("/message-board", "_blank");
-                }}
-              >
-                打开留言板
-              </Button>
-            </div>
-          </div>
-        </section>
-
-        {/* Registrations */}
+            <TabsContent value="welcome" className="space-y-8 mt-0">
         <section className="bg-card border border-border/50 rounded-2xl p-6">
           <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
             <h2 className="font-serif text-xl">登记名单</h2>
@@ -1156,116 +1123,6 @@ function AdminPage() {
             </div>
           )}
         </section>
-
-        {/* 教会活动 (Events / QR) */}
-        <section className="bg-card border border-border/50 rounded-2xl p-6">
-          <div className="flex items-center gap-4 mb-4 flex-wrap">
-            <h2 className="font-serif text-xl">教会活动</h2>
-            <div className="flex items-center gap-2 text-sm">
-              <span className="text-muted-foreground">二维码状态:</span>
-              {events.some((e) => e.is_active) ? (
-                <span className="font-medium text-green-600">二维码工作中</span>
-              ) : (
-                <span className="font-medium text-foreground">二维码已停用</span>
-              )}
-            </div>
-          </div>
-          <div className="flex flex-wrap gap-2 mb-4">
-            <Button onClick={addEvent}>生成新二维码</Button>
-          </div>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {events.map((ev) => {
-              const url = `${origin}/register?event=${ev.qr_token}`;
-              return (
-                <div key={ev.id} className="border border-border/50 rounded-xl p-4 flex items-center justify-between gap-4">
-                  <div className="min-w-0">
-                    <p className="font-medium truncate">{ev.name}</p>
-                    <p className="text-xs text-muted-foreground truncate">{url}</p>
-                  </div>
-                  <Dialog>
-                    <DialogTrigger asChild>
-                      <Button size="sm" variant="outline">二维码</Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>{ev.name}</DialogTitle>
-                      </DialogHeader>
-                      <div className="flex flex-col items-center gap-4 py-4">
-                        <QRCodeSVG value={url} size={280} level="H" />
-                        <p className="text-xs text-muted-foreground break-all text-center">{url}</p>
-                        <Button
-                          variant="outline"
-                          onClick={() => {
-                            navigator.clipboard.writeText(url);
-                            toast.success("链接已复制");
-                          }}
-                        >
-                          复制链接
-                        </Button>
-                      </div>
-                    </DialogContent>
-                  </Dialog>
-                </div>
-              );
-            })}
-          </div>
-        </section>
-
-        {/* 教会服侍 */}
-        <section className="bg-card border border-border/50 rounded-2xl p-6">
-          <h2 className="font-serif text-xl mb-4">教会服侍</h2>
-          <div className="grid sm:grid-cols-2 gap-6">
-            {/* 服侍申请 QR */}
-            <div className="border border-border/50 rounded-xl p-4 flex flex-col items-center gap-3">
-              <p className="font-medium">服侍申请</p>
-              {origin && (
-                <QRCodeSVG value={`${origin}/serve-apply`} size={180} level="H" />
-              )}
-              <p className="text-xs text-muted-foreground break-all text-center">{origin}/serve-apply</p>
-              <div className="flex gap-2">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => {
-                    navigator.clipboard.writeText(`${origin}/serve-apply`);
-                    toast.success("链接已复制");
-                  }}
-                >
-                  复制链接
-                </Button>
-                <Button size="sm" onClick={() => setServiceListOpen(true)}>
-                  查看信息 ({serviceApps.length})
-                </Button>
-              </div>
-            </div>
-
-            {/* 问题反馈 QR */}
-            <div className="border border-border/50 rounded-xl p-4 flex flex-col items-center gap-3">
-              <p className="font-medium">问题反馈</p>
-              {origin && (
-                <QRCodeSVG value={`${origin}/feedback`} size={180} level="H" />
-              )}
-              <p className="text-xs text-muted-foreground break-all text-center">{origin}/feedback</p>
-              <div className="flex gap-2">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => {
-                    navigator.clipboard.writeText(`${origin}/feedback`);
-                    toast.success("链接已复制");
-                  }}
-                >
-                  复制链接
-                </Button>
-                <Button size="sm" onClick={() => setFeedbackListOpen(true)}>
-                  查看信息 ({feedbacks.length})
-                </Button>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* 人数统计 */}
         <section className="bg-card border border-border/50 rounded-2xl p-6">
           <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
             <h2 className="font-serif text-xl">人数统计</h2>
@@ -1511,8 +1368,178 @@ function AdminPage() {
             </div>
           )}
         </section>
+            </TabsContent>
 
-        {/* Admin / Users */}
+            <TabsContent value="media" className="space-y-8 mt-0">
+        <section className="bg-card border border-border/50 rounded-2xl p-6">
+          <h2 className="font-serif text-xl mb-4">影音投影</h2>
+          <div className="grid sm:grid-cols-2 gap-4">
+            <div className="border border-border/50 rounded-xl p-4 flex flex-col items-start gap-3">
+              <p className="text-sm text-muted-foreground">今日登记名单(适合投影)</p>
+              <Button
+                variant="outline"
+                onClick={() => window.open("/today-preview", "_blank")}
+              >
+                今日登记名单
+              </Button>
+            </div>
+            <div
+              onDoubleClick={() => {
+                markMessagesSeen();
+                window.open("/message-board", "_blank");
+              }}
+              title="双击打开留言板"
+              className="relative border border-border/50 rounded-xl p-4 flex flex-col items-start gap-3 cursor-pointer hover:border-primary/60 transition-colors select-none"
+            >
+              {messagesCount > 0 && (
+                <span
+                  className="absolute -top-2 -right-2 min-w-[22px] h-[22px] px-1.5 rounded-full bg-red-500 text-white text-xs font-semibold flex items-center justify-center shadow-md ring-2 ring-background"
+                  title={`${messagesCount} 条留言`}
+                >
+                  {messagesCount > 99 ? "99+" : messagesCount}
+                </span>
+              )}
+              <p className="text-sm text-muted-foreground">留言板(双击打开新页面编辑)</p>
+              <Button
+                variant="outline"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  markMessagesSeen();
+                  window.open("/message-board", "_blank");
+                }}
+              >
+                打开留言板
+              </Button>
+            </div>
+          </div>
+        </section>
+            </TabsContent>
+
+            <TabsContent value="kitchen" className="space-y-8 mt-0">
+        <section className="bg-card border border-border/50 rounded-2xl p-6">
+          <h2 className="font-serif text-xl mb-4">厨房侍工</h2>
+          <p className="text-sm text-muted-foreground">敬请期待，此模块尚在开发中。</p>
+        </section>
+            </TabsContent>
+
+            <TabsContent value="sunday" className="space-y-8 mt-0">
+        <section className="bg-card border border-border/50 rounded-2xl p-6">
+          <h2 className="font-serif text-xl mb-4">主日学</h2>
+          <p className="text-sm text-muted-foreground">敬请期待，此模块尚在开发中。</p>
+        </section>
+            </TabsContent>
+
+            <TabsContent value="events" className="space-y-8 mt-0">
+        <section className="bg-card border border-border/50 rounded-2xl p-6">
+          <div className="flex items-center gap-4 mb-4 flex-wrap">
+            <h2 className="font-serif text-xl">教会活动</h2>
+            <div className="flex items-center gap-2 text-sm">
+              <span className="text-muted-foreground">二维码状态:</span>
+              {events.some((e) => e.is_active) ? (
+                <span className="font-medium text-green-600">二维码工作中</span>
+              ) : (
+                <span className="font-medium text-foreground">二维码已停用</span>
+              )}
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-2 mb-4">
+            <Button onClick={addEvent}>生成新二维码</Button>
+          </div>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {events.map((ev) => {
+              const url = `${origin}/register?event=${ev.qr_token}`;
+              return (
+                <div key={ev.id} className="border border-border/50 rounded-xl p-4 flex items-center justify-between gap-4">
+                  <div className="min-w-0">
+                    <p className="font-medium truncate">{ev.name}</p>
+                    <p className="text-xs text-muted-foreground truncate">{url}</p>
+                  </div>
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button size="sm" variant="outline">二维码</Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>{ev.name}</DialogTitle>
+                      </DialogHeader>
+                      <div className="flex flex-col items-center gap-4 py-4">
+                        <QRCodeSVG value={url} size={280} level="H" />
+                        <p className="text-xs text-muted-foreground break-all text-center">{url}</p>
+                        <Button
+                          variant="outline"
+                          onClick={() => {
+                            navigator.clipboard.writeText(url);
+                            toast.success("链接已复制");
+                          }}
+                        >
+                          复制链接
+                        </Button>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+            </TabsContent>
+
+          </fieldset>
+        </Tabs>
+
+        <fieldset disabled={!isAdmin} className="contents">
+        <section className="bg-card border border-border/50 rounded-2xl p-6">
+          <h2 className="font-serif text-xl mb-4">教会服侍</h2>
+          <div className="grid sm:grid-cols-2 gap-6">
+            {/* 服侍申请 QR */}
+            <div className="border border-border/50 rounded-xl p-4 flex flex-col items-center gap-3">
+              <p className="font-medium">服侍申请</p>
+              {origin && (
+                <QRCodeSVG value={`${origin}/serve-apply`} size={180} level="H" />
+              )}
+              <p className="text-xs text-muted-foreground break-all text-center">{origin}/serve-apply</p>
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    navigator.clipboard.writeText(`${origin}/serve-apply`);
+                    toast.success("链接已复制");
+                  }}
+                >
+                  复制链接
+                </Button>
+                <Button size="sm" onClick={() => setServiceListOpen(true)}>
+                  查看信息 ({serviceApps.length})
+                </Button>
+              </div>
+            </div>
+
+            {/* 问题反馈 QR */}
+            <div className="border border-border/50 rounded-xl p-4 flex flex-col items-center gap-3">
+              <p className="font-medium">问题反馈</p>
+              {origin && (
+                <QRCodeSVG value={`${origin}/feedback`} size={180} level="H" />
+              )}
+              <p className="text-xs text-muted-foreground break-all text-center">{origin}/feedback</p>
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    navigator.clipboard.writeText(`${origin}/feedback`);
+                    toast.success("链接已复制");
+                  }}
+                >
+                  复制链接
+                </Button>
+                <Button size="sm" onClick={() => setFeedbackListOpen(true)}>
+                  查看信息 ({feedbacks.length})
+                </Button>
+              </div>
+            </div>
+          </div>
+        </section>
         <section className="bg-card border border-border/50 rounded-2xl p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-serif text-xl">管理员权限</h2>
@@ -1658,8 +1685,6 @@ function AdminPage() {
             </table>
           </div>
         </section>
-
-        {/* System Tools */}
         <section className="bg-card border border-border/50 rounded-2xl p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-serif text-xl">系统工具栏</h2>
