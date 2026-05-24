@@ -107,41 +107,13 @@ function Index() {
 
       <main className="container mx-auto px-6 py-16">
         <div className="grid gap-12 md:grid-cols-2 items-center max-w-5xl mx-auto">
-          <div>
-            <div className="flex items-center gap-3 mb-2">
-              <img src={logo} alt="基督之家第三家" className="h-12 w-12 object-contain" />
-              <div>
-                <h1 className="font-serif text-3xl text-foreground leading-none">基督之家</h1>
-                <p className="font-serif text-xl text-foreground mt-1">第三家</p>
-              </div>
-            </div>
-            <p className="text-sm text-muted-foreground mt-4">这家就是永生神的教会</p>
-            <p className="text-sm text-muted-foreground">真理的柱石和根基 (提前 3:15)</p>
-
-            <div className="mt-8 mb-6">
-              <p className="text-sm text-accent-foreground/80">今年主题</p>
-              <p className="font-serif text-2xl text-foreground mt-1">信靠顺服 · 活出基督</p>
-            </div>
-
-            <div className="space-y-2 text-sm text-foreground/90 border-t border-border/40 pt-5">
-              <div className="grid grid-cols-[6rem_4rem_1fr] gap-2">
-                <span className="text-muted-foreground">成人主日学</span><span>中文</span><span>9:30 am</span>
-                <span></span><span>英文</span><span>9:30 am</span>
-                <span className="text-muted-foreground">主日崇拜</span><span>中文</span><span>11:00 am</span>
-                <span></span><span>英文</span><span>11:00 am</span>
-                <span className="text-muted-foreground">儿童主日学</span><span>英文</span><span>11:00 am</span>
-              </div>
-              <div className="grid grid-cols-[6rem_1fr] gap-2 pt-3 border-t border-border/40 mt-3">
-                <span className="text-muted-foreground">教会电话</span><span>510 651-9631 / 9937</span>
-                <span className="text-muted-foreground">电邮</span><span>contact@hoc3.org</span>
-                <span className="text-muted-foreground">网址</span><span>hoc3.org</span>
-              </div>
-            </div>
-
-            <div className="mt-6 text-xs text-muted-foreground leading-relaxed">
-              <p className="font-medium text-foreground">The Home of Christ Church in Fremont</p>
-              <p>4248 Solar Way, Fremont, CA 94538</p>
-            </div>
+          <div className="flex justify-center">
+            <img
+              src={churchInfo}
+              alt="基督之家第三家 教会信息"
+              className="w-full max-w-sm object-contain mix-blend-multiply"
+              style={{ background: "transparent" }}
+            />
           </div>
 
           <div className="flex flex-col items-center">
