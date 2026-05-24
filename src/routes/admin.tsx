@@ -159,7 +159,6 @@ function AdminPage() {
   const [coursesOpen, setCoursesOpen] = useState(false);
   const [newCourseName, setNewCourseName] = useState("");
   const [sundayCheckins, setSundayCheckins] = useState<SundayCheckin[]>([]);
-  const [checkinsOpen, setCheckinsOpen] = useState(false);
   const [fellowshipCheckins, setFellowshipCheckins] = useState<FellowshipCheckin[]>([]);
   const [fellowshipListOpen, setFellowshipListOpen] = useState(false);
   const [activeCourseTab, setActiveCourseTab] = useState<string>("");
