@@ -1739,12 +1739,6 @@ function AdminPage() {
             })}
           </div>
         </section>
-            </TabsContent>
-
-          </fieldset>
-        </Tabs>
-
-        <fieldset disabled={!isAdmin} className="contents">
         <section className="bg-card border border-border/50 rounded-2xl p-6">
           <h2 className="font-serif text-xl mb-4">教会服侍</h2>
           <div className="grid sm:grid-cols-2 gap-6">
@@ -1797,173 +1791,12 @@ function AdminPage() {
             </div>
           </div>
         </section>
-        <section className="bg-card border border-border/50 rounded-2xl p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="font-serif text-xl">管理员权限</h2>
-            <Button size="sm" variant="outline" onClick={loadUsers} disabled={usersLoading}>
-              {usersLoading ? "刷新中..." : "刷新"}
-            </Button>
-          </div>
-          <p className="text-xs text-muted-foreground mb-4">
-            新注册用户默认为「待审核」，须由主管理员在此分配角色后才能登录。
-            <br />
-            <span className="text-foreground/70">角色权限：</span>
-            <span className="ml-1">管理员 = 可修改所有设置；</span>
-            <span>一般用户 = 仅可查看系统（不可修改设置）；</span>
-            <span>访客 = 仅能登录 / 退出。</span>
-          </p>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="text-left border-b border-border/60 text-muted-foreground">
-                  <th className="py-2 px-2">邮箱</th>
-                  <th className="py-2 px-2">角色</th>
-                  <th className="py-2 px-2">注册时间</th>
-                  <th className="py-2 px-2 text-right">操作</th>
-                </tr>
-              </thead>
-              <tbody>
-                {users.map((u) => {
-                  const currentRole = u.roles.includes("admin")
-                    ? "admin"
-                    : u.roles.includes("user")
-                      ? "user"
-                      : u.roles.includes("viewer")
-                        ? "viewer"
-                        : "";
-                  const isSelf = u.id === currentUserId;
-                  const PROTECTED_ADMINS = ["hoc3nc@gmail.com", "charmzhangliang@gmail.com"];
-                  const isProtected = PROTECTED_ADMINS.includes(u.email.toLowerCase());
-                  const isPending = currentRole === "";
-                  const pendingRole = pendingRoleSelections[u.id] ?? "viewer";
-                  return (
-                    <tr key={u.id} className="border-b border-border/30 hover:bg-muted/30">
-                      <td className="py-2 px-2 font-medium">
-                        {u.email} {isSelf && <span className="text-xs text-muted-foreground">(我)</span>}
-                        {isPending && <span className="ml-2 text-xs text-amber-600">待审核</span>}
-                      </td>
-                      <td className="py-2 px-2">
-                        <select
-                          value={isPending ? pendingRole : currentRole}
-                          disabled={isProtected || (isSelf && currentRole === "admin")}
-                          onChange={async (e) => {
-                            const newRole = e.target.value as "" | "admin" | "user" | "viewer";
-                            if (isPending) {
-                              // Just track selection; don't apply until 确定 clicked
-                              setPendingRoleSelections((prev) => ({
-                                ...prev,
-                                [u.id]: (newRole || "viewer") as "admin" | "user" | "viewer",
-                              }));
-                              return;
-                            }
-                            const label =
-                              newRole === "admin" ? "管理员"
-                              : newRole === "user" ? "一般用户"
-                              : newRole === "viewer" ? "访客"
-                              : "待审核 (撤销权限)";
-                            if (!confirm(`将 ${u.email} 设置为「${label}」?`)) {
-                              return;
-                            }
-                            try {
-                              await setUserRoleFn({
-                                data: { userId: u.id, role: newRole === "" ? null : newRole },
-                              });
-                              logAction(`将 ${u.email} 角色设为 ${label}`);
-                              toast.success("已更新角色");
-                              loadUsers();
-                            } catch (err) {
-                              toast.error((err as Error).message);
-                            }
-                          }}
-                          className="text-xs bg-background border border-border rounded px-2 py-1"
-                        >
-                          {!isPending && <option value="">待审核</option>}
-                          <option value="admin">管理员</option>
-                          <option value="user">一般用户</option>
-                          <option value="viewer">访客</option>
-                        </select>
-                      </td>
-                      <td className="py-2 px-2 text-muted-foreground whitespace-nowrap">
-                        {new Date(u.created_at).toLocaleDateString("zh-CN")}
-                      </td>
-                      <td className="py-2 px-2 text-right space-x-3 whitespace-nowrap">
-                        {isPending && (
-                          <button
-                            onClick={async () => {
-                              const chosen = pendingRoleSelections[u.id] ?? "viewer";
-                              const label =
-                                chosen === "admin" ? "管理员"
-                                : chosen === "user" ? "一般用户"
-                                : "访客";
-                              if (!confirm(`通过 ${u.email} 的申请,并设为「${label}」?`)) return;
-                              try {
-                                await setUserRoleFn({ data: { userId: u.id, role: chosen } });
-                                logAction(`通过了 ${u.email} 的申请,角色: ${label}`);
-                                toast.success("已通过申请");
-                                loadUsers();
-                              } catch (e) {
-                                toast.error((e as Error).message);
-                              }
-                            }}
-                            className="text-xs text-emerald-600 hover:underline font-medium"
-                          >
-                            确定
-                          </button>
-                        )}
-                        <button
-                          disabled={isSelf || isProtected}
-                          onClick={async () => {
-                            if (!confirm(`确认删除用户 ${u.email}? 此操作不可撤销。`)) return;
-                            try {
-                              await deleteUserFn({ data: { userId: u.id } });
-                              logAction(`删除了用户 ${u.email}`);
-                              toast.success("用户已删除");
-                              loadUsers();
-                            } catch (e) {
-                              toast.error((e as Error).message);
-                            }
-                          }}
-                          className="text-xs text-destructive hover:underline disabled:opacity-30 disabled:cursor-not-allowed"
-                        >
-                          删除
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-                {users.length === 0 && !usersLoading && (
-                  <tr>
-                    <td colSpan={4} className="py-8 text-center text-muted-foreground">
-                      暂无用户
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </section>
-        <section className="bg-card border border-border/50 rounded-2xl p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="font-serif text-xl">系统工具栏</h2>
-          </div>
-          <p className="text-xs text-muted-foreground mb-4">
-            管理员可用的系统级工具。日志记录管理员在本浏览器上的操作（编辑、删除、权限变更等）。
-          </p>
-          <div className="flex flex-wrap gap-3">
-            <Button
-              variant="outline"
-              onClick={() => { loadLogs(); setLogsOpen(true); }}
-            >
-              操作日志
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={() => setInitOpen(true)}
-            >
-              系统初始化
-            </Button>
-          </div>
-        </section>
+            </TabsContent>
+
+          </fieldset>
+        </Tabs>
+
+        <fieldset disabled={!isAdmin} className="contents">
         </fieldset>
 
         {/* Edit Dialog */}
