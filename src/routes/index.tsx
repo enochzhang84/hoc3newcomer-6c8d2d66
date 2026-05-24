@@ -113,7 +113,9 @@ function Index() {
       <header className="border-b border-border/60">
         <div className="container mx-auto flex items-center justify-between px-6 py-5">
           <a href="/admin" className="flex items-center gap-2">
-            <img src={logo} alt="基督之家第三家" className="h-10 w-10 object-contain" />
+            <div className="rounded-full p-0.5 bg-gradient-to-br from-white/90 via-amber-50/60 to-amber-100/40 shadow-sm ring-1 ring-amber-100/40">
+              <img src={logo} alt="基督之家第三家" className="h-10 w-10 object-contain" />
+            </div>
             <span className="font-serif text-xl tracking-wide text-foreground">基督之家第三家</span>
           </a>
           {!isFullscreen ? (
