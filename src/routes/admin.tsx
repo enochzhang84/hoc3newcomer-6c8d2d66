@@ -2187,63 +2187,117 @@ function AdminPage() {
           </DialogContent>
         </Dialog>
 
-        {/* 团契签到记录 Dialog */}
-        <Dialog open={fellowshipListOpen} onOpenChange={setFellowshipListOpen}>
-          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+        {/* 团契 / 小组设置 Dialog */}
+        <Dialog open={fellowshipsOpen} onOpenChange={setFellowshipsOpen}>
+          <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>团契 / 小组签到记录 ({fellowshipCheckins.length})</DialogTitle>
+              <DialogTitle>团契 / 小组设置</DialogTitle>
             </DialogHeader>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="text-left border-b border-border/60 text-muted-foreground">
-                    <th className="py-2 px-2">日期</th>
-                    <th className="py-2 px-2">姓名</th>
-                    <th className="py-2 px-2">电话/微信</th>
-                    <th className="py-2 px-2">邮件</th>
-                    <th className="py-2 px-2">团契</th>
-                    <th className="py-2 px-2">代祷备注</th>
-                    <th className="py-2 px-2 text-right">操作</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {fellowshipCheckins.map((c) => (
-                    <tr key={c.id} className="border-b border-border/30 align-top">
-                      <td className="py-2 px-2 whitespace-nowrap">{c.checkin_date}</td>
-                      <td className="py-2 px-2 font-medium">{c.name}</td>
-                      <td className="py-2 px-2">{c.contact ?? ""}</td>
-                      <td className="py-2 px-2">{c.email ?? ""}</td>
-                      <td className="py-2 px-2">{c.fellowship}</td>
-                      <td className="py-2 px-2 max-w-[260px] whitespace-pre-wrap break-words">{c.prayer_request ?? ""}</td>
-                      <td className="py-2 px-2 text-right">
-                        <button
-                          onClick={async () => {
-                            if (!confirm(`删除 ${c.name} 的签到?`)) return;
-                            const { error } = await supabase
-                              .from("fellowship_checkins")
-                              .delete()
-                              .eq("id", c.id);
-                            if (error) return toast.error(error.message);
-                            logAction(`删除团契签到: ${c.name}`);
-                            toast.success("已删除");
-                            loadFellowshipCheckins();
-                          }}
-                          className="text-xs text-destructive hover:underline"
-                        >
-                          删除
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                  {fellowshipCheckins.length === 0 && (
-                    <tr>
-                      <td colSpan={7} className="py-8 text-center text-muted-foreground">
-                        暂无签到记录
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
+            <div className="space-y-4">
+              <div className="flex gap-2">
+                <Input
+                  placeholder="新团契 / 小组名称"
+                  value={newFellowshipName}
+                  onChange={(e) => setNewFellowshipName(e.target.value)}
+                  onKeyDown={async (e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      const name = newFellowshipName.trim();
+                      if (!name) return;
+                      const nextOrder = (fellowships[fellowships.length - 1]?.sort_order ?? 0) + 1;
+                      const { error } = await supabase
+                        .from("fellowships")
+                        .insert({ name, sort_order: nextOrder });
+                      if (error) return toast.error(error.message);
+                      setNewFellowshipName("");
+                      logAction(`新增团契: ${name}`);
+                      toast.success("已添加");
+                      loadFellowships();
+                    }
+                  }}
+                />
+                <Button
+                  onClick={async () => {
+                    const name = newFellowshipName.trim();
+                    if (!name) return toast.error("请输入名称");
+                    const nextOrder = (fellowships[fellowships.length - 1]?.sort_order ?? 0) + 1;
+                    const { error } = await supabase
+                      .from("fellowships")
+                      .insert({ name, sort_order: nextOrder });
+                    if (error) return toast.error(error.message);
+                    setNewFellowshipName("");
+                    logAction(`新增团契: ${name}`);
+                    toast.success("已添加");
+                    loadFellowships();
+                  }}
+                >
+                  添加
+                </Button>
+              </div>
+              <div className="space-y-2">
+                {fellowships.length === 0 && (
+                  <p className="text-sm text-muted-foreground text-center py-6">暂无团契</p>
+                )}
+                {fellowships.map((f) => (
+                  <div key={f.id} className="flex items-center gap-2 border border-border/50 rounded-md px-3 py-2">
+                    <Input
+                      defaultValue={f.name}
+                      onBlur={async (e) => {
+                        const v = e.target.value.trim();
+                        if (!v || v === f.name) return;
+                        const oldName = f.name;
+                        const { error } = await supabase
+                          .from("fellowships")
+                          .update({ name: v })
+                          .eq("id", f.id);
+                        if (error) return toast.error(error.message);
+                        // Keep historical checkins consistent with the new name
+                        await supabase
+                          .from("fellowship_checkins")
+                          .update({ fellowship: v })
+                          .eq("fellowship", oldName);
+                        logAction(`修改团契名称: ${oldName} → ${v}`);
+                        toast.success("已更新");
+                        loadFellowships();
+                        loadFellowshipCheckins();
+                      }}
+                      className="flex-1"
+                    />
+                    <label className="flex items-center gap-1 text-xs text-muted-foreground whitespace-nowrap">
+                      <input
+                        type="checkbox"
+                        checked={f.is_active}
+                        onChange={async (e) => {
+                          await supabase
+                            .from("fellowships")
+                            .update({ is_active: e.target.checked })
+                            .eq("id", f.id);
+                          loadFellowships();
+                        }}
+                      />
+                      启用
+                    </label>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="text-destructive"
+                      onClick={async () => {
+                        if (!confirm(`删除团契「${f.name}」?`)) return;
+                        const { error } = await supabase
+                          .from("fellowships")
+                          .delete()
+                          .eq("id", f.id);
+                        if (error) return toast.error(error.message);
+                        logAction(`删除团契: ${f.name}`);
+                        toast.success("已删除");
+                        loadFellowships();
+                      }}
+                    >
+                      删除
+                    </Button>
+                  </div>
+                ))}
+              </div>
             </div>
           </DialogContent>
         </Dialog>
