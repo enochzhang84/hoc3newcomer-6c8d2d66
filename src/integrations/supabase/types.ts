@@ -265,6 +265,74 @@ export type Database = {
         }
         Relationships: []
       }
+      sunday_school_checkins: {
+        Row: {
+          checkin_date: string
+          contact: string | null
+          course_id: string | null
+          course_name: string | null
+          created_at: string
+          email: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          checkin_date: string
+          contact?: string | null
+          course_id?: string | null
+          course_name?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          checkin_date?: string
+          contact?: string | null
+          course_id?: string | null
+          course_name?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sunday_school_checkins_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "sunday_school_courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sunday_school_courses: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_preferences: {
         Row: {
           last_messages_seen_at: string
