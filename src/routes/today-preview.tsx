@@ -178,8 +178,6 @@ function PreviewPage() {
                         timeZone: SAN_FRANCISCO_TIME_ZONE,
                         month: "2-digit",
                         day: "2-digit",
-                        hour: "2-digit",
-                        minute: "2-digit",
                       })}
                     </td>
                     <td className="py-3 px-3 font-medium">{r.name}</td>
