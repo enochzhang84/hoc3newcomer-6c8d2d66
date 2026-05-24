@@ -1547,55 +1547,6 @@ function AdminPage() {
                     onClick={(e) => (e.target as HTMLTextAreaElement).select()}
                   />
                 )}
-                {attTextRecords.length > 0 && (
-                  <div className="mt-4">
-                    <h3 className="text-sm font-medium mb-2">文本记录</h3>
-                    <div className="space-y-2">
-                      {attTextRecords.map((r) => (
-                        <div
-                          key={r.id}
-                          className="border border-border/50 rounded-lg p-3 text-sm"
-                        >
-                          <div className="flex items-center justify-between mb-2 gap-2 flex-wrap">
-                            <div className="text-xs text-muted-foreground">
-                              {r.date} · 保存于 {new Date(r.savedAt).toLocaleString("zh-CN")}
-                            </div>
-                            <div className="flex gap-2">
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => setAttText(r.text)}
-                              >查看</Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={async () => {
-                                  try {
-                                    await navigator.clipboard.writeText(r.text);
-                                    toast.success("已复制");
-                                  } catch {
-                                    toast.error("复制失败");
-                                  }
-                                }}
-                              >复制</Button>
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={() => {
-                                  if (!confirm("删除该记录?")) return;
-                                  persistAttTextRecords(
-                                    attTextRecords.filter((x) => x.id !== r.id),
-                                  );
-                                }}
-                              >删除</Button>
-                            </div>
-                          </div>
-                          <pre className="whitespace-pre-wrap font-mono text-xs text-muted-foreground">{r.text}</pre>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
               </>
             );
           })()}
