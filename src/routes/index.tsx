@@ -8,7 +8,6 @@ import logo from "@/assets/logo.png";
 import iconAdmin from "@/assets/icon-admin.png";
 import iconFullscreen from "@/assets/icon-fullscreen.png";
 import iconExitFullscreen from "@/assets/icon-exit-fullscreen.png";
-import churchInfo from "@/assets/church-info.png";
 
 export const Route = createFileRoute("/")({
   component: Index,
@@ -150,13 +149,51 @@ function Index() {
 
       <main className="container mx-auto px-6 py-16">
         <div className="grid gap-12 md:grid-cols-2 items-center max-w-5xl mx-auto">
-          <div className="flex justify-center -mt-[5px]">
-            <img
-              src={churchInfo}
-              alt="基督之家第三家 教会信息"
-              className="w-full max-w-sm object-contain mix-blend-multiply"
-              style={{ background: "transparent" }}
-            />
+          <div className="flex justify-center">
+            <div className="w-full max-w-sm font-serif text-foreground">
+              <div className="flex items-center gap-3 mb-3">
+                <img src={logo} alt="基督之家第三家" className="h-14 w-14 object-contain" />
+                <div className="leading-tight">
+                  <div className="text-3xl font-semibold tracking-wide">基督之家</div>
+                  <div className="text-xl tracking-widest">第三家</div>
+                </div>
+              </div>
+              <div className="text-sm text-foreground/80 mb-5 leading-relaxed">
+                <div>这家就是永生神的教会</div>
+                <div>真理的柱石和根基 (提前 3:15)</div>
+              </div>
+
+              <div className="text-sm mb-4">
+                <span className="font-semibold">今年主题</span>
+                <span className="mx-2">:</span>
+                <span>信靠顺服 活出基督</span>
+              </div>
+
+              <table className="text-sm border-separate [border-spacing:0_4px] mb-4">
+                <tbody>
+                  <tr><td className="font-semibold pr-2 whitespace-nowrap">成人主日学</td><td className="pr-2">:</td><td className="pr-3">中文</td><td>9:30 am</td></tr>
+                  <tr><td></td><td className="pr-2">:</td><td className="pr-3">英文</td><td>9:30 am</td></tr>
+                  <tr><td className="font-semibold pr-2 whitespace-nowrap">主日敬拜</td><td className="pr-2">:</td><td className="pr-3">中文</td><td>11:00 am</td></tr>
+                  <tr><td></td><td className="pr-2">:</td><td className="pr-3">英文</td><td>11:00 am</td></tr>
+                  <tr><td className="font-semibold pr-2 whitespace-nowrap">儿童主日学</td><td className="pr-2">:</td><td className="pr-3"></td><td>11:00 am</td></tr>
+                </tbody>
+              </table>
+
+              <table className="text-sm border-separate [border-spacing:0_4px] mb-4">
+                <tbody>
+                  <tr><td className="font-semibold pr-2 whitespace-nowrap">教会电话</td><td className="pr-2">:</td><td>510 651-9631 / 9937</td></tr>
+                  <tr><td className="font-semibold pr-2 whitespace-nowrap">电邮</td><td className="pr-2">:</td><td>contact@hoc3.org</td></tr>
+                  <tr><td className="font-semibold pr-2 whitespace-nowrap">网址</td><td className="pr-2">:</td><td>hoc3.org</td></tr>
+                </tbody>
+              </table>
+
+              <div className="text-center text-sm mt-6 leading-relaxed">
+                <div className="font-semibold">The Home of Christ Church</div>
+                <div className="font-semibold">In Fremont</div>
+                <div>4248 Solar Way</div>
+                <div>Fremont, CA 94538</div>
+              </div>
+            </div>
           </div>
 
           <div className="flex flex-col items-center">
