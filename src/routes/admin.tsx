@@ -1816,6 +1816,15 @@ function AdminPage() {
                 <span className="font-medium text-foreground">二维码已停用</span>
               )}
             </div>
+            <div className="ml-auto">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => window.open("/retreat", "_blank", "noopener,noreferrer")}
+              >
+                退修会登记
+              </Button>
+            </div>
           </div>
           <div className="flex flex-wrap gap-2 mb-4">
             <Button onClick={addEvent}>生成新二维码</Button>
