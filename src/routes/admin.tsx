@@ -134,6 +134,23 @@ function AdminPage() {
   const [attStudents, setAttStudents] = useState<string>("");
   const [attTeachers, setAttTeachers] = useState<string>("");
   const [attText, setAttText] = useState<string>("");
+  const [attTextRecords, setAttTextRecords] = useState<
+    { id: string; date: string; text: string; savedAt: string }[]
+  >([]);
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("attendance_text_records");
+      if (raw) setAttTextRecords(JSON.parse(raw));
+    } catch {}
+  }, []);
+  const persistAttTextRecords = (
+    next: { id: string; date: string; text: string; savedAt: string }[],
+  ) => {
+    setAttTextRecords(next);
+    try {
+      localStorage.setItem("attendance_text_records", JSON.stringify(next));
+    } catch {}
+  };
 
   const fetchUsersFn = useServerFn(listUsersWithRoles);
   const setUserRoleFn = useServerFn(setUserRole);
