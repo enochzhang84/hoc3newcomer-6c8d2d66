@@ -1427,8 +1427,53 @@ function AdminPage() {
 
             <TabsContent value="sunday" className="space-y-8 mt-0">
         <section className="bg-card border border-border/50 rounded-2xl p-6">
-          <h2 className="font-serif text-xl mb-4">主日学</h2>
-          <p className="text-sm text-muted-foreground">敬请期待，此模块尚在开发中。</p>
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+            <h2 className="font-serif text-xl">成人主日学</h2>
+            <Button size="sm" variant="outline" onClick={() => setCoursesOpen(true)}>
+              主日学课程设置
+            </Button>
+          </div>
+          <div className="grid sm:grid-cols-2 gap-6">
+            <div className="border border-border/50 rounded-xl p-4 flex flex-col items-center gap-3">
+              <p className="font-medium">主日学签到</p>
+              {origin && (
+                <QRCodeSVG value={`${origin}/sunday-checkin`} size={200} level="H" />
+              )}
+              <p className="text-xs text-muted-foreground break-all text-center">
+                {origin}/sunday-checkin
+              </p>
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    navigator.clipboard.writeText(`${origin}/sunday-checkin`);
+                    toast.success("链接已复制");
+                  }}
+                >
+                  复制链接
+                </Button>
+                <Button size="sm" onClick={() => { loadSundayCheckins(); setCheckinsOpen(true); }}>
+                  查看签到 ({sundayCheckins.length})
+                </Button>
+              </div>
+            </div>
+            <div className="border border-border/50 rounded-xl p-4 flex flex-col gap-3">
+              <p className="font-medium">已开放课程</p>
+              {courses.length === 0 ? (
+                <p className="text-sm text-muted-foreground">暂无课程，请点击右上角「主日学课程设置」添加。</p>
+              ) : (
+                <ul className="text-sm space-y-1">
+                  {courses.filter((c) => c.is_active).map((c) => (
+                    <li key={c.id} className="flex items-center gap-2">
+                      <span className="text-muted-foreground">·</span>
+                      <span>{c.name}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
         </section>
             </TabsContent>
 

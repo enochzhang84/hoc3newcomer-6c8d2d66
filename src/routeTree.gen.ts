@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TodayPreviewRouteImport } from './routes/today-preview'
+import { Route as SundayCheckinRouteImport } from './routes/sunday-checkin'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as ServeApplyRouteImport } from './routes/serve-apply'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
@@ -26,6 +27,11 @@ import { Route as TodayPublicTokenRouteImport } from './routes/today-public.$tok
 const TodayPreviewRoute = TodayPreviewRouteImport.update({
   id: '/today-preview',
   path: '/today-preview',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SundayCheckinRoute = SundayCheckinRouteImport.update({
+  id: '/sunday-checkin',
+  path: '/sunday-checkin',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SignupRoute = SignupRouteImport.update({
@@ -101,6 +107,7 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/serve-apply': typeof ServeApplyRoute
   '/signup': typeof SignupRoute
+  '/sunday-checkin': typeof SundayCheckinRoute
   '/today-preview': typeof TodayPreviewRoute
   '/today-public/$token': typeof TodayPublicTokenRoute
 }
@@ -116,6 +123,7 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/serve-apply': typeof ServeApplyRoute
   '/signup': typeof SignupRoute
+  '/sunday-checkin': typeof SundayCheckinRoute
   '/today-preview': typeof TodayPreviewRoute
   '/today-public/$token': typeof TodayPublicTokenRoute
 }
@@ -132,6 +140,7 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/serve-apply': typeof ServeApplyRoute
   '/signup': typeof SignupRoute
+  '/sunday-checkin': typeof SundayCheckinRoute
   '/today-preview': typeof TodayPreviewRoute
   '/today-public/$token': typeof TodayPublicTokenRoute
 }
@@ -149,6 +158,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/serve-apply'
     | '/signup'
+    | '/sunday-checkin'
     | '/today-preview'
     | '/today-public/$token'
   fileRoutesByTo: FileRoutesByTo
@@ -164,6 +174,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/serve-apply'
     | '/signup'
+    | '/sunday-checkin'
     | '/today-preview'
     | '/today-public/$token'
   id:
@@ -179,6 +190,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/serve-apply'
     | '/signup'
+    | '/sunday-checkin'
     | '/today-preview'
     | '/today-public/$token'
   fileRoutesById: FileRoutesById
@@ -195,6 +207,7 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   ServeApplyRoute: typeof ServeApplyRoute
   SignupRoute: typeof SignupRoute
+  SundayCheckinRoute: typeof SundayCheckinRoute
   TodayPreviewRoute: typeof TodayPreviewRoute
   TodayPublicTokenRoute: typeof TodayPublicTokenRoute
 }
@@ -206,6 +219,13 @@ declare module '@tanstack/react-router' {
       path: '/today-preview'
       fullPath: '/today-preview'
       preLoaderRoute: typeof TodayPreviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sunday-checkin': {
+      id: '/sunday-checkin'
+      path: '/sunday-checkin'
+      fullPath: '/sunday-checkin'
+      preLoaderRoute: typeof SundayCheckinRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/signup': {
@@ -307,6 +327,7 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   ServeApplyRoute: ServeApplyRoute,
   SignupRoute: SignupRoute,
+  SundayCheckinRoute: SundayCheckinRoute,
   TodayPreviewRoute: TodayPreviewRoute,
   TodayPublicTokenRoute: TodayPublicTokenRoute,
 }
