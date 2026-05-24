@@ -85,7 +85,7 @@ function Index() {
             <img src={logo} alt="基督之家第三家" className="h-10 w-10 object-contain" />
             <span className="font-serif text-xl tracking-wide text-foreground">基督之家第三家</span>
           </a>
-          {!isFullscreen && (
+          {!isFullscreen ? (
             <div className="flex items-center gap-2">
               <button
                 onClick={() => window.location.assign("/login")}
@@ -104,6 +104,14 @@ function Index() {
                 </button>
               )}
             </div>
+          ) : (
+            <button
+              onClick={exitFullscreen}
+              title="退出全屏"
+              className="h-10 w-10 rounded-xl border border-border/60 bg-card hover:bg-accent flex items-center justify-center transition-colors opacity-40 hover:opacity-100"
+            >
+              <img src={iconExitFullscreen} alt="退出全屏" className="h-5 w-5 object-contain" />
+            </button>
           )}
         </div>
       </header>
