@@ -1953,7 +1953,12 @@ function AdminPage() {
           </div>
         </section>
         <section className="bg-card border border-border/50 rounded-2xl p-6">
-          <h2 className="font-serif text-xl mb-4">团契 / 小组聚会签到</h2>
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+            <h2 className="font-serif text-xl">团契 / 小组聚会签到</h2>
+            <Button size="sm" variant="outline" onClick={() => setFellowshipsOpen(true)}>
+              团契 / 小组设置
+            </Button>
+          </div>
           <div className="grid sm:grid-cols-2 gap-6">
             <div className="border border-border/50 rounded-xl p-4 flex flex-col items-center gap-3">
               <p className="font-medium">团契 / 小组聚会签到</p>
@@ -1974,15 +1979,6 @@ function AdminPage() {
                 >
                   复制链接
                 </Button>
-                <Button
-                  size="sm"
-                  onClick={() => {
-                    loadFellowshipCheckins();
-                    setFellowshipListOpen(true);
-                  }}
-                >
-                  查看签到 ({fellowshipCheckins.length})
-                </Button>
               </div>
             </div>
             <div className="border border-border/50 rounded-xl p-4 flex flex-col gap-2 text-sm text-muted-foreground">
@@ -1991,6 +1987,92 @@ function AdminPage() {
               <p>表单同时显示中英文，方便弟兄姐妹使用。</p>
             </div>
           </div>
+        </section>
+
+        <section className="bg-card border border-border/50 rounded-2xl p-6">
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+            <h2 className="font-serif text-xl">团契签到记录</h2>
+            <Button size="sm" variant="outline" onClick={() => loadFellowshipCheckins()}>
+              刷新
+            </Button>
+          </div>
+          {fellowships.filter((f) => f.is_active).length === 0 ? (
+            <p className="text-sm text-muted-foreground">暂无团契。点击右上角「团契 / 小组设置」添加。</p>
+          ) : (
+            <Tabs
+              value={activeFellowshipTab || fellowships.find((f) => f.is_active)?.id || ""}
+              onValueChange={setActiveFellowshipTab}
+              className="w-full"
+            >
+              <TabsList className="h-auto flex flex-wrap gap-1 bg-muted/50 p-1">
+                {fellowships.filter((f) => f.is_active).map((f) => {
+                  const count = fellowshipCheckins.filter((k) => k.fellowship === f.name).length;
+                  return (
+                    <TabsTrigger key={f.id} value={f.id} className="text-xs">
+                      {f.name} ({count})
+                    </TabsTrigger>
+                  );
+                })}
+              </TabsList>
+              {fellowships.filter((f) => f.is_active).map((f) => {
+                const rows = fellowshipCheckins.filter((k) => k.fellowship === f.name);
+                return (
+                  <TabsContent key={f.id} value={f.id} className="mt-4">
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="text-left border-b border-border/60 text-muted-foreground">
+                            <th className="py-2 px-2">日期</th>
+                            <th className="py-2 px-2">姓名</th>
+                            <th className="py-2 px-2">电话/微信</th>
+                            <th className="py-2 px-2">邮件</th>
+                            <th className="py-2 px-2">代祷备注</th>
+                            <th className="py-2 px-2 text-right">操作</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {rows.map((k) => (
+                            <tr key={k.id} className="border-b border-border/30 align-top">
+                              <td className="py-2 px-2 whitespace-nowrap">{k.checkin_date}</td>
+                              <td className="py-2 px-2 font-medium">{k.name}</td>
+                              <td className="py-2 px-2">{k.contact ?? ""}</td>
+                              <td className="py-2 px-2">{k.email ?? ""}</td>
+                              <td className="py-2 px-2 max-w-[260px] whitespace-pre-wrap break-words">{k.prayer_request ?? ""}</td>
+                              <td className="py-2 px-2 text-right">
+                                <button
+                                  onClick={async () => {
+                                    if (!confirm(`删除 ${k.name} 的签到?`)) return;
+                                    const { error } = await supabase
+                                      .from("fellowship_checkins")
+                                      .delete()
+                                      .eq("id", k.id);
+                                    if (error) return toast.error(error.message);
+                                    logAction(`删除团契签到: ${k.name}`);
+                                    toast.success("已删除");
+                                    loadFellowshipCheckins();
+                                  }}
+                                  className="text-xs text-destructive hover:underline"
+                                >
+                                  删除
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                          {rows.length === 0 && (
+                            <tr>
+                              <td colSpan={6} className="py-8 text-center text-muted-foreground">
+                                暂无签到记录
+                              </td>
+                            </tr>
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </TabsContent>
+                );
+              })}
+            </Tabs>
+          )}
         </section>
             </TabsContent>
 
