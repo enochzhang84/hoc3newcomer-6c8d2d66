@@ -1852,7 +1852,11 @@ function AdminPage() {
             </DialogHeader>
             <div className="space-y-3">
               {feedbacks.map((f) => (
-                <div key={f.id} className="border border-border/40 rounded-lg p-3 space-y-2">
+                <div
+                  key={f.id}
+                  onClick={() => setFeedbackDetail(f)}
+                  className="border border-border/40 rounded-lg p-3 space-y-2 cursor-pointer hover:bg-accent/30 transition"
+                >
                   <div className="flex items-start justify-between gap-2 flex-wrap">
                     <div>
                       <p className="font-medium">{f.title}</p>
@@ -1862,7 +1866,8 @@ function AdminPage() {
                       </p>
                     </div>
                     <button
-                      onClick={async () => {
+                      onClick={async (e) => {
+                        e.stopPropagation();
                         if (!confirm(`确认删除 ${f.name} 的反馈?`)) return;
                         const { error } = await supabase.from("feedbacks").delete().eq("id", f.id);
                         if (error) toast.error(error.message);
@@ -1883,7 +1888,7 @@ function AdminPage() {
                   {f.images.length > 0 && (
                     <div className="grid grid-cols-4 gap-2">
                       {f.images.map((url) => (
-                        <a key={url} href={url} target="_blank" rel="noreferrer">
+                        <a key={url} href={url} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()}>
                           <img src={url} alt="" className="w-full h-20 object-cover rounded border" />
                         </a>
                       ))}
@@ -1897,6 +1902,48 @@ function AdminPage() {
             </div>
             <DialogFooter>
               <Button onClick={() => setFeedbackListOpen(false)}>关闭</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* 问题反馈 详情 */}
+        <Dialog open={!!feedbackDetail} onOpenChange={(o) => !o && setFeedbackDetail(null)}>
+          <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>反馈详情</DialogTitle>
+            </DialogHeader>
+            {feedbackDetail && (
+              <div className="space-y-4 text-sm">
+                <div className="grid grid-cols-[88px_1fr] gap-y-3 gap-x-3">
+                  <div className="text-muted-foreground">时间</div>
+                  <div>{new Date(feedbackDetail.created_at).toLocaleString("zh-CN")}</div>
+                  <div className="text-muted-foreground">姓名</div>
+                  <div>{feedbackDetail.name}</div>
+                  <div className="text-muted-foreground">联系方式</div>
+                  <div>{feedbackDetail.contact}</div>
+                  <div className="text-muted-foreground">团契</div>
+                  <div>{feedbackDetail.fellowship || "—"}</div>
+                  <div className="text-muted-foreground">标题</div>
+                  <div className="font-medium">{feedbackDetail.title}</div>
+                  <div className="text-muted-foreground">内容</div>
+                  <div className="whitespace-pre-wrap">{feedbackDetail.description || "—"}</div>
+                </div>
+                {feedbackDetail.images.length > 0 && (
+                  <div>
+                    <div className="text-muted-foreground mb-2">图片</div>
+                    <div className="grid grid-cols-3 gap-2">
+                      {feedbackDetail.images.map((url) => (
+                        <a key={url} href={url} target="_blank" rel="noreferrer">
+                          <img src={url} alt="" className="w-full h-28 object-cover rounded border" />
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setFeedbackDetail(null)}>关闭</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
