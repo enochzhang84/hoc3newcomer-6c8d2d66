@@ -152,7 +152,9 @@ function Index() {
           <div className="flex justify-center">
             <div className="w-full max-w-sm font-kaiti font-bold text-foreground">
               <div className="flex items-center gap-3 mb-3">
-                <img src={logo} alt="基督之家第三家" className="h-14 w-14 object-contain" />
+                <div className="rounded-full p-1 bg-gradient-to-br from-white/90 via-amber-50/60 to-amber-100/40 shadow-sm ring-1 ring-amber-100/40">
+                  <img src={logo} alt="基督之家第三家" className="h-14 w-14 object-contain" />
+                </div>
                 <div className="leading-tight">
                   <div className="text-3xl font-bold tracking-wide">基督之家</div>
                   <div className="text-xl tracking-widest">第三家</div>
