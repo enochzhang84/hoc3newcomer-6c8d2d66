@@ -2002,9 +2002,18 @@ function AdminPage() {
                     .from("service_applications")
                     .delete()
                     .not("id", "is", null);
-                  setInitLoading(false);
                   if (svcErr) {
+                    setInitLoading(false);
                     toast.error("清空服侍申请失败: " + svcErr.message);
+                    return;
+                  }
+                  const { error: fbErr } = await supabase
+                    .from("feedbacks")
+                    .delete()
+                    .not("id", "is", null);
+                  setInitLoading(false);
+                  if (fbErr) {
+                    toast.error("清空问题反馈失败: " + fbErr.message);
                     return;
                   }
                   logAction(`系统初始化（清空了 ${regs.length} 条登记）`);
