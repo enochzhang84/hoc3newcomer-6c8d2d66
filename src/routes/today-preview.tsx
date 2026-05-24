@@ -184,7 +184,7 @@ function PreviewPage() {
                     <td className="py-3 px-3">{r.name_en ?? "—"}</td>
                     <td className="py-3 px-3">
                       {r.faith === "christian"
-                        ? `基督徒${r.faith_years ? ` ${r.faith_years}年` : ""}`
+                        ? "基督徒"
                         : r.faith === "seeker"
                           ? "慕道友"
                           : r.faith === "other"
