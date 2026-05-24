@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,30 +10,6 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/fellowship-checkin")({
   component: FellowshipCheckinPage,
 });
-
-const FELLOWSHIPS = [
-  "小羊團契",
-  "Chadbourne",
-  "單身職業青年小組",
-  "粵語團契",
-  "幸福聊天室",
-  "恩典茶經小組",
-  "長青團契",
-  "活水團契",
-  "愛加倍團契(園區)",
-  "愛加倍團契(山區)",
-  "愛加倍團契(湖區)",
-  "愛加倍團契(以諾一組)",
-  "愛加倍團契(以諾二組)",
-  "中區查經班",
-  "神州團契",
-  "神州約書亞小組",
-  "Ohlone",
-  "Weibel",
-  "迦勒團契",
-  "磐石團契(隔週)",
-  "北區查經",
-];
 
 function todayISO() {
   const d = new Date();
@@ -54,6 +30,7 @@ function BiLabel({ cn, en, required }: { cn: string; en: string; required?: bool
 function FellowshipCheckinPage() {
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
+  const [fellowships, setFellowships] = useState<string[]>([]);
   const [form, setForm] = useState({
     checkin_date: todayISO(),
     name: "",
@@ -62,6 +39,17 @@ function FellowshipCheckinPage() {
     fellowship: "",
     prayer_request: "",
   });
+
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase
+        .from("fellowships")
+        .select("name")
+        .eq("is_active", true)
+        .order("sort_order", { ascending: true });
+      setFellowships((data ?? []).map((d) => d.name));
+    })();
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -177,7 +165,7 @@ function FellowshipCheckinPage() {
               className="w-full h-9 bg-background border border-input rounded-md px-3 text-sm"
             >
               <option value="">-- 请选择 / Please select --</option>
-              {FELLOWSHIPS.map((f) => (
+              {fellowships.map((f) => (
                 <option key={f} value={f}>{f}</option>
               ))}
             </select>
