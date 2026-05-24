@@ -117,6 +117,17 @@ type SundayCheckin = {
   created_at: string;
 };
 
+type FellowshipCheckin = {
+  id: string;
+  checkin_date: string;
+  name: string;
+  contact: string | null;
+  email: string | null;
+  fellowship: string;
+  prayer_request: string | null;
+  created_at: string;
+};
+
 export const Route = createFileRoute("/admin")({
   component: AdminPage,
 });
@@ -148,7 +159,9 @@ function AdminPage() {
   const [coursesOpen, setCoursesOpen] = useState(false);
   const [newCourseName, setNewCourseName] = useState("");
   const [sundayCheckins, setSundayCheckins] = useState<SundayCheckin[]>([]);
-  const [checkinsOpen, setCheckinsOpen] = useState(false);
+  const [fellowshipCheckins, setFellowshipCheckins] = useState<FellowshipCheckin[]>([]);
+  const [fellowshipListOpen, setFellowshipListOpen] = useState(false);
+  const [activeCourseTab, setActiveCourseTab] = useState<string>("");
   const [editingFollowUpId, setEditingFollowUpId] = useState<string | null>(null);
   const [followUpDraft, setFollowUpDraft] = useState("");
   const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
@@ -259,6 +272,15 @@ function AdminPage() {
     setSundayCheckins((data ?? []) as SundayCheckin[]);
   }, []);
 
+  const loadFellowshipCheckins = useCallback(async () => {
+    const { data } = await supabase
+      .from("fellowship_checkins")
+      .select("*")
+      .order("checkin_date", { ascending: false })
+      .order("created_at", { ascending: false });
+    setFellowshipCheckins((data ?? []) as FellowshipCheckin[]);
+  }, []);
+
   const loadMessagesCount = useCallback(async () => {
     const { data: sess } = await supabase.auth.getSession();
     const uid = sess.session?.user.id;
@@ -330,6 +352,7 @@ function AdminPage() {
             void loadData();
             void loadMessagesCount();
            void loadSundayCheckins();
+           void loadFellowshipCheckins();
             void loadUsers();
           }
         } catch (e) {
@@ -460,6 +483,27 @@ function AdminPage() {
   }
 
   const eventMap = Object.fromEntries(events.map((e) => [e.id, e.name]));
+  // Use published domain for QR codes so WeChat (and other in-app browsers)
+  // don't land on a preview URL that requires the developer login.
+  const publicBase = (() => {
+    if (!origin) return "";
+    try {
+      const host = new URL(origin).host;
+      if (
+        host.startsWith("id-preview--") ||
+        host.endsWith("-dev.lovable.app") ||
+        host.endsWith(".lovableproject.com") ||
+        host === "localhost" ||
+        host.startsWith("127.0.0.1") ||
+        host.startsWith("localhost:")
+      ) {
+        return "https://hoc3newcomer.lovable.app";
+      }
+    } catch {
+      // fall through
+    }
+    return origin;
+  })();
   const filtered = regs.filter((r) => {
     const matchesSearch =
       !search ||
@@ -1645,25 +1689,22 @@ function AdminPage() {
           <div className="grid sm:grid-cols-2 gap-6">
             <div className="border border-border/50 rounded-xl p-4 flex flex-col items-center gap-3">
               <p className="font-medium">主日学签到</p>
-              {origin && (
-                <QRCodeSVG value={`${origin}/sunday-checkin`} size={200} level="H" />
+              {publicBase && (
+                <QRCodeSVG value={`${publicBase}/sunday-checkin`} size={200} level="H" />
               )}
               <p className="text-xs text-muted-foreground break-all text-center">
-                {origin}/sunday-checkin
+                {publicBase}/sunday-checkin
               </p>
               <div className="flex gap-2">
                 <Button
                   size="sm"
                   variant="outline"
                   onClick={() => {
-                    navigator.clipboard.writeText(`${origin}/sunday-checkin`);
+                    navigator.clipboard.writeText(`${publicBase}/sunday-checkin`);
                     toast.success("链接已复制");
                   }}
                 >
                   复制链接
-                </Button>
-                <Button size="sm" onClick={() => { loadSundayCheckins(); setCheckinsOpen(true); }}>
-                  查看签到 ({sundayCheckins.length})
                 </Button>
               </div>
             </div>
@@ -1683,6 +1724,90 @@ function AdminPage() {
               )}
             </div>
           </div>
+        </section>
+
+        <section className="bg-card border border-border/50 rounded-2xl p-6">
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+            <h2 className="font-serif text-xl">课程签到记录</h2>
+            <Button size="sm" variant="outline" onClick={() => loadSundayCheckins()}>
+              刷新
+            </Button>
+          </div>
+          {courses.filter((c) => c.is_active).length === 0 ? (
+            <p className="text-sm text-muted-foreground">暂无课程。添加课程后此处会自动生成标签页。</p>
+          ) : (
+            <Tabs
+              value={activeCourseTab || courses.find((c) => c.is_active)?.id || ""}
+              onValueChange={setActiveCourseTab}
+              className="w-full"
+            >
+              <TabsList className="h-auto flex flex-wrap gap-1 bg-muted/50 p-1">
+                {courses.filter((c) => c.is_active).map((c) => {
+                  const count = sundayCheckins.filter((k) => k.course_id === c.id).length;
+                  return (
+                    <TabsTrigger key={c.id} value={c.id} className="text-xs">
+                      {c.name} ({count})
+                    </TabsTrigger>
+                  );
+                })}
+              </TabsList>
+              {courses.filter((c) => c.is_active).map((c) => {
+                const rows = sundayCheckins.filter((k) => k.course_id === c.id);
+                return (
+                  <TabsContent key={c.id} value={c.id} className="mt-4">
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="text-left border-b border-border/60 text-muted-foreground">
+                            <th className="py-2 px-2">日期</th>
+                            <th className="py-2 px-2">姓名</th>
+                            <th className="py-2 px-2">电话/微信</th>
+                            <th className="py-2 px-2">邮件</th>
+                            <th className="py-2 px-2 text-right">操作</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {rows.map((k) => (
+                            <tr key={k.id} className="border-b border-border/30">
+                              <td className="py-2 px-2 whitespace-nowrap">{k.checkin_date}</td>
+                              <td className="py-2 px-2 font-medium">{k.name}</td>
+                              <td className="py-2 px-2">{k.contact ?? ""}</td>
+                              <td className="py-2 px-2">{k.email ?? ""}</td>
+                              <td className="py-2 px-2 text-right">
+                                <button
+                                  onClick={async () => {
+                                    if (!confirm(`删除 ${k.name} 的签到?`)) return;
+                                    const { error } = await supabase
+                                      .from("sunday_school_checkins")
+                                      .delete()
+                                      .eq("id", k.id);
+                                    if (error) return toast.error(error.message);
+                                    logAction(`删除主日学签到: ${k.name}`);
+                                    toast.success("已删除");
+                                    loadSundayCheckins();
+                                  }}
+                                  className="text-xs text-destructive hover:underline"
+                                >
+                                  删除
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                          {rows.length === 0 && (
+                            <tr>
+                              <td colSpan={5} className="py-8 text-center text-muted-foreground">
+                                暂无签到记录
+                              </td>
+                            </tr>
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </TabsContent>
+                );
+              })}
+            </Tabs>
+          )}
         </section>
             </TabsContent>
 
@@ -1704,7 +1829,7 @@ function AdminPage() {
           </div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {events.map((ev) => {
-              const url = `${origin}/register?event=${ev.qr_token}`;
+              const url = `${publicBase}/register?event=${ev.qr_token}`;
               return (
                 <div key={ev.id} className="border border-border/50 rounded-xl p-4 flex items-center justify-between gap-4">
                   <div className="min-w-0">
@@ -1745,16 +1870,16 @@ function AdminPage() {
             {/* 服侍申请 QR */}
             <div className="border border-border/50 rounded-xl p-4 flex flex-col items-center gap-3">
               <p className="font-medium">服侍申请</p>
-              {origin && (
-                <QRCodeSVG value={`${origin}/serve-apply`} size={180} level="H" />
+              {publicBase && (
+                <QRCodeSVG value={`${publicBase}/serve-apply`} size={180} level="H" />
               )}
-              <p className="text-xs text-muted-foreground break-all text-center">{origin}/serve-apply</p>
+              <p className="text-xs text-muted-foreground break-all text-center">{publicBase}/serve-apply</p>
               <div className="flex gap-2">
                 <Button
                   size="sm"
                   variant="outline"
                   onClick={() => {
-                    navigator.clipboard.writeText(`${origin}/serve-apply`);
+                    navigator.clipboard.writeText(`${publicBase}/serve-apply`);
                     toast.success("链接已复制");
                   }}
                 >
@@ -1769,16 +1894,16 @@ function AdminPage() {
             {/* 问题反馈 QR */}
             <div className="border border-border/50 rounded-xl p-4 flex flex-col items-center gap-3">
               <p className="font-medium">问题反馈</p>
-              {origin && (
-                <QRCodeSVG value={`${origin}/feedback`} size={180} level="H" />
+              {publicBase && (
+                <QRCodeSVG value={`${publicBase}/feedback`} size={180} level="H" />
               )}
-              <p className="text-xs text-muted-foreground break-all text-center">{origin}/feedback</p>
+              <p className="text-xs text-muted-foreground break-all text-center">{publicBase}/feedback</p>
               <div className="flex gap-2">
                 <Button
                   size="sm"
                   variant="outline"
                   onClick={() => {
-                    navigator.clipboard.writeText(`${origin}/feedback`);
+                    navigator.clipboard.writeText(`${publicBase}/feedback`);
                     toast.success("链接已复制");
                   }}
                 >
@@ -1788,6 +1913,46 @@ function AdminPage() {
                   查看信息 ({feedbacks.length})
                 </Button>
               </div>
+            </div>
+          </div>
+        </section>
+        <section className="bg-card border border-border/50 rounded-2xl p-6">
+          <h2 className="font-serif text-xl mb-4">团契 / 小组聚会签到</h2>
+          <div className="grid sm:grid-cols-2 gap-6">
+            <div className="border border-border/50 rounded-xl p-4 flex flex-col items-center gap-3">
+              <p className="font-medium">团契 / 小组聚会签到</p>
+              {publicBase && (
+                <QRCodeSVG value={`${publicBase}/fellowship-checkin`} size={200} level="H" />
+              )}
+              <p className="text-xs text-muted-foreground break-all text-center">
+                {publicBase}/fellowship-checkin
+              </p>
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    navigator.clipboard.writeText(`${publicBase}/fellowship-checkin`);
+                    toast.success("链接已复制");
+                  }}
+                >
+                  复制链接
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    loadFellowshipCheckins();
+                    setFellowshipListOpen(true);
+                  }}
+                >
+                  查看签到 ({fellowshipCheckins.length})
+                </Button>
+              </div>
+            </div>
+            <div className="border border-border/50 rounded-xl p-4 flex flex-col gap-2 text-sm text-muted-foreground">
+              <p className="font-medium text-foreground">说明</p>
+              <p>扫码后参加者填写：日期、姓名、电话/微信、邮件、所属团契，以及代祷备注。</p>
+              <p>表单同时显示中英文，方便弟兄姐妹使用。</p>
             </div>
           </div>
         </section>
@@ -1904,11 +2069,11 @@ function AdminPage() {
           </DialogContent>
         </Dialog>
 
-        {/* 主日学签到记录 Dialog */}
-        <Dialog open={checkinsOpen} onOpenChange={setCheckinsOpen}>
-          <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+        {/* 团契签到记录 Dialog */}
+        <Dialog open={fellowshipListOpen} onOpenChange={setFellowshipListOpen}>
+          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>主日学签到记录 ({sundayCheckins.length})</DialogTitle>
+              <DialogTitle>团契 / 小组签到记录 ({fellowshipCheckins.length})</DialogTitle>
             </DialogHeader>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
@@ -1918,30 +2083,32 @@ function AdminPage() {
                     <th className="py-2 px-2">姓名</th>
                     <th className="py-2 px-2">电话/微信</th>
                     <th className="py-2 px-2">邮件</th>
-                    <th className="py-2 px-2">课程</th>
+                    <th className="py-2 px-2">团契</th>
+                    <th className="py-2 px-2">代祷备注</th>
                     <th className="py-2 px-2 text-right">操作</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {sundayCheckins.map((c) => (
-                    <tr key={c.id} className="border-b border-border/30">
+                  {fellowshipCheckins.map((c) => (
+                    <tr key={c.id} className="border-b border-border/30 align-top">
                       <td className="py-2 px-2 whitespace-nowrap">{c.checkin_date}</td>
                       <td className="py-2 px-2 font-medium">{c.name}</td>
                       <td className="py-2 px-2">{c.contact ?? ""}</td>
                       <td className="py-2 px-2">{c.email ?? ""}</td>
-                      <td className="py-2 px-2">{c.course_name ?? ""}</td>
+                      <td className="py-2 px-2">{c.fellowship}</td>
+                      <td className="py-2 px-2 max-w-[260px] whitespace-pre-wrap break-words">{c.prayer_request ?? ""}</td>
                       <td className="py-2 px-2 text-right">
                         <button
                           onClick={async () => {
                             if (!confirm(`删除 ${c.name} 的签到?`)) return;
                             const { error } = await supabase
-                              .from("sunday_school_checkins")
+                              .from("fellowship_checkins")
                               .delete()
                               .eq("id", c.id);
                             if (error) return toast.error(error.message);
-                            logAction(`删除主日学签到: ${c.name}`);
+                            logAction(`删除团契签到: ${c.name}`);
                             toast.success("已删除");
-                            loadSundayCheckins();
+                            loadFellowshipCheckins();
                           }}
                           className="text-xs text-destructive hover:underline"
                         >
@@ -1950,9 +2117,9 @@ function AdminPage() {
                       </td>
                     </tr>
                   ))}
-                  {sundayCheckins.length === 0 && (
+                  {fellowshipCheckins.length === 0 && (
                     <tr>
-                      <td colSpan={6} className="py-8 text-center text-muted-foreground">
+                      <td colSpan={7} className="py-8 text-center text-muted-foreground">
                         暂无签到记录
                       </td>
                     </tr>

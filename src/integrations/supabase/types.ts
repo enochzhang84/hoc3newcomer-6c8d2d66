@@ -104,6 +104,39 @@ export type Database = {
         }
         Relationships: []
       }
+      fellowship_checkins: {
+        Row: {
+          checkin_date: string
+          contact: string | null
+          created_at: string
+          email: string | null
+          fellowship: string
+          id: string
+          name: string
+          prayer_request: string | null
+        }
+        Insert: {
+          checkin_date: string
+          contact?: string | null
+          created_at?: string
+          email?: string | null
+          fellowship: string
+          id?: string
+          name: string
+          prayer_request?: string | null
+        }
+        Update: {
+          checkin_date?: string
+          contact?: string | null
+          created_at?: string
+          email?: string | null
+          fellowship?: string
+          id?: string
+          name?: string
+          prayer_request?: string | null
+        }
+        Relationships: []
+      }
       messages: {
         Row: {
           content: string
