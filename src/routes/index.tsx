@@ -187,7 +187,7 @@ function Index() {
                 </tbody>
               </table>
 
-              <div className="text-sm mt-6 leading-relaxed">
+              <div className="text-sm mt-6 leading-relaxed text-center">
                 <div className="font-bold">The Home of Christ Church</div>
                 <div className="font-bold">In Fremont</div>
                 <div>4248 Solar Way</div>
