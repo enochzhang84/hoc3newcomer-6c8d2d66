@@ -149,7 +149,7 @@ function Index() {
 
       <main className="container mx-auto px-6 py-16">
         <div className="grid gap-12 md:grid-cols-2 items-center max-w-5xl mx-auto">
-          <div className="flex justify-center">
+          <div className="flex justify-end">
             <div className="w-full max-w-sm font-kaiti font-bold text-foreground">
               <div className="flex items-center gap-3 mb-3">
                 <img src={logo} alt="基督之家第三家" className="h-14 w-14 object-contain" />
