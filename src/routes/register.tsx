@@ -147,9 +147,6 @@ function RegisterPage() {
         <div className="mt-4 mb-8">
           <p className="text-sm uppercase tracking-[0.2em] text-accent-foreground/70 mb-2">新人资料表</p>
           <h1 className="font-serif text-4xl text-foreground">基督之家第三家</h1>
-          {eventName && (
-            <p className="text-sm text-muted-foreground mt-2">活动:{eventName}</p>
-          )}
         </div>
 
         <form onSubmit={handleSubmit} className="bg-card border border-border/50 rounded-2xl p-6 md:p-8 space-y-5 shadow-sm">
