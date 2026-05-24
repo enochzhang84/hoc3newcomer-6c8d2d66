@@ -124,6 +124,7 @@ function AdminPage() {
   const [serviceListOpen, setServiceListOpen] = useState(false);
   const [feedbacks, setFeedbacks] = useState<Feedback[]>([]);
   const [feedbackListOpen, setFeedbackListOpen] = useState(false);
+  const [feedbackDetail, setFeedbackDetail] = useState<Feedback | null>(null);
   const [editingFollowUpId, setEditingFollowUpId] = useState<string | null>(null);
   const [followUpDraft, setFollowUpDraft] = useState("");
   const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
