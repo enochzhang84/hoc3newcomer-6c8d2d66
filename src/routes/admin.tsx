@@ -172,6 +172,9 @@ function AdminPage() {
   const [fellowshipsOpen, setFellowshipsOpen] = useState(false);
   const [newFellowshipName, setNewFellowshipName] = useState("");
   const [activeFellowshipTab, setActiveFellowshipTab] = useState<string>("");
+  const [coursePages, setCoursePages] = useState<Record<string, number>>({});
+  const [fellowshipPages, setFellowshipPages] = useState<Record<string, number>>({});
+  const TAB_PAGE_SIZE = 10;
   const [editingFollowUpId, setEditingFollowUpId] = useState<string | null>(null);
   const [followUpDraft, setFollowUpDraft] = useState("");
   const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
