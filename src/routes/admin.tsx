@@ -1829,6 +1829,63 @@ function AdminPage() {
           </DialogContent>
         </Dialog>
 
+        {/* 问题反馈 列表 */}
+        <Dialog open={feedbackListOpen} onOpenChange={setFeedbackListOpen}>
+          <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>问题反馈名单</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-3">
+              {feedbacks.map((f) => (
+                <div key={f.id} className="border border-border/40 rounded-lg p-3 space-y-2">
+                  <div className="flex items-start justify-between gap-2 flex-wrap">
+                    <div>
+                      <p className="font-medium">{f.title}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {new Date(f.created_at).toLocaleString("zh-CN")} · {f.name} · {f.contact}
+                        {f.fellowship ? ` · ${f.fellowship}` : ""}
+                      </p>
+                    </div>
+                    <button
+                      onClick={async () => {
+                        if (!confirm(`确认删除 ${f.name} 的反馈?`)) return;
+                        const { error } = await supabase.from("feedbacks").delete().eq("id", f.id);
+                        if (error) toast.error(error.message);
+                        else {
+                          setFeedbacks((prev) => prev.filter((x) => x.id !== f.id));
+                          logAction(`删除了问题反馈 ${f.name}`);
+                          toast.success("已删除");
+                        }
+                      }}
+                      className="text-xs text-destructive hover:underline shrink-0"
+                    >
+                      删除
+                    </button>
+                  </div>
+                  {f.description && (
+                    <p className="text-sm whitespace-pre-wrap text-foreground/90">{f.description}</p>
+                  )}
+                  {f.images.length > 0 && (
+                    <div className="grid grid-cols-4 gap-2">
+                      {f.images.map((url) => (
+                        <a key={url} href={url} target="_blank" rel="noreferrer">
+                          <img src={url} alt="" className="w-full h-20 object-cover rounded border" />
+                        </a>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+              {feedbacks.length === 0 && (
+                <p className="py-8 text-center text-muted-foreground">暂无问题反馈</p>
+              )}
+            </div>
+            <DialogFooter>
+              <Button onClick={() => setFeedbackListOpen(false)}>关闭</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
         {/* Logs Dialog */}
         <Dialog open={logsOpen} onOpenChange={setLogsOpen}>
           <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
