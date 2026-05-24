@@ -226,18 +226,37 @@ function AdminPage() {
   useEffect(() => setOrigin(window.location.origin), []);
 
   const loadData = useCallback(async () => {
-    const [{ data: r }, { data: e }, { data: s }, { data: a }, { data: f }] = await Promise.all([
+    const [{ data: r }, { data: e }, { data: s }, { data: a }, { data: f }, { data: cs }] = await Promise.all([
       supabase.from("registrations").select("*").order("created_at", { ascending: false }),
       supabase.from("events").select("*").order("created_at", { ascending: true }),
       supabase.from("service_applications").select("*").order("created_at", { ascending: false }),
       supabase.from("attendance_records").select("*").order("record_date", { ascending: false }),
       supabase.from("feedbacks").select("*").order("created_at", { ascending: false }),
+      supabase.from("sunday_school_courses").select("*").order("sort_order", { ascending: true }),
     ]);
     setRegs(r ?? []);
     setEvents(e ?? []);
     setServiceApps((s ?? []) as ServiceApp[]);
     setAttendance((a ?? []) as AttendanceRecord[]);
     setFeedbacks((f ?? []) as Feedback[]);
+    setCourses((cs ?? []) as Course[]);
+  }, []);
+
+  const loadCourses = useCallback(async () => {
+    const { data } = await supabase
+      .from("sunday_school_courses")
+      .select("*")
+      .order("sort_order", { ascending: true });
+    setCourses((data ?? []) as Course[]);
+  }, []);
+
+  const loadSundayCheckins = useCallback(async () => {
+    const { data } = await supabase
+      .from("sunday_school_checkins")
+      .select("*")
+      .order("checkin_date", { ascending: false })
+      .order("created_at", { ascending: false });
+    setSundayCheckins((data ?? []) as SundayCheckin[]);
   }, []);
 
   const loadMessagesCount = useCallback(async () => {
