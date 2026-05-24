@@ -106,6 +106,13 @@ type Course = {
   is_active: boolean;
 };
 
+type Fellowship = {
+  id: string;
+  name: string;
+  sort_order: number;
+  is_active: boolean;
+};
+
 type SundayCheckin = {
   id: string;
   checkin_date: string;
@@ -160,8 +167,11 @@ function AdminPage() {
   const [newCourseName, setNewCourseName] = useState("");
   const [sundayCheckins, setSundayCheckins] = useState<SundayCheckin[]>([]);
   const [fellowshipCheckins, setFellowshipCheckins] = useState<FellowshipCheckin[]>([]);
-  const [fellowshipListOpen, setFellowshipListOpen] = useState(false);
   const [activeCourseTab, setActiveCourseTab] = useState<string>("");
+  const [fellowships, setFellowships] = useState<Fellowship[]>([]);
+  const [fellowshipsOpen, setFellowshipsOpen] = useState(false);
+  const [newFellowshipName, setNewFellowshipName] = useState("");
+  const [activeFellowshipTab, setActiveFellowshipTab] = useState<string>("");
   const [editingFollowUpId, setEditingFollowUpId] = useState<string | null>(null);
   const [followUpDraft, setFollowUpDraft] = useState("");
   const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
@@ -281,6 +291,14 @@ function AdminPage() {
     setFellowshipCheckins((data ?? []) as FellowshipCheckin[]);
   }, []);
 
+  const loadFellowships = useCallback(async () => {
+    const { data } = await supabase
+      .from("fellowships")
+      .select("*")
+      .order("sort_order", { ascending: true });
+    setFellowships((data ?? []) as Fellowship[]);
+  }, []);
+
   const loadMessagesCount = useCallback(async () => {
     const { data: sess } = await supabase.auth.getSession();
     const uid = sess.session?.user.id;
@@ -353,6 +371,7 @@ function AdminPage() {
             void loadMessagesCount();
            void loadSundayCheckins();
            void loadFellowshipCheckins();
+           void loadFellowships();
             void loadUsers();
           }
         } catch (e) {
