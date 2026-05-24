@@ -2070,11 +2070,11 @@ function AdminPage() {
           </DialogContent>
         </Dialog>
 
-        {/* 主日学签到记录 Dialog */}
-        <Dialog open={checkinsOpen} onOpenChange={setCheckinsOpen}>
-          <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+        {/* 团契签到记录 Dialog */}
+        <Dialog open={fellowshipListOpen} onOpenChange={setFellowshipListOpen}>
+          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>主日学签到记录 ({sundayCheckins.length})</DialogTitle>
+              <DialogTitle>团契 / 小组签到记录 ({fellowshipCheckins.length})</DialogTitle>
             </DialogHeader>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
@@ -2084,30 +2084,32 @@ function AdminPage() {
                     <th className="py-2 px-2">姓名</th>
                     <th className="py-2 px-2">电话/微信</th>
                     <th className="py-2 px-2">邮件</th>
-                    <th className="py-2 px-2">课程</th>
+                    <th className="py-2 px-2">团契</th>
+                    <th className="py-2 px-2">代祷备注</th>
                     <th className="py-2 px-2 text-right">操作</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {sundayCheckins.map((c) => (
-                    <tr key={c.id} className="border-b border-border/30">
+                  {fellowshipCheckins.map((c) => (
+                    <tr key={c.id} className="border-b border-border/30 align-top">
                       <td className="py-2 px-2 whitespace-nowrap">{c.checkin_date}</td>
                       <td className="py-2 px-2 font-medium">{c.name}</td>
                       <td className="py-2 px-2">{c.contact ?? ""}</td>
                       <td className="py-2 px-2">{c.email ?? ""}</td>
-                      <td className="py-2 px-2">{c.course_name ?? ""}</td>
+                      <td className="py-2 px-2">{c.fellowship}</td>
+                      <td className="py-2 px-2 max-w-[260px] whitespace-pre-wrap break-words">{c.prayer_request ?? ""}</td>
                       <td className="py-2 px-2 text-right">
                         <button
                           onClick={async () => {
                             if (!confirm(`删除 ${c.name} 的签到?`)) return;
                             const { error } = await supabase
-                              .from("sunday_school_checkins")
+                              .from("fellowship_checkins")
                               .delete()
                               .eq("id", c.id);
                             if (error) return toast.error(error.message);
-                            logAction(`删除主日学签到: ${c.name}`);
+                            logAction(`删除团契签到: ${c.name}`);
                             toast.success("已删除");
-                            loadSundayCheckins();
+                            loadFellowshipCheckins();
                           }}
                           className="text-xs text-destructive hover:underline"
                         >
@@ -2116,9 +2118,9 @@ function AdminPage() {
                       </td>
                     </tr>
                   ))}
-                  {sundayCheckins.length === 0 && (
+                  {fellowshipCheckins.length === 0 && (
                     <tr>
-                      <td colSpan={6} className="py-8 text-center text-muted-foreground">
+                      <td colSpan={7} className="py-8 text-center text-muted-foreground">
                         暂无签到记录
                       </td>
                     </tr>
