@@ -329,6 +329,7 @@ function AdminPage() {
           if (role) {
             void loadData();
             void loadMessagesCount();
+           void loadSundayCheckins();
             void loadUsers();
           }
         } catch (e) {
