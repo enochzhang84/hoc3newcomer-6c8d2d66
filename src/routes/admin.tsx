@@ -1973,11 +1973,14 @@ function AdminPage() {
               </TabsList>
               {fellowships.filter((f) => f.is_active).map((f) => {
                 const rows = fellowshipCheckins.filter((k) => k.fellowship === f.name);
+                const pg = fellowshipPages[f.id] ?? 1;
+                const totalPg = Math.max(1, Math.ceil(rows.length / TAB_PAGE_SIZE));
+                const slice = rows.slice((pg - 1) * TAB_PAGE_SIZE, pg * TAB_PAGE_SIZE);
                 return (
                   <TabsContent key={f.id} value={f.id} className="mt-4">
-                    <div className="overflow-x-auto">
+                    <div className="overflow-x-auto max-h-[480px] overflow-y-auto rounded-lg border border-border/50">
                       <table className="w-full text-sm">
-                        <thead>
+                        <thead className="sticky top-0 z-10 bg-muted/80 backdrop-blur">
                           <tr className="text-left border-b border-border/60 text-muted-foreground">
                             <th className="py-2 px-2">日期</th>
                             <th className="py-2 px-2">姓名</th>
@@ -1988,7 +1991,7 @@ function AdminPage() {
                           </tr>
                         </thead>
                         <tbody>
-                          {rows.map((k) => (
+                          {slice.map((k) => (
                             <tr key={k.id} className="border-b border-border/30 align-top">
                               <td className="py-2 px-2 whitespace-nowrap">{k.checkin_date}</td>
                               <td className="py-2 px-2 font-medium">{k.name}</td>
@@ -2025,6 +2028,13 @@ function AdminPage() {
                         </tbody>
                       </table>
                     </div>
+                    {totalPg > 1 && (
+                      <div className="flex items-center justify-center gap-2 mt-3 text-sm">
+                        <Button size="sm" variant="outline" disabled={pg === 1} onClick={() => setFellowshipPages({ ...fellowshipPages, [f.id]: pg - 1 })}>上一页</Button>
+                        <span>{pg} / {totalPg}</span>
+                        <Button size="sm" variant="outline" disabled={pg === totalPg} onClick={() => setFellowshipPages({ ...fellowshipPages, [f.id]: pg + 1 })}>下一页</Button>
+                      </div>
+                    )}
                   </TabsContent>
                 );
               })}
