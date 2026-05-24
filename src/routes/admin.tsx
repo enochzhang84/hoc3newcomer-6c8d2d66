@@ -1873,9 +1873,27 @@ function AdminPage() {
                     .from("events")
                     .delete()
                     .not("id", "is", null);
-                  setInitLoading(false);
                   if (evErr) {
+                    setInitLoading(false);
                     toast.error("清空活动失败: " + evErr.message);
+                    return;
+                  }
+                  const { error: msgErr } = await supabase
+                    .from("messages")
+                    .delete()
+                    .not("id", "is", null);
+                  if (msgErr) {
+                    setInitLoading(false);
+                    toast.error("清空留言板失败: " + msgErr.message);
+                    return;
+                  }
+                  const { error: svcErr } = await supabase
+                    .from("service_applications")
+                    .delete()
+                    .not("id", "is", null);
+                  setInitLoading(false);
+                  if (svcErr) {
+                    toast.error("清空服侍申请失败: " + svcErr.message);
                     return;
                   }
                   logAction(`系统初始化（清空了 ${regs.length} 条登记）`);
