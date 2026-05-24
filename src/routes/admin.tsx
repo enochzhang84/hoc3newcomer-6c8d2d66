@@ -1207,12 +1207,28 @@ function AdminPage() {
               </div>
             </div>
 
-            {/* 预留位置 */}
-            <div className="border border-dashed border-border/50 rounded-xl p-4 flex flex-col items-center justify-center gap-3 min-h-[260px] text-muted-foreground">
-              <div className="w-[180px] h-[180px] rounded-lg bg-muted/30 flex items-center justify-center text-sm">
-                预留位置
+            {/* 问题反馈 QR */}
+            <div className="border border-border/50 rounded-xl p-4 flex flex-col items-center gap-3">
+              <p className="font-medium">问题反馈</p>
+              {origin && (
+                <QRCodeSVG value={`${origin}/feedback`} size={180} level="H" />
+              )}
+              <p className="text-xs text-muted-foreground break-all text-center">{origin}/feedback</p>
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    navigator.clipboard.writeText(`${origin}/feedback`);
+                    toast.success("链接已复制");
+                  }}
+                >
+                  复制链接
+                </Button>
+                <Button size="sm" onClick={() => setFeedbackListOpen(true)}>
+                  查看信息 ({feedbacks.length})
+                </Button>
               </div>
-              <p className="text-xs">待添加</p>
             </div>
           </div>
         </section>
