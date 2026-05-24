@@ -1509,14 +1509,7 @@ function AdminPage() {
                         `今日新人：${newcomers} 人` +
                         newcomerLines;
                       setAttText(text);
-                      const rec = {
-                        id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-                        date: attDate,
-                        text,
-                        savedAt: new Date().toISOString(),
-                      };
-                      persistAttTextRecords([rec, ...attTextRecords].slice(0, 50));
-                      toast.success("已生成并保存记录");
+                      toast.success("已生成文本");
                     }}
                   >生成文本</Button>
                   <Button
