@@ -292,6 +292,72 @@ export type Database = {
           },
         ]
       }
+      retreat_registrations: {
+        Row: {
+          bed: string | null
+          bus: string | null
+          cell: string | null
+          chinese_name: string
+          church: string | null
+          confirmation_no: string | null
+          created_at: string
+          email: string | null
+          entry_no: number
+          first_name: string | null
+          gender: string | null
+          id: string
+          last_name: string | null
+          paid: boolean
+          program: string | null
+          serial_no: string | null
+          topic: string | null
+          updated_at: string
+          user_notes: string | null
+        }
+        Insert: {
+          bed?: string | null
+          bus?: string | null
+          cell?: string | null
+          chinese_name: string
+          church?: string | null
+          confirmation_no?: string | null
+          created_at?: string
+          email?: string | null
+          entry_no?: number
+          first_name?: string | null
+          gender?: string | null
+          id?: string
+          last_name?: string | null
+          paid?: boolean
+          program?: string | null
+          serial_no?: string | null
+          topic?: string | null
+          updated_at?: string
+          user_notes?: string | null
+        }
+        Update: {
+          bed?: string | null
+          bus?: string | null
+          cell?: string | null
+          chinese_name?: string
+          church?: string | null
+          confirmation_no?: string | null
+          created_at?: string
+          email?: string | null
+          entry_no?: number
+          first_name?: string | null
+          gender?: string | null
+          id?: string
+          last_name?: string | null
+          paid?: boolean
+          program?: string | null
+          serial_no?: string | null
+          topic?: string | null
+          updated_at?: string
+          user_notes?: string | null
+        }
+        Relationships: []
+      }
       service_applications: {
         Row: {
           created_at: string

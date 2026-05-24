@@ -172,6 +172,9 @@ function AdminPage() {
   const [fellowshipsOpen, setFellowshipsOpen] = useState(false);
   const [newFellowshipName, setNewFellowshipName] = useState("");
   const [activeFellowshipTab, setActiveFellowshipTab] = useState<string>("");
+  const [coursePages, setCoursePages] = useState<Record<string, number>>({});
+  const [fellowshipPages, setFellowshipPages] = useState<Record<string, number>>({});
+  const TAB_PAGE_SIZE = 10;
   const [editingFollowUpId, setEditingFollowUpId] = useState<string | null>(null);
   const [followUpDraft, setFollowUpDraft] = useState("");
   const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
@@ -1509,14 +1512,7 @@ function AdminPage() {
                         `今日新人：${newcomers} 人` +
                         newcomerLines;
                       setAttText(text);
-                      const rec = {
-                        id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-                        date: attDate,
-                        text,
-                        savedAt: new Date().toISOString(),
-                      };
-                      persistAttTextRecords([rec, ...attTextRecords].slice(0, 50));
-                      toast.success("已生成并保存记录");
+                      toast.success("已生成文本");
                     }}
                   >生成文本</Button>
                   <Button
@@ -1546,55 +1542,6 @@ function AdminPage() {
                     className="font-mono text-sm"
                     onClick={(e) => (e.target as HTMLTextAreaElement).select()}
                   />
-                )}
-                {attTextRecords.length > 0 && (
-                  <div className="mt-4">
-                    <h3 className="text-sm font-medium mb-2">文本记录</h3>
-                    <div className="space-y-2">
-                      {attTextRecords.map((r) => (
-                        <div
-                          key={r.id}
-                          className="border border-border/50 rounded-lg p-3 text-sm"
-                        >
-                          <div className="flex items-center justify-between mb-2 gap-2 flex-wrap">
-                            <div className="text-xs text-muted-foreground">
-                              {r.date} · 保存于 {new Date(r.savedAt).toLocaleString("zh-CN")}
-                            </div>
-                            <div className="flex gap-2">
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => setAttText(r.text)}
-                              >查看</Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={async () => {
-                                  try {
-                                    await navigator.clipboard.writeText(r.text);
-                                    toast.success("已复制");
-                                  } catch {
-                                    toast.error("复制失败");
-                                  }
-                                }}
-                              >复制</Button>
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={() => {
-                                  if (!confirm("删除该记录?")) return;
-                                  persistAttTextRecords(
-                                    attTextRecords.filter((x) => x.id !== r.id),
-                                  );
-                                }}
-                              >删除</Button>
-                            </div>
-                          </div>
-                          <pre className="whitespace-pre-wrap font-mono text-xs text-muted-foreground">{r.text}</pre>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
                 )}
               </>
             );
@@ -1789,11 +1736,14 @@ function AdminPage() {
               </TabsList>
               {courses.filter((c) => c.is_active).map((c) => {
                 const rows = sundayCheckins.filter((k) => k.course_id === c.id);
+                const pg = coursePages[c.id] ?? 1;
+                const totalPg = Math.max(1, Math.ceil(rows.length / TAB_PAGE_SIZE));
+                const slice = rows.slice((pg - 1) * TAB_PAGE_SIZE, pg * TAB_PAGE_SIZE);
                 return (
                   <TabsContent key={c.id} value={c.id} className="mt-4">
-                    <div className="overflow-x-auto">
+                    <div className="overflow-x-auto max-h-[480px] overflow-y-auto rounded-lg border border-border/50">
                       <table className="w-full text-sm">
-                        <thead>
+                        <thead className="sticky top-0 z-10 bg-muted/80 backdrop-blur">
                           <tr className="text-left border-b border-border/60 text-muted-foreground">
                             <th className="py-2 px-2">日期</th>
                             <th className="py-2 px-2">姓名</th>
@@ -1803,7 +1753,7 @@ function AdminPage() {
                           </tr>
                         </thead>
                         <tbody>
-                          {rows.map((k) => (
+                          {slice.map((k) => (
                             <tr key={k.id} className="border-b border-border/30">
                               <td className="py-2 px-2 whitespace-nowrap">{k.checkin_date}</td>
                               <td className="py-2 px-2 font-medium">{k.name}</td>
@@ -1839,6 +1789,13 @@ function AdminPage() {
                         </tbody>
                       </table>
                     </div>
+                    {totalPg > 1 && (
+                      <div className="flex items-center justify-center gap-2 mt-3 text-sm">
+                        <Button size="sm" variant="outline" disabled={pg === 1} onClick={() => setCoursePages({ ...coursePages, [c.id]: pg - 1 })}>上一页</Button>
+                        <span>{pg} / {totalPg}</span>
+                        <Button size="sm" variant="outline" disabled={pg === totalPg} onClick={() => setCoursePages({ ...coursePages, [c.id]: pg + 1 })}>下一页</Button>
+                      </div>
+                    )}
                   </TabsContent>
                 );
               })}
@@ -1858,6 +1815,15 @@ function AdminPage() {
               ) : (
                 <span className="font-medium text-foreground">二维码已停用</span>
               )}
+            </div>
+            <div className="ml-auto">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => window.open("/retreat", "_blank", "noopener,noreferrer")}
+              >
+                退修会登记
+              </Button>
             </div>
           </div>
           <div className="flex flex-wrap gap-2 mb-4">
@@ -2016,11 +1982,14 @@ function AdminPage() {
               </TabsList>
               {fellowships.filter((f) => f.is_active).map((f) => {
                 const rows = fellowshipCheckins.filter((k) => k.fellowship === f.name);
+                const pg = fellowshipPages[f.id] ?? 1;
+                const totalPg = Math.max(1, Math.ceil(rows.length / TAB_PAGE_SIZE));
+                const slice = rows.slice((pg - 1) * TAB_PAGE_SIZE, pg * TAB_PAGE_SIZE);
                 return (
                   <TabsContent key={f.id} value={f.id} className="mt-4">
-                    <div className="overflow-x-auto">
+                    <div className="overflow-x-auto max-h-[480px] overflow-y-auto rounded-lg border border-border/50">
                       <table className="w-full text-sm">
-                        <thead>
+                        <thead className="sticky top-0 z-10 bg-muted/80 backdrop-blur">
                           <tr className="text-left border-b border-border/60 text-muted-foreground">
                             <th className="py-2 px-2">日期</th>
                             <th className="py-2 px-2">姓名</th>
@@ -2031,7 +2000,7 @@ function AdminPage() {
                           </tr>
                         </thead>
                         <tbody>
-                          {rows.map((k) => (
+                          {slice.map((k) => (
                             <tr key={k.id} className="border-b border-border/30 align-top">
                               <td className="py-2 px-2 whitespace-nowrap">{k.checkin_date}</td>
                               <td className="py-2 px-2 font-medium">{k.name}</td>
@@ -2068,6 +2037,13 @@ function AdminPage() {
                         </tbody>
                       </table>
                     </div>
+                    {totalPg > 1 && (
+                      <div className="flex items-center justify-center gap-2 mt-3 text-sm">
+                        <Button size="sm" variant="outline" disabled={pg === 1} onClick={() => setFellowshipPages({ ...fellowshipPages, [f.id]: pg - 1 })}>上一页</Button>
+                        <span>{pg} / {totalPg}</span>
+                        <Button size="sm" variant="outline" disabled={pg === totalPg} onClick={() => setFellowshipPages({ ...fellowshipPages, [f.id]: pg + 1 })}>下一页</Button>
+                      </div>
+                    )}
                   </TabsContent>
                 );
               })}

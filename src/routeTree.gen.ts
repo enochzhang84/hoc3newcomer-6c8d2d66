@@ -13,6 +13,9 @@ import { Route as TodayPreviewRouteImport } from './routes/today-preview'
 import { Route as SundayCheckinRouteImport } from './routes/sunday-checkin'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as ServeApplyRouteImport } from './routes/serve-apply'
+import { Route as RetreatRegisterRouteImport } from './routes/retreat-register'
+import { Route as RetreatAdminRouteImport } from './routes/retreat-admin'
+import { Route as RetreatRouteImport } from './routes/retreat'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as MessageBoardRouteImport } from './routes/message-board'
@@ -43,6 +46,21 @@ const SignupRoute = SignupRouteImport.update({
 const ServeApplyRoute = ServeApplyRouteImport.update({
   id: '/serve-apply',
   path: '/serve-apply',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RetreatRegisterRoute = RetreatRegisterRouteImport.update({
+  id: '/retreat-register',
+  path: '/retreat-register',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RetreatAdminRoute = RetreatAdminRouteImport.update({
+  id: '/retreat-admin',
+  path: '/retreat-admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RetreatRoute = RetreatRouteImport.update({
+  id: '/retreat',
+  path: '/retreat',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
@@ -112,6 +130,9 @@ export interface FileRoutesByFullPath {
   '/message-board': typeof MessageBoardRoute
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/retreat': typeof RetreatRoute
+  '/retreat-admin': typeof RetreatAdminRoute
+  '/retreat-register': typeof RetreatRegisterRoute
   '/serve-apply': typeof ServeApplyRoute
   '/signup': typeof SignupRoute
   '/sunday-checkin': typeof SundayCheckinRoute
@@ -129,6 +150,9 @@ export interface FileRoutesByTo {
   '/message-board': typeof MessageBoardRoute
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/retreat': typeof RetreatRoute
+  '/retreat-admin': typeof RetreatAdminRoute
+  '/retreat-register': typeof RetreatRegisterRoute
   '/serve-apply': typeof ServeApplyRoute
   '/signup': typeof SignupRoute
   '/sunday-checkin': typeof SundayCheckinRoute
@@ -147,6 +171,9 @@ export interface FileRoutesById {
   '/message-board': typeof MessageBoardRoute
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/retreat': typeof RetreatRoute
+  '/retreat-admin': typeof RetreatAdminRoute
+  '/retreat-register': typeof RetreatRegisterRoute
   '/serve-apply': typeof ServeApplyRoute
   '/signup': typeof SignupRoute
   '/sunday-checkin': typeof SundayCheckinRoute
@@ -166,6 +193,9 @@ export interface FileRouteTypes {
     | '/message-board'
     | '/register'
     | '/reset-password'
+    | '/retreat'
+    | '/retreat-admin'
+    | '/retreat-register'
     | '/serve-apply'
     | '/signup'
     | '/sunday-checkin'
@@ -183,6 +213,9 @@ export interface FileRouteTypes {
     | '/message-board'
     | '/register'
     | '/reset-password'
+    | '/retreat'
+    | '/retreat-admin'
+    | '/retreat-register'
     | '/serve-apply'
     | '/signup'
     | '/sunday-checkin'
@@ -200,6 +233,9 @@ export interface FileRouteTypes {
     | '/message-board'
     | '/register'
     | '/reset-password'
+    | '/retreat'
+    | '/retreat-admin'
+    | '/retreat-register'
     | '/serve-apply'
     | '/signup'
     | '/sunday-checkin'
@@ -218,6 +254,9 @@ export interface RootRouteChildren {
   MessageBoardRoute: typeof MessageBoardRoute
   RegisterRoute: typeof RegisterRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  RetreatRoute: typeof RetreatRoute
+  RetreatAdminRoute: typeof RetreatAdminRoute
+  RetreatRegisterRoute: typeof RetreatRegisterRoute
   ServeApplyRoute: typeof ServeApplyRoute
   SignupRoute: typeof SignupRoute
   SundayCheckinRoute: typeof SundayCheckinRoute
@@ -253,6 +292,27 @@ declare module '@tanstack/react-router' {
       path: '/serve-apply'
       fullPath: '/serve-apply'
       preLoaderRoute: typeof ServeApplyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/retreat-register': {
+      id: '/retreat-register'
+      path: '/retreat-register'
+      fullPath: '/retreat-register'
+      preLoaderRoute: typeof RetreatRegisterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/retreat-admin': {
+      id: '/retreat-admin'
+      path: '/retreat-admin'
+      fullPath: '/retreat-admin'
+      preLoaderRoute: typeof RetreatAdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/retreat': {
+      id: '/retreat'
+      path: '/retreat'
+      fullPath: '/retreat'
+      preLoaderRoute: typeof RetreatRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/reset-password': {
@@ -346,6 +406,9 @@ const rootRouteChildren: RootRouteChildren = {
   MessageBoardRoute: MessageBoardRoute,
   RegisterRoute: RegisterRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  RetreatRoute: RetreatRoute,
+  RetreatAdminRoute: RetreatAdminRoute,
+  RetreatRegisterRoute: RetreatRegisterRoute,
   ServeApplyRoute: ServeApplyRoute,
   SignupRoute: SignupRoute,
   SundayCheckinRoute: SundayCheckinRoute,
