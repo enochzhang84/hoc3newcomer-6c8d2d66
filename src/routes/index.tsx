@@ -18,6 +18,18 @@ function Index() {
   const [event, setEvent] = useState<{ name: string; qr_token: string } | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isIPad, setIsIPad] = useState(false);
+  const [verse, setVerse] = useState<{ text: string; ref: string } | null>(null);
+
+  const VERSES = [
+    { text: "凡劳苦担重担的人，可以到我这里来，我就使你们得安息。", ref: "马太福音 11:28" },
+    { text: "耶和华是我的牧者，我必不致缺乏。", ref: "诗篇 23:1" },
+    { text: "你们要尝尝主恩的滋味，便知道他是美善。", ref: "诗篇 34:8" },
+    { text: "我留下平安给你们，我将我的平安赐给你们。", ref: "约翰福音 14:27" },
+    { text: "应当一无挂虑，只要凡事藉着祷告、祈求和感谢，将你们所要的告诉神。", ref: "腓立比书 4:6" },
+    { text: "神所赐出人意外的平安，必在基督耶稣里保守你们的心怀意念。", ref: "腓立比书 4:7" },
+    { text: "你们祈求，就给你们；寻找，就寻见；叩门，就给你们开门。", ref: "马太福音 7:7" },
+    { text: "神爱世人，甚至将他的独生子赐给他们。", ref: "约翰福音 3:16" },
+  ];
 
   useEffect(() => {
     const ua = navigator.userAgent;
@@ -46,8 +58,11 @@ function Index() {
 
   const enterFullscreen = async () => {
     try {
+      // Pick a fresh verse for the top banner each time
+      setVerse(VERSES[Math.floor(Math.random() * VERSES.length)]);
       // On iPad Safari, requestFullscreen shows a persistent X button overlay.
-      // Skip the native API on iPad and just hide the UI via scroll + state.
+      // Skip the native API on iPad and rely on the sticky verse banner +
+      // scroll trick to cover the address bar.
       if (!isIPad) {
         const el = document.documentElement as HTMLElement & {
           webkitRequestFullscreen?: () => Promise<void>;
@@ -55,11 +70,16 @@ function Index() {
         if (el.requestFullscreen) await el.requestFullscreen();
         else if (el.webkitRequestFullscreen) await el.webkitRequestFullscreen();
       }
-      window.scrollTo(0, 1);
       setIsFullscreen(true);
+      // Allow layout to grow before scrolling so Safari actually hides the URL bar
+      requestAnimationFrame(() => {
+        setTimeout(() => window.scrollTo(0, 1), 50);
+      });
     } catch (e) {
-      window.scrollTo(0, 1);
       setIsFullscreen(true);
+      requestAnimationFrame(() => {
+        setTimeout(() => window.scrollTo(0, 1), 50);
+      });
     }
   };
 
@@ -78,7 +98,17 @@ function Index() {
   const url = event ? `${PUBLISHED_ORIGIN}/register?event=${event.qr_token}` : "";
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className={`min-h-screen bg-background ${isFullscreen ? "min-h-[120vh]" : ""}`}>
+      {isFullscreen && verse && (
+        <div className="fixed top-0 inset-x-0 z-50 bg-primary text-primary-foreground shadow-md">
+          <div className="container mx-auto px-6 py-3 flex items-center justify-center text-center">
+            <p className="text-sm md:text-base font-serif leading-relaxed">
+              「{verse.text}」
+              <span className="ml-2 opacity-80 text-xs md:text-sm">— {verse.ref}</span>
+            </p>
+          </div>
+        </div>
+      )}
       <header className="border-b border-border/60">
         <div className="container mx-auto flex items-center justify-between px-6 py-5">
           <a href="/admin" className="flex items-center gap-2">
