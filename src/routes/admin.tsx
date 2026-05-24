@@ -353,6 +353,7 @@ function AdminPage() {
             void loadData();
             void loadMessagesCount();
            void loadSundayCheckins();
+           void loadFellowshipCheckins();
             void loadUsers();
           }
         } catch (e) {
