@@ -117,6 +117,17 @@ type SundayCheckin = {
   created_at: string;
 };
 
+type FellowshipCheckin = {
+  id: string;
+  checkin_date: string;
+  name: string;
+  contact: string | null;
+  email: string | null;
+  fellowship: string;
+  prayer_request: string | null;
+  created_at: string;
+};
+
 export const Route = createFileRoute("/admin")({
   component: AdminPage,
 });
