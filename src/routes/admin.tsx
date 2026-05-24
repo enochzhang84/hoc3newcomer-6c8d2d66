@@ -87,6 +87,17 @@ type AttendanceRecord = {
   created_at: string;
 };
 
+type Feedback = {
+  id: string;
+  name: string;
+  contact: string;
+  fellowship: string | null;
+  title: string;
+  description: string | null;
+  images: string[];
+  created_at: string;
+};
+
 export const Route = createFileRoute("/admin")({
   component: AdminPage,
 });
@@ -111,6 +122,8 @@ function AdminPage() {
   const [messagesCount, setMessagesCount] = useState(0);
   const [serviceApps, setServiceApps] = useState<ServiceApp[]>([]);
   const [serviceListOpen, setServiceListOpen] = useState(false);
+  const [feedbacks, setFeedbacks] = useState<Feedback[]>([]);
+  const [feedbackListOpen, setFeedbackListOpen] = useState(false);
   const [editingFollowUpId, setEditingFollowUpId] = useState<string | null>(null);
   const [followUpDraft, setFollowUpDraft] = useState("");
   const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
@@ -171,16 +184,18 @@ function AdminPage() {
   useEffect(() => setOrigin(window.location.origin), []);
 
   const loadData = useCallback(async () => {
-    const [{ data: r }, { data: e }, { data: s }, { data: a }] = await Promise.all([
+    const [{ data: r }, { data: e }, { data: s }, { data: a }, { data: f }] = await Promise.all([
       supabase.from("registrations").select("*").order("created_at", { ascending: false }),
       supabase.from("events").select("*").order("created_at", { ascending: true }),
       supabase.from("service_applications").select("*").order("created_at", { ascending: false }),
       supabase.from("attendance_records").select("*").order("record_date", { ascending: false }),
+      supabase.from("feedbacks").select("*").order("created_at", { ascending: false }),
     ]);
     setRegs(r ?? []);
     setEvents(e ?? []);
     setServiceApps((s ?? []) as ServiceApp[]);
     setAttendance((a ?? []) as AttendanceRecord[]);
+    setFeedbacks((f ?? []) as Feedback[]);
   }, []);
 
   const loadMessagesCount = useCallback(async () => {
