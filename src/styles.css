@@ -152,3 +152,7 @@
   animation: verse-marquee 40s linear infinite;
   width: max-content;
 }
+
+.font-kaiti {
+  font-family: 'KaiTi', 'STKaiti', 'BiauKai', '华文楷体', serif;
+}
