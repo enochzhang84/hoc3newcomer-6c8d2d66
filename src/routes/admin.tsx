@@ -461,8 +461,9 @@ function AdminPage() {
     const referrerText = (r: Reg) => {
       const t = r.referrer_type ?? "";
       const friendName = t === "friend" ? esc(r.invited_by ?? "") : "";
+      const missionaryName = t === "missionary" ? esc(r.invited_by ?? "") : "";
       const otherText = t === "other" ? esc(r.referrer_other ?? "") : "";
-      return `${t === "self" ? "☑" : "☐"}自己　${t === "friend" ? "☑" : "☐"}親友姓名 ${friendName}　${t === "other" ? "☑" : "☐"}其他 ${otherText}`;
+      return `${t === "self" ? "☑" : "☐"}自己　${t === "friend" ? "☑" : "☐"}親友姓名 ${friendName}　${t === "wechat" ? "☑" : "☐"}微信/小紅書　${t === "youtube" ? "☑" : "☐"}YouTube　${t === "missionary" ? "☑" : "☐"}宣教士 ${missionaryName}　${t === "other" ? "☑" : "☐"}其他 ${otherText}`;
     };
     const wantsText = (r: Reg) =>
       `${r.wants_visit ? "☑" : "☐"}我歡迎教會牧者探訪我　${r.wants_info ? "☑" : "☐"}我需要教會的資料及聯絡`;
