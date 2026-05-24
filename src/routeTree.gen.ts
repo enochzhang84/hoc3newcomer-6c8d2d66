@@ -18,6 +18,7 @@ import { Route as RegisterRouteImport } from './routes/register'
 import { Route as MessageBoardRouteImport } from './routes/message-board'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
+import { Route as FellowshipCheckinRouteImport } from './routes/fellowship-checkin'
 import { Route as FeedbackRouteImport } from './routes/feedback'
 import { Route as DataPreviewRouteImport } from './routes/data-preview'
 import { Route as AdminRouteImport } from './routes/admin'
@@ -69,6 +70,11 @@ const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
   path: '/forgot-password',
   getParentRoute: () => rootRouteImport,
 } as any)
+const FellowshipCheckinRoute = FellowshipCheckinRouteImport.update({
+  id: '/fellowship-checkin',
+  path: '/fellowship-checkin',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const FeedbackRoute = FeedbackRouteImport.update({
   id: '/feedback',
   path: '/feedback',
@@ -100,6 +106,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRoute
   '/data-preview': typeof DataPreviewRoute
   '/feedback': typeof FeedbackRoute
+  '/fellowship-checkin': typeof FellowshipCheckinRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/message-board': typeof MessageBoardRoute
@@ -116,6 +123,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminRoute
   '/data-preview': typeof DataPreviewRoute
   '/feedback': typeof FeedbackRoute
+  '/fellowship-checkin': typeof FellowshipCheckinRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/message-board': typeof MessageBoardRoute
@@ -133,6 +141,7 @@ export interface FileRoutesById {
   '/admin': typeof AdminRoute
   '/data-preview': typeof DataPreviewRoute
   '/feedback': typeof FeedbackRoute
+  '/fellowship-checkin': typeof FellowshipCheckinRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/message-board': typeof MessageBoardRoute
@@ -151,6 +160,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/data-preview'
     | '/feedback'
+    | '/fellowship-checkin'
     | '/forgot-password'
     | '/login'
     | '/message-board'
@@ -167,6 +177,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/data-preview'
     | '/feedback'
+    | '/fellowship-checkin'
     | '/forgot-password'
     | '/login'
     | '/message-board'
@@ -183,6 +194,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/data-preview'
     | '/feedback'
+    | '/fellowship-checkin'
     | '/forgot-password'
     | '/login'
     | '/message-board'
@@ -200,6 +212,7 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRoute
   DataPreviewRoute: typeof DataPreviewRoute
   FeedbackRoute: typeof FeedbackRoute
+  FellowshipCheckinRoute: typeof FellowshipCheckinRoute
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   LoginRoute: typeof LoginRoute
   MessageBoardRoute: typeof MessageBoardRoute
@@ -277,6 +290,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ForgotPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/fellowship-checkin': {
+      id: '/fellowship-checkin'
+      path: '/fellowship-checkin'
+      fullPath: '/fellowship-checkin'
+      preLoaderRoute: typeof FellowshipCheckinRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/feedback': {
       id: '/feedback'
       path: '/feedback'
@@ -320,6 +340,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRoute: AdminRoute,
   DataPreviewRoute: DataPreviewRoute,
   FeedbackRoute: FeedbackRoute,
+  FellowshipCheckinRoute: FellowshipCheckinRoute,
   ForgotPasswordRoute: ForgotPasswordRoute,
   LoginRoute: LoginRoute,
   MessageBoardRoute: MessageBoardRoute,
