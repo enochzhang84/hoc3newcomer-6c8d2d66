@@ -689,7 +689,6 @@ function AdminPage() {
           <Stat label="总登记数" value={regs.length} />
           <Stat label="希望探访" value={regs.filter((r) => r.wants_visit).length} />
           <Stat label="需要资料" value={regs.filter((r) => r.wants_info).length} />
-          <Stat label="活动数" value={events.length} />
           </div>
           <div className="grid grid-cols-2 md:grid-cols-6 gap-4 mt-4">
             {(() => {
@@ -1113,7 +1112,17 @@ function AdminPage() {
 
         {/* 教会活动 (Events / QR) */}
         <section className="bg-card border border-border/50 rounded-2xl p-6">
-          <h2 className="font-serif text-xl mb-4">教会活动</h2>
+          <div className="flex items-center gap-4 mb-4 flex-wrap">
+            <h2 className="font-serif text-xl">教会活动</h2>
+            <div className="flex items-center gap-2 text-sm">
+              <span className="text-muted-foreground">二维码状态:</span>
+              {events.some((e) => e.is_active) ? (
+                <span className="font-medium text-green-600">二维码工作中</span>
+              ) : (
+                <span className="font-medium text-foreground">二维码已停用</span>
+              )}
+            </div>
+          </div>
           <div className="flex flex-wrap gap-2 mb-4">
             <Button onClick={addEvent}>生成新二维码</Button>
           </div>
