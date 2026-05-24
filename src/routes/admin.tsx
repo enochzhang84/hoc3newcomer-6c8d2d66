@@ -432,6 +432,108 @@ function AdminPage() {
     exportRows(filtered, "新人登记");
   }
 
+  function printHandwrittenForms(list: Reg[]) {
+    const esc = (s: unknown) =>
+      String(s ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+
+    const faithText = (r: Reg) => {
+      if (r.faith === "christian") return `☑基督徒 年${r.faith_years ?? ""}　☐慕道友　☐其他`;
+      if (r.faith === "seeker") return `☐基督徒 年___　☑慕道友　☐其他`;
+      if (r.faith === "other") return `☐基督徒 年___　☐慕道友　☑其他 ${esc(r.faith_other ?? "")}`;
+      return `☐基督徒 年___　☐慕道友　☐其他`;
+    };
+    const ageText = (r: Reg) => {
+      const a = r.age_group ?? "";
+      const m = (v: string) => (a === v ? "☑" : "☐");
+      return `${m("60+")}60歲以上　${m("40-60")}40-60歲　${m("20-39")}20-39歲`;
+    };
+    const genderText = (r: Reg) => {
+      const g = r.gender ?? "";
+      return `${g === "male" ? "☑" : "☐"}男　${g === "female" ? "☑" : "☐"}女`;
+    };
+    const maritalText = (r: Reg) => {
+      const m = r.marital_status ?? "";
+      return `${m === "married" ? "☑" : "☐"}已婚　配偶姓名：${esc(r.spouse_name ?? "")}　${m === "single" ? "☑" : "☐"}單身`;
+    };
+    const referrerText = (r: Reg) => {
+      const t = r.referrer_type ?? "";
+      const friendName = t === "friend" ? esc(r.invited_by ?? "") : "";
+      const otherText = t === "other" ? esc(r.referrer_other ?? "") : "";
+      return `${t === "self" ? "☑" : "☐"}自己　${t === "friend" ? "☑" : "☐"}親友姓名 ${friendName}　${t === "other" ? "☑" : "☐"}其他 ${otherText}`;
+    };
+    const wantsText = (r: Reg) =>
+      `${r.wants_visit ? "☑" : "☐"}我歡迎教會牧者探訪我　${r.wants_info ? "☑" : "☐"}我需要教會的資料及聯絡`;
+
+    const renderForm = (r: Reg) => {
+      const date = new Date(r.created_at).toLocaleDateString("zh-CN");
+      return `
+        <div class="form">
+          <h2>基督之家第三家新人資料表</h2>
+          <div class="row"><span class="lbl">日期：</span><span class="val">${esc(date)}</span><span class="lbl right">區別：</span><span class="val short">${esc(r.district ?? "")}</span></div>
+          <div class="row"><span class="lbl">姓名：(中)</span><span class="val">${esc(r.name)}</span><span class="lbl">(英)</span><span class="val">${esc(r.name_en ?? "")}</span><span class="lbl right">性別：${genderText(r)}</span></div>
+          <div class="row"><span class="lbl">地址：</span><span class="val grow">${esc(r.address ?? "")}</span></div>
+          <div class="row"><span class="lbl">City：</span><span class="val">${esc(r.city ?? "")}</span><span class="lbl">ZIP：</span><span class="val">${esc(r.zip ?? "")}</span></div>
+          <div class="row"><span class="lbl">電話：</span><span class="val">${esc(r.phone ?? "")}</span><span class="lbl">電郵地址：</span><span class="val grow">${esc(r.email ?? "")}</span></div>
+          <div class="row"><span class="lbl">信仰：</span><span class="val grow">${faithText(r)}</span></div>
+          <div class="row"><span class="lbl">年齡：</span><span class="val grow">${ageText(r)}</span></div>
+          <div class="row"><span class="lbl">婚姻：</span><span class="val grow">${maritalText(r)}</span></div>
+          <div class="row"><span class="lbl">介紹人：</span><span class="val grow">${referrerText(r)}</span></div>
+          <div class="row"><span class="val grow">${wantsText(r)}</span></div>
+          ${r.notes ? `<div class="row"><span class="lbl">備註：</span><span class="val grow">${esc(r.notes)}</span></div>` : ""}
+        </div>
+      `;
+    };
+
+    // Group into pages of 4
+    const pages: Reg[][] = [];
+    for (let i = 0; i < list.length; i += 4) pages.push(list.slice(i, i + 4));
+
+    const html = `<!doctype html>
+<html><head><meta charset="utf-8"/><title>新人資料表 打印</title>
+<style>
+  @page { size: A4 portrait; margin: 10mm; }
+  * { box-sizing: border-box; }
+  body { font-family: "Microsoft YaHei", "PingFang SC", "Songti SC", serif; margin: 0; color: #000; }
+  .page { display: grid; grid-template-rows: 1fr 1fr 1fr 1fr; gap: 4mm; height: 277mm; page-break-after: always; }
+  .page:last-child { page-break-after: auto; }
+  .form { border: 1px solid #000; padding: 4mm 5mm; font-size: 11pt; display: flex; flex-direction: column; gap: 2.5mm; overflow: hidden; }
+  .form h2 { text-align: center; margin: 0 0 2mm; font-size: 13pt; font-weight: 600; letter-spacing: 2px; }
+  .row { display: flex; align-items: baseline; gap: 4mm; border-bottom: 1px dotted #888; padding-bottom: 1mm; min-height: 6mm; flex-wrap: wrap; }
+  .lbl { white-space: nowrap; font-weight: 500; }
+  .lbl.right { margin-left: auto; }
+  .val { min-width: 30mm; }
+  .val.short { min-width: 18mm; }
+  .val.grow { flex: 1; }
+  .toolbar { padding: 10px; display: flex; gap: 8px; justify-content: center; background: #f5f5f5; }
+  .toolbar button { padding: 8px 16px; font-size: 14px; cursor: pointer; }
+  @media print { .toolbar { display: none; } }
+</style></head>
+<body>
+  <div class="toolbar">
+    <button onclick="window.print()">打印</button>
+    <button onclick="window.close()">关闭</button>
+  </div>
+  ${pages
+    .map(
+      (p) => `<div class="page">${p.map(renderForm).join("")}${Array.from({ length: 4 - p.length }).map(() => '<div class="form" style="border:1px dashed #ccc;"></div>').join("")}</div>`,
+    )
+    .join("")}
+  <script>window.addEventListener('load',()=>setTimeout(()=>window.print(),300));</script>
+</body></html>`;
+
+    const w = window.open("", "_blank");
+    if (!w) {
+      toast.error("浏览器拦截了弹窗，请允许弹出窗口");
+      return;
+    }
+    w.document.open();
+    w.document.write(html);
+    w.document.close();
+  }
+
   function exportAllExcel() {
     exportRows(regs, "新人登记_全部");
   }
