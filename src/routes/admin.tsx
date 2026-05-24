@@ -1420,6 +1420,16 @@ function AdminPage() {
               return `${y}-${m}-${day}`;
             };
             const newcomers = regs.filter((r) => toLocalDate(r.created_at) === attDate).length;
+            const newcomerList = regs
+              .filter((r) => toLocalDate(r.created_at) === attDate)
+              .slice()
+              .reverse();
+            const faithLabel = (r: Reg) => {
+              if (r.faith === "christian") return `基督徒${r.faith_years ? ` ${r.faith_years}年` : ""}`;
+              if (r.faith === "seeker") return "慕道友";
+              if (r.faith === "other") return `其他${r.faith_other ? `:${r.faith_other}` : ""}`;
+              return "未填";
+            };
             return (
               <>
                 <div className="grid grid-cols-1 md:grid-cols-5 gap-3 items-end mb-4">
@@ -1483,6 +1493,12 @@ function AdminPage() {
                     variant="outline"
                     size="sm"
                     onClick={() => {
+                      const newcomerLines = newcomerList.length
+                        ? `\n\n今日新人名单：\n` +
+                          newcomerList
+                            .map((r, i) => `${i + 1}. ${r.name}（信仰：${faithLabel(r)}）`)
+                            .join("\n")
+                        : "";
                       const text =
                         `【主日聚会人数统计】\n` +
                         `日期：${attDate}\n` +
@@ -1490,7 +1506,8 @@ function AdminPage() {
                         `儿童主日学（学生）：${s} 人\n` +
                         `儿童主日学（老师）：${t} 人\n` +
                         `今日总人数：${total} 人\n` +
-                        `今日新人：${newcomers} 人`;
+                        `今日新人：${newcomers} 人` +
+                        newcomerLines;
                       setAttText(text);
                       const rec = {
                         id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
