@@ -87,6 +87,17 @@ type AttendanceRecord = {
   created_at: string;
 };
 
+type Feedback = {
+  id: string;
+  name: string;
+  contact: string;
+  fellowship: string | null;
+  title: string;
+  description: string | null;
+  images: string[];
+  created_at: string;
+};
+
 export const Route = createFileRoute("/admin")({
   component: AdminPage,
 });
@@ -111,6 +122,8 @@ function AdminPage() {
   const [messagesCount, setMessagesCount] = useState(0);
   const [serviceApps, setServiceApps] = useState<ServiceApp[]>([]);
   const [serviceListOpen, setServiceListOpen] = useState(false);
+  const [feedbacks, setFeedbacks] = useState<Feedback[]>([]);
+  const [feedbackListOpen, setFeedbackListOpen] = useState(false);
   const [editingFollowUpId, setEditingFollowUpId] = useState<string | null>(null);
   const [followUpDraft, setFollowUpDraft] = useState("");
   const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
@@ -171,16 +184,18 @@ function AdminPage() {
   useEffect(() => setOrigin(window.location.origin), []);
 
   const loadData = useCallback(async () => {
-    const [{ data: r }, { data: e }, { data: s }, { data: a }] = await Promise.all([
+    const [{ data: r }, { data: e }, { data: s }, { data: a }, { data: f }] = await Promise.all([
       supabase.from("registrations").select("*").order("created_at", { ascending: false }),
       supabase.from("events").select("*").order("created_at", { ascending: true }),
       supabase.from("service_applications").select("*").order("created_at", { ascending: false }),
       supabase.from("attendance_records").select("*").order("record_date", { ascending: false }),
+      supabase.from("feedbacks").select("*").order("created_at", { ascending: false }),
     ]);
     setRegs(r ?? []);
     setEvents(e ?? []);
     setServiceApps((s ?? []) as ServiceApp[]);
     setAttendance((a ?? []) as AttendanceRecord[]);
+    setFeedbacks((f ?? []) as Feedback[]);
   }, []);
 
   const loadMessagesCount = useCallback(async () => {
@@ -346,6 +361,20 @@ function AdminPage() {
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "registrations" }, (payload) => {
         setRegs((prev) => [payload.new as Reg, ...prev]);
         toast.success(`新登记:${(payload.new as Reg).name}`);
+      })
+      .subscribe();
+    return () => {
+      supabase.removeChannel(ch);
+    };
+  }, []);
+
+  // Realtime new feedback notifications
+  useEffect(() => {
+    const ch = supabase
+      .channel("feedbacks-rt")
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "feedbacks" }, (payload) => {
+        setFeedbacks((prev) => [payload.new as Feedback, ...prev]);
+        toast.success(`新问题反馈:${(payload.new as Feedback).name}`);
       })
       .subscribe();
     return () => {
@@ -1192,12 +1221,28 @@ function AdminPage() {
               </div>
             </div>
 
-            {/* 预留位置 */}
-            <div className="border border-dashed border-border/50 rounded-xl p-4 flex flex-col items-center justify-center gap-3 min-h-[260px] text-muted-foreground">
-              <div className="w-[180px] h-[180px] rounded-lg bg-muted/30 flex items-center justify-center text-sm">
-                预留位置
+            {/* 问题反馈 QR */}
+            <div className="border border-border/50 rounded-xl p-4 flex flex-col items-center gap-3">
+              <p className="font-medium">问题反馈</p>
+              {origin && (
+                <QRCodeSVG value={`${origin}/feedback`} size={180} level="H" />
+              )}
+              <p className="text-xs text-muted-foreground break-all text-center">{origin}/feedback</p>
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    navigator.clipboard.writeText(`${origin}/feedback`);
+                    toast.success("链接已复制");
+                  }}
+                >
+                  复制链接
+                </Button>
+                <Button size="sm" onClick={() => setFeedbackListOpen(true)}>
+                  查看信息 ({feedbacks.length})
+                </Button>
               </div>
-              <p className="text-xs">待添加</p>
             </div>
           </div>
         </section>
@@ -1798,6 +1843,63 @@ function AdminPage() {
           </DialogContent>
         </Dialog>
 
+        {/* 问题反馈 列表 */}
+        <Dialog open={feedbackListOpen} onOpenChange={setFeedbackListOpen}>
+          <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>问题反馈名单</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-3">
+              {feedbacks.map((f) => (
+                <div key={f.id} className="border border-border/40 rounded-lg p-3 space-y-2">
+                  <div className="flex items-start justify-between gap-2 flex-wrap">
+                    <div>
+                      <p className="font-medium">{f.title}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {new Date(f.created_at).toLocaleString("zh-CN")} · {f.name} · {f.contact}
+                        {f.fellowship ? ` · ${f.fellowship}` : ""}
+                      </p>
+                    </div>
+                    <button
+                      onClick={async () => {
+                        if (!confirm(`确认删除 ${f.name} 的反馈?`)) return;
+                        const { error } = await supabase.from("feedbacks").delete().eq("id", f.id);
+                        if (error) toast.error(error.message);
+                        else {
+                          setFeedbacks((prev) => prev.filter((x) => x.id !== f.id));
+                          logAction(`删除了问题反馈 ${f.name}`);
+                          toast.success("已删除");
+                        }
+                      }}
+                      className="text-xs text-destructive hover:underline shrink-0"
+                    >
+                      删除
+                    </button>
+                  </div>
+                  {f.description && (
+                    <p className="text-sm whitespace-pre-wrap text-foreground/90">{f.description}</p>
+                  )}
+                  {f.images.length > 0 && (
+                    <div className="grid grid-cols-4 gap-2">
+                      {f.images.map((url) => (
+                        <a key={url} href={url} target="_blank" rel="noreferrer">
+                          <img src={url} alt="" className="w-full h-20 object-cover rounded border" />
+                        </a>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+              {feedbacks.length === 0 && (
+                <p className="py-8 text-center text-muted-foreground">暂无问题反馈</p>
+              )}
+            </div>
+            <DialogFooter>
+              <Button onClick={() => setFeedbackListOpen(false)}>关闭</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
         {/* Logs Dialog */}
         <Dialog open={logsOpen} onOpenChange={setLogsOpen}>
           <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
@@ -1900,9 +2002,18 @@ function AdminPage() {
                     .from("service_applications")
                     .delete()
                     .not("id", "is", null);
-                  setInitLoading(false);
                   if (svcErr) {
+                    setInitLoading(false);
                     toast.error("清空服侍申请失败: " + svcErr.message);
+                    return;
+                  }
+                  const { error: fbErr } = await supabase
+                    .from("feedbacks")
+                    .delete()
+                    .not("id", "is", null);
+                  setInitLoading(false);
+                  if (fbErr) {
+                    toast.error("清空问题反馈失败: " + fbErr.message);
                     return;
                   }
                   logAction(`系统初始化（清空了 ${regs.length} 条登记）`);
