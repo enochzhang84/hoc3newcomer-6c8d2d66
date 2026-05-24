@@ -500,7 +500,9 @@ function AdminPage() {
     };
     const genderText = (r: Reg) => {
       const g = r.gender ?? "";
-      return `${g === "male" ? "☑" : "☐"}男　${g === "female" ? "☑" : "☐"}女`;
+      const isMale = g === "男" || g === "male";
+      const isFemale = g === "女" || g === "female";
+      return `${isMale ? "☑" : "☐"}男　${isFemale ? "☑" : "☐"}女`;
     };
     const maritalText = (r: Reg) => {
       const m = r.marital_status ?? "";
