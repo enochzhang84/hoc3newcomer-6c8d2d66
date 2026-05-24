@@ -368,6 +368,20 @@ function AdminPage() {
     };
   }, []);
 
+  // Realtime new feedback notifications
+  useEffect(() => {
+    const ch = supabase
+      .channel("feedbacks-rt")
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "feedbacks" }, (payload) => {
+        setFeedbacks((prev) => [payload.new as Feedback, ...prev]);
+        toast.success(`新问题反馈:${(payload.new as Feedback).name}`);
+      })
+      .subscribe();
+    return () => {
+      supabase.removeChannel(ch);
+    };
+  }, []);
+
   // Reset page when filters change
   useEffect(() => {
     setPage(1);
