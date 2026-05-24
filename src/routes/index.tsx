@@ -46,12 +46,15 @@ function Index() {
 
   const enterFullscreen = async () => {
     try {
-      const el = document.documentElement as HTMLElement & {
-        webkitRequestFullscreen?: () => Promise<void>;
-      };
-      if (el.requestFullscreen) await el.requestFullscreen();
-      else if (el.webkitRequestFullscreen) await el.webkitRequestFullscreen();
-      // iPad Safari fallback: hide URL bar by scrolling
+      // On iPad Safari, requestFullscreen shows a persistent X button overlay.
+      // Skip the native API on iPad and just hide the UI via scroll + state.
+      if (!isIPad) {
+        const el = document.documentElement as HTMLElement & {
+          webkitRequestFullscreen?: () => Promise<void>;
+        };
+        if (el.requestFullscreen) await el.requestFullscreen();
+        else if (el.webkitRequestFullscreen) await el.webkitRequestFullscreen();
+      }
       window.scrollTo(0, 1);
       setIsFullscreen(true);
     } catch (e) {
