@@ -20,6 +20,17 @@ function todayISO() {
   return `${y}-${m}-${day}`;
 }
 
+function BiLabel({ cn, en, required }: { cn: string; en: string; required?: boolean }) {
+  return (
+    <Label className="flex flex-col items-start gap-0.5">
+      <span>
+        {cn} {required && <span className="text-destructive">*</span>}
+      </span>
+      <span className="text-xs font-normal text-muted-foreground">{en}</span>
+    </Label>
+  );
+}
+
 function SundayCheckinPage() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [submitting, setSubmitting] = useState(false);
@@ -76,8 +87,9 @@ function SundayCheckinPage() {
       <div className="min-h-screen bg-background flex items-center justify-center px-4">
         <div className="text-center max-w-md">
           <div className="text-6xl mb-6">📖</div>
-          <h1 className="font-serif text-4xl text-foreground mb-4">签到成功</h1>
-          <p className="text-muted-foreground mb-8">愿主的话语在你心中扎根丰盛。</p>
+          <h1 className="font-serif text-4xl text-foreground mb-2">签到成功</h1>
+          <p className="text-sm uppercase tracking-[0.2em] text-muted-foreground mb-4">CHECK-IN SUCCESSFUL</p>
+          <p className="text-muted-foreground mb-8">愿主的话语在你心中扎根丰盛。<br/><span className="text-xs">May God's word take deep root in your heart.</span></p>
           <div className="flex gap-3 justify-center">
             <Button
               variant="outline"
@@ -93,10 +105,10 @@ function SundayCheckinPage() {
                 });
               }}
             >
-              再签到一位
+              再签到一位 / Check in another
             </Button>
             <Link to="/">
-              <Button className="rounded-full">返回首页</Button>
+              <Button className="rounded-full">返回首页 / Home</Button>
             </Link>
           </div>
         </div>
@@ -107,15 +119,16 @@ function SundayCheckinPage() {
   return (
     <div className="min-h-screen bg-background py-10 px-4">
       <div className="max-w-xl mx-auto">
-        <Link to="/" className="text-sm text-muted-foreground hover:text-foreground">← 返回</Link>
+        <Link to="/" className="text-sm text-muted-foreground hover:text-foreground">← 返回 / Back</Link>
         <div className="mt-4 mb-8">
           <p className="text-sm uppercase tracking-[0.2em] text-accent-foreground/70 mb-2">SUNDAY SCHOOL</p>
           <h1 className="font-serif text-4xl text-foreground">成人主日学签到</h1>
+          <p className="text-base text-muted-foreground mt-1">Adult Sunday School Check-in</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-5 bg-card border border-border/50 rounded-2xl p-6">
           <div className="space-y-2">
-            <Label>日期</Label>
+            <BiLabel cn="日期" en="Date" />
             <Input
               type="date"
               value={form.checkin_date}
@@ -123,23 +136,23 @@ function SundayCheckinPage() {
             />
           </div>
           <div className="space-y-2">
-            <Label>姓名 <span className="text-destructive">*</span></Label>
+            <BiLabel cn="姓名" en="Name" required />
             <Input
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
-              placeholder="请输入姓名"
+              placeholder="请输入姓名 / Your name"
             />
           </div>
           <div className="space-y-2">
-            <Label>电话 / 微信</Label>
+            <BiLabel cn="电话 / 微信" en="Phone / WeChat" />
             <Input
               value={form.contact}
               onChange={(e) => setForm({ ...form, contact: e.target.value })}
-              placeholder="电话号码或微信号"
+              placeholder="电话号码或微信号 / Phone or WeChat ID"
             />
           </div>
           <div className="space-y-2">
-            <Label>邮件</Label>
+            <BiLabel cn="邮件" en="Email" />
             <Input
               type="email"
               value={form.email}
@@ -148,24 +161,24 @@ function SundayCheckinPage() {
             />
           </div>
           <div className="space-y-2">
-            <Label>参加课程 <span className="text-destructive">*</span></Label>
+            <BiLabel cn="参加课程" en="Course" required />
             <select
               value={form.course_id}
               onChange={(e) => setForm({ ...form, course_id: e.target.value })}
               className="w-full h-9 bg-background border border-input rounded-md px-3 text-sm"
             >
-              <option value="">-- 请选择 --</option>
+              <option value="">-- 请选择 / Please select --</option>
               {courses.map((c) => (
                 <option key={c.id} value={c.id}>{c.name}</option>
               ))}
             </select>
             {courses.length === 0 && (
-              <p className="text-xs text-muted-foreground">暂无可选课程，请联系管理员</p>
+              <p className="text-xs text-muted-foreground">暂无可选课程，请联系管理员 / No courses available, please contact admin</p>
             )}
           </div>
 
           <Button type="submit" className="w-full rounded-full" disabled={submitting}>
-            {submitting ? "提交中..." : "提交签到"}
+            {submitting ? "提交中... / Submitting..." : "提交签到 / Submit Check-in"}
           </Button>
         </form>
       </div>
