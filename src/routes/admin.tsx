@@ -494,10 +494,10 @@ function AdminPage() {
     const html = `<!doctype html>
 <html><head><meta charset="utf-8"/><title>新人資料表 打印</title>
 <style>
-  @page { size: A4 portrait; margin: 10mm; }
+  @page { size: A4 landscape; margin: 8mm; }
   * { box-sizing: border-box; }
   body { font-family: "Microsoft YaHei", "PingFang SC", "Songti SC", serif; margin: 0; color: #000; }
-  .page { display: grid; grid-template-rows: 1fr 1fr 1fr 1fr; gap: 4mm; height: 277mm; page-break-after: always; }
+  .page { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 4mm; height: 194mm; page-break-after: always; }
   .page:last-child { page-break-after: auto; }
   .form { border: 1px solid #000; padding: 4mm 5mm; font-size: 11pt; display: flex; flex-direction: column; gap: 2.5mm; overflow: hidden; }
   .form h2 { text-align: center; margin: 0 0 2mm; font-size: 13pt; font-weight: 600; letter-spacing: 2px; }
