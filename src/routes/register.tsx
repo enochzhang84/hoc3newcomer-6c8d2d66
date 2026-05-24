@@ -106,6 +106,18 @@ function RegisterPage() {
   }
 
   if (done) {
+    const verses = [
+      { text: "凡劳苦担重担的人,可以到我这里来,我就使你们得安息。", ref: "马太福音 11:28" },
+      { text: "耶和华是我的牧者,我必不至缺乏。", ref: "诗篇 23:1" },
+      { text: "你们要尝尝主恩的滋味,便知道他是美善。", ref: "诗篇 34:8" },
+      { text: "我留下平安给你们,我将我的平安赐给你们。", ref: "约翰福音 14:27" },
+      { text: "应当一无挂虑,只要凡事借着祷告、祈求和感谢,将你们所要的告诉神。", ref: "腓立比书 4:6" },
+      { text: "神所赐出人意外的平安,必在基督耶稣里保守你们的心怀意念。", ref: "腓立比书 4:7" },
+      { text: "你们祈求,就给你们;寻找,就寻见;叩门,就给你们开门。", ref: "马太福音 7:7" },
+      { text: "因为神爱世人,甚至将他的独生子赐给他们,叫一切信他的,不至灭亡,反得永生。", ref: "约翰福音 3:16" },
+    ];
+    const verse = verses[Math.floor(Math.random() * verses.length)];
+
     return (
       <div className="min-h-screen bg-background flex items-center justify-center px-4">
         <div className="text-center max-w-md">
@@ -114,12 +126,12 @@ function RegisterPage() {
           <p className="text-muted-foreground mb-6">
             谢谢您完成登记。我们的同工会很快与您联系,期待再次见到您。
           </p>
-          <blockquote className="border-l-2 border-primary/40 pl-4 mx-auto max-w-sm text-left mb-8">
+          <div className="mx-auto max-w-sm text-left mb-8">
             <p className="font-serif text-lg text-foreground leading-relaxed">
-              "凡劳苦担重担的人,可以到我这里来,我就使你们得安息。"
+              "{verse.text}"
             </p>
-            <footer className="text-sm text-muted-foreground mt-2">— 马太福音 11:28</footer>
-          </blockquote>
+            <p className="text-sm text-muted-foreground mt-2">— {verse.ref}</p>
+          </div>
           <Link to="/">
             <Button variant="outline" className="rounded-full">返回首页</Button>
           </Link>
