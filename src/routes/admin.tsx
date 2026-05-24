@@ -1796,8 +1796,172 @@ function AdminPage() {
           </fieldset>
         </Tabs>
 
-        <fieldset disabled={!isAdmin} className="contents">
-        </fieldset>
+        {/* 主日学课程设置 Dialog */}
+        <Dialog open={coursesOpen} onOpenChange={setCoursesOpen}>
+          <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>主日学课程设置</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="flex gap-2">
+                <Input
+                  placeholder="新课程名称"
+                  value={newCourseName}
+                  onChange={(e) => setNewCourseName(e.target.value)}
+                  onKeyDown={async (e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      const name = newCourseName.trim();
+                      if (!name) return;
+                      const nextOrder = (courses[courses.length - 1]?.sort_order ?? 0) + 1;
+                      const { error } = await supabase
+                        .from("sunday_school_courses")
+                        .insert({ name, sort_order: nextOrder });
+                      if (error) return toast.error(error.message);
+                      setNewCourseName("");
+                      logAction(`新增主日学课程: ${name}`);
+                      toast.success("已添加");
+                      loadCourses();
+                    }
+                  }}
+                />
+                <Button
+                  onClick={async () => {
+                    const name = newCourseName.trim();
+                    if (!name) return toast.error("请输入课程名称");
+                    const nextOrder = (courses[courses.length - 1]?.sort_order ?? 0) + 1;
+                    const { error } = await supabase
+                      .from("sunday_school_courses")
+                      .insert({ name, sort_order: nextOrder });
+                    if (error) return toast.error(error.message);
+                    setNewCourseName("");
+                    logAction(`新增主日学课程: ${name}`);
+                    toast.success("已添加");
+                    loadCourses();
+                  }}
+                >
+                  添加
+                </Button>
+              </div>
+              <div className="space-y-2">
+                {courses.length === 0 && (
+                  <p className="text-sm text-muted-foreground text-center py-6">暂无课程</p>
+                )}
+                {courses.map((c) => (
+                  <div key={c.id} className="flex items-center gap-2 border border-border/50 rounded-md px-3 py-2">
+                    <Input
+                      defaultValue={c.name}
+                      onBlur={async (e) => {
+                        const v = e.target.value.trim();
+                        if (!v || v === c.name) return;
+                        const { error } = await supabase
+                          .from("sunday_school_courses")
+                          .update({ name: v })
+                          .eq("id", c.id);
+                        if (error) return toast.error(error.message);
+                        logAction(`修改主日学课程: ${c.name} → ${v}`);
+                        toast.success("已更新");
+                        loadCourses();
+                      }}
+                      className="flex-1"
+                    />
+                    <label className="flex items-center gap-1 text-xs text-muted-foreground whitespace-nowrap">
+                      <input
+                        type="checkbox"
+                        checked={c.is_active}
+                        onChange={async (e) => {
+                          await supabase
+                            .from("sunday_school_courses")
+                            .update({ is_active: e.target.checked })
+                            .eq("id", c.id);
+                          loadCourses();
+                        }}
+                      />
+                      启用
+                    </label>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="text-destructive"
+                      onClick={async () => {
+                        if (!confirm(`删除课程「${c.name}」?`)) return;
+                        const { error } = await supabase
+                          .from("sunday_school_courses")
+                          .delete()
+                          .eq("id", c.id);
+                        if (error) return toast.error(error.message);
+                        logAction(`删除主日学课程: ${c.name}`);
+                        toast.success("已删除");
+                        loadCourses();
+                      }}
+                    >
+                      删除
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* 主日学签到记录 Dialog */}
+        <Dialog open={checkinsOpen} onOpenChange={setCheckinsOpen}>
+          <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>主日学签到记录 ({sundayCheckins.length})</DialogTitle>
+            </DialogHeader>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-left border-b border-border/60 text-muted-foreground">
+                    <th className="py-2 px-2">日期</th>
+                    <th className="py-2 px-2">姓名</th>
+                    <th className="py-2 px-2">电话/微信</th>
+                    <th className="py-2 px-2">邮件</th>
+                    <th className="py-2 px-2">课程</th>
+                    <th className="py-2 px-2 text-right">操作</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {sundayCheckins.map((c) => (
+                    <tr key={c.id} className="border-b border-border/30">
+                      <td className="py-2 px-2 whitespace-nowrap">{c.checkin_date}</td>
+                      <td className="py-2 px-2 font-medium">{c.name}</td>
+                      <td className="py-2 px-2">{c.contact ?? ""}</td>
+                      <td className="py-2 px-2">{c.email ?? ""}</td>
+                      <td className="py-2 px-2">{c.course_name ?? ""}</td>
+                      <td className="py-2 px-2 text-right">
+                        <button
+                          onClick={async () => {
+                            if (!confirm(`删除 ${c.name} 的签到?`)) return;
+                            const { error } = await supabase
+                              .from("sunday_school_checkins")
+                              .delete()
+                              .eq("id", c.id);
+                            if (error) return toast.error(error.message);
+                            logAction(`删除主日学签到: ${c.name}`);
+                            toast.success("已删除");
+                            loadSundayCheckins();
+                          }}
+                          className="text-xs text-destructive hover:underline"
+                        >
+                          删除
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                  {sundayCheckins.length === 0 && (
+                    <tr>
+                      <td colSpan={6} className="py-8 text-center text-muted-foreground">
+                        暂无签到记录
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </DialogContent>
+        </Dialog>
 
         {/* Edit Dialog */}
         <Dialog open={editOpen} onOpenChange={setEditOpen}>
