@@ -142,3 +142,13 @@
     color: var(--color-foreground);
   }
 }
+
+@keyframes verse-marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+.animate-verse-marquee {
+  animation: verse-marquee 40s linear infinite;
+  width: max-content;
+}

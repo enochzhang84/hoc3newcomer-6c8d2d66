@@ -99,13 +99,15 @@ function Index() {
 
   return (
     <div className={`min-h-screen bg-background ${isFullscreen ? "min-h-[120vh]" : ""}`}>
-      {isFullscreen && verse && (
-        <div className="fixed top-0 inset-x-0 z-50 bg-primary text-primary-foreground shadow-md">
-          <div className="container mx-auto px-6 py-3 flex items-center justify-center text-center">
-            <p className="text-sm md:text-base font-serif leading-relaxed">
-              「{verse.text}」
-              <span className="ml-2 opacity-80 text-xs md:text-sm">— {verse.ref}</span>
-            </p>
+      {isFullscreen && (
+        <div className="fixed top-0 inset-x-0 z-50 bg-background border-b border-border/60 overflow-hidden">
+          <div className="py-[14px] whitespace-nowrap animate-verse-marquee flex gap-16">
+            {[...VERSES, ...VERSES].map((v, i) => (
+              <span key={i} className="text-sm md:text-base font-serif text-foreground/90 inline-flex items-center">
+                「{v.text}」
+                <span className="ml-2 opacity-70 text-xs md:text-sm">— {v.ref}</span>
+              </span>
+            ))}
           </div>
         </div>
       )}
