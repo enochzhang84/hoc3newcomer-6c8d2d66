@@ -71,6 +71,39 @@ export type Database = {
         }
         Relationships: []
       }
+      feedbacks: {
+        Row: {
+          contact: string
+          created_at: string
+          description: string | null
+          fellowship: string | null
+          id: string
+          images: string[]
+          name: string
+          title: string
+        }
+        Insert: {
+          contact: string
+          created_at?: string
+          description?: string | null
+          fellowship?: string | null
+          id?: string
+          images?: string[]
+          name: string
+          title: string
+        }
+        Update: {
+          contact?: string
+          created_at?: string
+          description?: string | null
+          fellowship?: string | null
+          id?: string
+          images?: string[]
+          name?: string
+          title?: string
+        }
+        Relationships: []
+      }
       messages: {
         Row: {
           content: string
