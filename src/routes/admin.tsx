@@ -1736,11 +1736,14 @@ function AdminPage() {
               </TabsList>
               {courses.filter((c) => c.is_active).map((c) => {
                 const rows = sundayCheckins.filter((k) => k.course_id === c.id);
+                const pg = coursePages[c.id] ?? 1;
+                const totalPg = Math.max(1, Math.ceil(rows.length / TAB_PAGE_SIZE));
+                const slice = rows.slice((pg - 1) * TAB_PAGE_SIZE, pg * TAB_PAGE_SIZE);
                 return (
                   <TabsContent key={c.id} value={c.id} className="mt-4">
-                    <div className="overflow-x-auto">
+                    <div className="overflow-x-auto max-h-[480px] overflow-y-auto rounded-lg border border-border/50">
                       <table className="w-full text-sm">
-                        <thead>
+                        <thead className="sticky top-0 z-10 bg-muted/80 backdrop-blur">
                           <tr className="text-left border-b border-border/60 text-muted-foreground">
                             <th className="py-2 px-2">日期</th>
                             <th className="py-2 px-2">姓名</th>
@@ -1750,7 +1753,7 @@ function AdminPage() {
                           </tr>
                         </thead>
                         <tbody>
-                          {rows.map((k) => (
+                          {slice.map((k) => (
                             <tr key={k.id} className="border-b border-border/30">
                               <td className="py-2 px-2 whitespace-nowrap">{k.checkin_date}</td>
                               <td className="py-2 px-2 font-medium">{k.name}</td>
@@ -1786,6 +1789,13 @@ function AdminPage() {
                         </tbody>
                       </table>
                     </div>
+                    {totalPg > 1 && (
+                      <div className="flex items-center justify-center gap-2 mt-3 text-sm">
+                        <Button size="sm" variant="outline" disabled={pg === 1} onClick={() => setCoursePages({ ...coursePages, [c.id]: pg - 1 })}>上一页</Button>
+                        <span>{pg} / {totalPg}</span>
+                        <Button size="sm" variant="outline" disabled={pg === totalPg} onClick={() => setCoursePages({ ...coursePages, [c.id]: pg + 1 })}>下一页</Button>
+                      </div>
+                    )}
                   </TabsContent>
                 );
               })}
