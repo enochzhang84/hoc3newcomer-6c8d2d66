@@ -293,7 +293,25 @@ function AdminPage() {
         if (result && "data" in result) {
           handleSession(result.data.session ? { user: result.data.session.user } : null);
         }
-        // If timed out, INITIAL_SESSION from the listener will handle it.
+        // If timed out and still not resolved (Web Locks stuck on iOS Chrome
+        // with a cached session), clear stale supabase auth storage and
+        // redirect to login so the user can sign in again.
+        if (!result) {
+          setTimeout(() => {
+            if (cancelled || resolved) return;
+            try {
+              Object.keys(localStorage)
+                .filter((k) => k.startsWith("sb-") || k.includes("supabase"))
+                .forEach((k) => localStorage.removeItem(k));
+            } catch {
+              // ignore
+            }
+            resolved = true;
+            setChecking(false);
+            toast.error("登录状态已过期，请重新登录");
+            navigate({ to: "/login" });
+          }, 2000);
+        }
       } catch {
         if (!cancelled && !resolved) {
           setChecking(false);
@@ -800,6 +818,13 @@ function AdminPage() {
                 onChange={(e) => setSearch(e.target.value)}
                 className="w-56"
               />
+              <Button
+                onClick={() => printHandwrittenForms(filtered)}
+                disabled={filtered.length === 0}
+                variant="outline"
+              >
+                打印手写版
+              </Button>
               <Button onClick={exportExcel} disabled={filtered.length === 0}>
                 导出 Excel
               </Button>
