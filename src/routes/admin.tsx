@@ -99,6 +99,24 @@ type Feedback = {
   created_at: string;
 };
 
+type Course = {
+  id: string;
+  name: string;
+  sort_order: number;
+  is_active: boolean;
+};
+
+type SundayCheckin = {
+  id: string;
+  checkin_date: string;
+  name: string;
+  contact: string | null;
+  email: string | null;
+  course_id: string | null;
+  course_name: string | null;
+  created_at: string;
+};
+
 export const Route = createFileRoute("/admin")({
   component: AdminPage,
 });
@@ -126,6 +144,11 @@ function AdminPage() {
   const [feedbacks, setFeedbacks] = useState<Feedback[]>([]);
   const [feedbackListOpen, setFeedbackListOpen] = useState(false);
   const [feedbackDetail, setFeedbackDetail] = useState<Feedback | null>(null);
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [coursesOpen, setCoursesOpen] = useState(false);
+  const [newCourseName, setNewCourseName] = useState("");
+  const [sundayCheckins, setSundayCheckins] = useState<SundayCheckin[]>([]);
+  const [checkinsOpen, setCheckinsOpen] = useState(false);
   const [editingFollowUpId, setEditingFollowUpId] = useState<string | null>(null);
   const [followUpDraft, setFollowUpDraft] = useState("");
   const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
