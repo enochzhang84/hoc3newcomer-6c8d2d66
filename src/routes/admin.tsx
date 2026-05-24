@@ -497,16 +497,16 @@ function AdminPage() {
   @page { size: A4 landscape; margin: 8mm; }
   * { box-sizing: border-box; }
   body { font-family: "Microsoft YaHei", "PingFang SC", "Songti SC", serif; margin: 0; color: #000; }
-  .page { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 4mm; height: 194mm; page-break-after: always; }
+  .page { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 3mm; width: 281mm; height: 194mm; page-break-after: always; }
   .page:last-child { page-break-after: auto; }
-  .form { border: 1px solid #000; padding: 4mm 5mm; font-size: 11pt; display: flex; flex-direction: column; gap: 2.5mm; overflow: hidden; }
-  .form h2 { text-align: center; margin: 0 0 2mm; font-size: 13pt; font-weight: 600; letter-spacing: 2px; }
-  .row { display: flex; align-items: baseline; gap: 4mm; border-bottom: 1px dotted #888; padding-bottom: 1mm; min-height: 6mm; flex-wrap: wrap; }
+  .form { border: 1px solid #000; padding: 3mm 4mm; font-size: 9pt; line-height: 1.35; display: flex; flex-direction: column; gap: 1.2mm; overflow: hidden; }
+  .form h2 { text-align: center; margin: 0 0 1mm; font-size: 11pt; font-weight: 700; letter-spacing: 1.5px; }
+  .row { display: flex; align-items: baseline; gap: 2mm; border-bottom: 1px dotted #888; padding-bottom: 0.8mm; min-height: 5mm; flex-wrap: nowrap; }
   .lbl { white-space: nowrap; font-weight: 500; }
   .lbl.right { margin-left: auto; }
-  .val { min-width: 30mm; }
-  .val.short { min-width: 18mm; }
-  .val.grow { flex: 1; }
+  .val { min-width: 20mm; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .val.short { min-width: 12mm; }
+  .val.grow { flex: 1; min-width: 0; }
   .toolbar { padding: 10px; display: flex; gap: 8px; justify-content: center; background: #f5f5f5; }
   .toolbar button { padding: 8px 16px; font-size: 14px; cursor: pointer; }
   @media print { .toolbar { display: none; } }
