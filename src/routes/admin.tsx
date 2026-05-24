@@ -689,7 +689,6 @@ function AdminPage() {
           <Stat label="总登记数" value={regs.length} />
           <Stat label="希望探访" value={regs.filter((r) => r.wants_visit).length} />
           <Stat label="需要资料" value={regs.filter((r) => r.wants_info).length} />
-          <Stat label="活动数" value={events.length} />
           </div>
           <div className="grid grid-cols-2 md:grid-cols-6 gap-4 mt-4">
             {(() => {
