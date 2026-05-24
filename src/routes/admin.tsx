@@ -645,7 +645,10 @@ function AdminPage() {
     <div className="min-h-screen bg-background">
       <header className="border-b border-border/60 bg-card/50">
         <div className="container mx-auto px-6 py-4 flex items-center justify-between">
-          <Link to="/" className="font-serif text-xl">基督之家第三家 · 后台</Link>
+          <Link to="/" className="font-serif text-xl flex items-baseline gap-3">
+            <span>基督之家第三家 控制面板</span>
+            <NowLabel />
+          </Link>
           <div className="flex items-center gap-2">
             <Button
               size="sm"
@@ -2066,4 +2069,29 @@ function Tag({ children, tone = "primary" }: { children: React.ReactNode; tone?:
     ? "bg-accent/30 text-accent-foreground"
     : "bg-primary/15 text-primary";
   return <span className={`inline-block text-xs px-2 py-0.5 rounded-full ${cls}`}>{children}</span>;
+}
+
+function NowLabel() {
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    const t = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(t);
+  }, []);
+  const dateStr = now.toLocaleDateString("zh-CN", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    weekday: "long",
+  });
+  const timeStr = now.toLocaleTimeString("zh-CN", {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+  });
+  return (
+    <span className="text-sm font-sans text-muted-foreground font-normal">
+      {dateStr} {timeStr}
+    </span>
+  );
 }
