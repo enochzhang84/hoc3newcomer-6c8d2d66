@@ -2070,3 +2070,28 @@ function Tag({ children, tone = "primary" }: { children: React.ReactNode; tone?:
     : "bg-primary/15 text-primary";
   return <span className={`inline-block text-xs px-2 py-0.5 rounded-full ${cls}`}>{children}</span>;
 }
+
+function NowLabel() {
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    const t = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(t);
+  }, []);
+  const dateStr = now.toLocaleDateString("zh-CN", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    weekday: "long",
+  });
+  const timeStr = now.toLocaleTimeString("zh-CN", {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+  });
+  return (
+    <span className="text-sm font-sans text-muted-foreground font-normal">
+      {dateStr} {timeStr}
+    </span>
+  );
+}
