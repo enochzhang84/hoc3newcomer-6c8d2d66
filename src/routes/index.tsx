@@ -107,7 +107,7 @@ function Index() {
 
       <main className="container mx-auto px-6 py-16">
         <div className="grid gap-12 md:grid-cols-2 items-center max-w-5xl mx-auto">
-          <div className="flex justify-center">
+          <div className="flex justify-center -mt-[5px]">
             <img
               src={churchInfo}
               alt="基督之家第三家 教会信息"
