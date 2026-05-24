@@ -240,7 +240,6 @@ function AdminPage() {
   useEffect(() => setOrigin(window.location.origin), []);
 
   const loadData = useCallback(async () => {
-    // (placeholder anchor)
     const [{ data: r }, { data: e }, { data: s }, { data: a }, { data: f }, { data: cs }] = await Promise.all([
       supabase.from("registrations").select("*").order("created_at", { ascending: false }),
       supabase.from("events").select("*").order("created_at", { ascending: true }),
