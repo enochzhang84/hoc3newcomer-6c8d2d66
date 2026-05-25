@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
 import { QRCodeSVG } from "qrcode.react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -19,7 +19,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
 import { zhCN } from "date-fns/locale";
-import { listUsersWithRoles, setUserRole, deleteUser } from "@/lib/users.functions";
+import { listUsersWithRoles, setUserRole, deleteUser, createUserWithRole } from "@/lib/users.functions";
 import { updateRegistration } from "@/lib/registrations.functions";
 
 type Reg = {
@@ -172,10 +172,35 @@ type Contact = {
   wechat: string | null;
   email: string | null;
   address: string | null;
+  city: string | null;
+  zip: string | null;
   fellowship: string | null;
   notes: string | null;
   created_at: string;
 };
+
+const CONTACT_FELLOWSHIPS: string[] = [
+  "小羊團契",
+  "Chadbourne",
+  "單身職業青年小組",
+  "粵語團契",
+  "幸福聊天室",
+  "恩典茶經小組",
+  "長青團契",
+  "活水團契",
+  "愛加倍團契(園區)",
+  "愛加倍團契(山區)",
+  "愛加倍團契(湖區)",
+  "愛加倍團契(以諾一組)",
+  "愛加倍團契(以諾二組)",
+  "中區查經班",
+  "神州團契",
+  "神州約書亞小組",
+  "Ohlone",
+  "Weibel 迦勒團契",
+  "磐石團契(隔週)",
+  "北區查經",
+];
 
 type KidsRow = {
   id: string;
@@ -303,6 +328,14 @@ function AdminPage() {
   const fetchUsersFn = useServerFn(listUsersWithRoles);
   const setUserRoleFn = useServerFn(setUserRole);
   const deleteUserFn = useServerFn(deleteUser);
+  const createUserFn = useServerFn(createUserWithRole);
+  const [newUserOpen, setNewUserOpen] = useState(false);
+  const [newUserForm, setNewUserForm] = useState<{
+    email: string;
+    password: string;
+    role: "super_admin" | "admin" | "user" | "viewer";
+  }>({ email: "", password: "", role: "user" });
+  const [newUserSubmitting, setNewUserSubmitting] = useState(false);
   const updateRegFn = useServerFn(updateRegistration);
   const [editOpen, setEditOpen] = useState(false);
   const [editForm, setEditForm] = useState<Reg | null>(null);
@@ -1267,9 +1300,14 @@ function AdminPage() {
         <section className="bg-card border border-border/50 rounded-2xl p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-serif text-xl">管理员权限</h2>
-            <Button size="sm" variant="outline" onClick={loadUsers} disabled={usersLoading}>
-              {usersLoading ? "刷新中..." : "刷新"}
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button size="sm" onClick={() => { setNewUserForm({ email: "", password: "", role: "user" }); setNewUserOpen(true); }}>
+                + 添加用户
+              </Button>
+              <Button size="sm" variant="outline" onClick={loadUsers} disabled={usersLoading}>
+                {usersLoading ? "刷新中..." : "刷新"}
+              </Button>
+            </div>
           </div>
           <p className="text-xs text-muted-foreground mb-4">
             新注册用户默认为「待审核」，须由超级管理员在此分配角色后才能登录。
@@ -1414,6 +1452,74 @@ function AdminPage() {
             </table>
           </div>
         </section>
+        )}
+        {isSuperAdmin && (
+        <Dialog open={newUserOpen} onOpenChange={setNewUserOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>添加新用户</DialogTitle>
+              <DialogDescription>由超级管理员直接创建账号并分配角色，新用户可立即登录。</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-3 py-2">
+              <div className="space-y-1">
+                <Label className="text-xs">邮箱</Label>
+                <Input
+                  type="email"
+                  value={newUserForm.email}
+                  onChange={(e) => setNewUserForm({ ...newUserForm, email: e.target.value })}
+                  placeholder="user@example.com"
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">密码 (至少 6 位)</Label>
+                <Input
+                  type="text"
+                  value={newUserForm.password}
+                  onChange={(e) => setNewUserForm({ ...newUserForm, password: e.target.value })}
+                  placeholder="临时密码，可让用户登录后修改"
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">角色</Label>
+                <select
+                  value={newUserForm.role}
+                  onChange={(e) => setNewUserForm({ ...newUserForm, role: e.target.value as typeof newUserForm.role })}
+                  className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm"
+                >
+                  <option value="super_admin">超级管理员</option>
+                  <option value="admin">管理员</option>
+                  <option value="user">一般用户</option>
+                  <option value="viewer">访客</option>
+                </select>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="ghost" onClick={() => setNewUserOpen(false)}>取消</Button>
+              <Button
+                disabled={newUserSubmitting}
+                onClick={async () => {
+                  const email = newUserForm.email.trim();
+                  if (!email) return toast.error("请输入邮箱");
+                  if (newUserForm.password.length < 6) return toast.error("密码至少 6 位");
+                  setNewUserSubmitting(true);
+                  try {
+                    await createUserFn({ data: { email, password: newUserForm.password, role: newUserForm.role } });
+                    toast.success("用户已创建");
+                    logAction(`创建用户 ${email} (角色: ${newUserForm.role})`);
+                    setNewUserOpen(false);
+                    loadUsers();
+                  } catch (e) {
+                    toast.error((e as Error).message);
+                  } finally {
+                    setNewUserSubmitting(false);
+                  }
+                }}
+              >
+                {newUserSubmitting ? "创建中..." : "创建"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
         )}
         {isSuperAdmin && (
         <section className="bg-card border border-border/50 rounded-2xl p-6">
@@ -3481,7 +3587,7 @@ ${rows.length===0?'<tr><td colspan="4" style="text-align:center;color:#888;paddi
                   onChange={(e) => setContactSearch(e.target.value)}
                   className="flex-1 min-w-[200px]"
                 />
-                <Button size="sm" onClick={() => setContactForm({ name: "", phone: "", wechat: "", email: "", address: "", fellowship: "", notes: "" })}>
+                <Button size="sm" onClick={() => setContactForm({ name: "", phone: "", wechat: "", email: "", address: "", city: "", zip: "", fellowship: "", notes: "" })}>
                   + 添加联系人
                 </Button>
                 <Button
@@ -3581,8 +3687,26 @@ ${rows.length===0?'<tr><td colspan="4" style="text-align:center;color:#888;paddi
                       <Input value={contactForm.address ?? ""} onChange={(e) => setContactForm({ ...contactForm, address: e.target.value })} />
                     </div>
                     <div className="space-y-1">
+                      <Label className="text-xs">城市</Label>
+                      <Input value={contactForm.city ?? ""} onChange={(e) => setContactForm({ ...contactForm, city: e.target.value })} />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">邮编</Label>
+                      <Input value={contactForm.zip ?? ""} onChange={(e) => setContactForm({ ...contactForm, zip: e.target.value })} />
+                    </div>
+                    <div className="space-y-1">
                       <Label className="text-xs">团契</Label>
-                      <Input value={contactForm.fellowship ?? ""} onChange={(e) => setContactForm({ ...contactForm, fellowship: e.target.value })} />
+                      <Input
+                        list="contact-fellowship-options"
+                        placeholder="输入或选择团契"
+                        value={contactForm.fellowship ?? ""}
+                        onChange={(e) => setContactForm({ ...contactForm, fellowship: e.target.value })}
+                      />
+                      <datalist id="contact-fellowship-options">
+                        {CONTACT_FELLOWSHIPS.map((f) => (
+                          <option key={f} value={f} />
+                        ))}
+                      </datalist>
                     </div>
                     <div className="space-y-1 sm:col-span-2">
                       <Label className="text-xs">备注</Label>
@@ -3602,6 +3726,8 @@ ${rows.length===0?'<tr><td colspan="4" style="text-align:center;color:#888;paddi
                           wechat: (contactForm.wechat ?? "").trim() || null,
                           email: (contactForm.email ?? "").trim() || null,
                           address: (contactForm.address ?? "").trim() || null,
+                          city: (contactForm.city ?? "").trim() || null,
+                          zip: (contactForm.zip ?? "").trim() || null,
                           fellowship: (contactForm.fellowship ?? "").trim() || null,
                           notes: (contactForm.notes ?? "").trim() || null,
                         };
