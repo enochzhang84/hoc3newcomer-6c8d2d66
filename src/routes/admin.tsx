@@ -172,10 +172,35 @@ type Contact = {
   wechat: string | null;
   email: string | null;
   address: string | null;
+  city: string | null;
+  zip: string | null;
   fellowship: string | null;
   notes: string | null;
   created_at: string;
 };
+
+const CONTACT_FELLOWSHIPS: string[] = [
+  "小羊團契",
+  "Chadbourne",
+  "單身職業青年小組",
+  "粵語團契",
+  "幸福聊天室",
+  "恩典茶經小組",
+  "長青團契",
+  "活水團契",
+  "愛加倍團契(園區)",
+  "愛加倍團契(山區)",
+  "愛加倍團契(湖區)",
+  "愛加倍團契(以諾一組)",
+  "愛加倍團契(以諾二組)",
+  "中區查經班",
+  "神州團契",
+  "神州約書亞小組",
+  "Ohlone",
+  "Weibel 迦勒團契",
+  "磐石團契(隔週)",
+  "北區查經",
+];
 
 type KidsRow = {
   id: string;
