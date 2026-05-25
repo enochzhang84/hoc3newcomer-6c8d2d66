@@ -28,6 +28,7 @@ import { Route as DataPreviewRouteImport } from './routes/data-preview'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as TodayPublicTokenRouteImport } from './routes/today-public.$token'
+import { Route as AdultCheckinKindRouteImport } from './routes/adult-checkin.$kind'
 
 const TodayPreviewRoute = TodayPreviewRouteImport.update({
   id: '/today-preview',
@@ -124,6 +125,11 @@ const TodayPublicTokenRoute = TodayPublicTokenRouteImport.update({
   path: '/today-public/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdultCheckinKindRoute = AdultCheckinKindRouteImport.update({
+  id: '/adult-checkin/$kind',
+  path: '/adult-checkin/$kind',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -144,6 +150,7 @@ export interface FileRoutesByFullPath {
   '/sunday-checkin': typeof SundayCheckinRoute
   '/sunday-schedule': typeof SundayScheduleRoute
   '/today-preview': typeof TodayPreviewRoute
+  '/adult-checkin/$kind': typeof AdultCheckinKindRoute
   '/today-public/$token': typeof TodayPublicTokenRoute
 }
 export interface FileRoutesByTo {
@@ -165,6 +172,7 @@ export interface FileRoutesByTo {
   '/sunday-checkin': typeof SundayCheckinRoute
   '/sunday-schedule': typeof SundayScheduleRoute
   '/today-preview': typeof TodayPreviewRoute
+  '/adult-checkin/$kind': typeof AdultCheckinKindRoute
   '/today-public/$token': typeof TodayPublicTokenRoute
 }
 export interface FileRoutesById {
@@ -187,6 +195,7 @@ export interface FileRoutesById {
   '/sunday-checkin': typeof SundayCheckinRoute
   '/sunday-schedule': typeof SundayScheduleRoute
   '/today-preview': typeof TodayPreviewRoute
+  '/adult-checkin/$kind': typeof AdultCheckinKindRoute
   '/today-public/$token': typeof TodayPublicTokenRoute
 }
 export interface FileRouteTypes {
@@ -210,6 +219,7 @@ export interface FileRouteTypes {
     | '/sunday-checkin'
     | '/sunday-schedule'
     | '/today-preview'
+    | '/adult-checkin/$kind'
     | '/today-public/$token'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -231,6 +241,7 @@ export interface FileRouteTypes {
     | '/sunday-checkin'
     | '/sunday-schedule'
     | '/today-preview'
+    | '/adult-checkin/$kind'
     | '/today-public/$token'
   id:
     | '__root__'
@@ -252,6 +263,7 @@ export interface FileRouteTypes {
     | '/sunday-checkin'
     | '/sunday-schedule'
     | '/today-preview'
+    | '/adult-checkin/$kind'
     | '/today-public/$token'
   fileRoutesById: FileRoutesById
 }
@@ -274,6 +286,7 @@ export interface RootRouteChildren {
   SundayCheckinRoute: typeof SundayCheckinRoute
   SundayScheduleRoute: typeof SundayScheduleRoute
   TodayPreviewRoute: typeof TodayPreviewRoute
+  AdultCheckinKindRoute: typeof AdultCheckinKindRoute
   TodayPublicTokenRoute: typeof TodayPublicTokenRoute
 }
 
@@ -412,6 +425,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TodayPublicTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/adult-checkin/$kind': {
+      id: '/adult-checkin/$kind'
+      path: '/adult-checkin/$kind'
+      fullPath: '/adult-checkin/$kind'
+      preLoaderRoute: typeof AdultCheckinKindRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -434,8 +454,19 @@ const rootRouteChildren: RootRouteChildren = {
   SundayCheckinRoute: SundayCheckinRoute,
   SundayScheduleRoute: SundayScheduleRoute,
   TodayPreviewRoute: TodayPreviewRoute,
+  AdultCheckinKindRoute: AdultCheckinKindRoute,
   TodayPublicTokenRoute: TodayPublicTokenRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
