@@ -296,6 +296,7 @@ export type Database = {
         Row: {
           bed: string | null
           bus: string | null
+          can_pickup: number | null
           cell: string | null
           chinese_name: string
           church: string | null
@@ -307,6 +308,7 @@ export type Database = {
           gender: string | null
           id: string
           last_name: string | null
+          need_pickup: number | null
           paid: boolean
           program: string | null
           serial_no: string | null
@@ -317,6 +319,7 @@ export type Database = {
         Insert: {
           bed?: string | null
           bus?: string | null
+          can_pickup?: number | null
           cell?: string | null
           chinese_name: string
           church?: string | null
@@ -328,6 +331,7 @@ export type Database = {
           gender?: string | null
           id?: string
           last_name?: string | null
+          need_pickup?: number | null
           paid?: boolean
           program?: string | null
           serial_no?: string | null
@@ -338,6 +342,7 @@ export type Database = {
         Update: {
           bed?: string | null
           bus?: string | null
+          can_pickup?: number | null
           cell?: string | null
           chinese_name?: string
           church?: string | null
@@ -349,6 +354,7 @@ export type Database = {
           gender?: string | null
           id?: string
           last_name?: string | null
+          need_pickup?: number | null
           paid?: boolean
           program?: string | null
           serial_no?: string | null
