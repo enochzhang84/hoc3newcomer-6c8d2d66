@@ -72,6 +72,8 @@ function RetreatRegisterPage() {
     program: "",
     topic: "",
     bed: "",
+    can_pickup: "",
+    need_pickup: "",
     user_notes: "",
   });
 
@@ -86,6 +88,8 @@ function RetreatRegisterPage() {
       return;
     }
     setSubmitting(true);
+    const needPickup = parseInt(form.need_pickup || "0", 10) || 0;
+    const canPickup = parseInt(form.can_pickup || "0", 10) || 0;
     const { error } = await supabase.from("retreat_registrations").insert({
       church: form.church || null,
       chinese_name: form.chinese_name.trim(),
@@ -97,6 +101,9 @@ function RetreatRegisterPage() {
       program: form.program || null,
       topic: form.topic || null,
       bed: form.bed || null,
+      can_pickup: canPickup || null,
+      need_pickup: needPickup || null,
+      bus: needPickup > 0 ? "Y" : "N",
       user_notes: form.user_notes.trim() || null,
     });
     setSubmitting(false);
@@ -124,7 +131,7 @@ function RetreatRegisterPage() {
             <Link to="/retreat">
               <Button variant="outline">返回</Button>
             </Link>
-            <Button onClick={() => { setDone(null); setForm({ ...form, chinese_name: "", last_name: "", first_name: "", cell: "", email: "", user_notes: "" }); }}>
+            <Button onClick={() => { setDone(null); setForm({ church: "hoc3", chinese_name: "", last_name: "", first_name: "", gender: "", cell: "", email: "", program: "", topic: "", bed: "", can_pickup: "", need_pickup: "", user_notes: "" }); }}>
               再次登记
             </Button>
           </div>
