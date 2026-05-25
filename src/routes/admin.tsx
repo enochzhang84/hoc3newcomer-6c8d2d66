@@ -1120,6 +1120,12 @@ function AdminPage() {
               操作日志
             </Button>
             <Button
+              variant="outline"
+              onClick={() => setQrLibOpen(true)}
+            >
+              二维码库
+            </Button>
+            <Button
               variant="destructive"
               onClick={() => setInitOpen(true)}
             >
