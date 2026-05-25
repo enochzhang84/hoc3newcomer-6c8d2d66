@@ -109,6 +109,7 @@ export type Database = {
           created_at: string
           id: string
           live_person: string | null
+          live_person_2: string | null
           ppt_person: string | null
           schedule_type: string
           slot_time: string
@@ -119,6 +120,7 @@ export type Database = {
           created_at?: string
           id?: string
           live_person?: string | null
+          live_person_2?: string | null
           ppt_person?: string | null
           schedule_type: string
           slot_time: string
@@ -129,6 +131,7 @@ export type Database = {
           created_at?: string
           id?: string
           live_person?: string | null
+          live_person_2?: string | null
           ppt_person?: string | null
           schedule_type?: string
           slot_time?: string

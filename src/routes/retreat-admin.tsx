@@ -40,8 +40,24 @@ type Row = {
 };
 
 const CHURCHES = ["hoc1", "hoc2", "hoc3", "hoc4", "hoc5", "hoc6", "hoc7"];
-const PROGRAMS = ["M", "E", "N", "S", "F", "T", "R", "B"];
-const TOPICS = ["1", "2", "3", "4"];
+const PROGRAMS: { v: string; label: string }[] = [
+  { v: "M", label: "M — 中文 (Chinese)" },
+  { v: "E", label: "E — 英文 (English)" },
+  { v: "N", label: "N — 9~11 岁" },
+  { v: "S", label: "S — 7~8 岁" },
+  { v: "F", label: "F — 5~6 岁" },
+  { v: "T", label: "T — 4 岁" },
+  { v: "R", label: "R — 3 岁" },
+  { v: "B", label: "B — 0~2 岁" },
+];
+const TOPICS: { v: string; label: string }[] = [
+  { v: "1", label: "1 — 迎接老年时代的来临 (廖俊惠医师)" },
+  { v: "2", label: "2 — 婚姻成长 DIY / 陪孩子走一段路 (郭颜上琉师母)" },
+  { v: "3", label: "3 — 走过悲伤与忧鬱 (林慈敏博士)" },
+  { v: "4", label: "4 — 如何在 AI、高关税、股市高点下做好管家 (陈少豪牧师)" },
+];
+const TOPIC_LABEL: Record<string, string> = Object.fromEntries(TOPICS.map((t) => [t.v, t.label]));
+const PROGRAM_LABEL: Record<string, string> = Object.fromEntries(PROGRAMS.map((p) => [p.v, p.label]));
 
 function emptyForm() {
   return {
@@ -137,7 +153,7 @@ function RetreatAdminPage() {
       "Email": r.email ?? "",
       "Gender": r.gender ?? "",
       "Program": r.program ?? "",
-      "Topic": r.topic ?? "",
+      "Topic": r.topic ? (TOPIC_LABEL[r.topic] ?? r.topic) : "",
       "Bed": r.bed ?? "",
       "Bus": r.bus ?? "",
       "可接送": r.can_pickup ?? "",
@@ -330,13 +346,13 @@ function RetreatAdminPage() {
               <div>
                 <Label>Program</Label>
                 <select value={form.program} onChange={(e) => setForm({ ...form, program: e.target.value })} className="mt-1 w-full h-10 rounded-md border border-input bg-background px-3 text-sm">
-                  <option value="">—</option>{PROGRAMS.map((p) => <option key={p} value={p}>{p}</option>)}
+                  <option value="">—</option>{PROGRAMS.map((p) => <option key={p.v} value={p.v}>{p.label}</option>)}
                 </select>
               </div>
               <div>
                 <Label>Topic</Label>
                 <select value={form.topic} onChange={(e) => setForm({ ...form, topic: e.target.value })} className="mt-1 w-full h-10 rounded-md border border-input bg-background px-3 text-sm">
-                  <option value="">—</option>{TOPICS.map((t) => <option key={t} value={t}>{t}</option>)}
+                  <option value="">—</option>{TOPICS.map((t) => <option key={t.v} value={t.v}>{t.label}</option>)}
                 </select>
               </div>
               <div>

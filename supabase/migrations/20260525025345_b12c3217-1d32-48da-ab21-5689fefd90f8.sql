@@ -1,0 +1,1 @@
+ALTER TABLE public.duty_schedules ADD COLUMN IF NOT EXISTS live_person_2 TEXT;

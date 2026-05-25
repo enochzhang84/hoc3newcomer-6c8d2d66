@@ -150,6 +150,7 @@ type DutySchedule = {
   slot_time: string;
   ppt_person: string | null;
   live_person: string | null;
+  live_person_2?: string | null;
   sort_order: number;
 };
 
@@ -966,7 +967,7 @@ function AdminPage() {
 
             <TabsContent value="stats" className="space-y-8 mt-0">
         <section>
-          <h2 className="font-serif text-xl mb-4">数据统计</h2>
+          <h2 className="font-serif text-xl mb-4">登记统计</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <Stat label="总登记数" value={regs.length} />
           <Stat label="希望探访" value={regs.filter((r) => r.wants_visit).length} />
@@ -1791,7 +1792,7 @@ function AdminPage() {
         {(["sunday","summer"] as const).map((kind) => {
           const title = kind === "sunday" ? "主日崇拜轮值表" : "暑期主日学轮值表";
           const pptLabel = kind === "sunday" ? "主日PPT" : "暑期PPT";
-          const liveLabel = kind === "sunday" ? "主日直播" : "暑期直播";
+          const liveLabel = "YouTube直播";
           const rows = dutySchedules.filter((s) => s.schedule_type === kind);
           return (
             <section key={kind} className="bg-card border border-border/50 rounded-2xl p-6">
@@ -1822,7 +1823,8 @@ function AdminPage() {
                     <tr className="text-left border-b border-border/60 text-muted-foreground">
                       <th className="py-2 px-2 w-1/3">时间</th>
                       <th className="py-2 px-2">{pptLabel}</th>
-                      <th className="py-2 px-2">{liveLabel}</th>
+                      <th className="py-2 px-2">{liveLabel} 1</th>
+                      <th className="py-2 px-2">{liveLabel} 2</th>
                       <th className="py-2 px-2 text-right">操作</th>
                     </tr>
                   </thead>
@@ -1872,6 +1874,21 @@ function AdminPage() {
                             ))}
                           </select>
                         </td>
+                        <td className="py-2 px-2">
+                          <select
+                            className="h-8 rounded-md border border-input bg-transparent px-2 text-sm w-full"
+                            defaultValue={r.live_person_2 ?? ""}
+                            onChange={async (e) => {
+                              await (supabase as any).from("duty_schedules").update({ live_person_2: e.target.value || null }).eq("id", r.id);
+                              loadDutySchedules();
+                            }}
+                          >
+                            <option value="">— 选择人员 —</option>
+                            {dutyPersonnel.filter((p) => p.is_active).map((p) => (
+                              <option key={p.id} value={p.name}>{p.name}</option>
+                            ))}
+                          </select>
+                        </td>
                         <td className="py-2 px-2 text-right">
                           <button
                             className="text-xs text-destructive hover:underline"
@@ -1885,7 +1902,7 @@ function AdminPage() {
                       </tr>
                     ))}
                     {rows.length === 0 && (
-                      <tr><td colSpan={4} className="py-8 text-center text-muted-foreground">暂无记录，点击右上「添加一行」</td></tr>
+                      <tr><td colSpan={5} className="py-8 text-center text-muted-foreground">暂无记录，点击右上「添加一行」</td></tr>
                     )}
                   </tbody>
                 </table>
@@ -2306,13 +2323,6 @@ function AdminPage() {
           </div>
           <div className="flex flex-wrap items-center gap-2 mb-4">
             <Button onClick={addEvent}>生成新二维码</Button>
-            <Button
-              size="lg"
-              onClick={() => window.open("/retreat", "_blank", "noopener,noreferrer")}
-              className="ml-auto h-12 px-6 text-base font-semibold bg-gradient-to-r from-primary to-primary/80 shadow-md hover:shadow-lg hover:from-primary/90 hover:to-primary/70 transition-all"
-            >
-              🏔️ 退修会登记
-            </Button>
           </div>
           {/* 成人主日学扫码签到 */}
           <div className="grid sm:grid-cols-2 gap-4 mb-4">
@@ -2336,7 +2346,7 @@ function AdminPage() {
               );
             })}
           </div>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid sm:grid-cols-2 gap-4">
             {events.map((ev) => {
               const url = `${publicBase}/register?event=${ev.qr_token}`;
               return (
@@ -2371,6 +2381,45 @@ function AdminPage() {
                 </div>
               );
             })}
+            {/* 退修会登记 — 与新人登记并排 */}
+            <div className="border border-border/50 rounded-xl p-4 flex items-center justify-between gap-4 bg-gradient-to-r from-primary/10 to-primary/5">
+              <div className="min-w-0">
+                <p className="font-medium truncate">🏔️ 退修会登记</p>
+                <p className="text-xs text-muted-foreground truncate">{publicBase}/retreat</p>
+              </div>
+              <div className="flex gap-2 shrink-0">
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button size="sm" variant="outline">二维码</Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>退修会登记</DialogTitle>
+                    </DialogHeader>
+                    <div className="flex flex-col items-center gap-4 py-4">
+                      <QRCodeSVG value={`${publicBase}/retreat`} size={280} level="H" />
+                      <p className="text-xs text-muted-foreground break-all text-center">{publicBase}/retreat</p>
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          navigator.clipboard.writeText(`${publicBase}/retreat`);
+                          toast.success("链接已复制");
+                        }}
+                      >
+                        复制链接
+                      </Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+                <Button
+                  size="sm"
+                  onClick={() => window.open("/retreat", "_blank", "noopener,noreferrer")}
+                  className="bg-gradient-to-r from-primary to-primary/80"
+                >
+                  打开登记
+                </Button>
+              </div>
+            </div>
           </div>
         </section>
         <section className="bg-card border border-border/50 rounded-2xl p-6">
