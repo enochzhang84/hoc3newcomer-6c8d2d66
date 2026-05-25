@@ -1732,8 +1732,149 @@ function AdminPage() {
 
             <TabsContent value="kitchen" className="space-y-8 mt-0">
         <section className="bg-card border border-border/50 rounded-2xl p-6">
-          <h2 className="font-serif text-xl mb-4">厨房侍工</h2>
-          <p className="text-sm text-muted-foreground">敬请期待，此模块尚在开发中。</p>
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+            <h2 className="font-serif text-xl">主日订餐计划</h2>
+            <Button size="sm" variant="outline" onClick={() => setMealTypesOpen(true)}>
+              饭食种类设置
+            </Button>
+          </div>
+          <div className="grid sm:grid-cols-5 gap-2 mb-4">
+            <Input
+              type="date"
+              value={newMealDate}
+              onChange={(e) => setNewMealDate(e.target.value)}
+            />
+            <Input
+              type="number"
+              min="0"
+              placeholder="就餐人数"
+              value={newMealAttendees}
+              onChange={(e) => setNewMealAttendees(e.target.value)}
+            />
+            <select
+              className="h-9 rounded-md border border-input bg-transparent px-3 text-sm"
+              value={newMealType}
+              onChange={(e) => setNewMealType(e.target.value)}
+            >
+              <option value="">饭食种类</option>
+              {mealTypes.filter((m) => m.is_active).map((m) => (
+                <option key={m.id} value={m.name}>{m.name}</option>
+              ))}
+            </select>
+            <Input
+              placeholder="备注"
+              value={newMealNotes}
+              onChange={(e) => setNewMealNotes(e.target.value)}
+            />
+            <Button
+              onClick={async () => {
+                if (!newMealDate) return toast.error("请选择日期");
+                const { error } = await (supabase as any).from("meal_plans").insert({
+                  plan_date: newMealDate,
+                  attendees: parseInt(newMealAttendees || "0", 10) || 0,
+                  meal_type: newMealType || null,
+                  notes: newMealNotes || null,
+                });
+                if (error) return toast.error(error.message);
+                toast.success("已添加");
+                setNewMealAttendees(""); setNewMealType(""); setNewMealNotes("");
+                loadMealPlans();
+              }}
+            >
+              添加
+            </Button>
+          </div>
+          <div className="overflow-x-auto rounded-lg border border-border/50">
+            <table className="w-full text-sm">
+              <thead className="bg-muted/80">
+                <tr className="text-left border-b border-border/60 text-muted-foreground">
+                  <th className="py-2 px-2">日期</th>
+                  <th className="py-2 px-2">就餐人数</th>
+                  <th className="py-2 px-2">饭食种类</th>
+                  <th className="py-2 px-2">备注</th>
+                  <th className="py-2 px-2 text-right">操作</th>
+                </tr>
+              </thead>
+              <tbody>
+                {mealPlans.map((p) => (
+                  <tr key={p.id} className="border-b border-border/30">
+                    <td className="py-2 px-2 whitespace-nowrap">
+                      <Input
+                        type="date"
+                        defaultValue={p.plan_date}
+                        className="h-8"
+                        onBlur={async (e) => {
+                          const v = e.target.value;
+                          if (!v || v === p.plan_date) return;
+                          await (supabase as any).from("meal_plans").update({ plan_date: v }).eq("id", p.id);
+                          loadMealPlans();
+                        }}
+                      />
+                    </td>
+                    <td className="py-2 px-2">
+                      <Input
+                        type="number"
+                        min="0"
+                        defaultValue={String(p.attendees)}
+                        className="h-8 w-24"
+                        onBlur={async (e) => {
+                          const n = parseInt(e.target.value || "0", 10) || 0;
+                          if (n === p.attendees) return;
+                          await (supabase as any).from("meal_plans").update({ attendees: n }).eq("id", p.id);
+                          loadMealPlans();
+                        }}
+                      />
+                    </td>
+                    <td className="py-2 px-2">
+                      <select
+                        className="h-8 rounded-md border border-input bg-transparent px-2 text-sm"
+                        defaultValue={p.meal_type ?? ""}
+                        onChange={async (e) => {
+                          await (supabase as any).from("meal_plans").update({ meal_type: e.target.value || null }).eq("id", p.id);
+                          loadMealPlans();
+                        }}
+                      >
+                        <option value="">—</option>
+                        {mealTypes.filter((m) => m.is_active).map((m) => (
+                          <option key={m.id} value={m.name}>{m.name}</option>
+                        ))}
+                      </select>
+                    </td>
+                    <td className="py-2 px-2">
+                      <Input
+                        defaultValue={p.notes ?? ""}
+                        className="h-8"
+                        onBlur={async (e) => {
+                          const v = e.target.value;
+                          if (v === (p.notes ?? "")) return;
+                          await (supabase as any).from("meal_plans").update({ notes: v || null }).eq("id", p.id);
+                          loadMealPlans();
+                        }}
+                      />
+                    </td>
+                    <td className="py-2 px-2 text-right">
+                      <button
+                        className="text-xs text-destructive hover:underline"
+                        onClick={async () => {
+                          if (!confirm("删除该条订餐计划?")) return;
+                          await (supabase as any).from("meal_plans").delete().eq("id", p.id);
+                          toast.success("已删除");
+                          loadMealPlans();
+                        }}
+                      >
+                        删除
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+                {mealPlans.length === 0 && (
+                  <tr>
+                    <td colSpan={5} className="py-8 text-center text-muted-foreground">暂无订餐计划</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </section>
             </TabsContent>
 
