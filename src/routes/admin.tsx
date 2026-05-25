@@ -555,6 +555,9 @@ function AdminPage() {
            void loadSundayTeachers();
            void loadAdultCheckins();
             void loadUsers();
+            void loadContacts();
+            void loadAppSettings();
+            void loadKidsRows();
           }
         } catch (e) {
           if (!cancelled) {
