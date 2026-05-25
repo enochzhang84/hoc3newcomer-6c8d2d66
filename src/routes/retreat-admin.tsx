@@ -51,10 +51,10 @@ const PROGRAMS: { v: string; label: string }[] = [
   { v: "B", label: "B — 0~2 岁" },
 ];
 const TOPICS: { v: string; label: string }[] = [
-  { v: "1", label: "1 — 迎接老年时代的来临 (廖俊惠医师)" },
-  { v: "2", label: "2 — 婚姻成长 DIY / 陪孩子走一段路 (郭颜上琉师母)" },
-  { v: "3", label: "3 — 走过悲伤与忧鬱 (林慈敏博士)" },
-  { v: "4", label: "4 — 如何在 AI、高关税、股市高点下做好管家 (陈少豪牧师)" },
+  { v: "1", label: "1 - 迎接老年时代的来临 - 一个基督徒的立场 - 廖俊惠医师主讲" },
+  { v: "2", label: "2 - 婚姻成长 DIY / 陪孩子走一段路 - 郭磊土疏师母" },
+  { v: "3", label: "3 - 走过悲伤与忧郁：信仰中的关键与盼望 - 林慈敏博士主讲" },
+  { v: "4", label: "4 - 如何在 AI 热潮、高关税、股市高点下做个福音理财好管家 - 陈少豪牧师主讲" },
 ];
 const TOPIC_LABEL: Record<string, string> = Object.fromEntries(TOPICS.map((t) => [t.v, t.label]));
 const PROGRAM_LABEL: Record<string, string> = Object.fromEntries(PROGRAMS.map((p) => [p.v, p.label]));
