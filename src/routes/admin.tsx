@@ -193,6 +193,20 @@ function AdminPage() {
   const [coursePages, setCoursePages] = useState<Record<string, number>>({});
   const [fellowshipPages, setFellowshipPages] = useState<Record<string, number>>({});
   const TAB_PAGE_SIZE = 10;
+  // Kitchen meal plans
+  const [mealTypes, setMealTypes] = useState<MealType[]>([]);
+  const [mealPlans, setMealPlans] = useState<MealPlan[]>([]);
+  const [mealTypesOpen, setMealTypesOpen] = useState(false);
+  const [newMealTypeName, setNewMealTypeName] = useState("");
+  const [newMealDate, setNewMealDate] = useState<string>(format(new Date(), "yyyy-MM-dd"));
+  const [newMealAttendees, setNewMealAttendees] = useState<string>("");
+  const [newMealType, setNewMealType] = useState<string>("");
+  const [newMealNotes, setNewMealNotes] = useState<string>("");
+  // Duty rosters
+  const [dutyPersonnel, setDutyPersonnel] = useState<DutyPerson[]>([]);
+  const [dutySchedules, setDutySchedules] = useState<DutySchedule[]>([]);
+  const [dutyPersonnelOpen, setDutyPersonnelOpen] = useState(false);
+  const [newDutyPersonName, setNewDutyPersonName] = useState("");
   const [editingFollowUpId, setEditingFollowUpId] = useState<string | null>(null);
   const [followUpDraft, setFollowUpDraft] = useState("");
   const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
