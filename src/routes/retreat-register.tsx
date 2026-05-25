@@ -72,6 +72,8 @@ function RetreatRegisterPage() {
     program: "",
     topic: "",
     bed: "",
+    can_pickup: "",
+    need_pickup: "",
     user_notes: "",
   });
 
@@ -86,6 +88,8 @@ function RetreatRegisterPage() {
       return;
     }
     setSubmitting(true);
+    const needPickup = parseInt(form.need_pickup || "0", 10) || 0;
+    const canPickup = parseInt(form.can_pickup || "0", 10) || 0;
     const { error } = await supabase.from("retreat_registrations").insert({
       church: form.church || null,
       chinese_name: form.chinese_name.trim(),
@@ -97,6 +101,9 @@ function RetreatRegisterPage() {
       program: form.program || null,
       topic: form.topic || null,
       bed: form.bed || null,
+      can_pickup: canPickup || null,
+      need_pickup: needPickup || null,
+      bus: needPickup > 0 ? "Y" : "N",
       user_notes: form.user_notes.trim() || null,
     });
     setSubmitting(false);
@@ -124,7 +131,7 @@ function RetreatRegisterPage() {
             <Link to="/retreat">
               <Button variant="outline">返回</Button>
             </Link>
-            <Button onClick={() => { setDone(null); setForm({ ...form, chinese_name: "", last_name: "", first_name: "", cell: "", email: "", user_notes: "" }); }}>
+            <Button onClick={() => { setDone(null); setForm({ church: "hoc3", chinese_name: "", last_name: "", first_name: "", gender: "", cell: "", email: "", program: "", topic: "", bed: "", can_pickup: "", need_pickup: "", user_notes: "" }); }}>
               再次登记
             </Button>
           </div>
@@ -239,6 +246,31 @@ function RetreatRegisterPage() {
               <option value="yes">占床位 ($180) · With Bed</option>
               <option value="no">不占床位 ($110) · Without Bed</option>
             </select>
+          </div>
+
+          <div className="grid sm:grid-cols-2 gap-4">
+            <div>
+              <BiLabel cn="我们可以接送______位" en="We can pick up ___ people" />
+              <Input
+                type="number"
+                min={0}
+                value={form.can_pickup}
+                onChange={(e) => set("can_pickup", e.target.value)}
+                className="mt-1"
+                placeholder="0"
+              />
+            </div>
+            <div>
+              <BiLabel cn="我们有______位需要被接送" en="We need pick-up for ___ people" />
+              <Input
+                type="number"
+                min={0}
+                value={form.need_pickup}
+                onChange={(e) => set("need_pickup", e.target.value)}
+                className="mt-1"
+                placeholder="0"
+              />
+            </div>
           </div>
 
           <div>

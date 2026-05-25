@@ -32,6 +32,8 @@ type Row = {
   topic: string | null;
   bed: string | null;
   bus: string | null;
+  can_pickup: number | null;
+  need_pickup: number | null;
   user_notes: string | null;
   created_at: string;
   updated_at: string;
@@ -53,6 +55,8 @@ function emptyForm() {
     program: "",
     topic: "",
     bed: "",
+    can_pickup: "",
+    need_pickup: "",
     user_notes: "",
   };
 }
@@ -136,6 +140,8 @@ function RetreatAdminPage() {
       "Topic": r.topic ?? "",
       "Bed": r.bed ?? "",
       "Bus": r.bus ?? "",
+      "可接送": r.can_pickup ?? "",
+      "需接送": r.need_pickup ?? "",
       "Creation Time": new Date(r.created_at).toLocaleString("zh-CN"),
       "Changed By": "",
       "Modify Time": new Date(r.updated_at).toLocaleString("zh-CN"),
@@ -153,6 +159,8 @@ function RetreatAdminPage() {
     e.preventDefault();
     if (!form.chinese_name.trim()) return toast.error("请填写中文姓名");
     setSubmitting(true);
+    const needPickup = parseInt(form.need_pickup || "0", 10) || 0;
+    const canPickup = parseInt(form.can_pickup || "0", 10) || 0;
     const { error } = await supabase.from("retreat_registrations").insert({
       church: form.church || null,
       chinese_name: form.chinese_name.trim(),
@@ -164,6 +172,9 @@ function RetreatAdminPage() {
       program: form.program || null,
       topic: form.topic || null,
       bed: form.bed || null,
+      can_pickup: canPickup || null,
+      need_pickup: needPickup || null,
+      bus: needPickup > 0 ? "Y" : "N",
       user_notes: form.user_notes.trim() || null,
     });
     setSubmitting(false);
@@ -228,7 +239,7 @@ function RetreatAdminPage() {
             <table className="w-full text-xs whitespace-nowrap">
               <thead className="sticky top-0 z-10 bg-muted/80 backdrop-blur">
                 <tr className="text-left text-muted-foreground border-b border-border/60">
-                  {["Entry #","Confirmation #","已付费?","基督之家","序号","中文姓名","LastName","FirstName","Cell","Email","Gender","Program","Topic","Bed","Bus","Creation Time","Changed By","Modify Time","userNotes","操作"].map((h) => (
+                  {["Entry #","Confirmation #","已付费?","基督之家","序号","中文姓名","LastName","FirstName","Cell","Email","Gender","Program","Topic","Bed","可接送","需接送","Bus","Creation Time","Changed By","Modify Time","userNotes","操作"].map((h) => (
                     <th key={h} className="py-2 px-2 font-medium">{h}</th>
                   ))}
                 </tr>
@@ -254,6 +265,8 @@ function RetreatAdminPage() {
                     <td className="py-2 px-2">{r.program ?? ""}</td>
                     <td className="py-2 px-2">{r.topic ?? ""}</td>
                     <td className="py-2 px-2">{r.bed ?? ""}</td>
+                    <td className="py-2 px-2">{r.can_pickup ?? ""}</td>
+                    <td className="py-2 px-2">{r.need_pickup ?? ""}</td>
                     <td className="py-2 px-2">{r.bus ?? ""}</td>
                     <td className="py-2 px-2">{new Date(r.created_at).toLocaleString("zh-CN")}</td>
                     <td className="py-2 px-2"></td>
@@ -265,7 +278,7 @@ function RetreatAdminPage() {
                   </tr>
                 ))}
                 {pageRows.length === 0 && (
-                  <tr><td colSpan={20} className="py-10 text-center text-muted-foreground">暂无登记</td></tr>
+                  <tr><td colSpan={22} className="py-10 text-center text-muted-foreground">暂无登记</td></tr>
                 )}
               </tbody>
             </table>
@@ -331,6 +344,16 @@ function RetreatAdminPage() {
                 <select value={form.bed} onChange={(e) => setForm({ ...form, bed: e.target.value })} className="mt-1 w-full h-10 rounded-md border border-input bg-background px-3 text-sm">
                   <option value="">—</option><option value="yes">占床位</option><option value="no">不占床位</option>
                 </select>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>可接送 (位)</Label>
+                <Input type="number" min={0} value={form.can_pickup} onChange={(e) => setForm({ ...form, can_pickup: e.target.value })} className="mt-1" placeholder="0" />
+              </div>
+              <div>
+                <Label>需接送 (位)</Label>
+                <Input type="number" min={0} value={form.need_pickup} onChange={(e) => setForm({ ...form, need_pickup: e.target.value })} className="mt-1" placeholder="0" />
               </div>
             </div>
             <div>
