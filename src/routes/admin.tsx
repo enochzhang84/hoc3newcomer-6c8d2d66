@@ -1804,8 +1804,8 @@ function AdminPage() {
                       <tr key={r.id} className="border-b border-border/30">
                         <td className="py-2 px-2">
                           <Input
+                            type="date"
                             defaultValue={r.slot_time}
-                            placeholder="如 2026-06-07 10:00"
                             className="h-8"
                             onBlur={async (e) => {
                               const v = e.target.value;
@@ -2196,18 +2196,16 @@ function AdminPage() {
                 <span className="font-medium text-foreground">二维码已停用</span>
               )}
             </div>
-            <div className="ml-auto">
-              <Button
-                size="lg"
-                onClick={() => window.open("/retreat", "_blank", "noopener,noreferrer")}
-                className="h-12 px-6 text-base font-semibold bg-gradient-to-r from-primary to-primary/80 shadow-md hover:shadow-lg hover:from-primary/90 hover:to-primary/70 transition-all"
-              >
-                🏔️ 退修会登记
-              </Button>
-            </div>
           </div>
-          <div className="flex flex-wrap gap-2 mb-4">
+          <div className="flex flex-wrap items-center gap-2 mb-4">
             <Button onClick={addEvent}>生成新二维码</Button>
+            <Button
+              size="lg"
+              onClick={() => window.open("/retreat", "_blank", "noopener,noreferrer")}
+              className="ml-auto h-12 px-6 text-base font-semibold bg-gradient-to-r from-primary to-primary/80 shadow-md hover:shadow-lg hover:from-primary/90 hover:to-primary/70 transition-all"
+            >
+              🏔️ 退修会登记
+            </Button>
           </div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {events.map((ev) => {
