@@ -1429,6 +1429,74 @@ function AdminPage() {
         </section>
         )}
         {isSuperAdmin && (
+        <Dialog open={newUserOpen} onOpenChange={setNewUserOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>添加新用户</DialogTitle>
+              <DialogDescription>由超级管理员直接创建账号并分配角色，新用户可立即登录。</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-3 py-2">
+              <div className="space-y-1">
+                <Label className="text-xs">邮箱</Label>
+                <Input
+                  type="email"
+                  value={newUserForm.email}
+                  onChange={(e) => setNewUserForm({ ...newUserForm, email: e.target.value })}
+                  placeholder="user@example.com"
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">密码 (至少 6 位)</Label>
+                <Input
+                  type="text"
+                  value={newUserForm.password}
+                  onChange={(e) => setNewUserForm({ ...newUserForm, password: e.target.value })}
+                  placeholder="临时密码，可让用户登录后修改"
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">角色</Label>
+                <select
+                  value={newUserForm.role}
+                  onChange={(e) => setNewUserForm({ ...newUserForm, role: e.target.value as typeof newUserForm.role })}
+                  className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm"
+                >
+                  <option value="super_admin">超级管理员</option>
+                  <option value="admin">管理员</option>
+                  <option value="user">一般用户</option>
+                  <option value="viewer">访客</option>
+                </select>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="ghost" onClick={() => setNewUserOpen(false)}>取消</Button>
+              <Button
+                disabled={newUserSubmitting}
+                onClick={async () => {
+                  const email = newUserForm.email.trim();
+                  if (!email) return toast.error("请输入邮箱");
+                  if (newUserForm.password.length < 6) return toast.error("密码至少 6 位");
+                  setNewUserSubmitting(true);
+                  try {
+                    await createUserFn({ data: { email, password: newUserForm.password, role: newUserForm.role } });
+                    toast.success("用户已创建");
+                    logAction(`创建用户 ${email} (角色: ${newUserForm.role})`);
+                    setNewUserOpen(false);
+                    loadUsers();
+                  } catch (e) {
+                    toast.error((e as Error).message);
+                  } finally {
+                    setNewUserSubmitting(false);
+                  }
+                }}
+              >
+                {newUserSubmitting ? "创建中..." : "创建"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+        )}
+        {isSuperAdmin && (
         <section className="bg-card border border-border/50 rounded-2xl p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-serif text-xl">系统工具栏</h2>
