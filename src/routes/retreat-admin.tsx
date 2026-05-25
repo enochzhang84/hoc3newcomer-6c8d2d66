@@ -265,6 +265,8 @@ function RetreatAdminPage() {
                     <td className="py-2 px-2">{r.program ?? ""}</td>
                     <td className="py-2 px-2">{r.topic ?? ""}</td>
                     <td className="py-2 px-2">{r.bed ?? ""}</td>
+                    <td className="py-2 px-2">{r.can_pickup ?? ""}</td>
+                    <td className="py-2 px-2">{r.need_pickup ?? ""}</td>
                     <td className="py-2 px-2">{r.bus ?? ""}</td>
                     <td className="py-2 px-2">{new Date(r.created_at).toLocaleString("zh-CN")}</td>
                     <td className="py-2 px-2"></td>
