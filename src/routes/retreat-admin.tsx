@@ -239,7 +239,7 @@ function RetreatAdminPage() {
             <table className="w-full text-xs whitespace-nowrap">
               <thead className="sticky top-0 z-10 bg-muted/80 backdrop-blur">
                 <tr className="text-left text-muted-foreground border-b border-border/60">
-                  {["Entry #","Confirmation #","已付费?","基督之家","序号","中文姓名","LastName","FirstName","Cell","Email","Gender","Program","Topic","Bed","Bus","Creation Time","Changed By","Modify Time","userNotes","操作"].map((h) => (
+                  {["Entry #","Confirmation #","已付费?","基督之家","序号","中文姓名","LastName","FirstName","Cell","Email","Gender","Program","Topic","Bed","可接送","需接送","Bus","Creation Time","Changed By","Modify Time","userNotes","操作"].map((h) => (
                     <th key={h} className="py-2 px-2 font-medium">{h}</th>
                   ))}
                 </tr>
