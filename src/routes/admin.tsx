@@ -2432,7 +2432,12 @@ function AdminPage() {
             <DialogHeader>
               <DialogTitle>主日学课程设置</DialogTitle>
             </DialogHeader>
-            <div className="space-y-4">
+            <Tabs value={courseSettingsTab} onValueChange={(v) => setCourseSettingsTab(v as "courses" | "teachers")} className="w-full">
+              <TabsList className="grid grid-cols-2 w-full mb-4">
+                <TabsTrigger value="courses">课程管理</TabsTrigger>
+                <TabsTrigger value="teachers">老师管理</TabsTrigger>
+              </TabsList>
+              <TabsContent value="courses" className="space-y-4 mt-0">
               <div className="flex gap-2">
                 <Input
                   placeholder="新课程名称"
@@ -2530,7 +2535,91 @@ function AdminPage() {
                   </div>
                 ))}
               </div>
-            </div>
+              </TabsContent>
+              <TabsContent value="teachers" className="space-y-4 mt-0">
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="新老师姓名"
+                    value={newTeacherName}
+                    onChange={(e) => setNewTeacherName(e.target.value)}
+                  />
+                  <Button
+                    onClick={async () => {
+                      const name = newTeacherName.trim();
+                      if (!name) return toast.error("请输入老师姓名");
+                      const nextOrder = (sundayTeachers[sundayTeachers.length - 1]?.sort_order ?? 0) + 1;
+                      const { error } = await (supabase as any)
+                        .from("sunday_school_teachers")
+                        .insert({ name, sort_order: nextOrder });
+                      if (error) return toast.error(error.message);
+                      setNewTeacherName("");
+                      logAction(`新增主日学老师: ${name}`);
+                      toast.success("已添加");
+                      loadSundayTeachers();
+                    }}
+                  >
+                    添加
+                  </Button>
+                </div>
+                <div className="space-y-2">
+                  {sundayTeachers.length === 0 && (
+                    <p className="text-sm text-muted-foreground text-center py-6">暂无老师</p>
+                  )}
+                  {sundayTeachers.map((t) => (
+                    <div key={t.id} className="flex items-center gap-2 border border-border/50 rounded-md px-3 py-2">
+                      <Input
+                        defaultValue={t.name}
+                        onBlur={async (e) => {
+                          const v = e.target.value.trim();
+                          if (!v || v === t.name) return;
+                          const { error } = await (supabase as any)
+                            .from("sunday_school_teachers")
+                            .update({ name: v })
+                            .eq("id", t.id);
+                          if (error) return toast.error(error.message);
+                          logAction(`修改主日学老师: ${t.name} → ${v}`);
+                          toast.success("已更新");
+                          loadSundayTeachers();
+                        }}
+                        className="flex-1"
+                      />
+                      <label className="flex items-center gap-1 text-xs text-muted-foreground whitespace-nowrap">
+                        <input
+                          type="checkbox"
+                          checked={t.is_active}
+                          onChange={async (e) => {
+                            await (supabase as any)
+                              .from("sunday_school_teachers")
+                              .update({ is_active: e.target.checked })
+                              .eq("id", t.id);
+                            loadSundayTeachers();
+                          }}
+                        />
+                        启用
+                      </label>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="text-destructive"
+                        onClick={async () => {
+                          if (!confirm(`删除老师「${t.name}」?`)) return;
+                          const { error } = await (supabase as any)
+                            .from("sunday_school_teachers")
+                            .delete()
+                            .eq("id", t.id);
+                          if (error) return toast.error(error.message);
+                          logAction(`删除主日学老师: ${t.name}`);
+                          toast.success("已删除");
+                          loadSundayTeachers();
+                        }}
+                      >
+                        删除
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </TabsContent>
+            </Tabs>
           </DialogContent>
         </Dialog>
 
