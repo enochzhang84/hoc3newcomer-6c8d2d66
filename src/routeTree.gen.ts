@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TodayPreviewRouteImport } from './routes/today-preview'
+import { Route as SundayScheduleRouteImport } from './routes/sunday-schedule'
 import { Route as SundayCheckinRouteImport } from './routes/sunday-checkin'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as ServeApplyRouteImport } from './routes/serve-apply'
@@ -31,6 +32,11 @@ import { Route as TodayPublicTokenRouteImport } from './routes/today-public.$tok
 const TodayPreviewRoute = TodayPreviewRouteImport.update({
   id: '/today-preview',
   path: '/today-preview',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SundayScheduleRoute = SundayScheduleRouteImport.update({
+  id: '/sunday-schedule',
+  path: '/sunday-schedule',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SundayCheckinRoute = SundayCheckinRouteImport.update({
@@ -136,6 +142,7 @@ export interface FileRoutesByFullPath {
   '/serve-apply': typeof ServeApplyRoute
   '/signup': typeof SignupRoute
   '/sunday-checkin': typeof SundayCheckinRoute
+  '/sunday-schedule': typeof SundayScheduleRoute
   '/today-preview': typeof TodayPreviewRoute
   '/today-public/$token': typeof TodayPublicTokenRoute
 }
@@ -156,6 +163,7 @@ export interface FileRoutesByTo {
   '/serve-apply': typeof ServeApplyRoute
   '/signup': typeof SignupRoute
   '/sunday-checkin': typeof SundayCheckinRoute
+  '/sunday-schedule': typeof SundayScheduleRoute
   '/today-preview': typeof TodayPreviewRoute
   '/today-public/$token': typeof TodayPublicTokenRoute
 }
@@ -177,6 +185,7 @@ export interface FileRoutesById {
   '/serve-apply': typeof ServeApplyRoute
   '/signup': typeof SignupRoute
   '/sunday-checkin': typeof SundayCheckinRoute
+  '/sunday-schedule': typeof SundayScheduleRoute
   '/today-preview': typeof TodayPreviewRoute
   '/today-public/$token': typeof TodayPublicTokenRoute
 }
@@ -199,6 +208,7 @@ export interface FileRouteTypes {
     | '/serve-apply'
     | '/signup'
     | '/sunday-checkin'
+    | '/sunday-schedule'
     | '/today-preview'
     | '/today-public/$token'
   fileRoutesByTo: FileRoutesByTo
@@ -219,6 +229,7 @@ export interface FileRouteTypes {
     | '/serve-apply'
     | '/signup'
     | '/sunday-checkin'
+    | '/sunday-schedule'
     | '/today-preview'
     | '/today-public/$token'
   id:
@@ -239,6 +250,7 @@ export interface FileRouteTypes {
     | '/serve-apply'
     | '/signup'
     | '/sunday-checkin'
+    | '/sunday-schedule'
     | '/today-preview'
     | '/today-public/$token'
   fileRoutesById: FileRoutesById
@@ -260,6 +272,7 @@ export interface RootRouteChildren {
   ServeApplyRoute: typeof ServeApplyRoute
   SignupRoute: typeof SignupRoute
   SundayCheckinRoute: typeof SundayCheckinRoute
+  SundayScheduleRoute: typeof SundayScheduleRoute
   TodayPreviewRoute: typeof TodayPreviewRoute
   TodayPublicTokenRoute: typeof TodayPublicTokenRoute
 }
@@ -271,6 +284,13 @@ declare module '@tanstack/react-router' {
       path: '/today-preview'
       fullPath: '/today-preview'
       preLoaderRoute: typeof TodayPreviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sunday-schedule': {
+      id: '/sunday-schedule'
+      path: '/sunday-schedule'
+      fullPath: '/sunday-schedule'
+      preLoaderRoute: typeof SundayScheduleRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/sunday-checkin': {
@@ -412,9 +432,20 @@ const rootRouteChildren: RootRouteChildren = {
   ServeApplyRoute: ServeApplyRoute,
   SignupRoute: SignupRoute,
   SundayCheckinRoute: SundayCheckinRoute,
+  SundayScheduleRoute: SundayScheduleRoute,
   TodayPreviewRoute: TodayPreviewRoute,
   TodayPublicTokenRoute: TodayPublicTokenRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
