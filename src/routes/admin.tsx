@@ -2346,7 +2346,7 @@ function AdminPage() {
               );
             })}
           </div>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid sm:grid-cols-2 gap-4">
             {events.map((ev) => {
               const url = `${publicBase}/register?event=${ev.qr_token}`;
               return (
@@ -2381,6 +2381,45 @@ function AdminPage() {
                 </div>
               );
             })}
+            {/* 退修会登记 — 与新人登记并排 */}
+            <div className="border border-border/50 rounded-xl p-4 flex items-center justify-between gap-4 bg-gradient-to-r from-primary/10 to-primary/5">
+              <div className="min-w-0">
+                <p className="font-medium truncate">🏔️ 退修会登记</p>
+                <p className="text-xs text-muted-foreground truncate">{publicBase}/retreat</p>
+              </div>
+              <div className="flex gap-2 shrink-0">
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button size="sm" variant="outline">二维码</Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>退修会登记</DialogTitle>
+                    </DialogHeader>
+                    <div className="flex flex-col items-center gap-4 py-4">
+                      <QRCodeSVG value={`${publicBase}/retreat`} size={280} level="H" />
+                      <p className="text-xs text-muted-foreground break-all text-center">{publicBase}/retreat</p>
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          navigator.clipboard.writeText(`${publicBase}/retreat`);
+                          toast.success("链接已复制");
+                        }}
+                      >
+                        复制链接
+                      </Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+                <Button
+                  size="sm"
+                  onClick={() => window.open("/retreat", "_blank", "noopener,noreferrer")}
+                  className="bg-gradient-to-r from-primary to-primary/80"
+                >
+                  打开登记
+                </Button>
+              </div>
+            </div>
           </div>
         </section>
         <section className="bg-card border border-border/50 rounded-2xl p-6">
