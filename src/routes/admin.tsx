@@ -1728,6 +1728,112 @@ function AdminPage() {
             </div>
           </div>
         </section>
+
+        {(["sunday","summer"] as const).map((kind) => {
+          const title = kind === "sunday" ? "主日崇拜轮值表" : "暑期主日学轮值表";
+          const pptLabel = kind === "sunday" ? "主日PPT" : "暑期PPT";
+          const liveLabel = kind === "sunday" ? "主日直播" : "暑期直播";
+          const rows = dutySchedules.filter((s) => s.schedule_type === kind);
+          return (
+            <section key={kind} className="bg-card border border-border/50 rounded-2xl p-6">
+              <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+                <h2 className="font-serif text-xl">{title}</h2>
+                <div className="flex gap-2">
+                  <Button size="sm" variant="outline" onClick={() => setDutyPersonnelOpen(true)}>
+                    轮值表设置
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={async () => {
+                      const next = (rows[rows.length - 1]?.sort_order ?? 0) + 1;
+                      const { error } = await (supabase as any).from("duty_schedules").insert({
+                        schedule_type: kind, slot_time: "", ppt_person: null, live_person: null, sort_order: next,
+                      });
+                      if (error) return toast.error(error.message);
+                      loadDutySchedules();
+                    }}
+                  >
+                    添加一行
+                  </Button>
+                </div>
+              </div>
+              <div className="overflow-x-auto rounded-lg border border-border/50">
+                <table className="w-full text-sm">
+                  <thead className="bg-muted/80">
+                    <tr className="text-left border-b border-border/60 text-muted-foreground">
+                      <th className="py-2 px-2 w-1/3">时间</th>
+                      <th className="py-2 px-2">{pptLabel}</th>
+                      <th className="py-2 px-2">{liveLabel}</th>
+                      <th className="py-2 px-2 text-right">操作</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {rows.map((r) => (
+                      <tr key={r.id} className="border-b border-border/30">
+                        <td className="py-2 px-2">
+                          <Input
+                            defaultValue={r.slot_time}
+                            placeholder="如 2026-06-07 10:00"
+                            className="h-8"
+                            onBlur={async (e) => {
+                              const v = e.target.value;
+                              if (v === r.slot_time) return;
+                              await (supabase as any).from("duty_schedules").update({ slot_time: v }).eq("id", r.id);
+                              loadDutySchedules();
+                            }}
+                          />
+                        </td>
+                        <td className="py-2 px-2">
+                          <select
+                            className="h-8 rounded-md border border-input bg-transparent px-2 text-sm w-full"
+                            defaultValue={r.ppt_person ?? ""}
+                            onChange={async (e) => {
+                              await (supabase as any).from("duty_schedules").update({ ppt_person: e.target.value || null }).eq("id", r.id);
+                              loadDutySchedules();
+                            }}
+                          >
+                            <option value="">— 选择人员 —</option>
+                            {dutyPersonnel.filter((p) => p.is_active).map((p) => (
+                              <option key={p.id} value={p.name}>{p.name}</option>
+                            ))}
+                          </select>
+                        </td>
+                        <td className="py-2 px-2">
+                          <select
+                            className="h-8 rounded-md border border-input bg-transparent px-2 text-sm w-full"
+                            defaultValue={r.live_person ?? ""}
+                            onChange={async (e) => {
+                              await (supabase as any).from("duty_schedules").update({ live_person: e.target.value || null }).eq("id", r.id);
+                              loadDutySchedules();
+                            }}
+                          >
+                            <option value="">— 选择人员 —</option>
+                            {dutyPersonnel.filter((p) => p.is_active).map((p) => (
+                              <option key={p.id} value={p.name}>{p.name}</option>
+                            ))}
+                          </select>
+                        </td>
+                        <td className="py-2 px-2 text-right">
+                          <button
+                            className="text-xs text-destructive hover:underline"
+                            onClick={async () => {
+                              if (!confirm("删除该行?")) return;
+                              await (supabase as any).from("duty_schedules").delete().eq("id", r.id);
+                              loadDutySchedules();
+                            }}
+                          >删除</button>
+                        </td>
+                      </tr>
+                    ))}
+                    {rows.length === 0 && (
+                      <tr><td colSpan={4} className="py-8 text-center text-muted-foreground">暂无记录，点击右上「添加一行」</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          );
+        })}
             </TabsContent>
 
             <TabsContent value="kitchen" className="space-y-8 mt-0">
