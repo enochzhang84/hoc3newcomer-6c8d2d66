@@ -940,7 +940,7 @@ function AdminPage() {
 
             <TabsContent value="stats" className="space-y-8 mt-0">
         <section>
-          <h2 className="font-serif text-xl mb-4">登记人数统计</h2>
+          <h2 className="font-serif text-xl mb-4">数据统计</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <Stat label="总登记数" value={regs.length} />
           <Stat label="希望探访" value={regs.filter((r) => r.wants_visit).length} />
