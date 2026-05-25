@@ -279,7 +279,7 @@ function RetreatAdminPage() {
                     <td className="py-2 px-2">{r.email ?? ""}</td>
                     <td className="py-2 px-2">{r.gender ?? ""}</td>
                     <td className="py-2 px-2">{r.program ?? ""}</td>
-                    <td className="py-2 px-2">{r.topic ?? ""}</td>
+                    <td className="py-2 px-2">{r.topic ? (TOPIC_LABEL[r.topic] ?? r.topic) : ""}</td>
                     <td className="py-2 px-2">{r.bed ?? ""}</td>
                     <td className="py-2 px-2">{r.can_pickup ?? ""}</td>
                     <td className="py-2 px-2">{r.need_pickup ?? ""}</td>
