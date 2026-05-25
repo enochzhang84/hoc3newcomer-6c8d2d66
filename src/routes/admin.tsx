@@ -173,7 +173,8 @@ function AdminPage() {
   const navigate = useNavigate();
   const [checking, setChecking] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [userRole, setUserRoleState] = useState<"admin" | "user" | "viewer" | null>(null);
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+  const [userRole, setUserRoleState] = useState<"super_admin" | "admin" | "user" | "viewer" | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [currentUserEmail, setCurrentUserEmail] = useState<string>("");
   const [regs, setRegs] = useState<Reg[]>([]);
@@ -185,7 +186,7 @@ function AdminPage() {
   const [origin, setOrigin] = useState("");
   const [users, setUsers] = useState<AppUser[]>([]);
   const [usersLoading, setUsersLoading] = useState(false);
-  const [pendingRoleSelections, setPendingRoleSelections] = useState<Record<string, "admin" | "user" | "viewer">>({});
+  const [pendingRoleSelections, setPendingRoleSelections] = useState<Record<string, "super_admin" | "admin" | "user" | "viewer">>({});
   const [messagesCount, setMessagesCount] = useState(0);
   const [serviceApps, setServiceApps] = useState<ServiceApp[]>([]);
   const [serviceListOpen, setServiceListOpen] = useState(false);
@@ -467,12 +468,14 @@ function AdminPage() {
             .eq("user_id", sess.user.id);
           if (cancelled) return;
           if (error) throw error;
+          const superAdmin = roles?.some((r) => r.role === "super_admin") ?? false;
           const admin = roles?.some((r) => r.role === "admin") ?? false;
           const isUser = roles?.some((r) => r.role === "user") ?? false;
           const isViewer = roles?.some((r) => r.role === "viewer") ?? false;
-          const role: "admin" | "user" | "viewer" | null =
-            admin ? "admin" : isUser ? "user" : isViewer ? "viewer" : null;
-          setIsAdmin(admin);
+          const role: "super_admin" | "admin" | "user" | "viewer" | null =
+            superAdmin ? "super_admin" : admin ? "admin" : isUser ? "user" : isViewer ? "viewer" : null;
+          setIsSuperAdmin(superAdmin);
+          setIsAdmin(admin || superAdmin);
           setUserRoleState(role);
           setChecking(false);
           if (role) {
@@ -1090,6 +1093,7 @@ function AdminPage() {
             />
           </div>
         </section>
+        {isSuperAdmin && (
         <section className="bg-card border border-border/50 rounded-2xl p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-serif text-xl">管理员权限</h2>
@@ -1098,10 +1102,11 @@ function AdminPage() {
             </Button>
           </div>
           <p className="text-xs text-muted-foreground mb-4">
-            新注册用户默认为「待审核」，须由主管理员在此分配角色后才能登录。
+            新注册用户默认为「待审核」，须由超级管理员在此分配角色后才能登录。
             <br />
             <span className="text-foreground/70">角色权限：</span>
-            <span className="ml-1">管理员 = 可修改所有设置；</span>
+            <span className="ml-1">超级管理员 = 可修改所有设置；</span>
+            <span>管理员 = 可修改设置（不可管理用户权限与系统工具）；</span>
             <span>一般用户 = 仅可查看系统（不可修改设置）；</span>
             <span>访客 = 仅能登录 / 退出。</span>
           </p>
@@ -1117,13 +1122,15 @@ function AdminPage() {
               </thead>
               <tbody>
                 {users.map((u) => {
-                  const currentRole = u.roles.includes("admin")
-                    ? "admin"
-                    : u.roles.includes("user")
-                      ? "user"
-                      : u.roles.includes("viewer")
-                        ? "viewer"
-                        : "";
+                  const currentRole = u.roles.includes("super_admin")
+                    ? "super_admin"
+                    : u.roles.includes("admin")
+                      ? "admin"
+                      : u.roles.includes("user")
+                        ? "user"
+                        : u.roles.includes("viewer")
+                          ? "viewer"
+                          : "";
                   const isSelf = u.id === currentUserId;
                   const PROTECTED_ADMINS = ["hoc3nc@gmail.com", "charmzhangliang@gmail.com"];
                   const isProtected = PROTECTED_ADMINS.includes(u.email.toLowerCase());
@@ -1138,18 +1145,19 @@ function AdminPage() {
                       <td className="py-2 px-2">
                         <select
                           value={isPending ? pendingRole : currentRole}
-                          disabled={isProtected || (isSelf && currentRole === "admin")}
+                          disabled={isProtected || (isSelf && (currentRole === "admin" || currentRole === "super_admin"))}
                           onChange={async (e) => {
-                            const newRole = e.target.value as "" | "admin" | "user" | "viewer";
+                            const newRole = e.target.value as "" | "super_admin" | "admin" | "user" | "viewer";
                             if (isPending) {
                               setPendingRoleSelections((prev) => ({
                                 ...prev,
-                                [u.id]: (newRole || "viewer") as "admin" | "user" | "viewer",
+                                [u.id]: (newRole || "viewer") as "super_admin" | "admin" | "user" | "viewer",
                               }));
                               return;
                             }
                             const label =
-                              newRole === "admin" ? "管理员"
+                              newRole === "super_admin" ? "超级管理员"
+                              : newRole === "admin" ? "管理员"
                               : newRole === "user" ? "一般用户"
                               : newRole === "viewer" ? "访客"
                               : "待审核 (撤销权限)";
@@ -1170,6 +1178,7 @@ function AdminPage() {
                           className="text-xs bg-background border border-border rounded px-2 py-1"
                         >
                           {!isPending && <option value="">待审核</option>}
+                          <option value="super_admin">超级管理员</option>
                           <option value="admin">管理员</option>
                           <option value="user">一般用户</option>
                           <option value="viewer">访客</option>
@@ -1184,7 +1193,8 @@ function AdminPage() {
                             onClick={async () => {
                               const chosen = pendingRoleSelections[u.id] ?? "viewer";
                               const label =
-                                chosen === "admin" ? "管理员"
+                                chosen === "super_admin" ? "超级管理员"
+                                : chosen === "admin" ? "管理员"
                                 : chosen === "user" ? "一般用户"
                                 : "访客";
                               if (!confirm(`通过 ${u.email} 的申请,并设为「${label}」?`)) return;
@@ -1234,12 +1244,14 @@ function AdminPage() {
             </table>
           </div>
         </section>
+        )}
+        {isSuperAdmin && (
         <section className="bg-card border border-border/50 rounded-2xl p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-serif text-xl">系统工具栏</h2>
           </div>
           <p className="text-xs text-muted-foreground mb-4">
-            管理员可用的系统级工具。日志记录管理员在本浏览器上的操作（编辑、删除、权限变更等）。
+            超级管理员可用的系统级工具。日志记录管理员在本浏览器上的操作（编辑、删除、权限变更等）。
           </p>
           <div className="flex flex-wrap gap-3">
             <Button
@@ -1262,6 +1274,7 @@ function AdminPage() {
             </Button>
           </div>
         </section>
+        )}
             </TabsContent>
 
             <TabsContent value="welcome" className="space-y-8 mt-0">
