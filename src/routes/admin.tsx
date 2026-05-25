@@ -2364,8 +2364,8 @@ function AdminPage() {
               );
             })}
             {/* 退修会登记 — 与新人登记并排 */}
-            <div className="border border-border/50 rounded-xl p-4 flex flex-col items-center gap-3 bg-gradient-to-br from-primary/10 to-primary/5">
-              <p className="font-medium text-center">🏔️ 退修会登记</p>
+            <div className="border border-border/50 rounded-xl p-4 flex flex-col items-center gap-3">
+              <p className="font-medium text-center">退修会登记</p>
               {publicBase && <QRCodeSVG value={`${publicBase}/retreat`} size={180} level="H" />}
               <p className="text-xs text-muted-foreground break-all text-center">{publicBase}/retreat</p>
               <div className="flex gap-2 flex-wrap justify-center">
