@@ -3587,7 +3587,7 @@ ${rows.length===0?'<tr><td colspan="4" style="text-align:center;color:#888;paddi
                   onChange={(e) => setContactSearch(e.target.value)}
                   className="flex-1 min-w-[200px]"
                 />
-                <Button size="sm" onClick={() => setContactForm({ name: "", phone: "", wechat: "", email: "", address: "", fellowship: "", notes: "" })}>
+                <Button size="sm" onClick={() => setContactForm({ name: "", phone: "", wechat: "", email: "", address: "", city: "", zip: "", fellowship: "", notes: "" })}>
                   + 添加联系人
                 </Button>
                 <Button
@@ -3726,6 +3726,8 @@ ${rows.length===0?'<tr><td colspan="4" style="text-align:center;color:#888;paddi
                           wechat: (contactForm.wechat ?? "").trim() || null,
                           email: (contactForm.email ?? "").trim() || null,
                           address: (contactForm.address ?? "").trim() || null,
+                          city: (contactForm.city ?? "").trim() || null,
+                          zip: (contactForm.zip ?? "").trim() || null,
                           fellowship: (contactForm.fellowship ?? "").trim() || null,
                           notes: (contactForm.notes ?? "").trim() || null,
                         };
