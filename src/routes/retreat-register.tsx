@@ -200,11 +200,6 @@ function RetreatRegisterPage() {
   const [main, setMain] = useState<Person>(blankPerson());
   const [companions, setCompanions] = useState<Person[]>([]);
 
-  const updatePerson = (
-    setter: (p: Person) => void,
-    current: Person,
-  ) => <K extends keyof Person>(k: K, v: Person[K]) => setter({ ...current, [k]: v });
-
   const updateCompanion = (idx: number, patch: Partial<Person>) => {
     setCompanions((arr) => arr.map((p, i) => (i === idx ? { ...p, ...patch } : p)));
   };
