@@ -47,6 +47,66 @@ export type Database = {
         }
         Relationships: []
       }
+      duty_personnel: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      duty_schedules: {
+        Row: {
+          created_at: string
+          id: string
+          live_person: string | null
+          ppt_person: string | null
+          schedule_type: string
+          slot_time: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          live_person?: string | null
+          ppt_person?: string | null
+          schedule_type: string
+          slot_time: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          live_person?: string | null
+          ppt_person?: string | null
+          schedule_type?: string
+          slot_time?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       events: {
         Row: {
           created_at: string
@@ -138,6 +198,63 @@ export type Database = {
         Relationships: []
       }
       fellowships: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      meal_plans: {
+        Row: {
+          attendees: number
+          created_at: string
+          id: string
+          meal_type: string | null
+          notes: string | null
+          plan_date: string
+          updated_at: string
+        }
+        Insert: {
+          attendees?: number
+          created_at?: string
+          id?: string
+          meal_type?: string | null
+          notes?: string | null
+          plan_date: string
+          updated_at?: string
+        }
+        Update: {
+          attendees?: number
+          created_at?: string
+          id?: string
+          meal_type?: string | null
+          notes?: string | null
+          plan_date?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      meal_types: {
         Row: {
           created_at: string
           id: string

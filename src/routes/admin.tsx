@@ -135,6 +135,24 @@ type FellowshipCheckin = {
   created_at: string;
 };
 
+type MealType = { id: string; name: string; sort_order: number; is_active: boolean };
+type MealPlan = {
+  id: string;
+  plan_date: string;
+  attendees: number;
+  meal_type: string | null;
+  notes: string | null;
+};
+type DutyPerson = { id: string; name: string; sort_order: number; is_active: boolean };
+type DutySchedule = {
+  id: string;
+  schedule_type: "sunday" | "summer";
+  slot_time: string;
+  ppt_person: string | null;
+  live_person: string | null;
+  sort_order: number;
+};
+
 export const Route = createFileRoute("/admin")({
   component: AdminPage,
 });
@@ -175,6 +193,20 @@ function AdminPage() {
   const [coursePages, setCoursePages] = useState<Record<string, number>>({});
   const [fellowshipPages, setFellowshipPages] = useState<Record<string, number>>({});
   const TAB_PAGE_SIZE = 10;
+  // Kitchen meal plans
+  const [mealTypes, setMealTypes] = useState<MealType[]>([]);
+  const [mealPlans, setMealPlans] = useState<MealPlan[]>([]);
+  const [mealTypesOpen, setMealTypesOpen] = useState(false);
+  const [newMealTypeName, setNewMealTypeName] = useState("");
+  const [newMealDate, setNewMealDate] = useState<string>(format(new Date(), "yyyy-MM-dd"));
+  const [newMealAttendees, setNewMealAttendees] = useState<string>("");
+  const [newMealType, setNewMealType] = useState<string>("");
+  const [newMealNotes, setNewMealNotes] = useState<string>("");
+  // Duty rosters
+  const [dutyPersonnel, setDutyPersonnel] = useState<DutyPerson[]>([]);
+  const [dutySchedules, setDutySchedules] = useState<DutySchedule[]>([]);
+  const [dutyPersonnelOpen, setDutyPersonnelOpen] = useState(false);
+  const [newDutyPersonName, setNewDutyPersonName] = useState("");
   const [editingFollowUpId, setEditingFollowUpId] = useState<string | null>(null);
   const [followUpDraft, setFollowUpDraft] = useState("");
   const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
@@ -303,6 +335,39 @@ function AdminPage() {
     setFellowships((data ?? []) as Fellowship[]);
   }, []);
 
+  const loadMealTypes = useCallback(async () => {
+    const { data } = await (supabase as any)
+      .from("meal_types")
+      .select("*")
+      .order("sort_order", { ascending: true });
+    setMealTypes((data ?? []) as MealType[]);
+  }, []);
+
+  const loadMealPlans = useCallback(async () => {
+    const { data } = await (supabase as any)
+      .from("meal_plans")
+      .select("*")
+      .order("plan_date", { ascending: false });
+    setMealPlans((data ?? []) as MealPlan[]);
+  }, []);
+
+  const loadDutyPersonnel = useCallback(async () => {
+    const { data } = await (supabase as any)
+      .from("duty_personnel")
+      .select("*")
+      .order("sort_order", { ascending: true });
+    setDutyPersonnel((data ?? []) as DutyPerson[]);
+  }, []);
+
+  const loadDutySchedules = useCallback(async () => {
+    const { data } = await (supabase as any)
+      .from("duty_schedules")
+      .select("*")
+      .order("sort_order", { ascending: true })
+      .order("created_at", { ascending: true });
+    setDutySchedules((data ?? []) as DutySchedule[]);
+  }, []);
+
   const loadMessagesCount = useCallback(async () => {
     const { data: sess } = await supabase.auth.getSession();
     const uid = sess.session?.user.id;
@@ -376,6 +441,10 @@ function AdminPage() {
            void loadSundayCheckins();
            void loadFellowshipCheckins();
            void loadFellowships();
+           void loadMealTypes();
+           void loadMealPlans();
+           void loadDutyPersonnel();
+           void loadDutySchedules();
             void loadUsers();
           }
         } catch (e) {
@@ -1659,12 +1728,259 @@ function AdminPage() {
             </div>
           </div>
         </section>
+
+        {(["sunday","summer"] as const).map((kind) => {
+          const title = kind === "sunday" ? "主日崇拜轮值表" : "暑期主日学轮值表";
+          const pptLabel = kind === "sunday" ? "主日PPT" : "暑期PPT";
+          const liveLabel = kind === "sunday" ? "主日直播" : "暑期直播";
+          const rows = dutySchedules.filter((s) => s.schedule_type === kind);
+          return (
+            <section key={kind} className="bg-card border border-border/50 rounded-2xl p-6">
+              <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+                <h2 className="font-serif text-xl">{title}</h2>
+                <div className="flex gap-2">
+                  <Button size="sm" variant="outline" onClick={() => setDutyPersonnelOpen(true)}>
+                    轮值表设置
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={async () => {
+                      const next = (rows[rows.length - 1]?.sort_order ?? 0) + 1;
+                      const { error } = await (supabase as any).from("duty_schedules").insert({
+                        schedule_type: kind, slot_time: "", ppt_person: null, live_person: null, sort_order: next,
+                      });
+                      if (error) return toast.error(error.message);
+                      loadDutySchedules();
+                    }}
+                  >
+                    添加一行
+                  </Button>
+                </div>
+              </div>
+              <div className="overflow-x-auto rounded-lg border border-border/50">
+                <table className="w-full text-sm">
+                  <thead className="bg-muted/80">
+                    <tr className="text-left border-b border-border/60 text-muted-foreground">
+                      <th className="py-2 px-2 w-1/3">时间</th>
+                      <th className="py-2 px-2">{pptLabel}</th>
+                      <th className="py-2 px-2">{liveLabel}</th>
+                      <th className="py-2 px-2 text-right">操作</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {rows.map((r) => (
+                      <tr key={r.id} className="border-b border-border/30">
+                        <td className="py-2 px-2">
+                          <Input
+                            defaultValue={r.slot_time}
+                            placeholder="如 2026-06-07 10:00"
+                            className="h-8"
+                            onBlur={async (e) => {
+                              const v = e.target.value;
+                              if (v === r.slot_time) return;
+                              await (supabase as any).from("duty_schedules").update({ slot_time: v }).eq("id", r.id);
+                              loadDutySchedules();
+                            }}
+                          />
+                        </td>
+                        <td className="py-2 px-2">
+                          <select
+                            className="h-8 rounded-md border border-input bg-transparent px-2 text-sm w-full"
+                            defaultValue={r.ppt_person ?? ""}
+                            onChange={async (e) => {
+                              await (supabase as any).from("duty_schedules").update({ ppt_person: e.target.value || null }).eq("id", r.id);
+                              loadDutySchedules();
+                            }}
+                          >
+                            <option value="">— 选择人员 —</option>
+                            {dutyPersonnel.filter((p) => p.is_active).map((p) => (
+                              <option key={p.id} value={p.name}>{p.name}</option>
+                            ))}
+                          </select>
+                        </td>
+                        <td className="py-2 px-2">
+                          <select
+                            className="h-8 rounded-md border border-input bg-transparent px-2 text-sm w-full"
+                            defaultValue={r.live_person ?? ""}
+                            onChange={async (e) => {
+                              await (supabase as any).from("duty_schedules").update({ live_person: e.target.value || null }).eq("id", r.id);
+                              loadDutySchedules();
+                            }}
+                          >
+                            <option value="">— 选择人员 —</option>
+                            {dutyPersonnel.filter((p) => p.is_active).map((p) => (
+                              <option key={p.id} value={p.name}>{p.name}</option>
+                            ))}
+                          </select>
+                        </td>
+                        <td className="py-2 px-2 text-right">
+                          <button
+                            className="text-xs text-destructive hover:underline"
+                            onClick={async () => {
+                              if (!confirm("删除该行?")) return;
+                              await (supabase as any).from("duty_schedules").delete().eq("id", r.id);
+                              loadDutySchedules();
+                            }}
+                          >删除</button>
+                        </td>
+                      </tr>
+                    ))}
+                    {rows.length === 0 && (
+                      <tr><td colSpan={4} className="py-8 text-center text-muted-foreground">暂无记录，点击右上「添加一行」</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          );
+        })}
             </TabsContent>
 
             <TabsContent value="kitchen" className="space-y-8 mt-0">
         <section className="bg-card border border-border/50 rounded-2xl p-6">
-          <h2 className="font-serif text-xl mb-4">厨房侍工</h2>
-          <p className="text-sm text-muted-foreground">敬请期待，此模块尚在开发中。</p>
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+            <h2 className="font-serif text-xl">主日订餐计划</h2>
+            <Button size="sm" variant="outline" onClick={() => setMealTypesOpen(true)}>
+              饭食种类设置
+            </Button>
+          </div>
+          <div className="grid sm:grid-cols-5 gap-2 mb-4">
+            <Input
+              type="date"
+              value={newMealDate}
+              onChange={(e) => setNewMealDate(e.target.value)}
+            />
+            <Input
+              type="number"
+              min="0"
+              placeholder="就餐人数"
+              value={newMealAttendees}
+              onChange={(e) => setNewMealAttendees(e.target.value)}
+            />
+            <select
+              className="h-9 rounded-md border border-input bg-transparent px-3 text-sm"
+              value={newMealType}
+              onChange={(e) => setNewMealType(e.target.value)}
+            >
+              <option value="">饭食种类</option>
+              {mealTypes.filter((m) => m.is_active).map((m) => (
+                <option key={m.id} value={m.name}>{m.name}</option>
+              ))}
+            </select>
+            <Input
+              placeholder="备注"
+              value={newMealNotes}
+              onChange={(e) => setNewMealNotes(e.target.value)}
+            />
+            <Button
+              onClick={async () => {
+                if (!newMealDate) return toast.error("请选择日期");
+                const { error } = await (supabase as any).from("meal_plans").insert({
+                  plan_date: newMealDate,
+                  attendees: parseInt(newMealAttendees || "0", 10) || 0,
+                  meal_type: newMealType || null,
+                  notes: newMealNotes || null,
+                });
+                if (error) return toast.error(error.message);
+                toast.success("已添加");
+                setNewMealAttendees(""); setNewMealType(""); setNewMealNotes("");
+                loadMealPlans();
+              }}
+            >
+              添加
+            </Button>
+          </div>
+          <div className="overflow-x-auto rounded-lg border border-border/50">
+            <table className="w-full text-sm">
+              <thead className="bg-muted/80">
+                <tr className="text-left border-b border-border/60 text-muted-foreground">
+                  <th className="py-2 px-2">日期</th>
+                  <th className="py-2 px-2">就餐人数</th>
+                  <th className="py-2 px-2">饭食种类</th>
+                  <th className="py-2 px-2">备注</th>
+                  <th className="py-2 px-2 text-right">操作</th>
+                </tr>
+              </thead>
+              <tbody>
+                {mealPlans.map((p) => (
+                  <tr key={p.id} className="border-b border-border/30">
+                    <td className="py-2 px-2 whitespace-nowrap">
+                      <Input
+                        type="date"
+                        defaultValue={p.plan_date}
+                        className="h-8"
+                        onBlur={async (e) => {
+                          const v = e.target.value;
+                          if (!v || v === p.plan_date) return;
+                          await (supabase as any).from("meal_plans").update({ plan_date: v }).eq("id", p.id);
+                          loadMealPlans();
+                        }}
+                      />
+                    </td>
+                    <td className="py-2 px-2">
+                      <Input
+                        type="number"
+                        min="0"
+                        defaultValue={String(p.attendees)}
+                        className="h-8 w-24"
+                        onBlur={async (e) => {
+                          const n = parseInt(e.target.value || "0", 10) || 0;
+                          if (n === p.attendees) return;
+                          await (supabase as any).from("meal_plans").update({ attendees: n }).eq("id", p.id);
+                          loadMealPlans();
+                        }}
+                      />
+                    </td>
+                    <td className="py-2 px-2">
+                      <select
+                        className="h-8 rounded-md border border-input bg-transparent px-2 text-sm"
+                        defaultValue={p.meal_type ?? ""}
+                        onChange={async (e) => {
+                          await (supabase as any).from("meal_plans").update({ meal_type: e.target.value || null }).eq("id", p.id);
+                          loadMealPlans();
+                        }}
+                      >
+                        <option value="">—</option>
+                        {mealTypes.filter((m) => m.is_active).map((m) => (
+                          <option key={m.id} value={m.name}>{m.name}</option>
+                        ))}
+                      </select>
+                    </td>
+                    <td className="py-2 px-2">
+                      <Input
+                        defaultValue={p.notes ?? ""}
+                        className="h-8"
+                        onBlur={async (e) => {
+                          const v = e.target.value;
+                          if (v === (p.notes ?? "")) return;
+                          await (supabase as any).from("meal_plans").update({ notes: v || null }).eq("id", p.id);
+                          loadMealPlans();
+                        }}
+                      />
+                    </td>
+                    <td className="py-2 px-2 text-right">
+                      <button
+                        className="text-xs text-destructive hover:underline"
+                        onClick={async () => {
+                          if (!confirm("删除该条订餐计划?")) return;
+                          await (supabase as any).from("meal_plans").delete().eq("id", p.id);
+                          toast.success("已删除");
+                          loadMealPlans();
+                        }}
+                      >
+                        删除
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+                {mealPlans.length === 0 && (
+                  <tr>
+                    <td colSpan={5} className="py-8 text-center text-muted-foreground">暂无订餐计划</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </section>
             </TabsContent>
 
@@ -1825,11 +2141,11 @@ function AdminPage() {
             </div>
             <div className="ml-auto">
               <Button
-                variant="outline"
-                size="sm"
+                size="lg"
                 onClick={() => window.open("/retreat", "_blank", "noopener,noreferrer")}
+                className="h-12 px-6 text-base font-semibold bg-gradient-to-r from-primary to-primary/80 shadow-md hover:shadow-lg hover:from-primary/90 hover:to-primary/70 transition-all"
               >
-                退修会登记
+                🏔️ 退修会登记
               </Button>
             </div>
           </div>
@@ -2278,6 +2594,135 @@ function AdminPage() {
                     >
                       删除
                     </Button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Edit Dialog */}
+        <Dialog open={mealTypesOpen} onOpenChange={setMealTypesOpen}>
+          <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>饭食种类设置</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="flex gap-2">
+                <Input
+                  placeholder="新种类名称"
+                  value={newMealTypeName}
+                  onChange={(e) => setNewMealTypeName(e.target.value)}
+                />
+                <Button
+                  onClick={async () => {
+                    const name = newMealTypeName.trim();
+                    if (!name) return toast.error("请输入名称");
+                    const next = (mealTypes[mealTypes.length - 1]?.sort_order ?? 0) + 1;
+                    const { error } = await (supabase as any).from("meal_types").insert({ name, sort_order: next });
+                    if (error) return toast.error(error.message);
+                    setNewMealTypeName(""); toast.success("已添加"); loadMealTypes();
+                  }}
+                >添加</Button>
+              </div>
+              <div className="space-y-2">
+                {mealTypes.length === 0 && (
+                  <p className="text-sm text-muted-foreground text-center py-6">暂无种类</p>
+                )}
+                {mealTypes.map((m) => (
+                  <div key={m.id} className="flex items-center gap-2 border border-border/50 rounded-md px-3 py-2">
+                    <Input
+                      defaultValue={m.name}
+                      onBlur={async (e) => {
+                        const v = e.target.value.trim();
+                        if (!v || v === m.name) return;
+                        await (supabase as any).from("meal_types").update({ name: v }).eq("id", m.id);
+                        toast.success("已更新"); loadMealTypes();
+                      }}
+                      className="flex-1"
+                    />
+                    <label className="flex items-center gap-1 text-xs text-muted-foreground whitespace-nowrap">
+                      <input
+                        type="checkbox"
+                        checked={m.is_active}
+                        onChange={async (e) => {
+                          await (supabase as any).from("meal_types").update({ is_active: e.target.checked }).eq("id", m.id);
+                          loadMealTypes();
+                        }}
+                      /> 启用
+                    </label>
+                    <Button
+                      size="sm" variant="ghost" className="text-destructive"
+                      onClick={async () => {
+                        if (!confirm(`删除「${m.name}」?`)) return;
+                        await (supabase as any).from("meal_types").delete().eq("id", m.id);
+                        toast.success("已删除"); loadMealTypes();
+                      }}
+                    >删除</Button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={dutyPersonnelOpen} onOpenChange={setDutyPersonnelOpen}>
+          <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>轮值人员设置</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="flex gap-2">
+                <Input
+                  placeholder="新人员姓名"
+                  value={newDutyPersonName}
+                  onChange={(e) => setNewDutyPersonName(e.target.value)}
+                />
+                <Button
+                  onClick={async () => {
+                    const name = newDutyPersonName.trim();
+                    if (!name) return toast.error("请输入姓名");
+                    const next = (dutyPersonnel[dutyPersonnel.length - 1]?.sort_order ?? 0) + 1;
+                    const { error } = await (supabase as any).from("duty_personnel").insert({ name, sort_order: next });
+                    if (error) return toast.error(error.message);
+                    setNewDutyPersonName(""); toast.success("已添加"); loadDutyPersonnel();
+                  }}
+                >添加</Button>
+              </div>
+              <div className="space-y-2">
+                {dutyPersonnel.length === 0 && (
+                  <p className="text-sm text-muted-foreground text-center py-6">暂无人员</p>
+                )}
+                {dutyPersonnel.map((p) => (
+                  <div key={p.id} className="flex items-center gap-2 border border-border/50 rounded-md px-3 py-2">
+                    <Input
+                      defaultValue={p.name}
+                      onBlur={async (e) => {
+                        const v = e.target.value.trim();
+                        if (!v || v === p.name) return;
+                        await (supabase as any).from("duty_personnel").update({ name: v }).eq("id", p.id);
+                        toast.success("已更新"); loadDutyPersonnel();
+                      }}
+                      className="flex-1"
+                    />
+                    <label className="flex items-center gap-1 text-xs text-muted-foreground whitespace-nowrap">
+                      <input
+                        type="checkbox"
+                        checked={p.is_active}
+                        onChange={async (e) => {
+                          await (supabase as any).from("duty_personnel").update({ is_active: e.target.checked }).eq("id", p.id);
+                          loadDutyPersonnel();
+                        }}
+                      /> 启用
+                    </label>
+                    <Button
+                      size="sm" variant="ghost" className="text-destructive"
+                      onClick={async () => {
+                        if (!confirm(`删除「${p.name}」?`)) return;
+                        await (supabase as any).from("duty_personnel").delete().eq("id", p.id);
+                        toast.success("已删除"); loadDutyPersonnel();
+                      }}
+                    >删除</Button>
                   </div>
                 ))}
               </div>
