@@ -429,6 +429,7 @@ export type Database = {
           referrer_other: string | null
           referrer_type: string | null
           source: string
+          source_channel: string | null
           spouse_name: string | null
           wants_followup: boolean | null
           wants_info: boolean | null
@@ -459,6 +460,7 @@ export type Database = {
           referrer_other?: string | null
           referrer_type?: string | null
           source?: string
+          source_channel?: string | null
           spouse_name?: string | null
           wants_followup?: boolean | null
           wants_info?: boolean | null
@@ -489,6 +491,7 @@ export type Database = {
           referrer_other?: string | null
           referrer_type?: string | null
           source?: string
+          source_channel?: string | null
           spouse_name?: string | null
           wants_followup?: boolean | null
           wants_info?: boolean | null

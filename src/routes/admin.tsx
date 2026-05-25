@@ -42,6 +42,7 @@ type Reg = {
   referrer_type: string | null;
   invited_by: string | null;
   referrer_other: string | null;
+  source_channel: string | null;
   wants_visit: boolean | null;
   wants_info: boolean | null;
   notes: string | null;
@@ -57,10 +58,18 @@ function formatReferrer(r: Pick<Reg, "referrer_type" | "invited_by" | "referrer_
   switch (r.referrer_type) {
     case "self": return "自己";
     case "friend": return `亲友:${r.invited_by ?? ""}`;
+    case "other": return `其他:${r.referrer_other ?? ""}`;
+    default: return "";
+  }
+}
+
+function formatSourceChannel(r: Pick<Reg, "source_channel">): string {
+  switch (r.source_channel) {
+    case "chatgpt": return "ChatGPT";
+    case "maps": return "谷歌/苹果地图";
     case "wechat": return "微信/小红书";
     case "youtube": return "YouTube";
-    case "missionary": return `宣教士:${r.invited_by ?? ""}`;
-    case "other": return `其他:${r.referrer_other ?? ""}`;
+    case "missionary": return "宣教士";
     default: return "";
   }
 }
@@ -782,11 +791,12 @@ function AdminPage() {
       信主年数: r.faith_years ?? "",
       婚姻: r.marital_status === "married" ? "已婚" : r.marital_status === "single" ? "单身" : "",
       配偶: r.spouse_name ?? "",
-      来到方式: formatReferrer(r),
+      介绍人: formatReferrer(r),
+      来源: formatSourceChannel(r),
       欢迎探访: r.wants_visit ? "是" : "否",
       需要资料: r.wants_info ? "是" : "否",
       备注: r.notes ?? "",
-      来源: r.source === "qr" ? "扫码" : "手动",
+      录入方式: r.source === "qr" ? "扫码" : "手动",
       跟进人: r.follow_up_person ?? "",
       登记时间: new Date(r.created_at).toLocaleString("zh-CN"),
     }));
@@ -838,9 +848,13 @@ function AdminPage() {
     const referrerText = (r: Reg) => {
       const t = r.referrer_type ?? "";
       const friendName = t === "friend" ? esc(r.invited_by ?? "") : "";
-      const missionaryName = t === "missionary" ? esc(r.invited_by ?? "") : "";
       const otherText = t === "other" ? esc(r.referrer_other ?? "") : "";
-      return `${t === "self" ? "☑" : "☐"}自己　${t === "friend" ? "☑" : "☐"}親友姓名 ${friendName}　${t === "wechat" ? "☑" : "☐"}微信/小紅書　${t === "youtube" ? "☑" : "☐"}YouTube　${t === "missionary" ? "☑" : "☐"}宣教士 ${missionaryName}　${t === "other" ? "☑" : "☐"}其他 ${otherText}`;
+      return `${t === "self" ? "☑" : "☐"}自己　${t === "friend" ? "☑" : "☐"}親友姓名 ${friendName}　${t === "other" ? "☑" : "☐"}其他 ${otherText}`;
+    };
+    const sourceChannelText = (r: Reg) => {
+      const s = r.source_channel ?? "";
+      const m = (v: string) => (s === v ? "☑" : "☐");
+      return `${m("chatgpt")}ChatGPT　${m("maps")}谷歌/蘋果地圖　${m("wechat")}微信/小紅書　${m("youtube")}YouTube　${m("missionary")}宣教士`;
     };
     const wantsText = (r: Reg) =>
       `${r.wants_visit ? "☑" : "☐"}我歡迎教會牧者探訪我　${r.wants_info ? "☑" : "☐"}我需要教會的資料及聯絡`;
@@ -859,6 +873,7 @@ function AdminPage() {
           <div class="row"><span class="lbl">年齡：</span><span class="val grow">${ageText(r)}</span></div>
           <div class="row"><span class="lbl">婚姻：</span><span class="val grow">${maritalText(r)}</span></div>
           <div class="row"><span class="lbl">介紹人：</span><span class="val grow">${referrerText(r)}</span></div>
+          <div class="row"><span class="lbl">來源：</span><span class="val grow">${sourceChannelText(r)}</span></div>
           <div class="row"><span class="val grow">${wantsText(r)}</span></div>
           ${r.notes ? `<div class="row"><span class="lbl">備註：</span><span class="val grow">${esc(r.notes)}</span></div>` : ""}
         </div>
@@ -964,8 +979,9 @@ function AdminPage() {
           marital_status: editForm.marital_status || null,
           spouse_name: editForm.marital_status === "married" ? editForm.spouse_name?.trim() || null : null,
           referrer_type: editForm.referrer_type || null,
-          invited_by: (editForm.referrer_type === "friend" || editForm.referrer_type === "missionary") ? editForm.invited_by?.trim() || null : null,
+          invited_by: editForm.referrer_type === "friend" ? editForm.invited_by?.trim() || null : null,
           referrer_other: editForm.referrer_type === "other" ? editForm.referrer_other?.trim() || null : null,
+          source_channel: editForm.source_channel || null,
           wants_visit: editForm.wants_visit ?? false,
           wants_info: editForm.wants_info ?? false,
           notes: editForm.notes?.trim() || null,
@@ -1006,6 +1022,7 @@ function AdminPage() {
           referrer_type: r.referrer_type ?? null,
           invited_by: r.invited_by ?? null,
           referrer_other: r.referrer_other ?? null,
+          source_channel: r.source_channel ?? null,
           wants_visit: r.wants_visit ?? false,
           wants_info: r.wants_info ?? false,
           notes: r.notes ?? null,
@@ -1683,7 +1700,8 @@ function AdminPage() {
                     <th className="py-2 px-2">城市/邮编</th>
                     <th className="py-2 px-2">信仰</th>
                     <th className="py-2 px-2">婚姻</th>
-                    <th className="py-2 px-2">来到方式</th>
+                    <th className="py-2 px-2">介绍</th>
+                    <th className="py-2 px-2">来源</th>
                     <th className="py-2 px-2">标记</th>
                     <th className="py-2 px-2">跟进人</th>
                     <th></th>
@@ -1731,6 +1749,9 @@ function AdminPage() {
                       </td>
                       <td className="py-2 px-2">
                         {formatReferrer(r) || "—"}
+                      </td>
+                      <td className="py-2 px-2">
+                        {formatSourceChannel(r) || "—"}
                       </td>
                       <td className="py-2 px-2 space-x-1 whitespace-nowrap">
                         {r.wants_visit && <Tag>欢迎探访</Tag>}
@@ -4030,14 +4051,11 @@ ${rows.length===0?'<tr><td colspan="4" style="text-align:center;color:#888;paddi
                 </div>
 
                 <div className="space-y-2">
-                  <Label>如何知道我们教会</Label>
+                  <Label>介绍人</Label>
                   <RadioGroup value={editForm.referrer_type ?? ""} onValueChange={(v) => setEditForm((prev) => prev ? { ...prev, referrer_type: v } : prev)} className="flex flex-wrap gap-4 pt-2">
                     {[
                       { v: "self", l: "自己" },
                       { v: "friend", l: "亲友" },
-                      { v: "wechat", l: "微信/小红书" },
-                      { v: "youtube", l: "YouTube" },
-                      { v: "missionary", l: "宣教士" },
                       { v: "other", l: "其他" },
                     ].map((o) => (
                       <label key={o.v} className="flex items-center gap-2 cursor-pointer">
@@ -4048,12 +4066,26 @@ ${rows.length===0?'<tr><td colspan="4" style="text-align:center;color:#888;paddi
                   {editForm.referrer_type === "friend" && (
                     <Input className="mt-3" placeholder="亲友姓名" value={editForm.invited_by ?? ""} onChange={(e) => setEditForm((prev) => prev ? { ...prev, invited_by: e.target.value } : prev)} />
                   )}
-                  {editForm.referrer_type === "missionary" && (
-                    <Input className="mt-3" placeholder="宣教士姓名" value={editForm.invited_by ?? ""} onChange={(e) => setEditForm((prev) => prev ? { ...prev, invited_by: e.target.value } : prev)} />
-                  )}
                   {editForm.referrer_type === "other" && (
                     <Input className="mt-3" placeholder="请说明" value={editForm.referrer_other ?? ""} onChange={(e) => setEditForm((prev) => prev ? { ...prev, referrer_other: e.target.value } : prev)} />
                   )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label>如何知道我们教会</Label>
+                  <RadioGroup value={editForm.source_channel ?? ""} onValueChange={(v) => setEditForm((prev) => prev ? { ...prev, source_channel: v } : prev)} className="flex flex-wrap gap-4 pt-2">
+                    {[
+                      { v: "chatgpt", l: "ChatGPT" },
+                      { v: "maps", l: "谷歌/苹果地图" },
+                      { v: "wechat", l: "微信/小红书" },
+                      { v: "youtube", l: "YouTube" },
+                      { v: "missionary", l: "宣教士" },
+                    ].map((o) => (
+                      <label key={o.v} className="flex items-center gap-2 cursor-pointer">
+                        <RadioGroupItem value={o.v} /> <span className="text-sm">{o.l}</span>
+                      </label>
+                    ))}
+                  </RadioGroup>
                 </div>
 
                 <div className="space-y-3 pt-2 border-t border-border/50">

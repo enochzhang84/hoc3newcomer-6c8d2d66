@@ -44,6 +44,7 @@ function RegisterPage() {
     referrer_type: "", // self | friend | other
     invited_by: "",
     referrer_other: "",
+    source_channel: "", // chatgpt | maps | wechat | youtube | missionary
     wants_visit: false,
     wants_info: false,
     notes: "",
@@ -90,8 +91,9 @@ function RegisterPage() {
       marital_status: form.marital_status || null,
       spouse_name: form.marital_status === "married" ? form.spouse_name.trim() || null : null,
       referrer_type: form.referrer_type || null,
-      invited_by: (form.referrer_type === "friend" || form.referrer_type === "missionary") ? form.invited_by.trim() || null : null,
+      invited_by: form.referrer_type === "friend" ? form.invited_by.trim() || null : null,
       referrer_other: form.referrer_type === "other" ? form.referrer_other.trim() || null : null,
+      source_channel: form.source_channel || null,
       wants_visit: form.wants_visit,
       wants_info: form.wants_info,
       notes: form.notes.trim() || null,
@@ -259,14 +261,11 @@ function RegisterPage() {
             )}
           </Field>
 
-          <Field label="如何知道我们教会">
+          <Field label="介绍人">
             <RadioGroup value={form.referrer_type} onValueChange={(v) => setForm({ ...form, referrer_type: v })} className="flex flex-wrap gap-4 pt-2">
               {[
                 { v: "self", l: "自己" },
                 { v: "friend", l: "亲友" },
-                { v: "wechat", l: "微信/小红书" },
-                { v: "youtube", l: "YouTube" },
-                { v: "missionary", l: "宣教士" },
                 { v: "other", l: "其他" },
               ].map((o) => (
                 <label key={o.v} className="flex items-center gap-2 cursor-pointer">
@@ -282,14 +281,6 @@ function RegisterPage() {
                 onChange={(e) => setForm({ ...form, invited_by: e.target.value })}
               />
             )}
-            {form.referrer_type === "missionary" && (
-              <Input
-                className="mt-3"
-                placeholder="宣教士姓名"
-                value={form.invited_by}
-                onChange={(e) => setForm({ ...form, invited_by: e.target.value })}
-              />
-            )}
             {form.referrer_type === "other" && (
               <Input
                 className="mt-3"
@@ -298,6 +289,22 @@ function RegisterPage() {
                 onChange={(e) => setForm({ ...form, referrer_other: e.target.value })}
               />
             )}
+          </Field>
+
+          <Field label="如何知道我们教会">
+            <RadioGroup value={form.source_channel} onValueChange={(v) => setForm({ ...form, source_channel: v })} className="flex flex-wrap gap-4 pt-2">
+              {[
+                { v: "chatgpt", l: "ChatGPT" },
+                { v: "maps", l: "谷歌/苹果地图" },
+                { v: "wechat", l: "微信/小红书" },
+                { v: "youtube", l: "YouTube" },
+                { v: "missionary", l: "宣教士" },
+              ].map((o) => (
+                <label key={o.v} className="flex items-center gap-2 cursor-pointer">
+                  <RadioGroupItem value={o.v} /> <span className="text-sm">{o.l}</span>
+                </label>
+              ))}
+            </RadioGroup>
           </Field>
 
           <div className="space-y-3 pt-2 border-t border-border/50">
