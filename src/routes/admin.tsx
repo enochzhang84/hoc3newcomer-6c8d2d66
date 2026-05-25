@@ -335,6 +335,39 @@ function AdminPage() {
     setFellowships((data ?? []) as Fellowship[]);
   }, []);
 
+  const loadMealTypes = useCallback(async () => {
+    const { data } = await (supabase as any)
+      .from("meal_types")
+      .select("*")
+      .order("sort_order", { ascending: true });
+    setMealTypes((data ?? []) as MealType[]);
+  }, []);
+
+  const loadMealPlans = useCallback(async () => {
+    const { data } = await (supabase as any)
+      .from("meal_plans")
+      .select("*")
+      .order("plan_date", { ascending: false });
+    setMealPlans((data ?? []) as MealPlan[]);
+  }, []);
+
+  const loadDutyPersonnel = useCallback(async () => {
+    const { data } = await (supabase as any)
+      .from("duty_personnel")
+      .select("*")
+      .order("sort_order", { ascending: true });
+    setDutyPersonnel((data ?? []) as DutyPerson[]);
+  }, []);
+
+  const loadDutySchedules = useCallback(async () => {
+    const { data } = await (supabase as any)
+      .from("duty_schedules")
+      .select("*")
+      .order("sort_order", { ascending: true })
+      .order("created_at", { ascending: true });
+    setDutySchedules((data ?? []) as DutySchedule[]);
+  }, []);
+
   const loadMessagesCount = useCallback(async () => {
     const { data: sess } = await supabase.auth.getSession();
     const uid = sess.session?.user.id;
