@@ -2235,6 +2235,28 @@ function AdminPage() {
               🏔️ 退修会登记
             </Button>
           </div>
+          {/* 成人主日学扫码签到 */}
+          <div className="grid sm:grid-cols-2 gap-4 mb-4">
+            {(["summer","fall"] as const).map((k) => {
+              const label = k === "summer" ? "暑期成人主日学" : "秋季成人主日学";
+              const url = `${publicBase}/adult-checkin/${k}`;
+              return (
+                <div key={k} className="border border-border/50 rounded-xl p-4 flex flex-col items-center gap-3">
+                  <p className="font-medium">{label} · 扫码签到</p>
+                  {publicBase && <QRCodeSVG value={url} size={180} level="H" />}
+                  <p className="text-xs text-muted-foreground break-all text-center">{url}</p>
+                  <div className="flex gap-2">
+                    <Button size="sm" variant="outline" onClick={() => { navigator.clipboard.writeText(url); toast.success("链接已复制"); }}>
+                      复制链接
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => window.open(url, "_blank", "noopener,noreferrer")}>
+                      打开
+                    </Button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {events.map((ev) => {
               const url = `${publicBase}/register?event=${ev.qr_token}`;
