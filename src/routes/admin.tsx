@@ -19,7 +19,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
 import { zhCN } from "date-fns/locale";
-import { listUsersWithRoles, setUserRole, deleteUser } from "@/lib/users.functions";
+import { listUsersWithRoles, setUserRole, deleteUser, createUserWithRole } from "@/lib/users.functions";
 import { updateRegistration } from "@/lib/registrations.functions";
 
 type Reg = {
@@ -303,6 +303,14 @@ function AdminPage() {
   const fetchUsersFn = useServerFn(listUsersWithRoles);
   const setUserRoleFn = useServerFn(setUserRole);
   const deleteUserFn = useServerFn(deleteUser);
+  const createUserFn = useServerFn(createUserWithRole);
+  const [newUserOpen, setNewUserOpen] = useState(false);
+  const [newUserForm, setNewUserForm] = useState<{
+    email: string;
+    password: string;
+    role: "super_admin" | "admin" | "user" | "viewer";
+  }>({ email: "", password: "", role: "user" });
+  const [newUserSubmitting, setNewUserSubmitting] = useState(false);
   const updateRegFn = useServerFn(updateRegistration);
   const [editOpen, setEditOpen] = useState(false);
   const [editForm, setEditForm] = useState<Reg | null>(null);
