@@ -3662,8 +3662,26 @@ ${rows.length===0?'<tr><td colspan="4" style="text-align:center;color:#888;paddi
                       <Input value={contactForm.address ?? ""} onChange={(e) => setContactForm({ ...contactForm, address: e.target.value })} />
                     </div>
                     <div className="space-y-1">
+                      <Label className="text-xs">城市</Label>
+                      <Input value={contactForm.city ?? ""} onChange={(e) => setContactForm({ ...contactForm, city: e.target.value })} />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">邮编</Label>
+                      <Input value={contactForm.zip ?? ""} onChange={(e) => setContactForm({ ...contactForm, zip: e.target.value })} />
+                    </div>
+                    <div className="space-y-1">
                       <Label className="text-xs">团契</Label>
-                      <Input value={contactForm.fellowship ?? ""} onChange={(e) => setContactForm({ ...contactForm, fellowship: e.target.value })} />
+                      <Input
+                        list="contact-fellowship-options"
+                        placeholder="输入或选择团契"
+                        value={contactForm.fellowship ?? ""}
+                        onChange={(e) => setContactForm({ ...contactForm, fellowship: e.target.value })}
+                      />
+                      <datalist id="contact-fellowship-options">
+                        {CONTACT_FELLOWSHIPS.map((f) => (
+                          <option key={f} value={f} />
+                        ))}
+                      </datalist>
                     </div>
                     <div className="space-y-1 sm:col-span-2">
                       <Label className="text-xs">备注</Label>
