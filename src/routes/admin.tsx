@@ -2321,9 +2321,6 @@ function AdminPage() {
               )}
             </div>
           </div>
-          <div className="flex flex-wrap items-center gap-2 mb-4">
-            <Button onClick={addEvent}>生成新二维码</Button>
-          </div>
           {/* 成人主日学扫码签到 */}
           <div className="grid sm:grid-cols-2 gap-4 mb-4">
             {(["summer","fall"] as const).map((k) => {
@@ -2355,6 +2352,8 @@ function AdminPage() {
                     <p className="font-medium truncate">{ev.name}</p>
                     <p className="text-xs text-muted-foreground truncate">{url}</p>
                   </div>
+                  <div className="flex gap-2 shrink-0">
+                  <Button size="sm" onClick={addEvent}>生成新二维码</Button>
                   <Dialog>
                     <DialogTrigger asChild>
                       <Button size="sm" variant="outline">二维码</Button>
@@ -2378,6 +2377,7 @@ function AdminPage() {
                       </div>
                     </DialogContent>
                   </Dialog>
+                  </div>
                 </div>
               );
             })}
