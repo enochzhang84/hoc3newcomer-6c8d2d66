@@ -144,8 +144,9 @@ function RetreatRegisterPage() {
           <Link to="/retreat"><Button variant="ghost" size="sm">返回</Button></Link>
         </div>
       </header>
-      <main className="container mx-auto px-6 py-10 max-w-2xl">
-        <form onSubmit={handleSubmit} className="bg-card border border-border/50 rounded-2xl p-6 space-y-5">
+      <main className="container mx-auto px-6 py-10">
+        <div className="grid gap-8 lg:grid-cols-2 items-start max-w-6xl mx-auto">
+        <form onSubmit={handleSubmit} className="bg-card border border-border/50 rounded-2xl p-6 space-y-5 order-2 lg:order-1">
           <h1 className="font-serif text-2xl mb-1">2026 基督之家联合退修会</h1>
           <p className="text-sm text-muted-foreground mb-2">
             The Home of Christ Church Joint Retreat — Registration Form
@@ -249,6 +250,56 @@ function RetreatRegisterPage() {
             {submitting ? "提交中…" : "提交登记 · Submit"}
           </Button>
         </form>
+        <aside className="order-1 lg:order-2 space-y-5 lg:sticky lg:top-6">
+          {/* 1 — 标题 */}
+          <div className="bg-card border border-border/50 rounded-2xl p-6">
+            <h2 className="font-serif text-2xl text-center leading-tight">2026 基督之家联合退修会</h2>
+            <p className="text-center text-sm text-muted-foreground mt-1">
+              The Home of Christ Church Joint Retreat Conference
+            </p>
+            <p className="text-center text-sm mt-2">报名表 · Registration Form</p>
+          </div>
+          {/* 2 — 主题 / 讲员 */}
+          <div className="bg-card border border-border/50 rounded-2xl p-6 grid sm:grid-cols-2 gap-4 text-sm">
+            <div>
+              <p className="font-medium mb-1">中文部</p>
+              <p>主题：跨越—萬國萬代</p>
+              <p>讲员：柏有成博士</p>
+            </div>
+            <div>
+              <p className="font-medium mb-1">English Ministry</p>
+              <p>Theme: —</p>
+              <p>Speaker: Pastor</p>
+            </div>
+          </div>
+          {/* 3 — 中文部专题 */}
+          <div className="bg-card border border-border/50 rounded-2xl p-6">
+            <p className="font-medium text-sm mb-2">中文部专题讲题和讲员</p>
+            <ol className="list-decimal list-inside space-y-1 text-sm text-foreground/90">
+              <li>週六：迎接老年时代的来临—一个基督徒的立场（廖俊惠医师）</li>
+              <li>週六：婚姻成长 DIY / 陪孩子走一段路（郭颜上琉师母）</li>
+              <li>週六：走过悲伤与忧鬱—信仰中的关顾与盼望（林慈敏博士）</li>
+              <li>週六：如何在 AI 热潮、高关税、股市高点下，做幸福理财好管家（陈少豪牧师）</li>
+            </ol>
+          </div>
+          {/* 4 — 注意事项 / 会址 */}
+          <div className="bg-card border border-border/50 rounded-2xl p-6 text-sm space-y-2">
+            <p className="font-medium">日期与地点</p>
+            <p>7/24 Fri 1:00PM — 7/26 Sun 1:00PM</p>
+            <p>Sonoma State University<br/>1801 E. Cotati Ave., Rohnert Park, CA 94928</p>
+            <p className="text-xs text-muted-foreground">Tel: 707-664-2527 · www.sonoma.edu/cec</p>
+            <hr className="my-2 border-border/60" />
+            <p className="font-medium">注意事项</p>
+            <ul className="list-disc list-inside space-y-1 text-xs text-muted-foreground">
+              <li>报名费用：2026/7/15 前，未满 4 岁免费；4–11 岁不占床位 $110，占床位 $180；12 岁以上必需占床位。预估每人 $308。</li>
+              <li>报名截止：6/30/2026，先到先得，额满即止。</li>
+              <li>未满 18 岁父母未同行者，请填 Medical & Liability Release Form。</li>
+              <li>节目代码：中文(M)、英文(E)、9–11岁(N)、7–8岁(S)、5–6岁(F)、4岁(T)、3岁(R)、0–2岁(B)。</li>
+              <li>携带物品：圣经、笔、漱洗用具、日用衣物、常用药品、游泳衣、手电筒、运动器材等。</li>
+            </ul>
+          </div>
+        </aside>
+        </div>
       </main>
     </div>
   );
