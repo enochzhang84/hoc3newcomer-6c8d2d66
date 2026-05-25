@@ -928,7 +928,7 @@ function AdminPage() {
       <main className="container mx-auto px-6 py-8 space-y-8">
         <Tabs defaultValue="stats" className="w-full">
           <TabsList className="grid grid-cols-3 md:grid-cols-6 h-auto w-full mb-6">
-            <TabsTrigger value="stats">登记人数统计</TabsTrigger>
+            <TabsTrigger value="stats">数据统计</TabsTrigger>
             <TabsTrigger value="welcome">迎宾接待</TabsTrigger>
             <TabsTrigger value="media">影音播放</TabsTrigger>
             <TabsTrigger value="kitchen">厨房侍工</TabsTrigger>
