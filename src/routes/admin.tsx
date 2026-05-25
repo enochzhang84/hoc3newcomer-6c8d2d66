@@ -3239,6 +3239,149 @@ img{width:480px;height:480px;}@media print{@page{margin:1cm;}}</style></head>
           </DialogContent>
         </Dialog>
 
+        <Dialog open={contactsOpen} onOpenChange={setContactsOpen}>
+          <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>通讯录 ({contacts.length})</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="flex flex-wrap gap-2 items-center">
+                <Input
+                  placeholder="搜索 姓名 / 电话 / 团契"
+                  value={contactSearch}
+                  onChange={(e) => setContactSearch(e.target.value)}
+                  className="flex-1 min-w-[200px]"
+                />
+                <Button size="sm" onClick={() => setContactForm({ name: "", phone: "", wechat: "", email: "", address: "", fellowship: "", notes: "" })}>
+                  + 添加联系人
+                </Button>
+              </div>
+
+              {contactForm && (
+                <div className="rounded-xl border border-border/60 bg-muted/30 p-4 space-y-3">
+                  <h4 className="font-medium text-sm">{contactForm.id ? "编辑联系人" : "新增联系人"}</h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <Label className="text-xs">姓名 *</Label>
+                      <Input value={contactForm.name ?? ""} onChange={(e) => setContactForm({ ...contactForm, name: e.target.value })} />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">电话</Label>
+                      <Input value={contactForm.phone ?? ""} onChange={(e) => setContactForm({ ...contactForm, phone: e.target.value })} />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">微信</Label>
+                      <Input value={contactForm.wechat ?? ""} onChange={(e) => setContactForm({ ...contactForm, wechat: e.target.value })} />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">邮件</Label>
+                      <Input value={contactForm.email ?? ""} onChange={(e) => setContactForm({ ...contactForm, email: e.target.value })} />
+                    </div>
+                    <div className="space-y-1 sm:col-span-2">
+                      <Label className="text-xs">地址</Label>
+                      <Input value={contactForm.address ?? ""} onChange={(e) => setContactForm({ ...contactForm, address: e.target.value })} />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">团契</Label>
+                      <Input value={contactForm.fellowship ?? ""} onChange={(e) => setContactForm({ ...contactForm, fellowship: e.target.value })} />
+                    </div>
+                    <div className="space-y-1 sm:col-span-2">
+                      <Label className="text-xs">备注</Label>
+                      <Textarea rows={2} value={contactForm.notes ?? ""} onChange={(e) => setContactForm({ ...contactForm, notes: e.target.value })} />
+                    </div>
+                  </div>
+                  <div className="flex justify-end gap-2 pt-1">
+                    <Button size="sm" variant="ghost" onClick={() => setContactForm(null)}>取消</Button>
+                    <Button
+                      size="sm"
+                      onClick={async () => {
+                        const name = (contactForm.name ?? "").trim();
+                        if (!name) return toast.error("请填写姓名");
+                        const payload = {
+                          name,
+                          phone: (contactForm.phone ?? "").trim() || null,
+                          wechat: (contactForm.wechat ?? "").trim() || null,
+                          email: (contactForm.email ?? "").trim() || null,
+                          address: (contactForm.address ?? "").trim() || null,
+                          fellowship: (contactForm.fellowship ?? "").trim() || null,
+                          notes: (contactForm.notes ?? "").trim() || null,
+                        };
+                        if (contactForm.id) {
+                          const { error } = await (supabase as any).from("contacts").update(payload).eq("id", contactForm.id);
+                          if (error) return toast.error(error.message);
+                          toast.success("已更新");
+                        } else {
+                          const { error } = await (supabase as any).from("contacts").insert(payload);
+                          if (error) return toast.error(error.message);
+                          toast.success("已添加");
+                        }
+                        setContactForm(null);
+                        loadContacts();
+                      }}
+                    >
+                      保存
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              <div className="overflow-x-auto rounded-lg border border-border/50">
+                <table className="w-full text-sm">
+                  <thead className="bg-muted/80">
+                    <tr className="text-left text-muted-foreground border-b border-border/60">
+                      <th className="py-2 px-2">姓名</th>
+                      <th className="py-2 px-2">电话</th>
+                      <th className="py-2 px-2">微信</th>
+                      <th className="py-2 px-2">邮件</th>
+                      <th className="py-2 px-2">团契</th>
+                      <th className="py-2 px-2 text-right">操作</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {contacts
+                      .filter((c) => {
+                        const q = contactSearch.trim().toLowerCase();
+                        if (!q) return true;
+                        return (
+                          c.name.toLowerCase().includes(q) ||
+                          (c.phone ?? "").toLowerCase().includes(q) ||
+                          (c.fellowship ?? "").toLowerCase().includes(q)
+                        );
+                      })
+                      .map((c) => (
+                        <tr key={c.id} className="border-b border-border/30">
+                          <td className="py-2 px-2 font-medium">{c.name}</td>
+                          <td className="py-2 px-2">{c.phone ?? ""}</td>
+                          <td className="py-2 px-2">{c.wechat ?? ""}</td>
+                          <td className="py-2 px-2">{c.email ?? ""}</td>
+                          <td className="py-2 px-2">{c.fellowship ?? ""}</td>
+                          <td className="py-2 px-2 text-right whitespace-nowrap">
+                            <button className="text-xs text-primary hover:underline mr-3" onClick={() => setContactForm(c)}>编辑</button>
+                            <button
+                              className="text-xs text-destructive hover:underline"
+                              onClick={async () => {
+                                if (!confirm(`删除 ${c.name}?`)) return;
+                                const { error } = await (supabase as any).from("contacts").delete().eq("id", c.id);
+                                if (error) return toast.error(error.message);
+                                toast.success("已删除");
+                                loadContacts();
+                              }}
+                            >
+                              删除
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    {contacts.length === 0 && (
+                      <tr><td colSpan={6} className="py-8 text-center text-muted-foreground">暂无联系人</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
         {/* Edit Dialog */}
         <Dialog open={editOpen} onOpenChange={setEditOpen}>
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
