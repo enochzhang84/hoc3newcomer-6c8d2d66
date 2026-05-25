@@ -140,6 +140,8 @@ function RetreatAdminPage() {
       "Topic": r.topic ?? "",
       "Bed": r.bed ?? "",
       "Bus": r.bus ?? "",
+      "可接送": r.can_pickup ?? "",
+      "需接送": r.need_pickup ?? "",
       "Creation Time": new Date(r.created_at).toLocaleString("zh-CN"),
       "Changed By": "",
       "Modify Time": new Date(r.updated_at).toLocaleString("zh-CN"),
@@ -157,6 +159,8 @@ function RetreatAdminPage() {
     e.preventDefault();
     if (!form.chinese_name.trim()) return toast.error("请填写中文姓名");
     setSubmitting(true);
+    const needPickup = parseInt(form.need_pickup || "0", 10) || 0;
+    const canPickup = parseInt(form.can_pickup || "0", 10) || 0;
     const { error } = await supabase.from("retreat_registrations").insert({
       church: form.church || null,
       chinese_name: form.chinese_name.trim(),
@@ -168,6 +172,9 @@ function RetreatAdminPage() {
       program: form.program || null,
       topic: form.topic || null,
       bed: form.bed || null,
+      can_pickup: canPickup || null,
+      need_pickup: needPickup || null,
+      bus: needPickup > 0 ? "Y" : "N",
       user_notes: form.user_notes.trim() || null,
     });
     setSubmitting(false);
