@@ -1046,6 +1046,23 @@ function AdminPage() {
             </Button>
           </div>
         </section>
+        <section>
+          <h2 className="font-serif text-xl mb-4">活动签到统计</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <CheckinActivityCard
+              title="成人主日学"
+              dates={sundayCheckins.map((k) => k.checkin_date)}
+              categories={sundayCheckins.map((k) => k.course_name ?? "未分类")}
+              categoryLabel="本周活跃课程"
+            />
+            <CheckinActivityCard
+              title="团契 / 小组聚会"
+              dates={fellowshipCheckins.map((k) => k.checkin_date)}
+              categories={fellowshipCheckins.map((k) => k.fellowship)}
+              categoryLabel="本周活跃团契"
+            />
+          </div>
+        </section>
         <section className="bg-card border border-border/50 rounded-2xl p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-serif text-xl">管理员权限</h2>
