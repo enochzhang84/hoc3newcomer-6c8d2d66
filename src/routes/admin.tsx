@@ -468,12 +468,14 @@ function AdminPage() {
             .eq("user_id", sess.user.id);
           if (cancelled) return;
           if (error) throw error;
+          const superAdmin = roles?.some((r) => r.role === "super_admin") ?? false;
           const admin = roles?.some((r) => r.role === "admin") ?? false;
           const isUser = roles?.some((r) => r.role === "user") ?? false;
           const isViewer = roles?.some((r) => r.role === "viewer") ?? false;
-          const role: "admin" | "user" | "viewer" | null =
-            admin ? "admin" : isUser ? "user" : isViewer ? "viewer" : null;
-          setIsAdmin(admin);
+          const role: "super_admin" | "admin" | "user" | "viewer" | null =
+            superAdmin ? "super_admin" : admin ? "admin" : isUser ? "user" : isViewer ? "viewer" : null;
+          setIsSuperAdmin(superAdmin);
+          setIsAdmin(admin || superAdmin);
           setUserRoleState(role);
           setChecking(false);
           if (role) {
