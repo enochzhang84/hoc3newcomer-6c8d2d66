@@ -165,6 +165,32 @@ type AdultCheckin = {
   checkin_at: string;
 };
 
+type Contact = {
+  id: string;
+  name: string;
+  phone: string | null;
+  wechat: string | null;
+  email: string | null;
+  address: string | null;
+  fellowship: string | null;
+  notes: string | null;
+  created_at: string;
+};
+
+type KidsRow = {
+  id: string;
+  track: string;
+  class_name: string | null;       // 班级 stored in class_name
+  teacher_name: string | null;     // 老师
+  class_location: string | null;   // 地点
+  sort_order: number;
+};
+
+const KIDS_TRACKS = {
+  spring: { key: "kids_spring_2026", title: "2026年春季儿童主日学" },
+  fall: { key: "kids_fall_2026", title: "2026 秋季儿童主日学" },
+} as const;
+
 export const Route = createFileRoute("/admin")({
   component: AdminPage,
 });
