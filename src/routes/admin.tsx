@@ -441,6 +441,10 @@ function AdminPage() {
            void loadSundayCheckins();
            void loadFellowshipCheckins();
            void loadFellowships();
+           void loadMealTypes();
+           void loadMealPlans();
+           void loadDutyPersonnel();
+           void loadDutySchedules();
             void loadUsers();
           }
         } catch (e) {
