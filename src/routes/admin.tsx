@@ -2603,6 +2603,9 @@ function AdminPage() {
 
         {/* Edit Dialog */}
         <Dialog open={editOpen} onOpenChange={setEditOpen}>
+
+        </Dialog>
+        {/* placeholder removed below */}
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>编辑登记</DialogTitle>
