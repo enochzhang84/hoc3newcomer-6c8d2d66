@@ -135,6 +135,24 @@ type FellowshipCheckin = {
   created_at: string;
 };
 
+type MealType = { id: string; name: string; sort_order: number; is_active: boolean };
+type MealPlan = {
+  id: string;
+  plan_date: string;
+  attendees: number;
+  meal_type: string | null;
+  notes: string | null;
+};
+type DutyPerson = { id: string; name: string; sort_order: number; is_active: boolean };
+type DutySchedule = {
+  id: string;
+  schedule_type: "sunday" | "summer";
+  slot_time: string;
+  ppt_person: string | null;
+  live_person: string | null;
+  sort_order: number;
+};
+
 export const Route = createFileRoute("/admin")({
   component: AdminPage,
 });
