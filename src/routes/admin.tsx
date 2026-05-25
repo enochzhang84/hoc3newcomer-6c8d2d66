@@ -991,6 +991,11 @@ function AdminPage() {
             <NowLabel />
           </Link>
           <div className="flex items-center gap-2">
+            {isAdmin && (
+              <Button size="sm" variant="outline" onClick={() => setContactsOpen(true)}>
+                通讯录 ({contacts.length})
+              </Button>
+            )}
             <Button
               size="sm"
               variant="outline"
