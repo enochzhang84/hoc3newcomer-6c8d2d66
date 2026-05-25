@@ -278,7 +278,7 @@ function RetreatAdminPage() {
                   </tr>
                 ))}
                 {pageRows.length === 0 && (
-                  <tr><td colSpan={20} className="py-10 text-center text-muted-foreground">暂无登记</td></tr>
+                  <tr><td colSpan={22} className="py-10 text-center text-muted-foreground">暂无登记</td></tr>
                 )}
               </tbody>
             </table>
