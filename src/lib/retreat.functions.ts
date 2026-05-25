@@ -1,0 +1,123 @@
+import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
+
+const personSchema = z.object({
+  chinese_name: z.string().trim().min(1).max(80),
+  last_name: z.string().trim().max(80).optional().nullable(),
+  first_name: z.string().trim().max(80).optional().nullable(),
+  gender: z.string().trim().max(4).optional().nullable(),
+  cell: z.string().trim().max(40).optional().nullable(),
+  email: z.string().trim().max(120).optional().nullable(),
+  program: z.string().trim().max(8).optional().nullable(),
+  topic: z.string().trim().max(8).optional().nullable(),
+  bed: z.string().trim().max(20).optional().nullable(),
+  user_notes: z.string().trim().max(500).optional().nullable(),
+});
+
+const submitSchema = z.object({
+  church: z.string().trim().max(10).optional().nullable(),
+  can_pickup: z.number().int().min(0).max(50).optional().nullable(),
+  need_pickup: z.number().int().min(0).max(50).optional().nullable(),
+  main: personSchema,
+  companions: z.array(personSchema).max(6).default([]),
+});
+
+function mmddInPacific(d = new Date()): string {
+  const s = d.toLocaleDateString("en-US", {
+    timeZone: "America/Los_Angeles",
+    month: "2-digit",
+    day: "2-digit",
+  }); // "05/25"
+  return s.replace("/", "");
+}
+
+// Increment a 3-letter group: AAA -> AAB -> ... -> ZZZ
+function nextLetters(prev: string | null): string {
+  if (!prev) return "AAA";
+  const chars = prev.split("");
+  for (let i = chars.length - 1; i >= 0; i--) {
+    if (chars[i] < "Z") {
+      chars[i] = String.fromCharCode(chars[i].charCodeAt(0) + 1);
+      return chars.join("");
+    }
+    chars[i] = "A";
+  }
+  throw new Error("Letter group exhausted for the day");
+}
+
+export const submitRetreatRegistration = createServerFn({ method: "POST" })
+  .inputValidator((d) => submitSchema.parse(d))
+  .handler(async ({ data }) => {
+    const mmdd = mmddInPacific();
+    const isGroup = data.companions.length > 0;
+    const people = [data.main, ...data.companions];
+
+    // Fetch existing confirmation numbers for today
+    const { data: existing, error: qErr } = await supabaseAdmin
+      .from("retreat_registrations")
+      .select("confirmation_no")
+      .like("confirmation_no", `${mmdd}-%`);
+    if (qErr) throw new Error(qErr.message);
+
+    const nums = (existing ?? [])
+      .map((r) => r.confirmation_no as string | null)
+      .filter((s): s is string => !!s);
+
+    let groupCode: string;
+    if (!isGroup) {
+      groupCode = "000";
+    } else {
+      // Find max existing letter group != "000"
+      let maxLetters: string | null = null;
+      for (const n of nums) {
+        const parts = n.split("-"); // [mmdd, code, seq]
+        const code = parts[1];
+        if (!code || code === "000") continue;
+        if (!/^[A-Z]{3}$/.test(code)) continue;
+        if (maxLetters === null || code > maxLetters) maxLetters = code;
+      }
+      groupCode = nextLetters(maxLetters);
+    }
+
+    // Find next sequence within this group
+    const prefix = `${mmdd}-${groupCode}-`;
+    let maxSeq = 0;
+    for (const n of nums) {
+      if (n.startsWith(prefix)) {
+        const seq = parseInt(n.slice(prefix.length), 10);
+        if (!isNaN(seq) && seq > maxSeq) maxSeq = seq;
+      }
+    }
+
+    const inserts = people.map((p, idx) => {
+      const seq = String(maxSeq + idx + 1).padStart(3, "0");
+      const need = data.need_pickup ?? 0;
+      return {
+        confirmation_no: `${prefix}${seq}`,
+        church: data.church ?? null,
+        chinese_name: p.chinese_name,
+        last_name: p.last_name ?? null,
+        first_name: p.first_name ?? null,
+        gender: p.gender ?? null,
+        cell: p.cell ?? null,
+        email: p.email ?? null,
+        program: p.program ?? null,
+        topic: p.topic ?? null,
+        bed: p.bed ?? null,
+        // Pickup info applies to whole group; store on first record only
+        can_pickup: idx === 0 ? data.can_pickup ?? null : null,
+        need_pickup: idx === 0 ? need || null : null,
+        bus: idx === 0 ? (need > 0 ? "Y" : "N") : null,
+        user_notes: p.user_notes ?? null,
+      };
+    });
+
+    const { error } = await supabaseAdmin.from("retreat_registrations").insert(inserts);
+    if (error) throw new Error(error.message);
+
+    return {
+      success: true,
+      confirmation_numbers: inserts.map((i) => i.confirmation_no),
+    };
+  });
