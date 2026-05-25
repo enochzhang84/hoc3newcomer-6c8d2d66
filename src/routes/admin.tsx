@@ -1970,7 +1970,9 @@ function AdminPage() {
 
         <div className="grid lg:grid-cols-2 gap-6">
         {(["sunday","summer"] as const).map((kind) => {
-          const title = kind === "sunday" ? "主日崇拜轮值表" : "暑期主日学轮值表";
+          const settingKey = kind === "sunday" ? "duty_sunday_title" : "duty_summer_title";
+          const defaultTitle = kind === "sunday" ? "主日崇拜轮值表" : "暑期主日学轮值表";
+          const title = appSettings[settingKey] || defaultTitle;
           const pptLabel = kind === "sunday" ? "主日PPT" : "暑期PPT";
           const liveLabel = "YouTube直播";
           const rows = dutySchedules.filter((s) => s.schedule_type === kind);
