@@ -165,6 +165,32 @@ type AdultCheckin = {
   checkin_at: string;
 };
 
+type Contact = {
+  id: string;
+  name: string;
+  phone: string | null;
+  wechat: string | null;
+  email: string | null;
+  address: string | null;
+  fellowship: string | null;
+  notes: string | null;
+  created_at: string;
+};
+
+type KidsRow = {
+  id: string;
+  track: string;
+  class_name: string | null;       // 班级 stored in class_name
+  teacher_name: string | null;     // 老师
+  class_location: string | null;   // 地点
+  sort_order: number;
+};
+
+const KIDS_TRACKS = {
+  spring: { key: "kids_spring_2026", title: "2026年春季儿童主日学" },
+  fall: { key: "kids_fall_2026", title: "2026 秋季儿童主日学" },
+} as const;
+
 export const Route = createFileRoute("/admin")({
   component: AdminPage,
 });
@@ -230,6 +256,16 @@ function AdminPage() {
   const [dutySchedules, setDutySchedules] = useState<DutySchedule[]>([]);
   const [dutyPersonnelOpen, setDutyPersonnelOpen] = useState(false);
   const [newDutyPersonName, setNewDutyPersonName] = useState("");
+
+  // Contacts (address book)
+  const [contacts, setContacts] = useState<Contact[]>([]);
+  const [contactsOpen, setContactsOpen] = useState(false);
+  const [contactSearch, setContactSearch] = useState("");
+  const [contactForm, setContactForm] = useState<Partial<Contact> | null>(null);
+  // App settings (editable titles)
+  const [appSettings, setAppSettings] = useState<Record<string, string>>({});
+  // Kids Sunday School
+  const [kidsRows, setKidsRows] = useState<KidsRow[]>([]);
   // Sunday school teachers
   const [sundayTeachers, setSundayTeachers] = useState<SundayTeacher[]>([]);
   const [newTeacherName, setNewTeacherName] = useState("");
@@ -403,6 +439,32 @@ function AdminPage() {
     setDutySchedules((data ?? []) as DutySchedule[]);
   }, []);
 
+  const loadContacts = useCallback(async () => {
+    const { data } = await (supabase as any)
+      .from("contacts")
+      .select("*")
+      .order("name", { ascending: true });
+    setContacts((data ?? []) as Contact[]);
+  }, []);
+
+  const loadAppSettings = useCallback(async () => {
+    const { data } = await (supabase as any).from("app_settings").select("key,value");
+    const map: Record<string, string> = {};
+    for (const row of (data ?? []) as { key: string; value: string | null }[]) {
+      if (row.value != null) map[row.key] = row.value;
+    }
+    setAppSettings(map);
+  }, []);
+
+  const loadKidsRows = useCallback(async () => {
+    const { data } = await (supabase as any)
+      .from("sunday_class_schedule")
+      .select("*")
+      .in("track", [KIDS_TRACKS.spring.key, KIDS_TRACKS.fall.key])
+      .order("sort_order", { ascending: true });
+    setKidsRows((data ?? []) as KidsRow[]);
+  }, []);
+
   const loadSundayTeachers = useCallback(async () => {
     const { data } = await (supabase as any)
       .from("sunday_school_teachers")
@@ -493,6 +555,9 @@ function AdminPage() {
            void loadSundayTeachers();
            void loadAdultCheckins();
             void loadUsers();
+            void loadContacts();
+            void loadAppSettings();
+            void loadKidsRows();
           }
         } catch (e) {
           if (!cancelled) {
@@ -926,6 +991,11 @@ function AdminPage() {
             <NowLabel />
           </Link>
           <div className="flex items-center gap-2">
+            {isAdmin && (
+              <Button size="sm" variant="outline" onClick={() => setContactsOpen(true)}>
+                通讯录 ({contacts.length})
+              </Button>
+            )}
             <Button
               size="sm"
               variant="outline"
@@ -3164,6 +3234,149 @@ img{width:480px;height:480px;}@media print{@page{margin:1cm;}}</style></head>
                     >删除</Button>
                   </div>
                 ))}
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={contactsOpen} onOpenChange={setContactsOpen}>
+          <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>通讯录 ({contacts.length})</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="flex flex-wrap gap-2 items-center">
+                <Input
+                  placeholder="搜索 姓名 / 电话 / 团契"
+                  value={contactSearch}
+                  onChange={(e) => setContactSearch(e.target.value)}
+                  className="flex-1 min-w-[200px]"
+                />
+                <Button size="sm" onClick={() => setContactForm({ name: "", phone: "", wechat: "", email: "", address: "", fellowship: "", notes: "" })}>
+                  + 添加联系人
+                </Button>
+              </div>
+
+              {contactForm && (
+                <div className="rounded-xl border border-border/60 bg-muted/30 p-4 space-y-3">
+                  <h4 className="font-medium text-sm">{contactForm.id ? "编辑联系人" : "新增联系人"}</h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <Label className="text-xs">姓名 *</Label>
+                      <Input value={contactForm.name ?? ""} onChange={(e) => setContactForm({ ...contactForm, name: e.target.value })} />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">电话</Label>
+                      <Input value={contactForm.phone ?? ""} onChange={(e) => setContactForm({ ...contactForm, phone: e.target.value })} />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">微信</Label>
+                      <Input value={contactForm.wechat ?? ""} onChange={(e) => setContactForm({ ...contactForm, wechat: e.target.value })} />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">邮件</Label>
+                      <Input value={contactForm.email ?? ""} onChange={(e) => setContactForm({ ...contactForm, email: e.target.value })} />
+                    </div>
+                    <div className="space-y-1 sm:col-span-2">
+                      <Label className="text-xs">地址</Label>
+                      <Input value={contactForm.address ?? ""} onChange={(e) => setContactForm({ ...contactForm, address: e.target.value })} />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">团契</Label>
+                      <Input value={contactForm.fellowship ?? ""} onChange={(e) => setContactForm({ ...contactForm, fellowship: e.target.value })} />
+                    </div>
+                    <div className="space-y-1 sm:col-span-2">
+                      <Label className="text-xs">备注</Label>
+                      <Textarea rows={2} value={contactForm.notes ?? ""} onChange={(e) => setContactForm({ ...contactForm, notes: e.target.value })} />
+                    </div>
+                  </div>
+                  <div className="flex justify-end gap-2 pt-1">
+                    <Button size="sm" variant="ghost" onClick={() => setContactForm(null)}>取消</Button>
+                    <Button
+                      size="sm"
+                      onClick={async () => {
+                        const name = (contactForm.name ?? "").trim();
+                        if (!name) return toast.error("请填写姓名");
+                        const payload = {
+                          name,
+                          phone: (contactForm.phone ?? "").trim() || null,
+                          wechat: (contactForm.wechat ?? "").trim() || null,
+                          email: (contactForm.email ?? "").trim() || null,
+                          address: (contactForm.address ?? "").trim() || null,
+                          fellowship: (contactForm.fellowship ?? "").trim() || null,
+                          notes: (contactForm.notes ?? "").trim() || null,
+                        };
+                        if (contactForm.id) {
+                          const { error } = await (supabase as any).from("contacts").update(payload).eq("id", contactForm.id);
+                          if (error) return toast.error(error.message);
+                          toast.success("已更新");
+                        } else {
+                          const { error } = await (supabase as any).from("contacts").insert(payload);
+                          if (error) return toast.error(error.message);
+                          toast.success("已添加");
+                        }
+                        setContactForm(null);
+                        loadContacts();
+                      }}
+                    >
+                      保存
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              <div className="overflow-x-auto rounded-lg border border-border/50">
+                <table className="w-full text-sm">
+                  <thead className="bg-muted/80">
+                    <tr className="text-left text-muted-foreground border-b border-border/60">
+                      <th className="py-2 px-2">姓名</th>
+                      <th className="py-2 px-2">电话</th>
+                      <th className="py-2 px-2">微信</th>
+                      <th className="py-2 px-2">邮件</th>
+                      <th className="py-2 px-2">团契</th>
+                      <th className="py-2 px-2 text-right">操作</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {contacts
+                      .filter((c) => {
+                        const q = contactSearch.trim().toLowerCase();
+                        if (!q) return true;
+                        return (
+                          c.name.toLowerCase().includes(q) ||
+                          (c.phone ?? "").toLowerCase().includes(q) ||
+                          (c.fellowship ?? "").toLowerCase().includes(q)
+                        );
+                      })
+                      .map((c) => (
+                        <tr key={c.id} className="border-b border-border/30">
+                          <td className="py-2 px-2 font-medium">{c.name}</td>
+                          <td className="py-2 px-2">{c.phone ?? ""}</td>
+                          <td className="py-2 px-2">{c.wechat ?? ""}</td>
+                          <td className="py-2 px-2">{c.email ?? ""}</td>
+                          <td className="py-2 px-2">{c.fellowship ?? ""}</td>
+                          <td className="py-2 px-2 text-right whitespace-nowrap">
+                            <button className="text-xs text-primary hover:underline mr-3" onClick={() => setContactForm(c)}>编辑</button>
+                            <button
+                              className="text-xs text-destructive hover:underline"
+                              onClick={async () => {
+                                if (!confirm(`删除 ${c.name}?`)) return;
+                                const { error } = await (supabase as any).from("contacts").delete().eq("id", c.id);
+                                if (error) return toast.error(error.message);
+                                toast.success("已删除");
+                                loadContacts();
+                              }}
+                            >
+                              删除
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    {contacts.length === 0 && (
+                      <tr><td colSpan={6} className="py-8 text-center text-muted-foreground">暂无联系人</td></tr>
+                    )}
+                  </tbody>
+                </table>
               </div>
             </div>
           </DialogContent>

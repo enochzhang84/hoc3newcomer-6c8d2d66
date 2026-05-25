@@ -1,104 +1,66 @@
+## 实施计划（共 5 项）
 
-## 改动总览
+### 1. 通讯录（控制面板顶部按钮）
+- 数据库：新建 `contacts` 表
+  - 字段：`name`(必填), `phone`, `wechat`, `email`, `address`, `fellowship`, `notes`
+  - RLS：仅管理员可读写（admin / super_admin）
+- 控制面板：在「基督三家主页」按钮**前面**新增「通讯录」按钮
+- 点击打开弹窗（Dialog）：
+  - 列表显示全部联系人，支持搜索（姓名/电话/团契）
+  - 「添加」按钮 → 弹出输入框（姓名 / 电话 / 微信 / 邮件 / 地址 / 团契 / 备注）
+  - 每行支持「编辑」「删除」
+  - 顶部：导入/导出 Excel（选配，保持一致风格）
 
-针对管理后台 `src/routes/admin.tsx`(数据统计 / 成人主日学 / 教会活动) 进行六项调整,并新增一个独立路由用于课程表。
+### 2. 轮值表设置增强
+当前「主日崇拜轮值表」「暑期主日学轮值表」的设置面板新增：
+- **更改名称**：可以重命名「主日崇拜轮值表」「暑期主日学轮值表」这两个标题（存到一个新增的 `app_settings` 键值表，例：`duty_sunday_title` / `duty_summer_title`，admin 可写、所有人可读）
+- **添加同工**：从设置面板直接添加值班人员（写入 `duty_personnel` 表），无需跳到别处
+- 显示页面读取新标题渲染
 
----
+### 3. 儿童主日学板块
+- 数据库：复用现有 `sunday_class_schedule` 表，新增字段 `track`（text，可选）用于区分：
+  - `summer_adult` / `fall_adult` / `kids_spring_2026` / `kids_fall_2026`
+  - 或直接复用 `course_id` 指向新建的两门"课程"
+- 控制面板：在「秋季成人主日学」下方新增大区域「儿童主日学」
+  - 左右并排：
+    - 左：`2026年春季儿童主日学`
+    - 右：`2026 秋季儿童主日学`
+  - 每个区域内：表格 = **班级 / 老师 / 地点**
+  - 每个区域底部 4 个按钮：**添加同工 / 导出 Excel / 导入 Excel / 打印**
+  - 左右功能完全一致，仅数据 track 不同
 
-### 1. 数据统计板块改造 (Tab: stats)
+### 4. 退修会登记页面 — 随行人
+- 在「备注」字段**上方**新增「+ 添加随行人」按钮
+- 点击后向下展开一个完整随行人区块（字段与主登记人一致：中文姓名 / 英文姓名 / 性别 / 电话 / 邮箱 / 教会 / 项目 / 主题 / 床位 / 巴士 等）
+- 最多 6 位随行人
+- 响应式：iPhone / iPad / PC / Android 都用 `space-y-*` + `grid grid-cols-1 md:grid-cols-2` 自适应（不固定宽度，避免屏幕受限）
+- 提交时：主登记人 + N 位随行人 → 一次性插入 N+1 条 `retreat_registrations` 记录，共享同一个 confirmation 号段
 
-- Tab 名称由 "数据统计" → **"登记人数统计"**。
-- 在现有"新人登记统计"下新增两个统计卡片:
-  - **成人主日学** — 数据源 `sunday_school_checkins`
-  - **团契 / 小组聚会** — 数据源 `fellowship_checkins`
-- 每个卡片显示:
-  - **本周参加人数** + 与上周对比的百分比 + 上下箭头
-  - **本月参加人数** + 与上月对比的百分比 + 上下箭头
-  - **累计签到总数**
-  - **本周活跃课程/团契数量** (distinct count)
-- 箭头说明活动积极性:绿↑ 表示增长, 红↓ 表示下降, 灰→ 表示持平。
-
----
-
-### 2. 成人主日学板块布局 (Tab: sunday)
-
-- 当前的"主日学课程设置"按钮 → 移动到 **"已开放课程"** 标题栏的**右上角**(小按钮、ghost 样式)。
-- "已开放课程"标题右侧新增 **"课程表"** 按钮。
-- 增强"主日学课程设置"对话框:
-  - 两个 Tab: **课程管理** | **老师管理**
-  - 老师管理:新建 `sunday_school_teachers` 表 (id, name, sort_order, is_active),支持增删改。
-
----
-
-### 3. 课程表新页面 (新路由 `/sunday-schedule`)
-
-- 新文件 `src/routes/sunday-schedule.tsx` (管理员登录后访问,布局与 retreat-admin 一致)。
-- 新表 `sunday_class_schedule`:`id, slot_time, course_name, teacher_name, sort_order, created_at, updated_at`。
-- 功能:
-  - 行内编辑/新增/删除
-  - 老师列下拉选择(来自 `sunday_school_teachers`)
-  - 课程列下拉选择(来自 `sunday_school_courses`)
-  - **导出 Excel** (xlsx)
-  - **打印** (window.print + 打印样式)
-- 入口:点击主日学板块的"课程表"按钮 → `window.open('/sunday-schedule', '_blank')`。
-
----
-
-### 4. 教会活动板块 — 退修会按钮位置 (Tab: events)
-
-- 参考用户截图: **"退修会登记"按钮移动到"教会活动"标题栏最右侧**(与"二维码状态"同一行最右)。
-- 保留现有绿色渐变样式,稍微调整尺寸适配标题栏。
-
----
-
-### 数据库迁移
-
-```sql
--- 1) 老师名单
-create table public.sunday_school_teachers (
-  id uuid primary key default gen_random_uuid(),
-  name text not null,
-  sort_order int not null default 0,
-  is_active boolean not null default true,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
-);
-alter table public.sunday_school_teachers enable row level security;
-create policy "admins manage teachers" on public.sunday_school_teachers
-  for all to authenticated
-  using (has_role(auth.uid(),'admin')) with check (has_role(auth.uid(),'admin'));
-create policy "anyone read active teachers" on public.sunday_school_teachers
-  for select to anon, authenticated using (is_active = true);
-
--- 2) 课程表
-create table public.sunday_class_schedule (
-  id uuid primary key default gen_random_uuid(),
-  slot_time text not null,
-  course_name text,
-  teacher_name text,
-  sort_order int not null default 0,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
-);
-alter table public.sunday_class_schedule enable row level security;
-create policy "admins manage class schedule" on public.sunday_class_schedule
-  for all to authenticated
-  using (has_role(auth.uid(),'admin')) with check (has_role(auth.uid(),'admin'));
-```
+### 5. Confirmation # 生成规则
+提交时根据是否有随行人决定编号格式（日期取美东时间 MMDD）：
+- **单人注册**：`MMDD-000-001`、`MMDD-000-002`（同一天每条单人独立递增）
+- **多人注册（一张单含随行人）**：
+  - 一组共用三字母段（`AAA`, `AAB`, … `ZZZ`，每天独立递增）
+  - 同一组内 001, 002, 003… 对应每位人员
+  - 例：`0525-AAA-001` / `0525-AAA-002` / `0525-AAA-003`
+- 实现方式：
+  - 在 `retreat_registrations` 提交服务函数中按 `MMDD` 查询当天已有编号，计算下一个段
+  - 用事务或先 SELECT 最大值再 INSERT（加唯一索引兜底避免并发冲突）
+  - 写入 `confirmation_no` 字段（已存在）
 
 ---
 
-### 文件改动清单
+## 技术细节
+- 新建 migration：`contacts` 表 + RLS + `app_settings` 键值表 + `sunday_class_schedule` 加 `track` 字段
+- 新建 server function：`submitRetreatRegistration`（封装编号生成逻辑，避免客户端伪造）
+- 控制面板 `src/routes/admin.tsx` 新增三块 UI（通讯录按钮+弹窗 / 轮值表设置增强 / 儿童主日学板块）
+- 退修会 `src/routes/retreat-register.tsx` 改造表单结构 + 调用新服务函数
+- 所有列表导入/导出沿用现有 `xlsx` 工具风格
 
-- **新建**:
-  - `supabase/migrations/<timestamp>_sunday_teachers_schedule.sql`
-  - `src/routes/sunday-schedule.tsx`
-- **修改**:
-  - `src/routes/admin.tsx` (Tab 名称、stats 卡片、sunday 板块按钮布局、设置对话框增加老师管理、events 按钮位置)
-  - `src/integrations/supabase/types.ts` (迁移后自动更新)
+## 确认点
+1. 通讯录是否需要 Excel 导入导出？（默认包含）
+2. 儿童主日学的"班级/老师/地点"是否需要再加日期列？（默认不加，按你描述"班级 老师 地点"三列）
+3. 轮值表"更改名称"是否两个表都允许自由命名？（默认允许）
+4. 随行人是否完整复制所有字段还是简化（只姓名+性别+床位+巴士）？（默认完整复制）
 
----
-
-### 顺便处理
-
-启动器报告了一个 JSX 闭合标签的运行时错误,实施过程中会一并确认 `<main>` 结构完整。
+确认后我开始实施。

@@ -1,12 +1,13 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { useServerFn } from "@tanstack/react-start";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import logo from "@/assets/logo.png";
+import { submitRetreatRegistration } from "@/lib/retreat.functions";
 
 export const Route = createFileRoute("/retreat-register")({
   component: RetreatRegisterPage,
@@ -58,60 +59,199 @@ function BiLabel({ cn, en, required }: { cn: string; en: string; required?: bool
   );
 }
 
+type PersonValue = {
+  chinese_name: string;
+  last_name: string;
+  first_name: string;
+  gender: string;
+  cell: string;
+  email: string;
+  program: string;
+  topic: string;
+  bed: string;
+  user_notes: string;
+};
+
+function PersonFields({
+  heading,
+  value,
+  onChange,
+  onRemove,
+  requireName,
+}: {
+  heading: string;
+  value: PersonValue;
+  onChange: (patch: Partial<PersonValue>) => void;
+  onRemove?: () => void;
+  requireName?: boolean;
+}) {
+  return (
+    <div className="rounded-xl border border-border/50 bg-muted/20 p-4 sm:p-5 space-y-4">
+      <div className="flex items-center justify-between gap-2 flex-wrap">
+        <h3 className="font-medium text-sm">{heading}</h3>
+        {onRemove && (
+          <Button type="button" variant="ghost" size="sm" className="text-destructive h-7 px-2" onClick={onRemove}>
+            移除 / Remove
+          </Button>
+        )}
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <BiLabel cn="中文姓名" en="Chinese Name" required={requireName} />
+          <Input value={value.chinese_name} onChange={(e) => onChange({ chinese_name: e.target.value })} className="mt-1" />
+        </div>
+        <div>
+          <BiLabel cn="性别" en="Gender" />
+          <select
+            value={value.gender}
+            onChange={(e) => onChange({ gender: e.target.value })}
+            className="mt-1 w-full h-10 rounded-md border border-input bg-background px-3 text-sm"
+          >
+            <option value="">—</option>
+            <option value="M">M (男 / Male)</option>
+            <option value="F">F (女 / Female)</option>
+          </select>
+        </div>
+        <div>
+          <BiLabel cn="英文姓 (Last name)" en="Last Name" />
+          <Input value={value.last_name} onChange={(e) => onChange({ last_name: e.target.value })} className="mt-1" />
+        </div>
+        <div>
+          <BiLabel cn="英文名 (First name)" en="First Name" />
+          <Input value={value.first_name} onChange={(e) => onChange({ first_name: e.target.value })} className="mt-1" />
+        </div>
+        <div>
+          <BiLabel cn="手机" en="Cell Phone" />
+          <Input value={value.cell} onChange={(e) => onChange({ cell: e.target.value })} className="mt-1" />
+        </div>
+        <div>
+          <BiLabel cn="电子邮件" en="E-mail" />
+          <Input type="email" value={value.email} onChange={(e) => onChange({ email: e.target.value })} className="mt-1" />
+        </div>
+        <div>
+          <BiLabel cn="节目代码" en="Program Code" />
+          <select
+            value={value.program}
+            onChange={(e) => onChange({ program: e.target.value })}
+            className="mt-1 w-full h-10 rounded-md border border-input bg-background px-3 text-sm"
+          >
+            <option value="">— 请选择 / Select —</option>
+            {PROGRAMS.map((p) => <option key={p.v} value={p.v}>{p.label}</option>)}
+          </select>
+        </div>
+        <div>
+          <BiLabel cn="床位 (4-11 岁)" en="Bed (ages 4-11)" />
+          <select
+            value={value.bed}
+            onChange={(e) => onChange({ bed: e.target.value })}
+            className="mt-1 w-full h-10 rounded-md border border-input bg-background px-3 text-sm"
+          >
+            <option value="">—</option>
+            <option value="yes">占床位 ($180) · With Bed</option>
+            <option value="no">不占床位 ($110) · Without Bed</option>
+          </select>
+        </div>
+      </div>
+      <div>
+        <BiLabel cn="中文部专题 (週六)" en="Saturday Topic" />
+        <select
+          value={value.topic}
+          onChange={(e) => onChange({ topic: e.target.value })}
+          className="mt-1 w-full h-10 rounded-md border border-input bg-background px-3 text-sm"
+        >
+          <option value="">— 请选择 / Select —</option>
+          {TOPICS.map((t) => <option key={t} value={t[0]}>{t}</option>)}
+        </select>
+      </div>
+      <div>
+        <BiLabel cn="备注" en="Notes" />
+        <Textarea value={value.user_notes} onChange={(e) => onChange({ user_notes: e.target.value })} rows={2} className="mt-1" />
+      </div>
+    </div>
+  );
+}
 function RetreatRegisterPage() {
   const [submitting, setSubmitting] = useState(false);
-  const [done, setDone] = useState<{ verse: { text: string; ref: string } } | null>(null);
-  const [form, setForm] = useState({
-    church: "hoc3",
-    chinese_name: "",
-    last_name: "",
-    first_name: "",
-    gender: "",
-    cell: "",
-    email: "",
-    program: "",
-    topic: "",
-    bed: "",
-    can_pickup: "",
-    need_pickup: "",
-    user_notes: "",
+  const [done, setDone] = useState<{ verse: { text: string; ref: string }; numbers: string[] } | null>(null);
+  const submit = useServerFn(submitRetreatRegistration);
+
+  type Person = {
+    chinese_name: string;
+    last_name: string;
+    first_name: string;
+    gender: string;
+    cell: string;
+    email: string;
+    program: string;
+    topic: string;
+    bed: string;
+    user_notes: string;
+  };
+  const blankPerson = (): Person => ({
+    chinese_name: "", last_name: "", first_name: "", gender: "",
+    cell: "", email: "", program: "", topic: "", bed: "", user_notes: "",
   });
 
-  function set<K extends keyof typeof form>(k: K, v: (typeof form)[K]) {
-    setForm((f) => ({ ...f, [k]: v }));
-  }
+  const [shared, setShared] = useState({
+    church: "hoc3",
+    can_pickup: "",
+    need_pickup: "",
+  });
+  const [main, setMain] = useState<Person>(blankPerson());
+  const [companions, setCompanions] = useState<Person[]>([]);
+
+  const updateCompanion = (idx: number, patch: Partial<Person>) => {
+    setCompanions((arr) => arr.map((p, i) => (i === idx ? { ...p, ...patch } : p)));
+  };
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!form.chinese_name.trim()) {
+    if (!main.chinese_name.trim()) {
       toast.error("请填写中文姓名 / Please enter Chinese name");
       return;
     }
-    setSubmitting(true);
-    const needPickup = parseInt(form.need_pickup || "0", 10) || 0;
-    const canPickup = parseInt(form.can_pickup || "0", 10) || 0;
-    const { error } = await supabase.from("retreat_registrations").insert({
-      church: form.church || null,
-      chinese_name: form.chinese_name.trim(),
-      last_name: form.last_name.trim() || null,
-      first_name: form.first_name.trim() || null,
-      gender: form.gender || null,
-      cell: form.cell.trim() || null,
-      email: form.email.trim() || null,
-      program: form.program || null,
-      topic: form.topic || null,
-      bed: form.bed || null,
-      can_pickup: canPickup || null,
-      need_pickup: needPickup || null,
-      bus: needPickup > 0 ? "Y" : "N",
-      user_notes: form.user_notes.trim() || null,
-    });
-    setSubmitting(false);
-    if (error) {
-      toast.error(error.message);
-      return;
+    for (let i = 0; i < companions.length; i++) {
+      if (!companions[i].chinese_name.trim()) {
+        toast.error(`随行人 #${i + 1} 请填写中文姓名`);
+        return;
+      }
     }
-    setDone({ verse: pickVerse() });
+    setSubmitting(true);
+    try {
+      const toPayload = (p: Person) => ({
+        chinese_name: p.chinese_name.trim(),
+        last_name: p.last_name.trim() || null,
+        first_name: p.first_name.trim() || null,
+        gender: p.gender || null,
+        cell: p.cell.trim() || null,
+        email: p.email.trim() || null,
+        program: p.program || null,
+        topic: p.topic || null,
+        bed: p.bed || null,
+        user_notes: p.user_notes.trim() || null,
+      });
+      const res = await submit({
+        data: {
+          church: shared.church || null,
+          can_pickup: parseInt(shared.can_pickup || "0", 10) || null,
+          need_pickup: parseInt(shared.need_pickup || "0", 10) || null,
+          main: toPayload(main),
+          companions: companions.map(toPayload),
+        },
+      });
+      setDone({ verse: pickVerse(), numbers: res.confirmation_numbers });
+    } catch (err) {
+      toast.error((err as Error).message);
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  function resetAll() {
+    setShared({ church: "hoc3", can_pickup: "", need_pickup: "" });
+    setMain(blankPerson());
+    setCompanions([]);
+    setDone(null);
   }
 
   if (done) {
@@ -123,6 +263,14 @@ function RetreatRegisterPage() {
           <p className="text-sm text-muted-foreground mb-6">
             愿主赐福你 · May the Lord bless you
           </p>
+          {done.numbers.length > 0 && (
+            <div className="mb-6 bg-muted/40 border border-border/50 rounded-xl p-4 text-left">
+              <p className="text-xs uppercase tracking-wider text-muted-foreground mb-2">Confirmation #</p>
+              <ul className="font-mono text-sm space-y-1">
+                {done.numbers.map((n) => <li key={n}>{n}</li>)}
+              </ul>
+            </div>
+          )}
           <blockquote className="border-l-4 border-primary/60 pl-4 text-left italic text-foreground/90 leading-relaxed mb-6">
             「{done.verse.text}」
             <div className="mt-1 text-sm text-muted-foreground not-italic">— {done.verse.ref}</div>
@@ -131,7 +279,7 @@ function RetreatRegisterPage() {
             <Link to="/retreat">
               <Button variant="outline">返回</Button>
             </Link>
-            <Button onClick={() => { setDone(null); setForm({ church: "hoc3", chinese_name: "", last_name: "", first_name: "", gender: "", cell: "", email: "", program: "", topic: "", bed: "", can_pickup: "", need_pickup: "", user_notes: "" }); }}>
+            <Button onClick={resetAll}>
               再次登记
             </Button>
           </div>
@@ -159,94 +307,45 @@ function RetreatRegisterPage() {
             The Home of Christ Church Joint Retreat — Registration Form
           </p>
 
-          <div className="grid sm:grid-cols-2 gap-4">
-            <div>
-              <BiLabel cn="基督之家分堂" en="HOC Campus" />
-              <select
-                value={form.church}
-                onChange={(e) => set("church", e.target.value)}
-                className="mt-1 w-full h-10 rounded-md border border-input bg-background px-3 text-sm"
-              >
-                {CHURCHES.map((c) => <option key={c} value={c}>{c.toUpperCase()}</option>)}
-              </select>
-            </div>
-            <div>
-              <BiLabel cn="性别" en="Gender" />
-              <select
-                value={form.gender}
-                onChange={(e) => set("gender", e.target.value)}
-                className="mt-1 w-full h-10 rounded-md border border-input bg-background px-3 text-sm"
-              >
-                <option value="">—</option>
-                <option value="M">M (男 / Male)</option>
-                <option value="F">F (女 / Female)</option>
-              </select>
-            </div>
-          </div>
-
           <div>
-            <BiLabel cn="中文姓名" en="Chinese Name" required />
-            <Input value={form.chinese_name} onChange={(e) => set("chinese_name", e.target.value)} className="mt-1" />
-          </div>
-
-          <div className="grid sm:grid-cols-2 gap-4">
-            <div>
-              <BiLabel cn="英文姓 (Last name)" en="Last Name" />
-              <Input value={form.last_name} onChange={(e) => set("last_name", e.target.value)} className="mt-1" />
-            </div>
-            <div>
-              <BiLabel cn="英文名 (First name)" en="First Name" />
-              <Input value={form.first_name} onChange={(e) => set("first_name", e.target.value)} className="mt-1" />
-            </div>
-          </div>
-
-          <div className="grid sm:grid-cols-2 gap-4">
-            <div>
-              <BiLabel cn="手机" en="Cell Phone" />
-              <Input value={form.cell} onChange={(e) => set("cell", e.target.value)} className="mt-1" />
-            </div>
-            <div>
-              <BiLabel cn="电子邮件" en="E-mail" />
-              <Input type="email" value={form.email} onChange={(e) => set("email", e.target.value)} className="mt-1" />
-            </div>
-          </div>
-
-          <div>
-            <BiLabel cn="节目代码" en="Program Code" />
+            <BiLabel cn="基督之家分堂" en="HOC Campus" />
             <select
-              value={form.program}
-              onChange={(e) => set("program", e.target.value)}
+              value={shared.church}
+              onChange={(e) => setShared({ ...shared, church: e.target.value })}
               className="mt-1 w-full h-10 rounded-md border border-input bg-background px-3 text-sm"
             >
-              <option value="">— 请选择 / Select —</option>
-              {PROGRAMS.map((p) => <option key={p.v} value={p.v}>{p.label}</option>)}
+              {CHURCHES.map((c) => <option key={c} value={c}>{c.toUpperCase()}</option>)}
             </select>
           </div>
 
-          <div>
-            <BiLabel cn="中文部专题 (週六)" en="Saturday Topic" />
-            <select
-              value={form.topic}
-              onChange={(e) => set("topic", e.target.value)}
-              className="mt-1 w-full h-10 rounded-md border border-input bg-background px-3 text-sm"
-            >
-              <option value="">— 请选择 / Select —</option>
-              {TOPICS.map((t) => <option key={t} value={t[0]}>{t}</option>)}
-            </select>
-          </div>
+          <PersonFields
+            heading="主要登记人 · Primary Registrant"
+            value={main}
+            onChange={(patch) => setMain({ ...main, ...patch })}
+            requireName
+          />
 
-          <div>
-            <BiLabel cn="床位 (4-11 岁)" en="Bed (ages 4-11)" />
-            <select
-              value={form.bed}
-              onChange={(e) => set("bed", e.target.value)}
-              className="mt-1 w-full h-10 rounded-md border border-input bg-background px-3 text-sm"
+          {companions.map((p, idx) => (
+            <PersonFields
+              key={idx}
+              heading={`随行人 #${idx + 1} · Companion ${idx + 1}`}
+              value={p}
+              onChange={(patch) => updateCompanion(idx, patch)}
+              onRemove={() => setCompanions((arr) => arr.filter((_, i) => i !== idx))}
+              requireName
+            />
+          ))}
+
+          {companions.length < 6 && (
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full rounded-full"
+              onClick={() => setCompanions((arr) => [...arr, blankPerson()])}
             >
-              <option value="">—</option>
-              <option value="yes">占床位 ($180) · With Bed</option>
-              <option value="no">不占床位 ($110) · Without Bed</option>
-            </select>
-          </div>
+              + 添加随行人 · Add Companion ({companions.length}/6)
+            </Button>
+          )}
 
           <div className="grid sm:grid-cols-2 gap-4">
             <div>
@@ -254,8 +353,8 @@ function RetreatRegisterPage() {
               <Input
                 type="number"
                 min={0}
-                value={form.can_pickup}
-                onChange={(e) => set("can_pickup", e.target.value)}
+                value={shared.can_pickup}
+                onChange={(e) => setShared({ ...shared, can_pickup: e.target.value })}
                 className="mt-1"
                 placeholder="0"
               />
@@ -265,21 +364,16 @@ function RetreatRegisterPage() {
               <Input
                 type="number"
                 min={0}
-                value={form.need_pickup}
-                onChange={(e) => set("need_pickup", e.target.value)}
+                value={shared.need_pickup}
+                onChange={(e) => setShared({ ...shared, need_pickup: e.target.value })}
                 className="mt-1"
                 placeholder="0"
               />
             </div>
           </div>
 
-          <div>
-            <BiLabel cn="备注" en="Notes" />
-            <Textarea value={form.user_notes} onChange={(e) => set("user_notes", e.target.value)} rows={3} className="mt-1" />
-          </div>
-
           <Button type="submit" disabled={submitting} className="w-full rounded-full" size="lg">
-            {submitting ? "提交中…" : "提交登记 · Submit"}
+            {submitting ? "提交中…" : `提交登记 · Submit (${1 + companions.length} 人)`}
           </Button>
         </form>
         <aside className="order-2 lg:order-2 space-y-5 lg:sticky lg:top-6">
