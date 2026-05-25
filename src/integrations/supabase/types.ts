@@ -44,6 +44,24 @@ export type Database = {
         }
         Relationships: []
       }
+      app_settings: {
+        Row: {
+          key: string
+          updated_at: string
+          value: string | null
+        }
+        Insert: {
+          key: string
+          updated_at?: string
+          value?: string | null
+        }
+        Update: {
+          key?: string
+          updated_at?: string
+          value?: string | null
+        }
+        Relationships: []
+      }
       attendance_records: {
         Row: {
           children_students: number
@@ -74,6 +92,45 @@ export type Database = {
           record_date?: string
           updated_at?: string
           worship_count?: number
+        }
+        Relationships: []
+      }
+      contacts: {
+        Row: {
+          address: string | null
+          created_at: string
+          email: string | null
+          fellowship: string | null
+          id: string
+          name: string
+          notes: string | null
+          phone: string | null
+          updated_at: string
+          wechat: string | null
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string
+          email?: string | null
+          fellowship?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          phone?: string | null
+          updated_at?: string
+          wechat?: string | null
+        }
+        Update: {
+          address?: string | null
+          created_at?: string
+          email?: string | null
+          fellowship?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          updated_at?: string
+          wechat?: string | null
         }
         Relationships: []
       }
@@ -549,6 +606,7 @@ export type Database = {
       }
       sunday_class_schedule: {
         Row: {
+          class_location: string | null
           class_name: string | null
           course_id: string | null
           course_name: string | null
@@ -558,10 +616,12 @@ export type Database = {
           slot_time: string
           sort_order: number
           teacher_name: string | null
+          track: string | null
           updated_at: string
           weekly_topic: string | null
         }
         Insert: {
+          class_location?: string | null
           class_name?: string | null
           course_id?: string | null
           course_name?: string | null
@@ -571,10 +631,12 @@ export type Database = {
           slot_time: string
           sort_order?: number
           teacher_name?: string | null
+          track?: string | null
           updated_at?: string
           weekly_topic?: string | null
         }
         Update: {
+          class_location?: string | null
           class_name?: string | null
           course_id?: string | null
           course_name?: string | null
@@ -584,6 +646,7 @@ export type Database = {
           slot_time?: string
           sort_order?: number
           teacher_name?: string | null
+          track?: string | null
           updated_at?: string
           weekly_topic?: string | null
         }
