@@ -350,6 +350,14 @@ function AdminPage() {
     setFellowshipCheckins((data ?? []) as FellowshipCheckin[]);
   }, []);
 
+  const loadAdultCheckins = useCallback(async () => {
+    const { data } = await (supabase as any)
+      .from("adult_class_checkins")
+      .select("*")
+      .order("checkin_at", { ascending: false });
+    setAdultCheckins((data ?? []) as AdultCheckin[]);
+  }, []);
+
   const loadFellowships = useCallback(async () => {
     const { data } = await supabase
       .from("fellowships")
