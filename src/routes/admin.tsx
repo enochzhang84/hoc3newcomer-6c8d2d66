@@ -3682,6 +3682,105 @@ ${rows.length===0?'<tr><td colspan="4" style="text-align:center;color:#888;paddi
           </DialogContent>
         </Dialog>
 
+        {/* Kids Sunday School Settings Dialog */}
+        <Dialog open={kidsSettingsSeason !== null} onOpenChange={(o) => { if (!o) setKidsSettingsSeason(null); }}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>
+                {kidsSettingsSeason ? `设置 · ${appSettings[`${KIDS_TRACKS[kidsSettingsSeason].key}_title`] || KIDS_TRACKS[kidsSettingsSeason].title}` : "设置"}
+              </DialogTitle>
+            </DialogHeader>
+            {kidsSettingsSeason && (
+              <div className="space-y-5 py-2">
+                <div className="space-y-2">
+                  <Label className="text-xs">板块名称</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      key={`${kidsSettingsSeason}-${appSettings[`${KIDS_TRACKS[kidsSettingsSeason].key}_title`] ?? ""}`}
+                      defaultValue={appSettings[`${KIDS_TRACKS[kidsSettingsSeason].key}_title`] || KIDS_TRACKS[kidsSettingsSeason].title}
+                      onBlur={async (e) => {
+                        const key = `${KIDS_TRACKS[kidsSettingsSeason].key}_title`;
+                        const v = e.target.value.trim();
+                        if (!v) return;
+                        if (v === (appSettings[key] || KIDS_TRACKS[kidsSettingsSeason].title)) return;
+                        const { error } = await (supabase as any)
+                          .from("app_settings")
+                          .upsert({ key, value: v, updated_at: new Date().toISOString() });
+                        if (error) return toast.error(error.message);
+                        toast.success("已保存名称");
+                        loadAppSettings();
+                      }}
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground">失焦后自动保存。</p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-xs">添加同工 (老师列表)</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      value={kidsNewTeacher}
+                      placeholder="输入同工姓名"
+                      onChange={(e) => setKidsNewTeacher(e.target.value)}
+                      onKeyDown={async (e) => {
+                        if (e.key !== "Enter") return;
+                        const name = kidsNewTeacher.trim();
+                        if (!name) return;
+                        const next = (sundayTeachers[sundayTeachers.length - 1]?.sort_order ?? 0) + 1;
+                        const { error } = await (supabase as any)
+                          .from("sunday_school_teachers")
+                          .insert({ name, sort_order: next, is_active: true });
+                        if (error) return toast.error(error.message);
+                        toast.success("已添加");
+                        setKidsNewTeacher("");
+                        loadSundayTeachers();
+                      }}
+                    />
+                    <Button
+                      size="sm"
+                      onClick={async () => {
+                        const name = kidsNewTeacher.trim();
+                        if (!name) return toast.error("请输入姓名");
+                        const next = (sundayTeachers[sundayTeachers.length - 1]?.sort_order ?? 0) + 1;
+                        const { error } = await (supabase as any)
+                          .from("sunday_school_teachers")
+                          .insert({ name, sort_order: next, is_active: true });
+                        if (error) return toast.error(error.message);
+                        toast.success("已添加");
+                        setKidsNewTeacher("");
+                        loadSundayTeachers();
+                      }}
+                    >
+                      添加
+                    </Button>
+                  </div>
+                  {sundayTeachers.length > 0 && (
+                    <div className="flex flex-wrap gap-2 pt-2">
+                      {sundayTeachers.filter((t) => t.is_active).map((t) => (
+                        <span key={t.id} className="inline-flex items-center gap-1 text-xs bg-muted rounded-full px-2.5 py-1">
+                          {t.name}
+                          <button
+                            className="text-muted-foreground hover:text-destructive ml-0.5"
+                            onClick={async () => {
+                              if (!confirm(`移除同工「${t.name}」?`)) return;
+                              await (supabase as any).from("sunday_school_teachers").delete().eq("id", t.id);
+                              loadSundayTeachers();
+                            }}
+                          >×</button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  <p className="text-xs text-muted-foreground">同工姓名将出现在课程「老师」列的下拉建议中。</p>
+                </div>
+              </div>
+            )}
+            <DialogFooter>
+              <Button variant="outline" size="sm" onClick={() => setKidsSettingsSeason(null)}>完成</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
         {/* Edit Dialog */}
         <Dialog open={editOpen} onOpenChange={setEditOpen}>
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
