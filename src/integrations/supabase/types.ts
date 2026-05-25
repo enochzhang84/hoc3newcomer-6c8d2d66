@@ -516,33 +516,53 @@ export type Database = {
       }
       sunday_class_schedule: {
         Row: {
+          class_name: string | null
+          course_id: string | null
           course_name: string | null
           created_at: string
           id: string
+          notes: string | null
           slot_time: string
           sort_order: number
           teacher_name: string | null
           updated_at: string
+          weekly_topic: string | null
         }
         Insert: {
+          class_name?: string | null
+          course_id?: string | null
           course_name?: string | null
           created_at?: string
           id?: string
+          notes?: string | null
           slot_time: string
           sort_order?: number
           teacher_name?: string | null
           updated_at?: string
+          weekly_topic?: string | null
         }
         Update: {
+          class_name?: string | null
+          course_id?: string | null
           course_name?: string | null
           created_at?: string
           id?: string
+          notes?: string | null
           slot_time?: string
           sort_order?: number
           teacher_name?: string | null
           updated_at?: string
+          weekly_topic?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "sunday_class_schedule_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "sunday_school_courses"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       sunday_school_checkins: {
         Row: {

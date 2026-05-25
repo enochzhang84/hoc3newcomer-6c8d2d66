@@ -940,7 +940,7 @@ function AdminPage() {
 
             <TabsContent value="stats" className="space-y-8 mt-0">
         <section>
-          <h2 className="font-serif text-xl mb-4">登记人数统计</h2>
+          <h2 className="font-serif text-xl mb-4">数据统计</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <Stat label="总登记数" value={regs.length} />
           <Stat label="希望探访" value={regs.filter((r) => r.wants_visit).length} />
@@ -1804,8 +1804,8 @@ function AdminPage() {
                       <tr key={r.id} className="border-b border-border/30">
                         <td className="py-2 px-2">
                           <Input
+                            type="date"
                             defaultValue={r.slot_time}
-                            placeholder="如 2026-06-07 10:00"
                             className="h-8"
                             onBlur={async (e) => {
                               const v = e.target.value;
@@ -2049,13 +2049,6 @@ function AdminPage() {
                 <div className="flex items-center gap-1">
                   <Button
                     size="sm"
-                    variant="outline"
-                    onClick={() => window.open("/sunday-schedule", "_blank", "noopener,noreferrer")}
-                  >
-                    课程表
-                  </Button>
-                  <Button
-                    size="sm"
                     variant="ghost"
                     className="text-muted-foreground hover:text-foreground"
                     onClick={() => setCoursesOpen(true)}
@@ -2067,11 +2060,27 @@ function AdminPage() {
               {courses.length === 0 ? (
                 <p className="text-sm text-muted-foreground">暂无课程，请点击右上角「设置」添加。</p>
               ) : (
-                <ul className="text-sm space-y-1">
+                <ul className="text-sm space-y-1.5">
                   {courses.filter((c) => c.is_active).map((c) => (
-                    <li key={c.id} className="flex items-center gap-2">
-                      <span className="text-muted-foreground">·</span>
-                      <span>{c.name}</span>
+                    <li key={c.id} className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="text-muted-foreground">·</span>
+                        <span className="truncate">{c.name}</span>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-7 px-2 text-xs shrink-0"
+                        onClick={() =>
+                          window.open(
+                            `/sunday-schedule?courseId=${c.id}&courseName=${encodeURIComponent(c.name)}`,
+                            "_blank",
+                            "noopener,noreferrer",
+                          )
+                        }
+                      >
+                        课程表
+                      </Button>
                     </li>
                   ))}
                 </ul>
@@ -2187,18 +2196,16 @@ function AdminPage() {
                 <span className="font-medium text-foreground">二维码已停用</span>
               )}
             </div>
-            <div className="ml-auto">
-              <Button
-                size="lg"
-                onClick={() => window.open("/retreat", "_blank", "noopener,noreferrer")}
-                className="h-12 px-6 text-base font-semibold bg-gradient-to-r from-primary to-primary/80 shadow-md hover:shadow-lg hover:from-primary/90 hover:to-primary/70 transition-all"
-              >
-                🏔️ 退修会登记
-              </Button>
-            </div>
           </div>
-          <div className="flex flex-wrap gap-2 mb-4">
+          <div className="flex flex-wrap items-center gap-2 mb-4">
             <Button onClick={addEvent}>生成新二维码</Button>
+            <Button
+              size="lg"
+              onClick={() => window.open("/retreat", "_blank", "noopener,noreferrer")}
+              className="ml-auto h-12 px-6 text-base font-semibold bg-gradient-to-r from-primary to-primary/80 shadow-md hover:shadow-lg hover:from-primary/90 hover:to-primary/70 transition-all"
+            >
+              🏔️ 退修会登记
+            </Button>
           </div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {events.map((ev) => {
