@@ -59,6 +59,117 @@ function BiLabel({ cn, en, required }: { cn: string; en: string; required?: bool
   );
 }
 
+type PersonValue = {
+  chinese_name: string;
+  last_name: string;
+  first_name: string;
+  gender: string;
+  cell: string;
+  email: string;
+  program: string;
+  topic: string;
+  bed: string;
+  user_notes: string;
+};
+
+function PersonFields({
+  heading,
+  value,
+  onChange,
+  onRemove,
+  requireName,
+}: {
+  heading: string;
+  value: PersonValue;
+  onChange: (patch: Partial<PersonValue>) => void;
+  onRemove?: () => void;
+  requireName?: boolean;
+}) {
+  return (
+    <div className="rounded-xl border border-border/50 bg-muted/20 p-4 sm:p-5 space-y-4">
+      <div className="flex items-center justify-between gap-2 flex-wrap">
+        <h3 className="font-medium text-sm">{heading}</h3>
+        {onRemove && (
+          <Button type="button" variant="ghost" size="sm" className="text-destructive h-7 px-2" onClick={onRemove}>
+            移除 / Remove
+          </Button>
+        )}
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <BiLabel cn="中文姓名" en="Chinese Name" required={requireName} />
+          <Input value={value.chinese_name} onChange={(e) => onChange({ chinese_name: e.target.value })} className="mt-1" />
+        </div>
+        <div>
+          <BiLabel cn="性别" en="Gender" />
+          <select
+            value={value.gender}
+            onChange={(e) => onChange({ gender: e.target.value })}
+            className="mt-1 w-full h-10 rounded-md border border-input bg-background px-3 text-sm"
+          >
+            <option value="">—</option>
+            <option value="M">M (男 / Male)</option>
+            <option value="F">F (女 / Female)</option>
+          </select>
+        </div>
+        <div>
+          <BiLabel cn="英文姓 (Last name)" en="Last Name" />
+          <Input value={value.last_name} onChange={(e) => onChange({ last_name: e.target.value })} className="mt-1" />
+        </div>
+        <div>
+          <BiLabel cn="英文名 (First name)" en="First Name" />
+          <Input value={value.first_name} onChange={(e) => onChange({ first_name: e.target.value })} className="mt-1" />
+        </div>
+        <div>
+          <BiLabel cn="手机" en="Cell Phone" />
+          <Input value={value.cell} onChange={(e) => onChange({ cell: e.target.value })} className="mt-1" />
+        </div>
+        <div>
+          <BiLabel cn="电子邮件" en="E-mail" />
+          <Input type="email" value={value.email} onChange={(e) => onChange({ email: e.target.value })} className="mt-1" />
+        </div>
+        <div>
+          <BiLabel cn="节目代码" en="Program Code" />
+          <select
+            value={value.program}
+            onChange={(e) => onChange({ program: e.target.value })}
+            className="mt-1 w-full h-10 rounded-md border border-input bg-background px-3 text-sm"
+          >
+            <option value="">— 请选择 / Select —</option>
+            {PROGRAMS.map((p) => <option key={p.v} value={p.v}>{p.label}</option>)}
+          </select>
+        </div>
+        <div>
+          <BiLabel cn="床位 (4-11 岁)" en="Bed (ages 4-11)" />
+          <select
+            value={value.bed}
+            onChange={(e) => onChange({ bed: e.target.value })}
+            className="mt-1 w-full h-10 rounded-md border border-input bg-background px-3 text-sm"
+          >
+            <option value="">—</option>
+            <option value="yes">占床位 ($180) · With Bed</option>
+            <option value="no">不占床位 ($110) · Without Bed</option>
+          </select>
+        </div>
+      </div>
+      <div>
+        <BiLabel cn="中文部专题 (週六)" en="Saturday Topic" />
+        <select
+          value={value.topic}
+          onChange={(e) => onChange({ topic: e.target.value })}
+          className="mt-1 w-full h-10 rounded-md border border-input bg-background px-3 text-sm"
+        >
+          <option value="">— 请选择 / Select —</option>
+          {TOPICS.map((t) => <option key={t} value={t[0]}>{t}</option>)}
+        </select>
+      </div>
+      <div>
+        <BiLabel cn="备注" en="Notes" />
+        <Textarea value={value.user_notes} onChange={(e) => onChange({ user_notes: e.target.value })} rows={2} className="mt-1" />
+      </div>
+    </div>
+  );
+}
 function RetreatRegisterPage() {
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState<{ verse: { text: string; ref: string }; numbers: string[] } | null>(null);
