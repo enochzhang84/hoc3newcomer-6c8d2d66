@@ -4157,6 +4157,8 @@ function QrLibrary({ publicBase, events }: { publicBase: string; events: Event[]
     },
     { key: "retreat", label: "退修会登记", url: `${publicBase}/retreat` },
     { key: "sunday", label: "成人主日学签到", url: `${publicBase}/sunday-checkin` },
+    { key: "adult-summer", label: "暑期成人主日学 · 扫码签到", url: `${publicBase}/adult-checkin/summer` },
+    { key: "adult-fall", label: "秋季成人主日学 · 扫码签到", url: `${publicBase}/adult-checkin/fall` },
     { key: "serve", label: "服侍申请", url: `${publicBase}/serve-apply` },
     { key: "fellowship", label: "团契 / 小组聚会签到", url: `${publicBase}/fellowship-checkin` },
     { key: "feedback", label: "问题反馈", url: `${publicBase}/feedback` },

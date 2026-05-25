@@ -32,18 +32,14 @@ function mmddInPacific(d = new Date()): string {
   return s.replace("/", "");
 }
 
-// Increment a 3-letter group: AAA -> AAB -> ... -> ZZZ
+// Group codes per day jump AAA -> BBB -> CCC ... -> ZZZ
 function nextLetters(prev: string | null): string {
   if (!prev) return "AAA";
-  const chars = prev.split("");
-  for (let i = chars.length - 1; i >= 0; i--) {
-    if (chars[i] < "Z") {
-      chars[i] = String.fromCharCode(chars[i].charCodeAt(0) + 1);
-      return chars.join("");
-    }
-    chars[i] = "A";
-  }
-  throw new Error("Letter group exhausted for the day");
+  // Find the leading char and advance by one
+  const head = prev[0];
+  if (head >= "Z") throw new Error("Letter group exhausted for the day");
+  const nxt = String.fromCharCode(head.charCodeAt(0) + 1);
+  return nxt.repeat(3);
 }
 
 export const submitRetreatRegistration = createServerFn({ method: "POST" })
@@ -69,12 +65,13 @@ export const submitRetreatRegistration = createServerFn({ method: "POST" })
       groupCode = "000";
     } else {
       // Find max existing letter group != "000"
+      // Find the latest triple-letter code used today (only consider XXX-style triplets)
       let maxLetters: string | null = null;
       for (const n of nums) {
         const parts = n.split("-"); // [mmdd, code, seq]
         const code = parts[1];
         if (!code || code === "000") continue;
-        if (!/^[A-Z]{3}$/.test(code)) continue;
+        if (!/^([A-Z])\1\1$/.test(code)) continue;
         if (maxLetters === null || code > maxLetters) maxLetters = code;
       }
       groupCode = nextLetters(maxLetters);
