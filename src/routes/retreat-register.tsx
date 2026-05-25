@@ -146,7 +146,7 @@ function RetreatRegisterPage() {
       </header>
       <main className="container mx-auto px-6 py-10">
         <div className="grid gap-8 lg:grid-cols-2 items-start max-w-6xl mx-auto">
-        <form onSubmit={handleSubmit} className="bg-card border border-border/50 rounded-2xl p-6 space-y-5 order-2 lg:order-1">
+        <form onSubmit={handleSubmit} className="bg-card border border-border/50 rounded-2xl p-6 space-y-5 order-1 lg:order-1">
           <h1 className="font-serif text-2xl mb-1">2026 基督之家联合退修会</h1>
           <p className="text-sm text-muted-foreground mb-2">
             The Home of Christ Church Joint Retreat — Registration Form
@@ -250,7 +250,7 @@ function RetreatRegisterPage() {
             {submitting ? "提交中…" : "提交登记 · Submit"}
           </Button>
         </form>
-        <aside className="order-1 lg:order-2 space-y-5 lg:sticky lg:top-6">
+        <aside className="order-2 lg:order-2 space-y-5 lg:sticky lg:top-6">
           {/* 1 — 标题 */}
           <div className="bg-card border border-border/50 rounded-2xl p-6">
             <h2 className="font-serif text-2xl text-center leading-tight">2026 基督之家联合退修会</h2>
