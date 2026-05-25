@@ -2643,6 +2643,8 @@ img{width:480px;height:480px;}@media print{@page{margin:1cm;}}</style></head>
           <div className="grid lg:grid-cols-2 gap-6">
             {(["spring","fall"] as const).map((season) => {
               const cfg = KIDS_TRACKS[season];
+              const titleKey = `${cfg.key}_title`;
+              const title = appSettings[titleKey] || cfg.title;
               const rows = kidsRows.filter((r) => r.track === cfg.key);
               const exportKids = () => {
                 if (rows.length === 0) return toast.error("无数据可导出");
@@ -2656,7 +2658,7 @@ img{width:480px;height:480px;}@media print{@page{margin:1cm;}}</style></head>
                 ws["!cols"] = [{ wch: 6 }, { wch: 18 }, { wch: 18 }, { wch: 20 }];
                 const wb = XLSX.utils.book_new();
                 XLSX.utils.book_append_sheet(wb, ws, "儿童主日学");
-                XLSX.writeFile(wb, `${cfg.title}_${new Date().toISOString().slice(0,10)}.xlsx`);
+                XLSX.writeFile(wb, `${title}_${new Date().toISOString().slice(0,10)}.xlsx`);
                 toast.success(`已导出 ${data.length} 条`);
               };
               const importKids = async (file: File) => {
@@ -2693,12 +2695,12 @@ img{width:480px;height:480px;}@media print{@page{margin:1cm;}}</style></head>
                 }
               };
               const printKids = () => {
-                const html = `<!doctype html><html><head><meta charset="utf-8"><title>${cfg.title}</title>
+                const html = `<!doctype html><html><head><meta charset="utf-8"><title>${title}</title>
 <style>body{font-family:system-ui,-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;padding:24px;}
 h1{font-size:20px;margin:0 0 16px;}table{width:100%;border-collapse:collapse;}
 th,td{border:1px solid #888;padding:8px 10px;text-align:left;font-size:14px;}
 th{background:#f4f4f5;}</style></head><body>
-<h1>${cfg.title}</h1>
+<h1>${title}</h1>
 <table><thead><tr><th style="width:60px">序号</th><th>班级</th><th>老师</th><th>地点</th></tr></thead>
 <tbody>${rows.map((r,i)=>`<tr><td>${i+1}</td><td>${r.class_name??""}</td><td>${r.teacher_name??""}</td><td>${r.class_location??""}</td></tr>`).join("")}
 ${rows.length===0?'<tr><td colspan="4" style="text-align:center;color:#888;padding:24px">暂无数据</td></tr>':""}
@@ -2711,7 +2713,17 @@ ${rows.length===0?'<tr><td colspan="4" style="text-align:center;color:#888;paddi
               };
               return (
                 <div key={season} className="border border-border/50 rounded-xl p-4">
-                  <h3 className="font-serif text-lg mb-3">{cfg.title}</h3>
+                  <div className="flex items-center justify-between mb-3 gap-2">
+                    <h3 className="font-serif text-lg">{title}</h3>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="text-muted-foreground hover:text-foreground h-7 px-2"
+                      onClick={() => { setKidsNewTeacher(""); setKidsSettingsSeason(season); }}
+                    >
+                      ⚙ 设置
+                    </Button>
+                  </div>
                   <div className="overflow-x-auto rounded-lg border border-border/50 mb-3">
                     <table className="w-full text-sm">
                       <thead className="bg-muted/80">
@@ -2741,6 +2753,7 @@ ${rows.length===0?'<tr><td colspan="4" style="text-align:center;color:#888;paddi
                               <Input
                                 defaultValue={r.teacher_name ?? ""}
                                 className="h-8"
+                                list={`kids-teachers-${season}`}
                                 onBlur={async (e) => {
                                   const v = e.target.value;
                                   if (v === (r.teacher_name ?? "")) return;
@@ -2778,6 +2791,11 @@ ${rows.length===0?'<tr><td colspan="4" style="text-align:center;color:#888;paddi
                         )}
                       </tbody>
                     </table>
+                    <datalist id={`kids-teachers-${season}`}>
+                      {sundayTeachers.filter((t) => t.is_active).map((t) => (
+                        <option key={t.id} value={t.name} />
+                      ))}
+                    </datalist>
                   </div>
                   <div className="flex flex-wrap gap-2">
                     <Button
@@ -2791,7 +2809,7 @@ ${rows.length===0?'<tr><td colspan="4" style="text-align:center;color:#888;paddi
                         loadKidsRows();
                       }}
                     >
-                      + 添加同工
+                      + 添加课程
                     </Button>
                     <Button size="sm" variant="outline" onClick={exportKids}>导出 Excel</Button>
                     <label className="inline-flex">
