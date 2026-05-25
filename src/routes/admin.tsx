@@ -209,6 +209,10 @@ function AdminPage() {
   const [dutySchedules, setDutySchedules] = useState<DutySchedule[]>([]);
   const [dutyPersonnelOpen, setDutyPersonnelOpen] = useState(false);
   const [newDutyPersonName, setNewDutyPersonName] = useState("");
+  // Sunday school teachers
+  const [sundayTeachers, setSundayTeachers] = useState<SundayTeacher[]>([]);
+  const [newTeacherName, setNewTeacherName] = useState("");
+  const [courseSettingsTab, setCourseSettingsTab] = useState<"courses" | "teachers">("courses");
   const [editingFollowUpId, setEditingFollowUpId] = useState<string | null>(null);
   const [followUpDraft, setFollowUpDraft] = useState("");
   const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
