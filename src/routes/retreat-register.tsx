@@ -1,12 +1,13 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { useServerFn } from "@tanstack/react-start";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import logo from "@/assets/logo.png";
+import { submitRetreatRegistration } from "@/lib/retreat.functions";
 
 export const Route = createFileRoute("/retreat-register")({
   component: RetreatRegisterPage,
@@ -60,58 +61,91 @@ function BiLabel({ cn, en, required }: { cn: string; en: string; required?: bool
 
 function RetreatRegisterPage() {
   const [submitting, setSubmitting] = useState(false);
-  const [done, setDone] = useState<{ verse: { text: string; ref: string } } | null>(null);
-  const [form, setForm] = useState({
-    church: "hoc3",
-    chinese_name: "",
-    last_name: "",
-    first_name: "",
-    gender: "",
-    cell: "",
-    email: "",
-    program: "",
-    topic: "",
-    bed: "",
-    can_pickup: "",
-    need_pickup: "",
-    user_notes: "",
+  const [done, setDone] = useState<{ verse: { text: string; ref: string }; numbers: string[] } | null>(null);
+  const submit = useServerFn(submitRetreatRegistration);
+
+  type Person = {
+    chinese_name: string;
+    last_name: string;
+    first_name: string;
+    gender: string;
+    cell: string;
+    email: string;
+    program: string;
+    topic: string;
+    bed: string;
+    user_notes: string;
+  };
+  const blankPerson = (): Person => ({
+    chinese_name: "", last_name: "", first_name: "", gender: "",
+    cell: "", email: "", program: "", topic: "", bed: "", user_notes: "",
   });
 
-  function set<K extends keyof typeof form>(k: K, v: (typeof form)[K]) {
-    setForm((f) => ({ ...f, [k]: v }));
-  }
+  const [shared, setShared] = useState({
+    church: "hoc3",
+    can_pickup: "",
+    need_pickup: "",
+  });
+  const [main, setMain] = useState<Person>(blankPerson());
+  const [companions, setCompanions] = useState<Person[]>([]);
+
+  const updatePerson = (
+    setter: (p: Person) => void,
+    current: Person,
+  ) => <K extends keyof Person>(k: K, v: Person[K]) => setter({ ...current, [k]: v });
+
+  const updateCompanion = (idx: number, patch: Partial<Person>) => {
+    setCompanions((arr) => arr.map((p, i) => (i === idx ? { ...p, ...patch } : p)));
+  };
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!form.chinese_name.trim()) {
+    if (!main.chinese_name.trim()) {
       toast.error("请填写中文姓名 / Please enter Chinese name");
       return;
     }
-    setSubmitting(true);
-    const needPickup = parseInt(form.need_pickup || "0", 10) || 0;
-    const canPickup = parseInt(form.can_pickup || "0", 10) || 0;
-    const { error } = await supabase.from("retreat_registrations").insert({
-      church: form.church || null,
-      chinese_name: form.chinese_name.trim(),
-      last_name: form.last_name.trim() || null,
-      first_name: form.first_name.trim() || null,
-      gender: form.gender || null,
-      cell: form.cell.trim() || null,
-      email: form.email.trim() || null,
-      program: form.program || null,
-      topic: form.topic || null,
-      bed: form.bed || null,
-      can_pickup: canPickup || null,
-      need_pickup: needPickup || null,
-      bus: needPickup > 0 ? "Y" : "N",
-      user_notes: form.user_notes.trim() || null,
-    });
-    setSubmitting(false);
-    if (error) {
-      toast.error(error.message);
-      return;
+    for (let i = 0; i < companions.length; i++) {
+      if (!companions[i].chinese_name.trim()) {
+        toast.error(`随行人 #${i + 1} 请填写中文姓名`);
+        return;
+      }
     }
-    setDone({ verse: pickVerse() });
+    setSubmitting(true);
+    try {
+      const toPayload = (p: Person) => ({
+        chinese_name: p.chinese_name.trim(),
+        last_name: p.last_name.trim() || null,
+        first_name: p.first_name.trim() || null,
+        gender: p.gender || null,
+        cell: p.cell.trim() || null,
+        email: p.email.trim() || null,
+        program: p.program || null,
+        topic: p.topic || null,
+        bed: p.bed || null,
+        user_notes: p.user_notes.trim() || null,
+      });
+      const res = await submit({
+        data: {
+          church: shared.church || null,
+          can_pickup: parseInt(shared.can_pickup || "0", 10) || null,
+          need_pickup: parseInt(shared.need_pickup || "0", 10) || null,
+          main: toPayload(main),
+          companions: companions.map(toPayload),
+        },
+      });
+      setDone({ verse: pickVerse(), numbers: res.confirmation_numbers });
+    } catch (err) {
+      toast.error((err as Error).message);
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  function resetAll() {
+    setShared({ church: "hoc3", can_pickup: "", need_pickup: "" });
+    setMain(blankPerson());
+    setCompanions([]);
+    setDone(null);
   }
 
   if (done) {
@@ -123,6 +157,14 @@ function RetreatRegisterPage() {
           <p className="text-sm text-muted-foreground mb-6">
             愿主赐福你 · May the Lord bless you
           </p>
+          {done.numbers.length > 0 && (
+            <div className="mb-6 bg-muted/40 border border-border/50 rounded-xl p-4 text-left">
+              <p className="text-xs uppercase tracking-wider text-muted-foreground mb-2">Confirmation #</p>
+              <ul className="font-mono text-sm space-y-1">
+                {done.numbers.map((n) => <li key={n}>{n}</li>)}
+              </ul>
+            </div>
+          )}
           <blockquote className="border-l-4 border-primary/60 pl-4 text-left italic text-foreground/90 leading-relaxed mb-6">
             「{done.verse.text}」
             <div className="mt-1 text-sm text-muted-foreground not-italic">— {done.verse.ref}</div>
@@ -131,7 +173,7 @@ function RetreatRegisterPage() {
             <Link to="/retreat">
               <Button variant="outline">返回</Button>
             </Link>
-            <Button onClick={() => { setDone(null); setForm({ church: "hoc3", chinese_name: "", last_name: "", first_name: "", gender: "", cell: "", email: "", program: "", topic: "", bed: "", can_pickup: "", need_pickup: "", user_notes: "" }); }}>
+            <Button onClick={resetAll}>
               再次登记
             </Button>
           </div>
