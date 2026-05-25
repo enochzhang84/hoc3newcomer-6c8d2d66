@@ -262,6 +262,9 @@ function AdminPage() {
   const [contactsOpen, setContactsOpen] = useState(false);
   const [contactSearch, setContactSearch] = useState("");
   const [contactForm, setContactForm] = useState<Partial<Contact> | null>(null);
+  // Kids Sunday School settings dialog
+  const [kidsSettingsSeason, setKidsSettingsSeason] = useState<"spring" | "fall" | null>(null);
+  const [kidsNewTeacher, setKidsNewTeacher] = useState("");
   // App settings (editable titles)
   const [appSettings, setAppSettings] = useState<Record<string, string>>({});
   // Kids Sunday School
@@ -2640,6 +2643,8 @@ img{width:480px;height:480px;}@media print{@page{margin:1cm;}}</style></head>
           <div className="grid lg:grid-cols-2 gap-6">
             {(["spring","fall"] as const).map((season) => {
               const cfg = KIDS_TRACKS[season];
+              const titleKey = `${cfg.key}_title`;
+              const title = appSettings[titleKey] || cfg.title;
               const rows = kidsRows.filter((r) => r.track === cfg.key);
               const exportKids = () => {
                 if (rows.length === 0) return toast.error("无数据可导出");
@@ -2653,7 +2658,7 @@ img{width:480px;height:480px;}@media print{@page{margin:1cm;}}</style></head>
                 ws["!cols"] = [{ wch: 6 }, { wch: 18 }, { wch: 18 }, { wch: 20 }];
                 const wb = XLSX.utils.book_new();
                 XLSX.utils.book_append_sheet(wb, ws, "儿童主日学");
-                XLSX.writeFile(wb, `${cfg.title}_${new Date().toISOString().slice(0,10)}.xlsx`);
+                XLSX.writeFile(wb, `${title}_${new Date().toISOString().slice(0,10)}.xlsx`);
                 toast.success(`已导出 ${data.length} 条`);
               };
               const importKids = async (file: File) => {
@@ -2690,12 +2695,12 @@ img{width:480px;height:480px;}@media print{@page{margin:1cm;}}</style></head>
                 }
               };
               const printKids = () => {
-                const html = `<!doctype html><html><head><meta charset="utf-8"><title>${cfg.title}</title>
+                const html = `<!doctype html><html><head><meta charset="utf-8"><title>${title}</title>
 <style>body{font-family:system-ui,-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;padding:24px;}
 h1{font-size:20px;margin:0 0 16px;}table{width:100%;border-collapse:collapse;}
 th,td{border:1px solid #888;padding:8px 10px;text-align:left;font-size:14px;}
 th{background:#f4f4f5;}</style></head><body>
-<h1>${cfg.title}</h1>
+<h1>${title}</h1>
 <table><thead><tr><th style="width:60px">序号</th><th>班级</th><th>老师</th><th>地点</th></tr></thead>
 <tbody>${rows.map((r,i)=>`<tr><td>${i+1}</td><td>${r.class_name??""}</td><td>${r.teacher_name??""}</td><td>${r.class_location??""}</td></tr>`).join("")}
 ${rows.length===0?'<tr><td colspan="4" style="text-align:center;color:#888;padding:24px">暂无数据</td></tr>':""}
@@ -2708,7 +2713,17 @@ ${rows.length===0?'<tr><td colspan="4" style="text-align:center;color:#888;paddi
               };
               return (
                 <div key={season} className="border border-border/50 rounded-xl p-4">
-                  <h3 className="font-serif text-lg mb-3">{cfg.title}</h3>
+                  <div className="flex items-center justify-between mb-3 gap-2">
+                    <h3 className="font-serif text-lg">{title}</h3>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="text-muted-foreground hover:text-foreground h-7 px-2"
+                      onClick={() => { setKidsNewTeacher(""); setKidsSettingsSeason(season); }}
+                    >
+                      ⚙ 设置
+                    </Button>
+                  </div>
                   <div className="overflow-x-auto rounded-lg border border-border/50 mb-3">
                     <table className="w-full text-sm">
                       <thead className="bg-muted/80">
@@ -2738,6 +2753,7 @@ ${rows.length===0?'<tr><td colspan="4" style="text-align:center;color:#888;paddi
                               <Input
                                 defaultValue={r.teacher_name ?? ""}
                                 className="h-8"
+                                list={`kids-teachers-${season}`}
                                 onBlur={async (e) => {
                                   const v = e.target.value;
                                   if (v === (r.teacher_name ?? "")) return;
@@ -2775,6 +2791,11 @@ ${rows.length===0?'<tr><td colspan="4" style="text-align:center;color:#888;paddi
                         )}
                       </tbody>
                     </table>
+                    <datalist id={`kids-teachers-${season}`}>
+                      {sundayTeachers.filter((t) => t.is_active).map((t) => (
+                        <option key={t.id} value={t.name} />
+                      ))}
+                    </datalist>
                   </div>
                   <div className="flex flex-wrap gap-2">
                     <Button
@@ -2788,7 +2809,7 @@ ${rows.length===0?'<tr><td colspan="4" style="text-align:center;color:#888;paddi
                         loadKidsRows();
                       }}
                     >
-                      + 添加同工
+                      + 添加课程
                     </Button>
                     <Button size="sm" variant="outline" onClick={exportKids}>导出 Excel</Button>
                     <label className="inline-flex">
@@ -3441,10 +3462,17 @@ ${rows.length===0?'<tr><td colspan="4" style="text-align:center;color:#888;paddi
         </Dialog>
 
         <Dialog open={contactsOpen} onOpenChange={setContactsOpen}>
-          <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>通讯录 ({contacts.length})</DialogTitle>
+          <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto p-0 gap-0 bg-card">
+            <DialogHeader className="px-6 pt-6 pb-4 border-b border-border/60 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent rounded-t-lg">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-full bg-primary/15 flex items-center justify-center text-primary text-lg">📖</div>
+                <div className="flex flex-col">
+                  <DialogTitle className="font-serif text-xl tracking-wide">基督三家通讯录</DialogTitle>
+                  <p className="text-xs text-muted-foreground mt-0.5">Home of Christ · Address Book · 共 {contacts.length} 位</p>
+                </div>
+              </div>
             </DialogHeader>
+          <div className="px-6 py-5">
             <div className="space-y-4">
               <div className="flex flex-wrap gap-2 items-center">
                 <Input
@@ -3650,6 +3678,106 @@ ${rows.length===0?'<tr><td colspan="4" style="text-align:center;color:#888;paddi
                 </table>
               </div>
             </div>
+          </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Kids Sunday School Settings Dialog */}
+        <Dialog open={kidsSettingsSeason !== null} onOpenChange={(o) => { if (!o) setKidsSettingsSeason(null); }}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>
+                {kidsSettingsSeason ? `设置 · ${appSettings[`${KIDS_TRACKS[kidsSettingsSeason].key}_title`] || KIDS_TRACKS[kidsSettingsSeason].title}` : "设置"}
+              </DialogTitle>
+            </DialogHeader>
+            {kidsSettingsSeason && (
+              <div className="space-y-5 py-2">
+                <div className="space-y-2">
+                  <Label className="text-xs">板块名称</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      key={`${kidsSettingsSeason}-${appSettings[`${KIDS_TRACKS[kidsSettingsSeason].key}_title`] ?? ""}`}
+                      defaultValue={appSettings[`${KIDS_TRACKS[kidsSettingsSeason].key}_title`] || KIDS_TRACKS[kidsSettingsSeason].title}
+                      onBlur={async (e) => {
+                        const key = `${KIDS_TRACKS[kidsSettingsSeason].key}_title`;
+                        const v = e.target.value.trim();
+                        if (!v) return;
+                        if (v === (appSettings[key] || KIDS_TRACKS[kidsSettingsSeason].title)) return;
+                        const { error } = await (supabase as any)
+                          .from("app_settings")
+                          .upsert({ key, value: v, updated_at: new Date().toISOString() });
+                        if (error) return toast.error(error.message);
+                        toast.success("已保存名称");
+                        loadAppSettings();
+                      }}
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground">失焦后自动保存。</p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-xs">添加同工 (老师列表)</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      value={kidsNewTeacher}
+                      placeholder="输入同工姓名"
+                      onChange={(e) => setKidsNewTeacher(e.target.value)}
+                      onKeyDown={async (e) => {
+                        if (e.key !== "Enter") return;
+                        const name = kidsNewTeacher.trim();
+                        if (!name) return;
+                        const next = (sundayTeachers[sundayTeachers.length - 1]?.sort_order ?? 0) + 1;
+                        const { error } = await (supabase as any)
+                          .from("sunday_school_teachers")
+                          .insert({ name, sort_order: next, is_active: true });
+                        if (error) return toast.error(error.message);
+                        toast.success("已添加");
+                        setKidsNewTeacher("");
+                        loadSundayTeachers();
+                      }}
+                    />
+                    <Button
+                      size="sm"
+                      onClick={async () => {
+                        const name = kidsNewTeacher.trim();
+                        if (!name) return toast.error("请输入姓名");
+                        const next = (sundayTeachers[sundayTeachers.length - 1]?.sort_order ?? 0) + 1;
+                        const { error } = await (supabase as any)
+                          .from("sunday_school_teachers")
+                          .insert({ name, sort_order: next, is_active: true });
+                        if (error) return toast.error(error.message);
+                        toast.success("已添加");
+                        setKidsNewTeacher("");
+                        loadSundayTeachers();
+                      }}
+                    >
+                      添加
+                    </Button>
+                  </div>
+                  {sundayTeachers.length > 0 && (
+                    <div className="flex flex-wrap gap-2 pt-2">
+                      {sundayTeachers.filter((t) => t.is_active).map((t) => (
+                        <span key={t.id} className="inline-flex items-center gap-1 text-xs bg-muted rounded-full px-2.5 py-1">
+                          {t.name}
+                          <button
+                            className="text-muted-foreground hover:text-destructive ml-0.5"
+                            onClick={async () => {
+                              if (!confirm(`移除同工「${t.name}」?`)) return;
+                              await (supabase as any).from("sunday_school_teachers").delete().eq("id", t.id);
+                              loadSundayTeachers();
+                            }}
+                          >×</button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  <p className="text-xs text-muted-foreground">同工姓名将出现在课程「老师」列的下拉建议中。</p>
+                </div>
+              </div>
+            )}
+            <DialogFooter>
+              <Button variant="outline" size="sm" onClick={() => setKidsSettingsSeason(null)}>完成</Button>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
 
@@ -4157,6 +4285,8 @@ function QrLibrary({ publicBase, events }: { publicBase: string; events: Event[]
     },
     { key: "retreat", label: "退修会登记", url: `${publicBase}/retreat` },
     { key: "sunday", label: "成人主日学签到", url: `${publicBase}/sunday-checkin` },
+    { key: "adult-summer", label: "暑期成人主日学 · 扫码签到", url: `${publicBase}/adult-checkin/summer` },
+    { key: "adult-fall", label: "秋季成人主日学 · 扫码签到", url: `${publicBase}/adult-checkin/fall` },
     { key: "serve", label: "服侍申请", url: `${publicBase}/serve-apply` },
     { key: "fellowship", label: "团契 / 小组聚会签到", url: `${publicBase}/fellowship-checkin` },
     { key: "feedback", label: "问题反馈", url: `${publicBase}/feedback` },

@@ -263,15 +263,7 @@ function RetreatRegisterPage() {
           <p className="text-sm text-muted-foreground mb-6">
             愿主赐福你 · May the Lord bless you
           </p>
-          {done.numbers.length > 0 && (
-            <div className="mb-6 bg-muted/40 border border-border/50 rounded-xl p-4 text-left">
-              <p className="text-xs uppercase tracking-wider text-muted-foreground mb-2">Confirmation #</p>
-              <ul className="font-mono text-sm space-y-1">
-                {done.numbers.map((n) => <li key={n}>{n}</li>)}
-              </ul>
-            </div>
-          )}
-          <blockquote className="border-l-4 border-primary/60 pl-4 text-left italic text-foreground/90 leading-relaxed mb-6">
+          <blockquote className="pl-4 text-left italic text-foreground/90 leading-relaxed mb-6">
             「{done.verse.text}」
             <div className="mt-1 text-sm text-muted-foreground not-italic">— {done.verse.ref}</div>
           </blockquote>
