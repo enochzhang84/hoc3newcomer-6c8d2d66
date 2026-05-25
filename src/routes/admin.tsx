@@ -1698,7 +1698,8 @@ function AdminPage() {
                     <th className="py-2 px-2">城市/邮编</th>
                     <th className="py-2 px-2">信仰</th>
                     <th className="py-2 px-2">婚姻</th>
-                    <th className="py-2 px-2">来到方式</th>
+                    <th className="py-2 px-2">介绍</th>
+                    <th className="py-2 px-2">来源</th>
                     <th className="py-2 px-2">标记</th>
                     <th className="py-2 px-2">跟进人</th>
                     <th></th>
@@ -1746,6 +1747,9 @@ function AdminPage() {
                       </td>
                       <td className="py-2 px-2">
                         {formatReferrer(r) || "—"}
+                      </td>
+                      <td className="py-2 px-2">
+                        {formatSourceChannel(r) || "—"}
                       </td>
                       <td className="py-2 px-2 space-x-1 whitespace-nowrap">
                         {r.wants_visit && <Tag>欢迎探访</Tag>}
