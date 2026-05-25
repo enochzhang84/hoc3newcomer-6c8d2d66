@@ -439,6 +439,32 @@ function AdminPage() {
     setDutySchedules((data ?? []) as DutySchedule[]);
   }, []);
 
+  const loadContacts = useCallback(async () => {
+    const { data } = await (supabase as any)
+      .from("contacts")
+      .select("*")
+      .order("name", { ascending: true });
+    setContacts((data ?? []) as Contact[]);
+  }, []);
+
+  const loadAppSettings = useCallback(async () => {
+    const { data } = await (supabase as any).from("app_settings").select("key,value");
+    const map: Record<string, string> = {};
+    for (const row of (data ?? []) as { key: string; value: string | null }[]) {
+      if (row.value != null) map[row.key] = row.value;
+    }
+    setAppSettings(map);
+  }, []);
+
+  const loadKidsRows = useCallback(async () => {
+    const { data } = await (supabase as any)
+      .from("sunday_class_schedule")
+      .select("*")
+      .in("track", [KIDS_TRACKS.spring.key, KIDS_TRACKS.fall.key])
+      .order("sort_order", { ascending: true });
+    setKidsRows((data ?? []) as KidsRow[]);
+  }, []);
+
   const loadSundayTeachers = useCallback(async () => {
     const { data } = await (supabase as any)
       .from("sunday_school_teachers")
