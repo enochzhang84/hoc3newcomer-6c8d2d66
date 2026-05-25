@@ -1761,6 +1761,7 @@ function AdminPage() {
           </div>
         </section>
 
+        <div className="grid lg:grid-cols-2 gap-6">
         {(["sunday","summer"] as const).map((kind) => {
           const title = kind === "sunday" ? "主日崇拜轮值表" : "暑期主日学轮值表";
           const pptLabel = kind === "sunday" ? "主日PPT" : "暑期PPT";
@@ -1866,6 +1867,7 @@ function AdminPage() {
             </section>
           );
         })}
+        </div>
             </TabsContent>
 
             <TabsContent value="kitchen" className="space-y-8 mt-0">
