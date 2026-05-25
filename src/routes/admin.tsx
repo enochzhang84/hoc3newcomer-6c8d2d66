@@ -2049,13 +2049,6 @@ function AdminPage() {
                 <div className="flex items-center gap-1">
                   <Button
                     size="sm"
-                    variant="outline"
-                    onClick={() => window.open("/sunday-schedule", "_blank", "noopener,noreferrer")}
-                  >
-                    课程表
-                  </Button>
-                  <Button
-                    size="sm"
                     variant="ghost"
                     className="text-muted-foreground hover:text-foreground"
                     onClick={() => setCoursesOpen(true)}
@@ -2067,11 +2060,27 @@ function AdminPage() {
               {courses.length === 0 ? (
                 <p className="text-sm text-muted-foreground">暂无课程，请点击右上角「设置」添加。</p>
               ) : (
-                <ul className="text-sm space-y-1">
+                <ul className="text-sm space-y-1.5">
                   {courses.filter((c) => c.is_active).map((c) => (
-                    <li key={c.id} className="flex items-center gap-2">
-                      <span className="text-muted-foreground">·</span>
-                      <span>{c.name}</span>
+                    <li key={c.id} className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="text-muted-foreground">·</span>
+                        <span className="truncate">{c.name}</span>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-7 px-2 text-xs shrink-0"
+                        onClick={() =>
+                          window.open(
+                            `/sunday-schedule?courseId=${c.id}&courseName=${encodeURIComponent(c.name)}`,
+                            "_blank",
+                            "noopener,noreferrer",
+                          )
+                        }
+                      >
+                        课程表
+                      </Button>
                     </li>
                   ))}
                 </ul>
