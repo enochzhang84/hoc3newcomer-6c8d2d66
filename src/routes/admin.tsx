@@ -3462,10 +3462,17 @@ ${rows.length===0?'<tr><td colspan="4" style="text-align:center;color:#888;paddi
         </Dialog>
 
         <Dialog open={contactsOpen} onOpenChange={setContactsOpen}>
-          <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>通讯录 ({contacts.length})</DialogTitle>
+          <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto p-0 gap-0 bg-card">
+            <DialogHeader className="px-6 pt-6 pb-4 border-b border-border/60 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent rounded-t-lg">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-full bg-primary/15 flex items-center justify-center text-primary text-lg">📖</div>
+                <div className="flex flex-col">
+                  <DialogTitle className="font-serif text-xl tracking-wide">基督三家通讯录</DialogTitle>
+                  <p className="text-xs text-muted-foreground mt-0.5">Home of Christ · Address Book · 共 {contacts.length} 位</p>
+                </div>
+              </div>
             </DialogHeader>
+          <div className="px-6 py-5">
             <div className="space-y-4">
               <div className="flex flex-wrap gap-2 items-center">
                 <Input
