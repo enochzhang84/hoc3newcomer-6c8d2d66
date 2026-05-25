@@ -2602,10 +2602,136 @@ function AdminPage() {
         </Dialog>
 
         {/* Edit Dialog */}
-        <Dialog open={editOpen} onOpenChange={setEditOpen}>
-
+        <Dialog open={mealTypesOpen} onOpenChange={setMealTypesOpen}>
+          <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>饭食种类设置</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="flex gap-2">
+                <Input
+                  placeholder="新种类名称"
+                  value={newMealTypeName}
+                  onChange={(e) => setNewMealTypeName(e.target.value)}
+                />
+                <Button
+                  onClick={async () => {
+                    const name = newMealTypeName.trim();
+                    if (!name) return toast.error("请输入名称");
+                    const next = (mealTypes[mealTypes.length - 1]?.sort_order ?? 0) + 1;
+                    const { error } = await (supabase as any).from("meal_types").insert({ name, sort_order: next });
+                    if (error) return toast.error(error.message);
+                    setNewMealTypeName(""); toast.success("已添加"); loadMealTypes();
+                  }}
+                >添加</Button>
+              </div>
+              <div className="space-y-2">
+                {mealTypes.length === 0 && (
+                  <p className="text-sm text-muted-foreground text-center py-6">暂无种类</p>
+                )}
+                {mealTypes.map((m) => (
+                  <div key={m.id} className="flex items-center gap-2 border border-border/50 rounded-md px-3 py-2">
+                    <Input
+                      defaultValue={m.name}
+                      onBlur={async (e) => {
+                        const v = e.target.value.trim();
+                        if (!v || v === m.name) return;
+                        await (supabase as any).from("meal_types").update({ name: v }).eq("id", m.id);
+                        toast.success("已更新"); loadMealTypes();
+                      }}
+                      className="flex-1"
+                    />
+                    <label className="flex items-center gap-1 text-xs text-muted-foreground whitespace-nowrap">
+                      <input
+                        type="checkbox"
+                        checked={m.is_active}
+                        onChange={async (e) => {
+                          await (supabase as any).from("meal_types").update({ is_active: e.target.checked }).eq("id", m.id);
+                          loadMealTypes();
+                        }}
+                      /> 启用
+                    </label>
+                    <Button
+                      size="sm" variant="ghost" className="text-destructive"
+                      onClick={async () => {
+                        if (!confirm(`删除「${m.name}」?`)) return;
+                        await (supabase as any).from("meal_types").delete().eq("id", m.id);
+                        toast.success("已删除"); loadMealTypes();
+                      }}
+                    >删除</Button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </DialogContent>
         </Dialog>
-        {/* placeholder removed below */}
+
+        <Dialog open={dutyPersonnelOpen} onOpenChange={setDutyPersonnelOpen}>
+          <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>轮值人员设置</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="flex gap-2">
+                <Input
+                  placeholder="新人员姓名"
+                  value={newDutyPersonName}
+                  onChange={(e) => setNewDutyPersonName(e.target.value)}
+                />
+                <Button
+                  onClick={async () => {
+                    const name = newDutyPersonName.trim();
+                    if (!name) return toast.error("请输入姓名");
+                    const next = (dutyPersonnel[dutyPersonnel.length - 1]?.sort_order ?? 0) + 1;
+                    const { error } = await (supabase as any).from("duty_personnel").insert({ name, sort_order: next });
+                    if (error) return toast.error(error.message);
+                    setNewDutyPersonName(""); toast.success("已添加"); loadDutyPersonnel();
+                  }}
+                >添加</Button>
+              </div>
+              <div className="space-y-2">
+                {dutyPersonnel.length === 0 && (
+                  <p className="text-sm text-muted-foreground text-center py-6">暂无人员</p>
+                )}
+                {dutyPersonnel.map((p) => (
+                  <div key={p.id} className="flex items-center gap-2 border border-border/50 rounded-md px-3 py-2">
+                    <Input
+                      defaultValue={p.name}
+                      onBlur={async (e) => {
+                        const v = e.target.value.trim();
+                        if (!v || v === p.name) return;
+                        await (supabase as any).from("duty_personnel").update({ name: v }).eq("id", p.id);
+                        toast.success("已更新"); loadDutyPersonnel();
+                      }}
+                      className="flex-1"
+                    />
+                    <label className="flex items-center gap-1 text-xs text-muted-foreground whitespace-nowrap">
+                      <input
+                        type="checkbox"
+                        checked={p.is_active}
+                        onChange={async (e) => {
+                          await (supabase as any).from("duty_personnel").update({ is_active: e.target.checked }).eq("id", p.id);
+                          loadDutyPersonnel();
+                        }}
+                      /> 启用
+                    </label>
+                    <Button
+                      size="sm" variant="ghost" className="text-destructive"
+                      onClick={async () => {
+                        if (!confirm(`删除「${p.name}」?`)) return;
+                        await (supabase as any).from("duty_personnel").delete().eq("id", p.id);
+                        toast.success("已删除"); loadDutyPersonnel();
+                      }}
+                    >删除</Button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Edit Dialog */}
+        <Dialog open={editOpen} onOpenChange={setEditOpen}>
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>编辑登记</DialogTitle>
