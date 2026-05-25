@@ -346,6 +346,16 @@ function RetreatAdminPage() {
                 </select>
               </div>
             </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>可接送 (位)</Label>
+                <Input type="number" min={0} value={form.can_pickup} onChange={(e) => setForm({ ...form, can_pickup: e.target.value })} className="mt-1" placeholder="0" />
+              </div>
+              <div>
+                <Label>需接送 (位)</Label>
+                <Input type="number" min={0} value={form.need_pickup} onChange={(e) => setForm({ ...form, need_pickup: e.target.value })} className="mt-1" placeholder="0" />
+              </div>
+            </div>
             <div>
               <Label>备注</Label>
               <Textarea value={form.user_notes} onChange={(e) => setForm({ ...form, user_notes: e.target.value })} rows={2} className="mt-1" />
