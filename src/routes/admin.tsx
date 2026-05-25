@@ -2633,6 +2633,179 @@ img{width:480px;height:480px;}@media print{@page{margin:1cm;}}</style></head>
             </section>
           );
         })}
+
+        {/* 儿童主日学 */}
+        <section className="bg-card border border-border/50 rounded-2xl p-6">
+          <h2 className="font-serif text-2xl mb-4">儿童主日学</h2>
+          <div className="grid lg:grid-cols-2 gap-6">
+            {(["spring","fall"] as const).map((season) => {
+              const cfg = KIDS_TRACKS[season];
+              const rows = kidsRows.filter((r) => r.track === cfg.key);
+              const exportKids = () => {
+                if (rows.length === 0) return toast.error("无数据可导出");
+                const data = rows.map((r, i) => ({
+                  "序号": i + 1,
+                  "班级": r.class_name ?? "",
+                  "老师": r.teacher_name ?? "",
+                  "地点": r.class_location ?? "",
+                }));
+                const ws = XLSX.utils.json_to_sheet(data);
+                ws["!cols"] = [{ wch: 6 }, { wch: 18 }, { wch: 18 }, { wch: 20 }];
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, "儿童主日学");
+                XLSX.writeFile(wb, `${cfg.title}_${new Date().toISOString().slice(0,10)}.xlsx`);
+                toast.success(`已导出 ${data.length} 条`);
+              };
+              const importKids = async (file: File) => {
+                try {
+                  const buf = await file.arrayBuffer();
+                  const wb = XLSX.read(buf, { type: "array" });
+                  const ws = wb.Sheets[wb.SheetNames[0]];
+                  const json = XLSX.utils.sheet_to_json<Record<string, unknown>>(ws, { defval: "" });
+                  if (json.length === 0) return toast.error("文件为空");
+                  const baseOrder = rows[rows.length - 1]?.sort_order ?? 0;
+                  const inserts = json.map((r, idx) => {
+                    const get = (keys: string[]) => {
+                      for (const k of keys) {
+                        if (r[k] !== undefined && String(r[k]).trim() !== "") return String(r[k]).trim();
+                      }
+                      return null;
+                    };
+                    return {
+                      track: cfg.key,
+                      slot_time: "",
+                      class_name: get(["班级", "class", "class_name"]),
+                      teacher_name: get(["老师", "teacher", "teacher_name"]),
+                      class_location: get(["地点", "location", "class_location"]),
+                      sort_order: baseOrder + idx + 1,
+                    };
+                  }).filter((r) => r.class_name || r.teacher_name || r.class_location);
+                  if (inserts.length === 0) return toast.error("未识别到有效数据");
+                  const { error } = await (supabase as any).from("sunday_class_schedule").insert(inserts);
+                  if (error) return toast.error(error.message);
+                  toast.success(`已导入 ${inserts.length} 条`);
+                  loadKidsRows();
+                } catch (err) {
+                  toast.error("导入失败: " + (err as Error).message);
+                }
+              };
+              const printKids = () => {
+                const html = `<!doctype html><html><head><meta charset="utf-8"><title>${cfg.title}</title>
+<style>body{font-family:system-ui,-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;padding:24px;}
+h1{font-size:20px;margin:0 0 16px;}table{width:100%;border-collapse:collapse;}
+th,td{border:1px solid #888;padding:8px 10px;text-align:left;font-size:14px;}
+th{background:#f4f4f5;}</style></head><body>
+<h1>${cfg.title}</h1>
+<table><thead><tr><th style="width:60px">序号</th><th>班级</th><th>老师</th><th>地点</th></tr></thead>
+<tbody>${rows.map((r,i)=>`<tr><td>${i+1}</td><td>${r.class_name??""}</td><td>${r.teacher_name??""}</td><td>${r.class_location??""}</td></tr>`).join("")}
+${rows.length===0?'<tr><td colspan="4" style="text-align:center;color:#888;padding:24px">暂无数据</td></tr>':""}
+</tbody></table>
+<script>window.onload=()=>{setTimeout(()=>window.print(),200);}</script>
+</body></html>`;
+                const w = window.open("", "_blank", "width=900,height=700");
+                if (!w) return toast.error("请允许弹出窗口");
+                w.document.write(html); w.document.close();
+              };
+              return (
+                <div key={season} className="border border-border/50 rounded-xl p-4">
+                  <h3 className="font-serif text-lg mb-3">{cfg.title}</h3>
+                  <div className="overflow-x-auto rounded-lg border border-border/50 mb-3">
+                    <table className="w-full text-sm">
+                      <thead className="bg-muted/80">
+                        <tr className="text-left border-b border-border/60 text-muted-foreground">
+                          <th className="py-2 px-2 w-1/3">班级</th>
+                          <th className="py-2 px-2 w-1/3">老师</th>
+                          <th className="py-2 px-2">地点</th>
+                          <th className="py-2 px-2 text-right w-16">操作</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {rows.map((r) => (
+                          <tr key={r.id} className="border-b border-border/30">
+                            <td className="py-2 px-2">
+                              <Input
+                                defaultValue={r.class_name ?? ""}
+                                className="h-8"
+                                onBlur={async (e) => {
+                                  const v = e.target.value;
+                                  if (v === (r.class_name ?? "")) return;
+                                  await (supabase as any).from("sunday_class_schedule").update({ class_name: v || null }).eq("id", r.id);
+                                  loadKidsRows();
+                                }}
+                              />
+                            </td>
+                            <td className="py-2 px-2">
+                              <Input
+                                defaultValue={r.teacher_name ?? ""}
+                                className="h-8"
+                                onBlur={async (e) => {
+                                  const v = e.target.value;
+                                  if (v === (r.teacher_name ?? "")) return;
+                                  await (supabase as any).from("sunday_class_schedule").update({ teacher_name: v || null }).eq("id", r.id);
+                                  loadKidsRows();
+                                }}
+                              />
+                            </td>
+                            <td className="py-2 px-2">
+                              <Input
+                                defaultValue={r.class_location ?? ""}
+                                className="h-8"
+                                onBlur={async (e) => {
+                                  const v = e.target.value;
+                                  if (v === (r.class_location ?? "")) return;
+                                  await (supabase as any).from("sunday_class_schedule").update({ class_location: v || null }).eq("id", r.id);
+                                  loadKidsRows();
+                                }}
+                              />
+                            </td>
+                            <td className="py-2 px-2 text-right">
+                              <button
+                                className="text-xs text-destructive hover:underline"
+                                onClick={async () => {
+                                  if (!confirm("删除该行?")) return;
+                                  await (supabase as any).from("sunday_class_schedule").delete().eq("id", r.id);
+                                  loadKidsRows();
+                                }}
+                              >删除</button>
+                            </td>
+                          </tr>
+                        ))}
+                        {rows.length === 0 && (
+                          <tr><td colSpan={4} className="py-6 text-center text-muted-foreground">暂无记录</td></tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      size="sm"
+                      onClick={async () => {
+                        const next = (rows[rows.length - 1]?.sort_order ?? 0) + 1;
+                        const { error } = await (supabase as any).from("sunday_class_schedule").insert({
+                          track: cfg.key, slot_time: "", class_name: "", teacher_name: "", class_location: "", sort_order: next,
+                        });
+                        if (error) return toast.error(error.message);
+                        loadKidsRows();
+                      }}
+                    >
+                      + 添加同工
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={exportKids}>导出 Excel</Button>
+                    <label className="inline-flex">
+                      <input type="file" accept=".xlsx,.xls" hidden onChange={(e) => {
+                        const f = e.target.files?.[0]; if (f) importKids(f); e.target.value = "";
+                      }} />
+                      <Button asChild size="sm" variant="outline">
+                        <span className="cursor-pointer">导入 Excel</span>
+                      </Button>
+                    </label>
+                    <Button size="sm" variant="outline" onClick={printKids}>打印</Button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </section>
             </TabsContent>
 
             <TabsContent value="events" className="space-y-8 mt-0">
