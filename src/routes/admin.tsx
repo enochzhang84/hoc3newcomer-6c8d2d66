@@ -2035,11 +2035,11 @@ function AdminPage() {
             </div>
             <div className="ml-auto">
               <Button
-                variant="outline"
-                size="sm"
+                size="lg"
                 onClick={() => window.open("/retreat", "_blank", "noopener,noreferrer")}
+                className="h-12 px-6 text-base font-semibold bg-gradient-to-r from-primary to-primary/80 shadow-md hover:shadow-lg hover:from-primary/90 hover:to-primary/70 transition-all"
               >
-                退修会登记
+                🏔️ 退修会登记
               </Button>
             </div>
           </div>
