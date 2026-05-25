@@ -374,6 +374,14 @@ function AdminPage() {
     setDutySchedules((data ?? []) as DutySchedule[]);
   }, []);
 
+  const loadSundayTeachers = useCallback(async () => {
+    const { data } = await (supabase as any)
+      .from("sunday_school_teachers")
+      .select("*")
+      .order("sort_order", { ascending: true });
+    setSundayTeachers((data ?? []) as SundayTeacher[]);
+  }, []);
+
   const loadMessagesCount = useCallback(async () => {
     const { data: sess } = await supabase.auth.getSession();
     const uid = sess.session?.user.id;
