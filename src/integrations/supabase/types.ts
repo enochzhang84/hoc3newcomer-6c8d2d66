@@ -514,6 +514,36 @@ export type Database = {
         }
         Relationships: []
       }
+      sunday_class_schedule: {
+        Row: {
+          course_name: string | null
+          created_at: string
+          id: string
+          slot_time: string
+          sort_order: number
+          teacher_name: string | null
+          updated_at: string
+        }
+        Insert: {
+          course_name?: string | null
+          created_at?: string
+          id?: string
+          slot_time: string
+          sort_order?: number
+          teacher_name?: string | null
+          updated_at?: string
+        }
+        Update: {
+          course_name?: string | null
+          created_at?: string
+          id?: string
+          slot_time?: string
+          sort_order?: number
+          teacher_name?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       sunday_school_checkins: {
         Row: {
           checkin_date: string
@@ -556,6 +586,33 @@ export type Database = {
         ]
       }
       sunday_school_courses: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      sunday_school_teachers: {
         Row: {
           created_at: string
           id: string

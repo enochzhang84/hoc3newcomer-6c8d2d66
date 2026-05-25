@@ -153,6 +153,8 @@ type DutySchedule = {
   sort_order: number;
 };
 
+type SundayTeacher = { id: string; name: string; sort_order: number; is_active: boolean };
+
 export const Route = createFileRoute("/admin")({
   component: AdminPage,
 });
@@ -207,6 +209,10 @@ function AdminPage() {
   const [dutySchedules, setDutySchedules] = useState<DutySchedule[]>([]);
   const [dutyPersonnelOpen, setDutyPersonnelOpen] = useState(false);
   const [newDutyPersonName, setNewDutyPersonName] = useState("");
+  // Sunday school teachers
+  const [sundayTeachers, setSundayTeachers] = useState<SundayTeacher[]>([]);
+  const [newTeacherName, setNewTeacherName] = useState("");
+  const [courseSettingsTab, setCourseSettingsTab] = useState<"courses" | "teachers">("courses");
   const [editingFollowUpId, setEditingFollowUpId] = useState<string | null>(null);
   const [followUpDraft, setFollowUpDraft] = useState("");
   const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
@@ -368,6 +374,14 @@ function AdminPage() {
     setDutySchedules((data ?? []) as DutySchedule[]);
   }, []);
 
+  const loadSundayTeachers = useCallback(async () => {
+    const { data } = await (supabase as any)
+      .from("sunday_school_teachers")
+      .select("*")
+      .order("sort_order", { ascending: true });
+    setSundayTeachers((data ?? []) as SundayTeacher[]);
+  }, []);
+
   const loadMessagesCount = useCallback(async () => {
     const { data: sess } = await supabase.auth.getSession();
     const uid = sess.session?.user.id;
@@ -445,6 +459,7 @@ function AdminPage() {
            void loadMealPlans();
            void loadDutyPersonnel();
            void loadDutySchedules();
+           void loadSundayTeachers();
             void loadUsers();
           }
         } catch (e) {
@@ -913,7 +928,7 @@ function AdminPage() {
       <main className="container mx-auto px-6 py-8 space-y-8">
         <Tabs defaultValue="stats" className="w-full">
           <TabsList className="grid grid-cols-3 md:grid-cols-6 h-auto w-full mb-6">
-            <TabsTrigger value="stats">数据统计</TabsTrigger>
+            <TabsTrigger value="stats">登记人数统计</TabsTrigger>
             <TabsTrigger value="welcome">迎宾接待</TabsTrigger>
             <TabsTrigger value="media">影音播放</TabsTrigger>
             <TabsTrigger value="kitchen">厨房侍工</TabsTrigger>
@@ -925,7 +940,7 @@ function AdminPage() {
 
             <TabsContent value="stats" className="space-y-8 mt-0">
         <section>
-          <h2 className="font-serif text-xl mb-4">数据统计</h2>
+          <h2 className="font-serif text-xl mb-4">登记人数统计</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <Stat label="总登记数" value={regs.length} />
           <Stat label="希望探访" value={regs.filter((r) => r.wants_visit).length} />
@@ -1029,6 +1044,23 @@ function AdminPage() {
             >
               导出数据
             </Button>
+          </div>
+        </section>
+        <section>
+          <h2 className="font-serif text-xl mb-4">活动签到统计</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <CheckinActivityCard
+              title="成人主日学"
+              dates={sundayCheckins.map((k) => k.checkin_date)}
+              categories={sundayCheckins.map((k) => k.course_name ?? "未分类")}
+              categoryLabel="本周活跃课程"
+            />
+            <CheckinActivityCard
+              title="团契 / 小组聚会"
+              dates={fellowshipCheckins.map((k) => k.checkin_date)}
+              categories={fellowshipCheckins.map((k) => k.fellowship)}
+              categoryLabel="本周活跃团契"
+            />
           </div>
         </section>
         <section className="bg-card border border-border/50 rounded-2xl p-6">
@@ -1988,9 +2020,6 @@ function AdminPage() {
         <section className="bg-card border border-border/50 rounded-2xl p-6">
           <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
             <h2 className="font-serif text-xl">成人主日学</h2>
-            <Button size="sm" variant="outline" onClick={() => setCoursesOpen(true)}>
-              主日学课程设置
-            </Button>
           </div>
           <div className="grid sm:grid-cols-2 gap-6">
             <div className="border border-border/50 rounded-xl p-4 flex flex-col items-center gap-3">
@@ -2015,9 +2044,28 @@ function AdminPage() {
               </div>
             </div>
             <div className="border border-border/50 rounded-xl p-4 flex flex-col gap-3">
-              <p className="font-medium">已开放课程</p>
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <p className="font-medium">已开放课程</p>
+                <div className="flex items-center gap-1">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => window.open("/sunday-schedule", "_blank", "noopener,noreferrer")}
+                  >
+                    课程表
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="text-muted-foreground hover:text-foreground"
+                    onClick={() => setCoursesOpen(true)}
+                  >
+                    ⚙ 设置
+                  </Button>
+                </div>
+              </div>
               {courses.length === 0 ? (
-                <p className="text-sm text-muted-foreground">暂无课程，请点击右上角「主日学课程设置」添加。</p>
+                <p className="text-sm text-muted-foreground">暂无课程，请点击右上角「设置」添加。</p>
               ) : (
                 <ul className="text-sm space-y-1">
                   {courses.filter((c) => c.is_active).map((c) => (
@@ -2384,7 +2432,12 @@ function AdminPage() {
             <DialogHeader>
               <DialogTitle>主日学课程设置</DialogTitle>
             </DialogHeader>
-            <div className="space-y-4">
+            <Tabs value={courseSettingsTab} onValueChange={(v) => setCourseSettingsTab(v as "courses" | "teachers")} className="w-full">
+              <TabsList className="grid grid-cols-2 w-full mb-4">
+                <TabsTrigger value="courses">课程管理</TabsTrigger>
+                <TabsTrigger value="teachers">老师管理</TabsTrigger>
+              </TabsList>
+              <TabsContent value="courses" className="space-y-4 mt-0">
               <div className="flex gap-2">
                 <Input
                   placeholder="新课程名称"
@@ -2482,7 +2535,91 @@ function AdminPage() {
                   </div>
                 ))}
               </div>
-            </div>
+              </TabsContent>
+              <TabsContent value="teachers" className="space-y-4 mt-0">
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="新老师姓名"
+                    value={newTeacherName}
+                    onChange={(e) => setNewTeacherName(e.target.value)}
+                  />
+                  <Button
+                    onClick={async () => {
+                      const name = newTeacherName.trim();
+                      if (!name) return toast.error("请输入老师姓名");
+                      const nextOrder = (sundayTeachers[sundayTeachers.length - 1]?.sort_order ?? 0) + 1;
+                      const { error } = await (supabase as any)
+                        .from("sunday_school_teachers")
+                        .insert({ name, sort_order: nextOrder });
+                      if (error) return toast.error(error.message);
+                      setNewTeacherName("");
+                      logAction(`新增主日学老师: ${name}`);
+                      toast.success("已添加");
+                      loadSundayTeachers();
+                    }}
+                  >
+                    添加
+                  </Button>
+                </div>
+                <div className="space-y-2">
+                  {sundayTeachers.length === 0 && (
+                    <p className="text-sm text-muted-foreground text-center py-6">暂无老师</p>
+                  )}
+                  {sundayTeachers.map((t) => (
+                    <div key={t.id} className="flex items-center gap-2 border border-border/50 rounded-md px-3 py-2">
+                      <Input
+                        defaultValue={t.name}
+                        onBlur={async (e) => {
+                          const v = e.target.value.trim();
+                          if (!v || v === t.name) return;
+                          const { error } = await (supabase as any)
+                            .from("sunday_school_teachers")
+                            .update({ name: v })
+                            .eq("id", t.id);
+                          if (error) return toast.error(error.message);
+                          logAction(`修改主日学老师: ${t.name} → ${v}`);
+                          toast.success("已更新");
+                          loadSundayTeachers();
+                        }}
+                        className="flex-1"
+                      />
+                      <label className="flex items-center gap-1 text-xs text-muted-foreground whitespace-nowrap">
+                        <input
+                          type="checkbox"
+                          checked={t.is_active}
+                          onChange={async (e) => {
+                            await (supabase as any)
+                              .from("sunday_school_teachers")
+                              .update({ is_active: e.target.checked })
+                              .eq("id", t.id);
+                            loadSundayTeachers();
+                          }}
+                        />
+                        启用
+                      </label>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="text-destructive"
+                        onClick={async () => {
+                          if (!confirm(`删除老师「${t.name}」?`)) return;
+                          const { error } = await (supabase as any)
+                            .from("sunday_school_teachers")
+                            .delete()
+                            .eq("id", t.id);
+                          if (error) return toast.error(error.message);
+                          logAction(`删除主日学老师: ${t.name}`);
+                          toast.success("已删除");
+                          loadSundayTeachers();
+                        }}
+                      >
+                        删除
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </TabsContent>
+            </Tabs>
           </DialogContent>
         </Dialog>
 
@@ -3442,6 +3579,98 @@ function groupCounts(list: Reg[], keyFn: (r: Reg) => string) {
   return Array.from(map.entries())
     .map(([key, count]) => ({ key, count }))
     .sort((a, b) => b.count - a.count);
+}
+
+function countDatesSince(dates: string[], since: Date) {
+  return dates.filter((d) => new Date(d + "T00:00:00") >= since).length;
+}
+function countDatesBetween(dates: string[], from: Date, to: Date) {
+  return dates.filter((d) => {
+    const t = new Date(d + "T00:00:00");
+    return t >= from && t < to;
+  }).length;
+}
+
+function CheckinActivityCard({
+  title,
+  dates,
+  categories,
+  categoryLabel,
+}: {
+  title: string;
+  dates: string[];
+  categories: string[];
+  categoryLabel: string;
+}) {
+  const sow = startOfWeek();
+  const psow = prevStartOfWeek();
+  const som = startOfMonth();
+  const psom = prevStartOfMonth();
+
+  const thisWeek = countDatesSince(dates, sow);
+  const lastWeek = countDatesBetween(dates, psow, sow);
+  const thisMonth = countDatesSince(dates, som);
+  const lastMonth = countDatesBetween(dates, psom, som);
+  const total = dates.length;
+
+  const activeThisWeek = new Set(
+    categories.filter((_, i) => new Date(dates[i] + "T00:00:00") >= sow),
+  ).size;
+
+  const weekDelta = thisWeek - lastWeek;
+  const monthDelta = thisMonth - lastMonth;
+  const weekPct = lastWeek > 0 ? Math.round((weekDelta / lastWeek) * 100) : (thisWeek > 0 ? 100 : 0);
+  const monthPct = lastMonth > 0 ? Math.round((monthDelta / lastMonth) * 100) : (thisMonth > 0 ? 100 : 0);
+
+  const arrowColor = (delta: number) =>
+    delta > 0 ? "text-emerald-600" : delta < 0 ? "text-red-600" : "text-muted-foreground";
+  const arrowGlyph = (delta: number) => (delta > 0 ? "▲" : delta < 0 ? "▼" : "→");
+
+  return (
+    <div className="bg-card border border-border/50 rounded-2xl p-6">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="font-serif text-lg">{title}</h3>
+        <span className="text-xs text-muted-foreground">累计 {total} 人次</span>
+      </div>
+      <div className="grid grid-cols-2 gap-4">
+        <div className="border border-border/40 rounded-xl p-4">
+          <div className="text-xs text-muted-foreground">本周参加</div>
+          <div className="flex items-baseline gap-2 mt-1">
+            <div className="text-2xl font-serif">{thisWeek}</div>
+            <div className={`text-xs flex items-center gap-1 ${arrowColor(weekDelta)}`}>
+              <span>{arrowGlyph(weekDelta)}</span>
+              <span>{weekDelta > 0 ? "+" : ""}{weekDelta} ({weekPct > 0 ? "+" : ""}{weekPct}%)</span>
+            </div>
+          </div>
+          <div className="text-[11px] text-muted-foreground mt-1">上周 {lastWeek} 人次</div>
+        </div>
+        <div className="border border-border/40 rounded-xl p-4">
+          <div className="text-xs text-muted-foreground">本月参加</div>
+          <div className="flex items-baseline gap-2 mt-1">
+            <div className="text-2xl font-serif">{thisMonth}</div>
+            <div className={`text-xs flex items-center gap-1 ${arrowColor(monthDelta)}`}>
+              <span>{arrowGlyph(monthDelta)}</span>
+              <span>{monthDelta > 0 ? "+" : ""}{monthDelta} ({monthPct > 0 ? "+" : ""}{monthPct}%)</span>
+            </div>
+          </div>
+          <div className="text-[11px] text-muted-foreground mt-1">上月 {lastMonth} 人次</div>
+        </div>
+        <div className="border border-border/40 rounded-xl p-4">
+          <div className="text-xs text-muted-foreground">{categoryLabel}</div>
+          <div className="text-2xl font-serif mt-1">{activeThisWeek}</div>
+          <div className="text-[11px] text-muted-foreground mt-1">本周不同分组数量</div>
+        </div>
+        <div className="border border-border/40 rounded-xl p-4">
+          <div className="text-xs text-muted-foreground">活动积极性</div>
+          <div className={`text-2xl font-serif mt-1 flex items-center gap-2 ${arrowColor(weekDelta)}`}>
+            <span>{arrowGlyph(weekDelta)}</span>
+            <span className="text-base">{weekDelta > 0 ? "上升" : weekDelta < 0 ? "下降" : "持平"}</span>
+          </div>
+          <div className="text-[11px] text-muted-foreground mt-1">对比上周</div>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function Tag({ children, tone = "primary" }: { children: React.ReactNode; tone?: "primary" | "accent" }) {
