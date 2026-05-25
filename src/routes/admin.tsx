@@ -214,6 +214,8 @@ function AdminPage() {
   });
   const [adultPages, setAdultPages] = useState<Record<"summer" | "fall", number>>({ summer: 1, fall: 1 });
   const ADULT_PAGE_SIZE = 15;
+  const [adultDateFilter, setAdultDateFilter] = useState<Record<"summer" | "fall", Date | undefined>>({ summer: undefined, fall: undefined });
+  const [adultDateOpen, setAdultDateOpen] = useState<Record<"summer" | "fall", boolean>>({ summer: false, fall: false });
   // Kitchen meal plans
   const [mealTypes, setMealTypes] = useState<MealType[]>([]);
   const [mealPlans, setMealPlans] = useState<MealPlan[]>([]);
@@ -1093,6 +1095,101 @@ function AdminPage() {
             />
           </div>
         </section>
+        <section className="bg-card border border-border/50 rounded-2xl p-6">
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+            <h2 className="font-serif text-xl">团契签到记录</h2>
+            <Button size="sm" variant="outline" onClick={() => loadFellowshipCheckins()}>
+              刷新
+            </Button>
+          </div>
+          {fellowships.filter((f) => f.is_active).length === 0 ? (
+            <p className="text-sm text-muted-foreground">暂无团契。请在「主日学」页右上角「团契 / 小组设置」中添加。</p>
+          ) : (
+            <Tabs
+              value={activeFellowshipTab || fellowships.find((f) => f.is_active)?.id || ""}
+              onValueChange={setActiveFellowshipTab}
+              className="w-full"
+            >
+              <TabsList className="h-auto flex flex-wrap gap-1 bg-muted/50 p-1">
+                {fellowships.filter((f) => f.is_active).map((f) => {
+                  const count = fellowshipCheckins.filter((k) => k.fellowship === f.name).length;
+                  return (
+                    <TabsTrigger key={f.id} value={f.id} className="text-xs">
+                      {f.name} ({count})
+                    </TabsTrigger>
+                  );
+                })}
+              </TabsList>
+              {fellowships.filter((f) => f.is_active).map((f) => {
+                const rows = fellowshipCheckins.filter((k) => k.fellowship === f.name);
+                const pg = fellowshipPages[f.id] ?? 1;
+                const totalPg = Math.max(1, Math.ceil(rows.length / TAB_PAGE_SIZE));
+                const slice = rows.slice((pg - 1) * TAB_PAGE_SIZE, pg * TAB_PAGE_SIZE);
+                return (
+                  <TabsContent key={f.id} value={f.id} className="mt-4">
+                    <div className="overflow-x-auto max-h-[480px] overflow-y-auto rounded-lg border border-border/50">
+                      <table className="w-full text-sm">
+                        <thead className="sticky top-0 z-10 bg-muted/80 backdrop-blur">
+                          <tr className="text-left border-b border-border/60 text-muted-foreground">
+                            <th className="py-2 px-2">日期</th>
+                            <th className="py-2 px-2">姓名</th>
+                            <th className="py-2 px-2">电话/微信</th>
+                            <th className="py-2 px-2">邮件</th>
+                            <th className="py-2 px-2">代祷备注</th>
+                            <th className="py-2 px-2 text-right">操作</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {slice.map((k) => (
+                            <tr key={k.id} className="border-b border-border/30 align-top">
+                              <td className="py-2 px-2 whitespace-nowrap">{k.checkin_date}</td>
+                              <td className="py-2 px-2 font-medium">{k.name}</td>
+                              <td className="py-2 px-2">{k.contact ?? ""}</td>
+                              <td className="py-2 px-2">{k.email ?? ""}</td>
+                              <td className="py-2 px-2 max-w-[260px] whitespace-pre-wrap break-words">{k.prayer_request ?? ""}</td>
+                              <td className="py-2 px-2 text-right">
+                                <button
+                                  onClick={async () => {
+                                    if (!confirm(`删除 ${k.name} 的签到?`)) return;
+                                    const { error } = await supabase
+                                      .from("fellowship_checkins")
+                                      .delete()
+                                      .eq("id", k.id);
+                                    if (error) return toast.error(error.message);
+                                    logAction(`删除团契签到: ${k.name}`);
+                                    toast.success("已删除");
+                                    loadFellowshipCheckins();
+                                  }}
+                                  className="text-xs text-destructive hover:underline"
+                                >
+                                  删除
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                          {rows.length === 0 && (
+                            <tr>
+                              <td colSpan={6} className="py-8 text-center text-muted-foreground">
+                                暂无签到记录
+                              </td>
+                            </tr>
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                    {totalPg > 1 && (
+                      <div className="flex items-center justify-center gap-2 mt-3 text-sm">
+                        <Button size="sm" variant="outline" disabled={pg === 1} onClick={() => setFellowshipPages({ ...fellowshipPages, [f.id]: pg - 1 })}>上一页</Button>
+                        <span>{pg} / {totalPg}</span>
+                        <Button size="sm" variant="outline" disabled={pg === totalPg} onClick={() => setFellowshipPages({ ...fellowshipPages, [f.id]: pg + 1 })}>下一页</Button>
+                      </div>
+                    )}
+                  </TabsContent>
+                );
+              })}
+            </Tabs>
+          )}
+        </section>
         {isSuperAdmin && (
         <section className="bg-card border border-border/50 rounded-2xl p-6">
           <div className="flex items-center justify-between mb-4">
@@ -1807,13 +1904,80 @@ function AdminPage() {
           const pptLabel = kind === "sunday" ? "主日PPT" : "暑期PPT";
           const liveLabel = "YouTube直播";
           const rows = dutySchedules.filter((s) => s.schedule_type === kind);
+          const exportDuty = () => {
+            if (rows.length === 0) return toast.error("无数据可导出");
+            const data = rows.map((r, i) => ({
+              "序号": i + 1,
+              "时间": r.slot_time ?? "",
+              [pptLabel]: r.ppt_person ?? "",
+              [`${liveLabel} 1`]: r.live_person ?? "",
+              [`${liveLabel} 2`]: r.live_person_2 ?? "",
+            }));
+            const ws = XLSX.utils.json_to_sheet(data);
+            ws["!cols"] = [{ wch: 6 }, { wch: 16 }, { wch: 14 }, { wch: 14 }, { wch: 14 }];
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "轮值表");
+            XLSX.writeFile(wb, `${title}_${new Date().toISOString().slice(0,10)}.xlsx`);
+            toast.success(`已导出 ${data.length} 条`);
+          };
+          const importDuty = async (file: File) => {
+            try {
+              const buf = await file.arrayBuffer();
+              const wb = XLSX.read(buf, { type: "array" });
+              const ws = wb.Sheets[wb.SheetNames[0]];
+              const json = XLSX.utils.sheet_to_json<Record<string, unknown>>(ws, { defval: "" });
+              if (json.length === 0) return toast.error("文件为空");
+              const baseOrder = rows[rows.length - 1]?.sort_order ?? 0;
+              const inserts = json.map((r, idx) => {
+                const get = (keys: string[]) => {
+                  for (const k of keys) {
+                    if (r[k] !== undefined && r[k] !== null && String(r[k]).trim() !== "") return String(r[k]).trim();
+                  }
+                  return null;
+                };
+                return {
+                  schedule_type: kind,
+                  slot_time: get(["时间", "日期", "time", "slot_time"]) ?? "",
+                  ppt_person: get([pptLabel, "PPT", "ppt", "ppt_person"]),
+                  live_person: get([`${liveLabel} 1`, "直播1", "live_person", "live1"]),
+                  live_person_2: get([`${liveLabel} 2`, "直播2", "live_person_2", "live2"]),
+                  sort_order: baseOrder + idx + 1,
+                };
+              }).filter((r) => r.slot_time);
+              if (inserts.length === 0) return toast.error("未识别到有效数据(需含「时间」列)");
+              const { error } = await (supabase as any).from("duty_schedules").insert(inserts);
+              if (error) return toast.error(error.message);
+              toast.success(`已导入 ${inserts.length} 条`);
+              loadDutySchedules();
+            } catch (err) {
+              toast.error("导入失败: " + (err as Error).message);
+            }
+          };
           return (
             <section key={kind} className="bg-card border border-border/50 rounded-2xl p-6">
               <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
                 <h2 className="font-serif text-xl">{title}</h2>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   <Button size="sm" variant="outline" onClick={() => setDutyPersonnelOpen(true)}>
                     轮值表设置
+                  </Button>
+                  <label className="inline-flex">
+                    <input
+                      type="file"
+                      accept=".xlsx,.xls"
+                      hidden
+                      onChange={(e) => {
+                        const f = e.target.files?.[0];
+                        if (f) importDuty(f);
+                        e.target.value = "";
+                      }}
+                    />
+                    <Button asChild size="sm" variant="outline">
+                      <span className="cursor-pointer">导入 Excel</span>
+                    </Button>
+                  </label>
+                  <Button size="sm" variant="outline" onClick={exportDuty}>
+                    导出 Excel
                   </Button>
                   <Button
                     size="sm"
@@ -2099,6 +2263,24 @@ function AdminPage() {
                 >
                   复制链接
                 </Button>
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    const url = `${publicBase}/sunday-checkin`;
+                    const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=600x600&data=${encodeURIComponent(url)}`;
+                    const html = `<!doctype html><html><head><meta charset="utf-8"><title>主日学签到</title>
+<style>body{font-family:system-ui,sans-serif;margin:0;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;}
+h1{font-size:28px;margin:0 0 16px;}p{color:#555;margin:16px 0 0;font-size:14px;word-break:break-all;text-align:center;max-width:520px;}
+img{width:480px;height:480px;}@media print{@page{margin:1cm;}}</style></head>
+<body><h1>主日学签到</h1><img src="${qrSrc}" alt="QR"/><p>${url}</p>
+<script>window.addEventListener('load',()=>setTimeout(()=>window.print(),400));</script></body></html>`;
+                    const w = window.open("", "_blank");
+                    if (!w) { toast.error("浏览器拦截了弹窗"); return; }
+                    w.document.open(); w.document.write(html); w.document.close();
+                  }}
+                >
+                  打印二维码
+                </Button>
               </div>
             </div>
             <div className="border border-border/50 rounded-xl p-4 flex flex-col gap-3">
@@ -2243,8 +2425,17 @@ function AdminPage() {
         {(["summer","fall"] as const).map((kind) => {
           const title = kind === "summer" ? "暑期成人主日学签到表" : "秋季成人主日学签到表";
           const all = adultCheckins.filter((c) => c.kind === kind);
+          const dateFilter = adultDateFilter[kind];
+          const filtered = dateFilter
+            ? all.filter((c) => {
+                const d = new Date(c.checkin_at);
+                return d.getFullYear() === dateFilter.getFullYear()
+                  && d.getMonth() === dateFilter.getMonth()
+                  && d.getDate() === dateFilter.getDate();
+              })
+            : all;
           const sort = adultSort[kind];
-          const sorted = [...all].sort((a, b) => {
+          const sorted = [...filtered].sort((a, b) => {
             const av = sort.col === "name" ? a.name : sort.col === "fellowship" ? (a.fellowship ?? "") : a.checkin_at;
             const bv = sort.col === "name" ? b.name : sort.col === "fellowship" ? (b.fellowship ?? "") : b.checkin_at;
             const cmp = String(av).localeCompare(String(bv), "zh-CN");
@@ -2263,11 +2454,62 @@ function AdminPage() {
             setAdultPages((p) => ({ ...p, [kind]: 1 }));
           };
           const arrow = (col: "name" | "fellowship" | "time") => sort.col === col ? (sort.dir === "asc" ? " ▲" : " ▼") : "";
+          const exportAdult = (rowsToExport: AdultCheckin[], suffix: string) => {
+            if (rowsToExport.length === 0) return toast.error("无数据可导出");
+            const data = rowsToExport.map((r, i) => ({
+              "序号": i + 1,
+              "签到时间": new Date(r.checkin_at).toLocaleString("zh-CN", { hour12: false }),
+              "姓名": r.name,
+              "团契": r.fellowship ?? "",
+              "备注": r.notes ?? "",
+            }));
+            const ws = XLSX.utils.json_to_sheet(data);
+            ws["!cols"] = [{ wch: 6 }, { wch: 22 }, { wch: 14 }, { wch: 16 }, { wch: 30 }];
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "签到名单");
+            XLSX.writeFile(wb, `${title}_${suffix}_${new Date().toISOString().slice(0,10)}.xlsx`);
+            toast.success(`已导出 ${data.length} 条`);
+          };
           return (
             <section key={kind} className="bg-card border border-border/50 rounded-2xl p-6">
               <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-                <h2 className="font-serif text-xl">{title} ({all.length})</h2>
-                <Button size="sm" variant="outline" onClick={() => loadAdultCheckins()}>刷新</Button>
+                <h2 className="font-serif text-xl">{title} ({filtered.length}{dateFilter ? ` / 共 ${all.length}` : ""})</h2>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Popover open={adultDateOpen[kind]} onOpenChange={(v) => setAdultDateOpen((p) => ({ ...p, [kind]: v }))}>
+                    <PopoverTrigger asChild>
+                      <Button size="sm" variant="outline" className="gap-2">
+                        <CalendarIcon className="h-4 w-4" />
+                        {dateFilter ? format(dateFilter, "yyyy-MM-dd") : "日期筛选"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="end">
+                      <Calendar
+                        mode="single"
+                        selected={dateFilter}
+                        onSelect={(d) => {
+                          setAdultDateFilter((p) => ({ ...p, [kind]: d ?? undefined }));
+                          setAdultPages((p) => ({ ...p, [kind]: 1 }));
+                          setAdultDateOpen((p) => ({ ...p, [kind]: false }));
+                        }}
+                        locale={zhCN}
+                        initialFocus
+                        className="p-3 pointer-events-auto"
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  {dateFilter && (
+                    <Button size="sm" variant="ghost" onClick={() => setAdultDateFilter((p) => ({ ...p, [kind]: undefined }))}>
+                      清除
+                    </Button>
+                  )}
+                  <Button size="sm" variant="outline" onClick={() => exportAdult(sorted, dateFilter ? format(dateFilter, "yyyy-MM-dd") : "当前")}>
+                    导出当前
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => exportAdult(all, "全部")}>
+                    所有名单 · 导出 Excel
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => loadAdultCheckins()}>刷新</Button>
+                </div>
               </div>
               <div className="overflow-x-auto max-h-[520px] overflow-y-auto rounded-lg border border-border/50">
                 <table className="w-full text-sm">
@@ -2481,101 +2723,6 @@ function AdminPage() {
           </div>
         </section>
 
-        <section className="bg-card border border-border/50 rounded-2xl p-6">
-          <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-            <h2 className="font-serif text-xl">团契签到记录</h2>
-            <Button size="sm" variant="outline" onClick={() => loadFellowshipCheckins()}>
-              刷新
-            </Button>
-          </div>
-          {fellowships.filter((f) => f.is_active).length === 0 ? (
-            <p className="text-sm text-muted-foreground">暂无团契。点击右上角「团契 / 小组设置」添加。</p>
-          ) : (
-            <Tabs
-              value={activeFellowshipTab || fellowships.find((f) => f.is_active)?.id || ""}
-              onValueChange={setActiveFellowshipTab}
-              className="w-full"
-            >
-              <TabsList className="h-auto flex flex-wrap gap-1 bg-muted/50 p-1">
-                {fellowships.filter((f) => f.is_active).map((f) => {
-                  const count = fellowshipCheckins.filter((k) => k.fellowship === f.name).length;
-                  return (
-                    <TabsTrigger key={f.id} value={f.id} className="text-xs">
-                      {f.name} ({count})
-                    </TabsTrigger>
-                  );
-                })}
-              </TabsList>
-              {fellowships.filter((f) => f.is_active).map((f) => {
-                const rows = fellowshipCheckins.filter((k) => k.fellowship === f.name);
-                const pg = fellowshipPages[f.id] ?? 1;
-                const totalPg = Math.max(1, Math.ceil(rows.length / TAB_PAGE_SIZE));
-                const slice = rows.slice((pg - 1) * TAB_PAGE_SIZE, pg * TAB_PAGE_SIZE);
-                return (
-                  <TabsContent key={f.id} value={f.id} className="mt-4">
-                    <div className="overflow-x-auto max-h-[480px] overflow-y-auto rounded-lg border border-border/50">
-                      <table className="w-full text-sm">
-                        <thead className="sticky top-0 z-10 bg-muted/80 backdrop-blur">
-                          <tr className="text-left border-b border-border/60 text-muted-foreground">
-                            <th className="py-2 px-2">日期</th>
-                            <th className="py-2 px-2">姓名</th>
-                            <th className="py-2 px-2">电话/微信</th>
-                            <th className="py-2 px-2">邮件</th>
-                            <th className="py-2 px-2">代祷备注</th>
-                            <th className="py-2 px-2 text-right">操作</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {slice.map((k) => (
-                            <tr key={k.id} className="border-b border-border/30 align-top">
-                              <td className="py-2 px-2 whitespace-nowrap">{k.checkin_date}</td>
-                              <td className="py-2 px-2 font-medium">{k.name}</td>
-                              <td className="py-2 px-2">{k.contact ?? ""}</td>
-                              <td className="py-2 px-2">{k.email ?? ""}</td>
-                              <td className="py-2 px-2 max-w-[260px] whitespace-pre-wrap break-words">{k.prayer_request ?? ""}</td>
-                              <td className="py-2 px-2 text-right">
-                                <button
-                                  onClick={async () => {
-                                    if (!confirm(`删除 ${k.name} 的签到?`)) return;
-                                    const { error } = await supabase
-                                      .from("fellowship_checkins")
-                                      .delete()
-                                      .eq("id", k.id);
-                                    if (error) return toast.error(error.message);
-                                    logAction(`删除团契签到: ${k.name}`);
-                                    toast.success("已删除");
-                                    loadFellowshipCheckins();
-                                  }}
-                                  className="text-xs text-destructive hover:underline"
-                                >
-                                  删除
-                                </button>
-                              </td>
-                            </tr>
-                          ))}
-                          {rows.length === 0 && (
-                            <tr>
-                              <td colSpan={6} className="py-8 text-center text-muted-foreground">
-                                暂无签到记录
-                              </td>
-                            </tr>
-                          )}
-                        </tbody>
-                      </table>
-                    </div>
-                    {totalPg > 1 && (
-                      <div className="flex items-center justify-center gap-2 mt-3 text-sm">
-                        <Button size="sm" variant="outline" disabled={pg === 1} onClick={() => setFellowshipPages({ ...fellowshipPages, [f.id]: pg - 1 })}>上一页</Button>
-                        <span>{pg} / {totalPg}</span>
-                        <Button size="sm" variant="outline" disabled={pg === totalPg} onClick={() => setFellowshipPages({ ...fellowshipPages, [f.id]: pg + 1 })}>下一页</Button>
-                      </div>
-                    )}
-                  </TabsContent>
-                );
-              })}
-            </Tabs>
-          )}
-        </section>
             </TabsContent>
 
           </fieldset>

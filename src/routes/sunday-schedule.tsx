@@ -18,6 +18,7 @@ type Row = {
   course_name: string | null;
   class_name: string | null;
   weekly_topic: string | null;
+  teacher_name: string | null;
   notes: string | null;
   sort_order: number;
 };
@@ -31,6 +32,7 @@ function SundaySchedulePage() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [newSlot, setNewSlot] = useState("");
   const [newTopic, setNewTopic] = useState("");
+  const [newTeacher, setNewTeacher] = useState("");
   const [newNotes, setNewNotes] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -85,11 +87,12 @@ function SundaySchedulePage() {
       course_id: filterCourseId,
       course_name: filterCourseName || null,
       weekly_topic: newTopic || null,
+      teacher_name: newTeacher || null,
       notes: newNotes || null,
       sort_order: nextOrder,
     });
     if (error) return toast.error(error.message);
-    setNewSlot(""); setNewTopic(""); setNewNotes("");
+    setNewSlot(""); setNewTopic(""); setNewTeacher(""); setNewNotes("");
     toast.success("已添加");
     loadAll();
   }
@@ -113,10 +116,11 @@ function SundaySchedulePage() {
       "序号": i + 1,
       "时间": r.slot_time,
       "课程": r.weekly_topic ?? "",
+      "老师": r.teacher_name ?? "",
       "备注": r.notes ?? "",
     }));
     const ws = XLSX.utils.json_to_sheet(data);
-    ws["!cols"] = [{ wch: 6 }, { wch: 18 }, { wch: 28 }, { wch: 24 }];
+    ws["!cols"] = [{ wch: 6 }, { wch: 18 }, { wch: 28 }, { wch: 16 }, { wch: 24 }];
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "课程表");
     const fileName = filterCourseName ? `${filterCourseName}_课程表` : "课程表";
@@ -143,6 +147,7 @@ function SundaySchedulePage() {
         return {
           slot_time: slot || "",
           weekly_topic: get(["课程", "本周课程", "topic", "weekly_topic"]),
+          teacher_name: get(["老师", "教师", "teacher", "teacher_name"]),
           notes: get(["备注", "notes", "remark"]),
           course_id: filterCourseId,
           course_name: filterCourseName || null,
@@ -211,6 +216,7 @@ function SundaySchedulePage() {
                 <th className="py-2 px-3 w-16">序号</th>
                 <th className="py-2 px-3 w-44">时间</th>
                 <th className="py-2 px-3">课程</th>
+                <th className="py-2 px-3 w-40">老师</th>
                 <th className="py-2 px-3">备注</th>
                 <th className="py-2 px-3 text-right w-20 no-print">操作</th>
               </tr>
@@ -243,6 +249,17 @@ function SundaySchedulePage() {
                   </td>
                   <td className="py-2 px-3">
                     <Input
+                      defaultValue={r.teacher_name ?? ""}
+                      placeholder="老师"
+                      onBlur={(e) => {
+                        const v = e.target.value;
+                        if (v !== (r.teacher_name ?? "")) updateRow(r.id, { teacher_name: v || null });
+                      }}
+                      className="h-8 print:border-0 print:shadow-none print:px-0"
+                    />
+                  </td>
+                  <td className="py-2 px-3">
+                    <Input
                       defaultValue={r.notes ?? ""}
                       placeholder="备注"
                       onBlur={(e) => {
@@ -261,7 +278,7 @@ function SundaySchedulePage() {
               ))}
               {rows.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="py-10 text-center text-muted-foreground">暂无记录，请在下方添加或导入 Excel</td>
+                  <td colSpan={6} className="py-10 text-center text-muted-foreground">暂无记录，请在下方添加或导入 Excel</td>
                 </tr>
               )}
             </tbody>
@@ -270,14 +287,15 @@ function SundaySchedulePage() {
 
         <div className="mt-6 bg-card border border-border/50 rounded-2xl p-4 no-print">
           <h3 className="font-medium mb-3">新增一行</h3>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
             <Input type="date" value={newSlot} onChange={(e) => setNewSlot(e.target.value)} />
             <Input placeholder="课程" value={newTopic} onChange={(e) => setNewTopic(e.target.value)} />
+            <Input placeholder="老师" value={newTeacher} onChange={(e) => setNewTeacher(e.target.value)} />
             <Input placeholder="备注" value={newNotes} onChange={(e) => setNewNotes(e.target.value)} />
             <Button onClick={addRow}>添加</Button>
           </div>
           <p className="text-xs text-muted-foreground mt-3">
-            导入格式：时间｜课程｜备注（第一行为表头，与导出格式一致）。
+            导入格式：时间｜课程｜老师｜备注（第一行为表头，与导出格式一致）。
             {courses.length > 0 && !filterCourseId && (
               <> 当前显示全部课程数据；要查看单门课程，请到后台「主日学」点击该课程后的「课程表」。</>
             )}
