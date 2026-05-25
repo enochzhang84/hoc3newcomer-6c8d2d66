@@ -3678,6 +3678,7 @@ ${rows.length===0?'<tr><td colspan="4" style="text-align:center;color:#888;paddi
                 </table>
               </div>
             </div>
+          </div>
           </DialogContent>
         </Dialog>
 
