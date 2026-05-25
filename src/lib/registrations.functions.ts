@@ -37,6 +37,7 @@ export const updateRegistration = createServerFn({ method: "POST" })
       referrer_type: z.string().nullable().optional(),
       invited_by: z.string().nullable().optional(),
       referrer_other: z.string().nullable().optional(),
+      source_channel: z.string().nullable().optional(),
       wants_visit: z.boolean().nullable().optional(),
       wants_info: z.boolean().nullable().optional(),
       notes: z.string().nullable().optional(),
