@@ -42,6 +42,7 @@ type Reg = {
   referrer_type: string | null;
   invited_by: string | null;
   referrer_other: string | null;
+  source_channel: string | null;
   wants_visit: boolean | null;
   wants_info: boolean | null;
   notes: string | null;
@@ -57,10 +58,18 @@ function formatReferrer(r: Pick<Reg, "referrer_type" | "invited_by" | "referrer_
   switch (r.referrer_type) {
     case "self": return "自己";
     case "friend": return `亲友:${r.invited_by ?? ""}`;
+    case "other": return `其他:${r.referrer_other ?? ""}`;
+    default: return "";
+  }
+}
+
+function formatSourceChannel(r: Pick<Reg, "source_channel">): string {
+  switch (r.source_channel) {
+    case "chatgpt": return "ChatGPT";
+    case "maps": return "谷歌/苹果地图";
     case "wechat": return "微信/小红书";
     case "youtube": return "YouTube";
-    case "missionary": return `宣教士:${r.invited_by ?? ""}`;
-    case "other": return `其他:${r.referrer_other ?? ""}`;
+    case "missionary": return "宣教士";
     default: return "";
   }
 }
