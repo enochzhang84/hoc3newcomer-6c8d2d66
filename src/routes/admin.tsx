@@ -153,6 +153,8 @@ type DutySchedule = {
   sort_order: number;
 };
 
+type SundayTeacher = { id: string; name: string; sort_order: number; is_active: boolean };
+
 export const Route = createFileRoute("/admin")({
   component: AdminPage,
 });
