@@ -3180,9 +3180,35 @@ img{width:480px;height:480px;}@media print{@page{margin:1cm;}}</style></head>
         <Dialog open={dutyPersonnelOpen} onOpenChange={setDutyPersonnelOpen}>
           <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>轮值人员设置</DialogTitle>
+              <DialogTitle>轮值表设置</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
+              <div className="space-y-3 rounded-lg border border-border/50 bg-muted/30 p-3">
+                <p className="text-xs font-medium text-muted-foreground">更改名称</p>
+                {([
+                  { key: "duty_sunday_title", defaultTitle: "主日崇拜轮值表" },
+                  { key: "duty_summer_title", defaultTitle: "暑期主日学轮值表" },
+                ] as const).map(({ key, defaultTitle }) => (
+                  <div key={key} className="flex gap-2 items-center">
+                    <Label className="text-xs w-16 shrink-0">{defaultTitle.slice(0, 4)}</Label>
+                    <Input
+                      defaultValue={appSettings[key] ?? defaultTitle}
+                      placeholder={defaultTitle}
+                      onBlur={async (e) => {
+                        const v = e.target.value.trim() || defaultTitle;
+                        if (v === (appSettings[key] ?? defaultTitle)) return;
+                        const { error } = await (supabase as any)
+                          .from("app_settings")
+                          .upsert({ key, value: v }, { onConflict: "key" });
+                        if (error) return toast.error(error.message);
+                        toast.success("已保存名称");
+                        loadAppSettings();
+                      }}
+                    />
+                  </div>
+                ))}
+              </div>
+              <p className="text-xs font-medium text-muted-foreground">添加同工 / 人员管理</p>
               <div className="flex gap-2">
                 <Input
                   placeholder="新人员姓名"
