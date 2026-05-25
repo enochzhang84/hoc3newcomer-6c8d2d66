@@ -2323,13 +2323,6 @@ function AdminPage() {
           </div>
           <div className="flex flex-wrap items-center gap-2 mb-4">
             <Button onClick={addEvent}>生成新二维码</Button>
-            <Button
-              size="lg"
-              onClick={() => window.open("/retreat", "_blank", "noopener,noreferrer")}
-              className="ml-auto h-12 px-6 text-base font-semibold bg-gradient-to-r from-primary to-primary/80 shadow-md hover:shadow-lg hover:from-primary/90 hover:to-primary/70 transition-all"
-            >
-              🏔️ 退修会登记
-            </Button>
           </div>
           {/* 成人主日学扫码签到 */}
           <div className="grid sm:grid-cols-2 gap-4 mb-4">
