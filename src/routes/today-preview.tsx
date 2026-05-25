@@ -145,7 +145,7 @@ function PreviewPage() {
         <header className="text-center mb-8 pb-6 border-b border-border/60">
           <h1 className="font-serif text-4xl mb-2">基督三家欢迎你</h1>
           <p className="text-muted-foreground">
-            {today} · 今日新登记 {regs.length} 人
+            {today} · 共 {regs.length} 条登记
           </p>
         </header>
 
