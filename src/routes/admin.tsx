@@ -1904,13 +1904,80 @@ function AdminPage() {
           const pptLabel = kind === "sunday" ? "主日PPT" : "暑期PPT";
           const liveLabel = "YouTube直播";
           const rows = dutySchedules.filter((s) => s.schedule_type === kind);
+          const exportDuty = () => {
+            if (rows.length === 0) return toast.error("无数据可导出");
+            const data = rows.map((r, i) => ({
+              "序号": i + 1,
+              "时间": r.slot_time ?? "",
+              [pptLabel]: r.ppt_person ?? "",
+              [`${liveLabel} 1`]: r.live_person ?? "",
+              [`${liveLabel} 2`]: r.live_person_2 ?? "",
+            }));
+            const ws = XLSX.utils.json_to_sheet(data);
+            ws["!cols"] = [{ wch: 6 }, { wch: 16 }, { wch: 14 }, { wch: 14 }, { wch: 14 }];
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "轮值表");
+            XLSX.writeFile(wb, `${title}_${new Date().toISOString().slice(0,10)}.xlsx`);
+            toast.success(`已导出 ${data.length} 条`);
+          };
+          const importDuty = async (file: File) => {
+            try {
+              const buf = await file.arrayBuffer();
+              const wb = XLSX.read(buf, { type: "array" });
+              const ws = wb.Sheets[wb.SheetNames[0]];
+              const json = XLSX.utils.sheet_to_json<Record<string, unknown>>(ws, { defval: "" });
+              if (json.length === 0) return toast.error("文件为空");
+              const baseOrder = rows[rows.length - 1]?.sort_order ?? 0;
+              const inserts = json.map((r, idx) => {
+                const get = (keys: string[]) => {
+                  for (const k of keys) {
+                    if (r[k] !== undefined && r[k] !== null && String(r[k]).trim() !== "") return String(r[k]).trim();
+                  }
+                  return null;
+                };
+                return {
+                  schedule_type: kind,
+                  slot_time: get(["时间", "日期", "time", "slot_time"]) ?? "",
+                  ppt_person: get([pptLabel, "PPT", "ppt", "ppt_person"]),
+                  live_person: get([`${liveLabel} 1`, "直播1", "live_person", "live1"]),
+                  live_person_2: get([`${liveLabel} 2`, "直播2", "live_person_2", "live2"]),
+                  sort_order: baseOrder + idx + 1,
+                };
+              }).filter((r) => r.slot_time);
+              if (inserts.length === 0) return toast.error("未识别到有效数据(需含「时间」列)");
+              const { error } = await (supabase as any).from("duty_schedules").insert(inserts);
+              if (error) return toast.error(error.message);
+              toast.success(`已导入 ${inserts.length} 条`);
+              loadDutySchedules();
+            } catch (err) {
+              toast.error("导入失败: " + (err as Error).message);
+            }
+          };
           return (
             <section key={kind} className="bg-card border border-border/50 rounded-2xl p-6">
               <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
                 <h2 className="font-serif text-xl">{title}</h2>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   <Button size="sm" variant="outline" onClick={() => setDutyPersonnelOpen(true)}>
                     轮值表设置
+                  </Button>
+                  <label className="inline-flex">
+                    <input
+                      type="file"
+                      accept=".xlsx,.xls"
+                      hidden
+                      onChange={(e) => {
+                        const f = e.target.files?.[0];
+                        if (f) importDuty(f);
+                        e.target.value = "";
+                      }}
+                    />
+                    <Button asChild size="sm" variant="outline">
+                      <span className="cursor-pointer">导入 Excel</span>
+                    </Button>
+                  </label>
+                  <Button size="sm" variant="outline" onClick={exportDuty}>
+                    导出 Excel
                   </Button>
                   <Button
                     size="sm"
