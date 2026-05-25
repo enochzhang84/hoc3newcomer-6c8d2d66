@@ -3476,6 +3476,98 @@ function groupCounts(list: Reg[], keyFn: (r: Reg) => string) {
     .sort((a, b) => b.count - a.count);
 }
 
+function countDatesSince(dates: string[], since: Date) {
+  return dates.filter((d) => new Date(d + "T00:00:00") >= since).length;
+}
+function countDatesBetween(dates: string[], from: Date, to: Date) {
+  return dates.filter((d) => {
+    const t = new Date(d + "T00:00:00");
+    return t >= from && t < to;
+  }).length;
+}
+
+function CheckinActivityCard({
+  title,
+  dates,
+  categories,
+  categoryLabel,
+}: {
+  title: string;
+  dates: string[];
+  categories: string[];
+  categoryLabel: string;
+}) {
+  const sow = startOfWeek();
+  const psow = prevStartOfWeek();
+  const som = startOfMonth();
+  const psom = prevStartOfMonth();
+
+  const thisWeek = countDatesSince(dates, sow);
+  const lastWeek = countDatesBetween(dates, psow, sow);
+  const thisMonth = countDatesSince(dates, som);
+  const lastMonth = countDatesBetween(dates, psom, som);
+  const total = dates.length;
+
+  const activeThisWeek = new Set(
+    categories.filter((_, i) => new Date(dates[i] + "T00:00:00") >= sow),
+  ).size;
+
+  const weekDelta = thisWeek - lastWeek;
+  const monthDelta = thisMonth - lastMonth;
+  const weekPct = lastWeek > 0 ? Math.round((weekDelta / lastWeek) * 100) : (thisWeek > 0 ? 100 : 0);
+  const monthPct = lastMonth > 0 ? Math.round((monthDelta / lastMonth) * 100) : (thisMonth > 0 ? 100 : 0);
+
+  const arrowColor = (delta: number) =>
+    delta > 0 ? "text-emerald-600" : delta < 0 ? "text-red-600" : "text-muted-foreground";
+  const arrowGlyph = (delta: number) => (delta > 0 ? "▲" : delta < 0 ? "▼" : "→");
+
+  return (
+    <div className="bg-card border border-border/50 rounded-2xl p-6">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="font-serif text-lg">{title}</h3>
+        <span className="text-xs text-muted-foreground">累计 {total} 人次</span>
+      </div>
+      <div className="grid grid-cols-2 gap-4">
+        <div className="border border-border/40 rounded-xl p-4">
+          <div className="text-xs text-muted-foreground">本周参加</div>
+          <div className="flex items-baseline gap-2 mt-1">
+            <div className="text-2xl font-serif">{thisWeek}</div>
+            <div className={`text-xs flex items-center gap-1 ${arrowColor(weekDelta)}`}>
+              <span>{arrowGlyph(weekDelta)}</span>
+              <span>{weekDelta > 0 ? "+" : ""}{weekDelta} ({weekPct > 0 ? "+" : ""}{weekPct}%)</span>
+            </div>
+          </div>
+          <div className="text-[11px] text-muted-foreground mt-1">上周 {lastWeek} 人次</div>
+        </div>
+        <div className="border border-border/40 rounded-xl p-4">
+          <div className="text-xs text-muted-foreground">本月参加</div>
+          <div className="flex items-baseline gap-2 mt-1">
+            <div className="text-2xl font-serif">{thisMonth}</div>
+            <div className={`text-xs flex items-center gap-1 ${arrowColor(monthDelta)}`}>
+              <span>{arrowGlyph(monthDelta)}</span>
+              <span>{monthDelta > 0 ? "+" : ""}{monthDelta} ({monthPct > 0 ? "+" : ""}{monthPct}%)</span>
+            </div>
+          </div>
+          <div className="text-[11px] text-muted-foreground mt-1">上月 {lastMonth} 人次</div>
+        </div>
+        <div className="border border-border/40 rounded-xl p-4">
+          <div className="text-xs text-muted-foreground">{categoryLabel}</div>
+          <div className="text-2xl font-serif mt-1">{activeThisWeek}</div>
+          <div className="text-[11px] text-muted-foreground mt-1">本周不同分组数量</div>
+        </div>
+        <div className="border border-border/40 rounded-xl p-4">
+          <div className="text-xs text-muted-foreground">活动积极性</div>
+          <div className={`text-2xl font-serif mt-1 flex items-center gap-2 ${arrowColor(weekDelta)}`}>
+            <span>{arrowGlyph(weekDelta)}</span>
+            <span className="text-base">{weekDelta > 0 ? "上升" : weekDelta < 0 ? "下降" : "持平"}</span>
+          </div>
+          <div className="text-[11px] text-muted-foreground mt-1">对比上周</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function Tag({ children, tone = "primary" }: { children: React.ReactNode; tone?: "primary" | "accent" }) {
   const cls = tone === "accent"
     ? "bg-accent/30 text-accent-foreground"
