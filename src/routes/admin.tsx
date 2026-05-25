@@ -2020,9 +2020,6 @@ function AdminPage() {
         <section className="bg-card border border-border/50 rounded-2xl p-6">
           <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
             <h2 className="font-serif text-xl">成人主日学</h2>
-            <Button size="sm" variant="outline" onClick={() => setCoursesOpen(true)}>
-              主日学课程设置
-            </Button>
           </div>
           <div className="grid sm:grid-cols-2 gap-6">
             <div className="border border-border/50 rounded-xl p-4 flex flex-col items-center gap-3">
@@ -2047,9 +2044,28 @@ function AdminPage() {
               </div>
             </div>
             <div className="border border-border/50 rounded-xl p-4 flex flex-col gap-3">
-              <p className="font-medium">已开放课程</p>
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <p className="font-medium">已开放课程</p>
+                <div className="flex items-center gap-1">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => window.open("/sunday-schedule", "_blank", "noopener,noreferrer")}
+                  >
+                    课程表
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="text-muted-foreground hover:text-foreground"
+                    onClick={() => setCoursesOpen(true)}
+                  >
+                    ⚙ 设置
+                  </Button>
+                </div>
+              </div>
               {courses.length === 0 ? (
-                <p className="text-sm text-muted-foreground">暂无课程，请点击右上角「主日学课程设置」添加。</p>
+                <p className="text-sm text-muted-foreground">暂无课程，请点击右上角「设置」添加。</p>
               ) : (
                 <ul className="text-sm space-y-1">
                   {courses.filter((c) => c.is_active).map((c) => (
