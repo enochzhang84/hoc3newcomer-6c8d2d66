@@ -144,7 +144,6 @@ function RetreatRegisterPage() {
           <Link to="/retreat"><Button variant="ghost" size="sm">返回</Button></Link>
         </div>
       </header>
-      <main className="container mx-auto px-6 py-10 max-w-2xl">
       <main className="container mx-auto px-6 py-10">
         <div className="grid gap-8 lg:grid-cols-2 items-start max-w-6xl mx-auto">
         <form onSubmit={handleSubmit} className="bg-card border border-border/50 rounded-2xl p-6 space-y-5 order-2 lg:order-1">
