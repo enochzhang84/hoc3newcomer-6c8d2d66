@@ -256,6 +256,16 @@ function AdminPage() {
   const [dutySchedules, setDutySchedules] = useState<DutySchedule[]>([]);
   const [dutyPersonnelOpen, setDutyPersonnelOpen] = useState(false);
   const [newDutyPersonName, setNewDutyPersonName] = useState("");
+
+  // Contacts (address book)
+  const [contacts, setContacts] = useState<Contact[]>([]);
+  const [contactsOpen, setContactsOpen] = useState(false);
+  const [contactSearch, setContactSearch] = useState("");
+  const [contactForm, setContactForm] = useState<Partial<Contact> | null>(null);
+  // App settings (editable titles)
+  const [appSettings, setAppSettings] = useState<Record<string, string>>({});
+  // Kids Sunday School
+  const [kidsRows, setKidsRows] = useState<KidsRow[]>([]);
   // Sunday school teachers
   const [sundayTeachers, setSundayTeachers] = useState<SundayTeacher[]>([]);
   const [newTeacherName, setNewTeacherName] = useState("");
