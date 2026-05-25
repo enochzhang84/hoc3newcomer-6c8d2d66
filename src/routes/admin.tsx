@@ -2764,7 +2764,75 @@ function AdminPage() {
           </DialogContent>
         </Dialog>
 
+        {/* QR Library Dialog */}
+        <Dialog open={qrLibOpen} onOpenChange={setQrLibOpen}>
+          <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>二维码库</DialogTitle>
+            </DialogHeader>
+            <QrLibrary publicBase={publicBase} events={events} />
+          </DialogContent>
+        </Dialog>
+
       </main>
+    </div>
+  );
+}
+
+function QrLibrary({ publicBase, events }: { publicBase: string; events: Event[] }) {
+  const activeEvent = events.find((e) => e.is_active) ?? events[0];
+  const items: { key: string; label: string; url: string }[] = [
+    {
+      key: "register",
+      label: "扫码登记 (新人登记)",
+      url: activeEvent ? `${publicBase}/register?event=${activeEvent.qr_token}` : "",
+    },
+    { key: "retreat", label: "退修会登记", url: `${publicBase}/retreat` },
+    { key: "sunday", label: "成人主日学签到", url: `${publicBase}/sunday-checkin` },
+    { key: "serve", label: "服侍申请", url: `${publicBase}/serve-apply` },
+    { key: "fellowship", label: "团契 / 小组聚会签到", url: `${publicBase}/fellowship-checkin` },
+    { key: "feedback", label: "问题反馈", url: `${publicBase}/feedback` },
+  ];
+
+  function copyUrl(url: string) {
+    if (!url) return;
+    navigator.clipboard.writeText(url);
+    toast.success("二维码地址已复制");
+  }
+
+  function printQr(label: string, url: string) {
+    if (!url) return;
+    const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=600x600&data=${encodeURIComponent(url)}`;
+    const html = `<!doctype html><html><head><meta charset="utf-8"><title>${label}</title>
+<style>body{font-family:system-ui,sans-serif;margin:0;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;}
+h1{font-size:28px;margin:0 0 16px;}p{color:#555;margin:16px 0 0;font-size:14px;word-break:break-all;text-align:center;max-width:520px;}
+img{width:480px;height:480px;}@media print{@page{margin:1cm;}}</style></head>
+<body><h1>${label}</h1><img src="${qrSrc}" alt="QR"/><p>${url}</p>
+<script>window.addEventListener('load',()=>setTimeout(()=>window.print(),400));</script></body></html>`;
+    const w = window.open("", "_blank");
+    if (!w) { toast.error("浏览器拦截了弹窗"); return; }
+    w.document.open(); w.document.write(html); w.document.close();
+  }
+
+  return (
+    <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 py-2">
+      {items.map((it) => (
+        <div key={it.key} className="border border-border/50 rounded-xl p-4 flex flex-col items-center gap-3 bg-background">
+          <div className="text-sm font-medium text-center">{it.label}</div>
+          {it.url ? (
+            <div className="bg-white p-2 rounded">
+              <QRCodeSVG value={it.url} size={150} level="H" />
+            </div>
+          ) : (
+            <div className="text-xs text-muted-foreground py-12">暂无有效二维码</div>
+          )}
+          <div className="text-[10px] text-muted-foreground break-all text-center leading-tight px-1">{it.url || "—"}</div>
+          <div className="flex gap-2 w-full">
+            <Button size="sm" variant="outline" className="flex-1" disabled={!it.url} onClick={() => copyUrl(it.url)}>复制地址</Button>
+            <Button size="sm" className="flex-1" disabled={!it.url} onClick={() => printQr(it.label, it.url)}>打印</Button>
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
