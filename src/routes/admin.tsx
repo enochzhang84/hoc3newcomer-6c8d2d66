@@ -2358,8 +2358,17 @@ img{width:480px;height:480px;}@media print{@page{margin:1cm;}}</style></head>
         {(["summer","fall"] as const).map((kind) => {
           const title = kind === "summer" ? "暑期成人主日学签到表" : "秋季成人主日学签到表";
           const all = adultCheckins.filter((c) => c.kind === kind);
+          const dateFilter = adultDateFilter[kind];
+          const filtered = dateFilter
+            ? all.filter((c) => {
+                const d = new Date(c.checkin_at);
+                return d.getFullYear() === dateFilter.getFullYear()
+                  && d.getMonth() === dateFilter.getMonth()
+                  && d.getDate() === dateFilter.getDate();
+              })
+            : all;
           const sort = adultSort[kind];
-          const sorted = [...all].sort((a, b) => {
+          const sorted = [...filtered].sort((a, b) => {
             const av = sort.col === "name" ? a.name : sort.col === "fellowship" ? (a.fellowship ?? "") : a.checkin_at;
             const bv = sort.col === "name" ? b.name : sort.col === "fellowship" ? (b.fellowship ?? "") : b.checkin_at;
             const cmp = String(av).localeCompare(String(bv), "zh-CN");
@@ -2378,11 +2387,62 @@ img{width:480px;height:480px;}@media print{@page{margin:1cm;}}</style></head>
             setAdultPages((p) => ({ ...p, [kind]: 1 }));
           };
           const arrow = (col: "name" | "fellowship" | "time") => sort.col === col ? (sort.dir === "asc" ? " ▲" : " ▼") : "";
+          const exportAdult = (rowsToExport: AdultCheckin[], suffix: string) => {
+            if (rowsToExport.length === 0) return toast.error("无数据可导出");
+            const data = rowsToExport.map((r, i) => ({
+              "序号": i + 1,
+              "签到时间": new Date(r.checkin_at).toLocaleString("zh-CN", { hour12: false }),
+              "姓名": r.name,
+              "团契": r.fellowship ?? "",
+              "备注": r.notes ?? "",
+            }));
+            const ws = XLSX.utils.json_to_sheet(data);
+            ws["!cols"] = [{ wch: 6 }, { wch: 22 }, { wch: 14 }, { wch: 16 }, { wch: 30 }];
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "签到名单");
+            XLSX.writeFile(wb, `${title}_${suffix}_${new Date().toISOString().slice(0,10)}.xlsx`);
+            toast.success(`已导出 ${data.length} 条`);
+          };
           return (
             <section key={kind} className="bg-card border border-border/50 rounded-2xl p-6">
               <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-                <h2 className="font-serif text-xl">{title} ({all.length})</h2>
-                <Button size="sm" variant="outline" onClick={() => loadAdultCheckins()}>刷新</Button>
+                <h2 className="font-serif text-xl">{title} ({filtered.length}{dateFilter ? ` / 共 ${all.length}` : ""})</h2>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Popover open={adultDateOpen[kind]} onOpenChange={(v) => setAdultDateOpen((p) => ({ ...p, [kind]: v }))}>
+                    <PopoverTrigger asChild>
+                      <Button size="sm" variant="outline" className="gap-2">
+                        <CalendarIcon className="h-4 w-4" />
+                        {dateFilter ? format(dateFilter, "yyyy-MM-dd") : "日期筛选"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="end">
+                      <Calendar
+                        mode="single"
+                        selected={dateFilter}
+                        onSelect={(d) => {
+                          setAdultDateFilter((p) => ({ ...p, [kind]: d ?? undefined }));
+                          setAdultPages((p) => ({ ...p, [kind]: 1 }));
+                          setAdultDateOpen((p) => ({ ...p, [kind]: false }));
+                        }}
+                        locale={zhCN}
+                        initialFocus
+                        className="p-3 pointer-events-auto"
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  {dateFilter && (
+                    <Button size="sm" variant="ghost" onClick={() => setAdultDateFilter((p) => ({ ...p, [kind]: undefined }))}>
+                      清除
+                    </Button>
+                  )}
+                  <Button size="sm" variant="outline" onClick={() => exportAdult(sorted, dateFilter ? format(dateFilter, "yyyy-MM-dd") : "当前")}>
+                    导出当前
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => exportAdult(all, "全部")}>
+                    所有名单 · 导出 Excel
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => loadAdultCheckins()}>刷新</Button>
+                </div>
               </div>
               <div className="overflow-x-auto max-h-[520px] overflow-y-auto rounded-lg border border-border/50">
                 <table className="w-full text-sm">
