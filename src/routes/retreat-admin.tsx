@@ -32,6 +32,8 @@ type Row = {
   topic: string | null;
   bed: string | null;
   bus: string | null;
+  can_pickup: number | null;
+  need_pickup: number | null;
   user_notes: string | null;
   created_at: string;
   updated_at: string;
@@ -53,6 +55,8 @@ function emptyForm() {
     program: "",
     topic: "",
     bed: "",
+    can_pickup: "",
+    need_pickup: "",
     user_notes: "",
   };
 }

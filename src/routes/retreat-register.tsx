@@ -248,6 +248,31 @@ function RetreatRegisterPage() {
             </select>
           </div>
 
+          <div className="grid sm:grid-cols-2 gap-4">
+            <div>
+              <BiLabel cn="我们可以接送______位" en="We can pick up ___ people" />
+              <Input
+                type="number"
+                min={0}
+                value={form.can_pickup}
+                onChange={(e) => set("can_pickup", e.target.value)}
+                className="mt-1"
+                placeholder="0"
+              />
+            </div>
+            <div>
+              <BiLabel cn="我们有______位需要被接送" en="We need pick-up for ___ people" />
+              <Input
+                type="number"
+                min={0}
+                value={form.need_pickup}
+                onChange={(e) => set("need_pickup", e.target.value)}
+                className="mt-1"
+                placeholder="0"
+              />
+            </div>
+          </div>
+
           <div>
             <BiLabel cn="备注" en="Notes" />
             <Textarea value={form.user_notes} onChange={(e) => set("user_notes", e.target.value)} rows={3} className="mt-1" />
