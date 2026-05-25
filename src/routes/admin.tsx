@@ -155,6 +155,15 @@ type DutySchedule = {
 
 type SundayTeacher = { id: string; name: string; sort_order: number; is_active: boolean };
 
+type AdultCheckin = {
+  id: string;
+  kind: "summer" | "fall";
+  name: string;
+  fellowship: string | null;
+  notes: string | null;
+  checkin_at: string;
+};
+
 export const Route = createFileRoute("/admin")({
   component: AdminPage,
 });
@@ -195,6 +204,14 @@ function AdminPage() {
   const [coursePages, setCoursePages] = useState<Record<string, number>>({});
   const [fellowshipPages, setFellowshipPages] = useState<Record<string, number>>({});
   const TAB_PAGE_SIZE = 10;
+  // Adult class checkins (summer / fall)
+  const [adultCheckins, setAdultCheckins] = useState<AdultCheckin[]>([]);
+  const [adultSort, setAdultSort] = useState<Record<"summer" | "fall", { col: "name" | "fellowship" | "time"; dir: "asc" | "desc" }>>({
+    summer: { col: "time", dir: "desc" },
+    fall: { col: "time", dir: "desc" },
+  });
+  const [adultPages, setAdultPages] = useState<Record<"summer" | "fall", number>>({ summer: 1, fall: 1 });
+  const ADULT_PAGE_SIZE = 15;
   // Kitchen meal plans
   const [mealTypes, setMealTypes] = useState<MealType[]>([]);
   const [mealPlans, setMealPlans] = useState<MealPlan[]>([]);
