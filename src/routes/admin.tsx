@@ -967,7 +967,7 @@ function AdminPage() {
 
             <TabsContent value="stats" className="space-y-8 mt-0">
         <section>
-          <h2 className="font-serif text-xl mb-4">数据统计</h2>
+          <h2 className="font-serif text-xl mb-4">登记统计</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <Stat label="总登记数" value={regs.length} />
           <Stat label="希望探访" value={regs.filter((r) => r.wants_visit).length} />
@@ -1792,7 +1792,7 @@ function AdminPage() {
         {(["sunday","summer"] as const).map((kind) => {
           const title = kind === "sunday" ? "主日崇拜轮值表" : "暑期主日学轮值表";
           const pptLabel = kind === "sunday" ? "主日PPT" : "暑期PPT";
-          const liveLabel = kind === "sunday" ? "主日直播" : "暑期直播";
+          const liveLabel = "YouTube直播";
           const rows = dutySchedules.filter((s) => s.schedule_type === kind);
           return (
             <section key={kind} className="bg-card border border-border/50 rounded-2xl p-6">
@@ -1823,7 +1823,8 @@ function AdminPage() {
                     <tr className="text-left border-b border-border/60 text-muted-foreground">
                       <th className="py-2 px-2 w-1/3">时间</th>
                       <th className="py-2 px-2">{pptLabel}</th>
-                      <th className="py-2 px-2">{liveLabel}</th>
+                      <th className="py-2 px-2">{liveLabel} 1</th>
+                      <th className="py-2 px-2">{liveLabel} 2</th>
                       <th className="py-2 px-2 text-right">操作</th>
                     </tr>
                   </thead>
@@ -1873,6 +1874,21 @@ function AdminPage() {
                             ))}
                           </select>
                         </td>
+                        <td className="py-2 px-2">
+                          <select
+                            className="h-8 rounded-md border border-input bg-transparent px-2 text-sm w-full"
+                            defaultValue={r.live_person_2 ?? ""}
+                            onChange={async (e) => {
+                              await (supabase as any).from("duty_schedules").update({ live_person_2: e.target.value || null }).eq("id", r.id);
+                              loadDutySchedules();
+                            }}
+                          >
+                            <option value="">— 选择人员 —</option>
+                            {dutyPersonnel.filter((p) => p.is_active).map((p) => (
+                              <option key={p.id} value={p.name}>{p.name}</option>
+                            ))}
+                          </select>
+                        </td>
                         <td className="py-2 px-2 text-right">
                           <button
                             className="text-xs text-destructive hover:underline"
@@ -1886,7 +1902,7 @@ function AdminPage() {
                       </tr>
                     ))}
                     {rows.length === 0 && (
-                      <tr><td colSpan={4} className="py-8 text-center text-muted-foreground">暂无记录，点击右上「添加一行」</td></tr>
+                      <tr><td colSpan={5} className="py-8 text-center text-muted-foreground">暂无记录，点击右上「添加一行」</td></tr>
                     )}
                   </tbody>
                 </table>
