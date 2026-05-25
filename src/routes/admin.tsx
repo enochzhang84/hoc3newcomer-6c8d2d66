@@ -459,6 +459,7 @@ function AdminPage() {
            void loadMealPlans();
            void loadDutyPersonnel();
            void loadDutySchedules();
+           void loadSundayTeachers();
             void loadUsers();
           }
         } catch (e) {
