@@ -1275,9 +1275,14 @@ function AdminPage() {
         <section className="bg-card border border-border/50 rounded-2xl p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-serif text-xl">管理员权限</h2>
-            <Button size="sm" variant="outline" onClick={loadUsers} disabled={usersLoading}>
-              {usersLoading ? "刷新中..." : "刷新"}
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button size="sm" onClick={() => { setNewUserForm({ email: "", password: "", role: "user" }); setNewUserOpen(true); }}>
+                + 添加用户
+              </Button>
+              <Button size="sm" variant="outline" onClick={loadUsers} disabled={usersLoading}>
+                {usersLoading ? "刷新中..." : "刷新"}
+              </Button>
+            </div>
           </div>
           <p className="text-xs text-muted-foreground mb-4">
             新注册用户默认为「待审核」，须由超级管理员在此分配角色后才能登录。
