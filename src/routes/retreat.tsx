@@ -49,7 +49,7 @@ function RetreatPage() {
                 Sonoma State University
               </p>
             </div>
-            <blockquote className="border-l-4 border-primary/60 pl-4 italic text-foreground/85 leading-relaxed">
+            <blockquote className="italic text-foreground/85 leading-relaxed">
               「神能将各样的恩惠多多地加给你们，使你们凡事常常充足，能多行各样善事。」
               <div className="mt-1 text-sm text-muted-foreground not-italic">— 哥林多后书 9:8</div>
             </blockquote>
