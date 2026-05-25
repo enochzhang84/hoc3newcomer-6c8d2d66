@@ -14,6 +14,17 @@ async function assertAdmin(userId: string) {
   if (!data) throw new Error("Forbidden: admin only");
 }
 
+async function assertSuperAdmin(userId: string) {
+  const { data, error } = await supabaseAdmin
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", userId)
+    .eq("role", "super_admin")
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!data) throw new Error("Forbidden: super admin only");
+}
+
 async function assertApprovedUser(userId: string) {
   const { data, error } = await supabaseAdmin
     .from("user_roles")
@@ -63,7 +74,7 @@ export const setUserAdmin = createServerFn({ method: "POST" })
     }).parse(input),
   )
   .handler(async ({ context, data }) => {
-    await assertAdmin(context.userId);
+    await assertSuperAdmin(context.userId);
 
     if (data.makeAdmin) {
       const { error } = await supabaseAdmin
@@ -100,7 +111,7 @@ export const deleteUser = createServerFn({ method: "POST" })
     z.object({ userId: z.string().uuid() }).parse(input),
   )
   .handler(async ({ context, data }) => {
-    await assertAdmin(context.userId);
+    await assertSuperAdmin(context.userId);
     if (data.userId === context.userId) {
       throw new Error("不能删除自己");
     }
@@ -109,7 +120,7 @@ export const deleteUser = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-const roleSchema = z.enum(["admin", "user", "viewer"]);
+const roleSchema = z.enum(["super_admin", "admin", "user", "viewer"]);
 
 export const setUserRole = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -120,7 +131,7 @@ export const setUserRole = createServerFn({ method: "POST" })
     }).parse(input),
   )
   .handler(async ({ context, data }) => {
-    await assertAdmin(context.userId);
+    await assertSuperAdmin(context.userId);
 
     // Prevent self-demotion that would lock out the last admin
     if (data.userId === context.userId && data.role !== "admin") {
