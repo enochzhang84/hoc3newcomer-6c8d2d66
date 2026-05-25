@@ -262,6 +262,9 @@ function AdminPage() {
   const [contactsOpen, setContactsOpen] = useState(false);
   const [contactSearch, setContactSearch] = useState("");
   const [contactForm, setContactForm] = useState<Partial<Contact> | null>(null);
+  // Kids Sunday School settings dialog
+  const [kidsSettingsSeason, setKidsSettingsSeason] = useState<"spring" | "fall" | null>(null);
+  const [kidsNewTeacher, setKidsNewTeacher] = useState("");
   // App settings (editable titles)
   const [appSettings, setAppSettings] = useState<Record<string, string>>({});
   // Kids Sunday School
