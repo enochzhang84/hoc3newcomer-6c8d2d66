@@ -150,6 +150,7 @@ type DutySchedule = {
   slot_time: string;
   ppt_person: string | null;
   live_person: string | null;
+  live_person_2?: string | null;
   sort_order: number;
 };
 
