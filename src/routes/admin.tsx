@@ -3456,6 +3456,76 @@ ${rows.length===0?'<tr><td colspan="4" style="text-align:center;color:#888;paddi
                 <Button size="sm" onClick={() => setContactForm({ name: "", phone: "", wechat: "", email: "", address: "", fellowship: "", notes: "" })}>
                   + 添加联系人
                 </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    if (contacts.length === 0) return toast.error("无数据可导出");
+                    const data = contacts.map((c, i) => ({
+                      "序号": i + 1,
+                      "姓名": c.name,
+                      "电话": c.phone ?? "",
+                      "微信": c.wechat ?? "",
+                      "邮件": c.email ?? "",
+                      "地址": c.address ?? "",
+                      "团契": c.fellowship ?? "",
+                      "备注": c.notes ?? "",
+                    }));
+                    const ws = XLSX.utils.json_to_sheet(data);
+                    ws["!cols"] = [{ wch: 6 },{ wch: 14 },{ wch: 16 },{ wch: 16 },{ wch: 22 },{ wch: 28 },{ wch: 14 },{ wch: 24 }];
+                    const wb = XLSX.utils.book_new();
+                    XLSX.utils.book_append_sheet(wb, ws, "通讯录");
+                    XLSX.writeFile(wb, `通讯录_${new Date().toISOString().slice(0,10)}.xlsx`);
+                    toast.success(`已导出 ${data.length} 条`);
+                  }}
+                >
+                  导出 Excel
+                </Button>
+                <label className="inline-flex">
+                  <input
+                    type="file"
+                    accept=".xlsx,.xls"
+                    hidden
+                    onChange={async (e) => {
+                      const f = e.target.files?.[0];
+                      e.target.value = "";
+                      if (!f) return;
+                      try {
+                        const buf = await f.arrayBuffer();
+                        const wb = XLSX.read(buf, { type: "array" });
+                        const ws = wb.Sheets[wb.SheetNames[0]];
+                        const json = XLSX.utils.sheet_to_json<Record<string, unknown>>(ws, { defval: "" });
+                        const get = (r: Record<string, unknown>, keys: string[]) => {
+                          for (const k of keys) {
+                            if (r[k] !== undefined && String(r[k]).trim() !== "") return String(r[k]).trim();
+                          }
+                          return null;
+                        };
+                        const inserts = json
+                          .map((r) => ({
+                            name: get(r, ["姓名", "name"]) ?? "",
+                            phone: get(r, ["电话", "phone"]),
+                            wechat: get(r, ["微信", "wechat"]),
+                            email: get(r, ["邮件", "邮箱", "email"]),
+                            address: get(r, ["地址", "address"]),
+                            fellowship: get(r, ["团契", "fellowship"]),
+                            notes: get(r, ["备注", "notes"]),
+                          }))
+                          .filter((r) => r.name);
+                        if (inserts.length === 0) return toast.error("未识别到有效数据(需含「姓名」列)");
+                        const { error } = await (supabase as any).from("contacts").insert(inserts);
+                        if (error) return toast.error(error.message);
+                        toast.success(`已导入 ${inserts.length} 条`);
+                        loadContacts();
+                      } catch (err) {
+                        toast.error("导入失败: " + (err as Error).message);
+                      }
+                    }}
+                  />
+                  <Button asChild size="sm" variant="outline">
+                    <span className="cursor-pointer">导入 Excel</span>
+                  </Button>
+                </label>
               </div>
 
               {contactForm && (
