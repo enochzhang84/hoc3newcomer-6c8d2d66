@@ -44,6 +44,7 @@ function RegisterPage() {
     referrer_type: "", // self | friend | other
     invited_by: "",
     referrer_other: "",
+    source_channel: "", // chatgpt | maps | wechat | youtube | missionary
     wants_visit: false,
     wants_info: false,
     notes: "",
@@ -90,8 +91,9 @@ function RegisterPage() {
       marital_status: form.marital_status || null,
       spouse_name: form.marital_status === "married" ? form.spouse_name.trim() || null : null,
       referrer_type: form.referrer_type || null,
-      invited_by: (form.referrer_type === "friend" || form.referrer_type === "missionary") ? form.invited_by.trim() || null : null,
+      invited_by: form.referrer_type === "friend" ? form.invited_by.trim() || null : null,
       referrer_other: form.referrer_type === "other" ? form.referrer_other.trim() || null : null,
+      source_channel: form.source_channel || null,
       wants_visit: form.wants_visit,
       wants_info: form.wants_info,
       notes: form.notes.trim() || null,
