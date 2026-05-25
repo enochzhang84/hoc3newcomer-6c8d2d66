@@ -848,9 +848,13 @@ function AdminPage() {
     const referrerText = (r: Reg) => {
       const t = r.referrer_type ?? "";
       const friendName = t === "friend" ? esc(r.invited_by ?? "") : "";
-      const missionaryName = t === "missionary" ? esc(r.invited_by ?? "") : "";
       const otherText = t === "other" ? esc(r.referrer_other ?? "") : "";
-      return `${t === "self" ? "☑" : "☐"}自己　${t === "friend" ? "☑" : "☐"}親友姓名 ${friendName}　${t === "wechat" ? "☑" : "☐"}微信/小紅書　${t === "youtube" ? "☑" : "☐"}YouTube　${t === "missionary" ? "☑" : "☐"}宣教士 ${missionaryName}　${t === "other" ? "☑" : "☐"}其他 ${otherText}`;
+      return `${t === "self" ? "☑" : "☐"}自己　${t === "friend" ? "☑" : "☐"}親友姓名 ${friendName}　${t === "other" ? "☑" : "☐"}其他 ${otherText}`;
+    };
+    const sourceChannelText = (r: Reg) => {
+      const s = r.source_channel ?? "";
+      const m = (v: string) => (s === v ? "☑" : "☐");
+      return `${m("chatgpt")}ChatGPT　${m("maps")}谷歌/蘋果地圖　${m("wechat")}微信/小紅書　${m("youtube")}YouTube　${m("missionary")}宣教士`;
     };
     const wantsText = (r: Reg) =>
       `${r.wants_visit ? "☑" : "☐"}我歡迎教會牧者探訪我　${r.wants_info ? "☑" : "☐"}我需要教會的資料及聯絡`;
@@ -869,6 +873,7 @@ function AdminPage() {
           <div class="row"><span class="lbl">年齡：</span><span class="val grow">${ageText(r)}</span></div>
           <div class="row"><span class="lbl">婚姻：</span><span class="val grow">${maritalText(r)}</span></div>
           <div class="row"><span class="lbl">介紹人：</span><span class="val grow">${referrerText(r)}</span></div>
+          <div class="row"><span class="lbl">來源：</span><span class="val grow">${sourceChannelText(r)}</span></div>
           <div class="row"><span class="val grow">${wantsText(r)}</span></div>
           ${r.notes ? `<div class="row"><span class="lbl">備註：</span><span class="val grow">${esc(r.notes)}</span></div>` : ""}
         </div>
