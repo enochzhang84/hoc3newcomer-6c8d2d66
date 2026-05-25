@@ -98,6 +98,7 @@ export type Database = {
       contacts: {
         Row: {
           address: string | null
+          city: string | null
           created_at: string
           email: string | null
           fellowship: string | null
@@ -107,9 +108,11 @@ export type Database = {
           phone: string | null
           updated_at: string
           wechat: string | null
+          zip: string | null
         }
         Insert: {
           address?: string | null
+          city?: string | null
           created_at?: string
           email?: string | null
           fellowship?: string | null
@@ -119,9 +122,11 @@ export type Database = {
           phone?: string | null
           updated_at?: string
           wechat?: string | null
+          zip?: string | null
         }
         Update: {
           address?: string | null
+          city?: string | null
           created_at?: string
           email?: string | null
           fellowship?: string | null
@@ -131,6 +136,7 @@ export type Database = {
           phone?: string | null
           updated_at?: string
           wechat?: string | null
+          zip?: string | null
         }
         Relationships: []
       }
