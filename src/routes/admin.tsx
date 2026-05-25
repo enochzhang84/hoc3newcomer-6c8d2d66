@@ -485,6 +485,7 @@ function AdminPage() {
            void loadDutyPersonnel();
            void loadDutySchedules();
            void loadSundayTeachers();
+           void loadAdultCheckins();
             void loadUsers();
           }
         } catch (e) {
