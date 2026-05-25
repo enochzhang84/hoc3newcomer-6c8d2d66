@@ -2312,14 +2312,6 @@ function AdminPage() {
         <section className="bg-card border border-border/50 rounded-2xl p-6">
           <div className="flex items-center gap-4 mb-4 flex-wrap">
             <h2 className="font-serif text-xl">教会活动</h2>
-            <div className="flex items-center gap-2 text-sm">
-              <span className="text-muted-foreground">二维码状态:</span>
-              {events.some((e) => e.is_active) ? (
-                <span className="font-medium text-green-600">二维码工作中</span>
-              ) : (
-                <span className="font-medium text-foreground">二维码已停用</span>
-              )}
-            </div>
           </div>
           {/* 成人主日学扫码签到 */}
           <div className="grid sm:grid-cols-2 gap-4 mb-4">
@@ -2351,6 +2343,14 @@ function AdminPage() {
                   <div className="min-w-0">
                     <p className="font-medium truncate">{ev.name}</p>
                     <p className="text-xs text-muted-foreground truncate">{url}</p>
+                    <div className="flex items-center gap-2 text-xs mt-1">
+                      <span className="text-muted-foreground">二维码状态:</span>
+                      {ev.is_active ? (
+                        <span className="font-medium text-green-600">二维码工作中</span>
+                      ) : (
+                        <span className="font-medium text-foreground">二维码已停用</span>
+                      )}
+                    </div>
                   </div>
                   <div className="flex gap-2 shrink-0">
                   <Button size="sm" onClick={addEvent}>生成新二维码</Button>

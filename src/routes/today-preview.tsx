@@ -101,16 +101,27 @@ function PreviewPage() {
         }
         const { start, end } = getTodayRangeForSanFrancisco();
         console.log("[today-preview] range", { start, end });
-        const { data, error } = await supabase
+        const cols =
+          "id,name,name_en,faith,faith_years,faith_other,referrer_type,invited_by,referrer_other,notes,created_at";
+        // First try today (SF time)
+        let { data, error } = await supabase
           .from("registrations")
-          .select(
-            "id,name,name_en,faith,faith_years,faith_other,referrer_type,invited_by,referrer_other,notes,created_at",
-          )
+          .select(cols)
           .gte("created_at", start)
           .lt("created_at", end)
           .order("created_at", { ascending: false });
         if (error) {
           console.error("[today-preview] query error", error);
+        }
+        // Fallback: if no records today, show the most recent registrations
+        if (!data || data.length === 0) {
+          const fb = await supabase
+            .from("registrations")
+            .select(cols)
+            .order("created_at", { ascending: false })
+            .limit(100);
+          if (fb.error) console.error("[today-preview] fallback error", fb.error);
+          data = fb.data ?? [];
         }
         setRegs((data ?? []) as Reg[]);
       } catch (e) {
@@ -134,7 +145,7 @@ function PreviewPage() {
         <header className="text-center mb-8 pb-6 border-b border-border/60">
           <h1 className="font-serif text-4xl mb-2">基督三家欢迎你</h1>
           <p className="text-muted-foreground">
-            {today} · 今日新登记 {regs.length} 人
+            {today} · 共 {regs.length} 条登记
           </p>
         </header>
 
