@@ -2672,20 +2672,6 @@ function AdminPage() {
 
         {/* System Init Dialog */}
         <Dialog open={initOpen} onOpenChange={(o) => { if (!initLoading) setInitOpen(o); }}>
-
-        </Dialog>
-
-        {/* QR Library Dialog */}
-        <Dialog open={qrLibOpen} onOpenChange={setQrLibOpen}>
-          <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>二维码库</DialogTitle>
-            </DialogHeader>
-            <QrLibrary publicBase={publicBase} events={events} onClose={() => setQrLibOpen(false)} />
-          </DialogContent>
-        </Dialog>
-
-        <Dialog open={initOpen} onOpenChange={(o) => { if (!initLoading) setInitOpen(o); }}>
           <DialogContent className="max-w-md">
             <DialogHeader>
               <DialogTitle>系统初始化</DialogTitle>
