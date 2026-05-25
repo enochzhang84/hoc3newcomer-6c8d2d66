@@ -2099,6 +2099,24 @@ function AdminPage() {
                 >
                   复制链接
                 </Button>
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    const url = `${publicBase}/sunday-checkin`;
+                    const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=600x600&data=${encodeURIComponent(url)}`;
+                    const html = `<!doctype html><html><head><meta charset="utf-8"><title>主日学签到</title>
+<style>body{font-family:system-ui,sans-serif;margin:0;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;}
+h1{font-size:28px;margin:0 0 16px;}p{color:#555;margin:16px 0 0;font-size:14px;word-break:break-all;text-align:center;max-width:520px;}
+img{width:480px;height:480px;}@media print{@page{margin:1cm;}}</style></head>
+<body><h1>主日学签到</h1><img src="${qrSrc}" alt="QR"/><p>${url}</p>
+<script>window.addEventListener('load',()=>setTimeout(()=>window.print(),400));</script></body></html>`;
+                    const w = window.open("", "_blank");
+                    if (!w) { toast.error("浏览器拦截了弹窗"); return; }
+                    w.document.open(); w.document.write(html); w.document.close();
+                  }}
+                >
+                  打印二维码
+                </Button>
               </div>
             </div>
             <div className="border border-border/50 rounded-xl p-4 flex flex-col gap-3">
