@@ -214,6 +214,8 @@ function AdminPage() {
   });
   const [adultPages, setAdultPages] = useState<Record<"summer" | "fall", number>>({ summer: 1, fall: 1 });
   const ADULT_PAGE_SIZE = 15;
+  const [adultDateFilter, setAdultDateFilter] = useState<Record<"summer" | "fall", Date | undefined>>({ summer: undefined, fall: undefined });
+  const [adultDateOpen, setAdultDateOpen] = useState<Record<"summer" | "fall", boolean>>({ summer: false, fall: false });
   // Kitchen meal plans
   const [mealTypes, setMealTypes] = useState<MealType[]>([]);
   const [mealPlans, setMealPlans] = useState<MealPlan[]>([]);
