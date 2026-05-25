@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      adult_class_checkins: {
+        Row: {
+          checkin_at: string
+          created_at: string
+          fellowship: string | null
+          id: string
+          kind: string
+          name: string
+          notes: string | null
+        }
+        Insert: {
+          checkin_at?: string
+          created_at?: string
+          fellowship?: string | null
+          id?: string
+          kind: string
+          name: string
+          notes?: string | null
+        }
+        Update: {
+          checkin_at?: string
+          created_at?: string
+          fellowship?: string | null
+          id?: string
+          kind?: string
+          name?: string
+          notes?: string | null
+        }
+        Relationships: []
+      }
       attendance_records: {
         Row: {
           children_students: number

@@ -155,6 +155,15 @@ type DutySchedule = {
 
 type SundayTeacher = { id: string; name: string; sort_order: number; is_active: boolean };
 
+type AdultCheckin = {
+  id: string;
+  kind: "summer" | "fall";
+  name: string;
+  fellowship: string | null;
+  notes: string | null;
+  checkin_at: string;
+};
+
 export const Route = createFileRoute("/admin")({
   component: AdminPage,
 });
@@ -195,6 +204,14 @@ function AdminPage() {
   const [coursePages, setCoursePages] = useState<Record<string, number>>({});
   const [fellowshipPages, setFellowshipPages] = useState<Record<string, number>>({});
   const TAB_PAGE_SIZE = 10;
+  // Adult class checkins (summer / fall)
+  const [adultCheckins, setAdultCheckins] = useState<AdultCheckin[]>([]);
+  const [adultSort, setAdultSort] = useState<Record<"summer" | "fall", { col: "name" | "fellowship" | "time"; dir: "asc" | "desc" }>>({
+    summer: { col: "time", dir: "desc" },
+    fall: { col: "time", dir: "desc" },
+  });
+  const [adultPages, setAdultPages] = useState<Record<"summer" | "fall", number>>({ summer: 1, fall: 1 });
+  const ADULT_PAGE_SIZE = 15;
   // Kitchen meal plans
   const [mealTypes, setMealTypes] = useState<MealType[]>([]);
   const [mealPlans, setMealPlans] = useState<MealPlan[]>([]);
@@ -333,6 +350,14 @@ function AdminPage() {
     setFellowshipCheckins((data ?? []) as FellowshipCheckin[]);
   }, []);
 
+  const loadAdultCheckins = useCallback(async () => {
+    const { data } = await (supabase as any)
+      .from("adult_class_checkins")
+      .select("*")
+      .order("checkin_at", { ascending: false });
+    setAdultCheckins((data ?? []) as AdultCheckin[]);
+  }, []);
+
   const loadFellowships = useCallback(async () => {
     const { data } = await supabase
       .from("fellowships")
@@ -460,6 +485,7 @@ function AdminPage() {
            void loadDutyPersonnel();
            void loadDutySchedules();
            void loadSundayTeachers();
+           void loadAdultCheckins();
             void loadUsers();
           }
         } catch (e) {
@@ -928,7 +954,7 @@ function AdminPage() {
       <main className="container mx-auto px-6 py-8 space-y-8">
         <Tabs defaultValue="stats" className="w-full">
           <TabsList className="grid grid-cols-3 md:grid-cols-6 h-auto w-full mb-6">
-            <TabsTrigger value="stats">登记人数统计</TabsTrigger>
+            <TabsTrigger value="stats">数据统计</TabsTrigger>
             <TabsTrigger value="welcome">迎宾接待</TabsTrigger>
             <TabsTrigger value="media">影音播放</TabsTrigger>
             <TabsTrigger value="kitchen">厨房侍工</TabsTrigger>
@@ -1761,6 +1787,7 @@ function AdminPage() {
           </div>
         </section>
 
+        <div className="grid lg:grid-cols-2 gap-6">
         {(["sunday","summer"] as const).map((kind) => {
           const title = kind === "sunday" ? "主日崇拜轮值表" : "暑期主日学轮值表";
           const pptLabel = kind === "sunday" ? "主日PPT" : "暑期PPT";
@@ -1866,6 +1893,7 @@ function AdminPage() {
             </section>
           );
         })}
+        </div>
             </TabsContent>
 
             <TabsContent value="kitchen" className="space-y-8 mt-0">
@@ -2182,6 +2210,85 @@ function AdminPage() {
             </Tabs>
           )}
         </section>
+        {(["summer","fall"] as const).map((kind) => {
+          const title = kind === "summer" ? "暑期成人主日学签到表" : "秋季成人主日学签到表";
+          const all = adultCheckins.filter((c) => c.kind === kind);
+          const sort = adultSort[kind];
+          const sorted = [...all].sort((a, b) => {
+            const av = sort.col === "name" ? a.name : sort.col === "fellowship" ? (a.fellowship ?? "") : a.checkin_at;
+            const bv = sort.col === "name" ? b.name : sort.col === "fellowship" ? (b.fellowship ?? "") : b.checkin_at;
+            const cmp = String(av).localeCompare(String(bv), "zh-CN");
+            return sort.dir === "asc" ? cmp : -cmp;
+          });
+          const pg = adultPages[kind] ?? 1;
+          const totalPg = Math.max(1, Math.ceil(sorted.length / ADULT_PAGE_SIZE));
+          const slice = sorted.slice((pg - 1) * ADULT_PAGE_SIZE, pg * ADULT_PAGE_SIZE);
+          const toggleSort = (col: "name" | "fellowship" | "time") => {
+            setAdultSort((prev) => ({
+              ...prev,
+              [kind]: prev[kind].col === col
+                ? { col, dir: prev[kind].dir === "asc" ? "desc" : "asc" }
+                : { col, dir: "asc" },
+            }));
+            setAdultPages((p) => ({ ...p, [kind]: 1 }));
+          };
+          const arrow = (col: "name" | "fellowship" | "time") => sort.col === col ? (sort.dir === "asc" ? " ▲" : " ▼") : "";
+          return (
+            <section key={kind} className="bg-card border border-border/50 rounded-2xl p-6">
+              <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+                <h2 className="font-serif text-xl">{title} ({all.length})</h2>
+                <Button size="sm" variant="outline" onClick={() => loadAdultCheckins()}>刷新</Button>
+              </div>
+              <div className="overflow-x-auto max-h-[520px] overflow-y-auto rounded-lg border border-border/50">
+                <table className="w-full text-sm">
+                  <thead className="sticky top-0 z-10 bg-muted/80 backdrop-blur">
+                    <tr className="text-left border-b border-border/60 text-muted-foreground">
+                      <th className="py-2 px-2 cursor-pointer select-none" onClick={() => toggleSort("time")}>当前时间{arrow("time")}</th>
+                      <th className="py-2 px-2 cursor-pointer select-none" onClick={() => toggleSort("name")}>姓名{arrow("name")}</th>
+                      <th className="py-2 px-2 cursor-pointer select-none" onClick={() => toggleSort("fellowship")}>团契{arrow("fellowship")}</th>
+                      <th className="py-2 px-2">备注</th>
+                      <th className="py-2 px-2 text-right">操作</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {slice.map((k) => (
+                      <tr key={k.id} className="border-b border-border/30 align-top">
+                        <td className="py-2 px-2 whitespace-nowrap text-muted-foreground">
+                          {new Date(k.checkin_at).toLocaleString("zh-CN", { hour12: false })}
+                        </td>
+                        <td className="py-2 px-2 font-medium">{k.name}</td>
+                        <td className="py-2 px-2">{k.fellowship ?? ""}</td>
+                        <td className="py-2 px-2 max-w-[260px] whitespace-pre-wrap break-words">{k.notes ?? ""}</td>
+                        <td className="py-2 px-2 text-right">
+                          <button
+                            onClick={async () => {
+                              if (!confirm(`删除 ${k.name} 的签到?`)) return;
+                              const { error } = await (supabase as any).from("adult_class_checkins").delete().eq("id", k.id);
+                              if (error) return toast.error(error.message);
+                              toast.success("已删除");
+                              loadAdultCheckins();
+                            }}
+                            className="text-xs text-destructive hover:underline"
+                          >删除</button>
+                        </td>
+                      </tr>
+                    ))}
+                    {sorted.length === 0 && (
+                      <tr><td colSpan={5} className="py-8 text-center text-muted-foreground">暂无签到记录</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+              {totalPg > 1 && (
+                <div className="flex items-center justify-center gap-2 mt-3 text-sm">
+                  <Button size="sm" variant="outline" disabled={pg === 1} onClick={() => setAdultPages({ ...adultPages, [kind]: pg - 1 })}>上一页</Button>
+                  <span>{pg} / {totalPg}</span>
+                  <Button size="sm" variant="outline" disabled={pg === totalPg} onClick={() => setAdultPages({ ...adultPages, [kind]: pg + 1 })}>下一页</Button>
+                </div>
+              )}
+            </section>
+          );
+        })}
             </TabsContent>
 
             <TabsContent value="events" className="space-y-8 mt-0">
@@ -2206,6 +2313,28 @@ function AdminPage() {
             >
               🏔️ 退修会登记
             </Button>
+          </div>
+          {/* 成人主日学扫码签到 */}
+          <div className="grid sm:grid-cols-2 gap-4 mb-4">
+            {(["summer","fall"] as const).map((k) => {
+              const label = k === "summer" ? "暑期成人主日学" : "秋季成人主日学";
+              const url = `${publicBase}/adult-checkin/${k}`;
+              return (
+                <div key={k} className="border border-border/50 rounded-xl p-4 flex flex-col items-center gap-3">
+                  <p className="font-medium">{label} · 扫码签到</p>
+                  {publicBase && <QRCodeSVG value={url} size={180} level="H" />}
+                  <p className="text-xs text-muted-foreground break-all text-center">{url}</p>
+                  <div className="flex gap-2">
+                    <Button size="sm" variant="outline" onClick={() => { navigator.clipboard.writeText(url); toast.success("链接已复制"); }}>
+                      复制链接
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => window.open(url, "_blank", "noopener,noreferrer")}>
+                      打开
+                    </Button>
+                  </div>
+                </div>
+              );
+            })}
           </div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {events.map((ev) => {
