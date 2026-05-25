@@ -2339,84 +2339,41 @@ function AdminPage() {
             {events.map((ev) => {
               const url = `${publicBase}/register?event=${ev.qr_token}`;
               return (
-                <div key={ev.id} className="border border-border/50 rounded-xl p-4 flex items-center justify-between gap-4">
-                  <div className="min-w-0">
-                    <p className="font-medium truncate">{ev.name}</p>
-                    <p className="text-xs text-muted-foreground truncate">{url}</p>
-                    <div className="flex items-center gap-2 text-xs mt-1">
-                      <span className="text-muted-foreground">二维码状态:</span>
-                      {ev.is_active ? (
-                        <span className="font-medium text-green-600">二维码工作中</span>
-                      ) : (
-                        <span className="font-medium text-foreground">二维码已停用</span>
-                      )}
-                    </div>
+                <div key={ev.id} className="border border-border/50 rounded-xl p-4 flex flex-col items-center gap-3">
+                  <p className="font-medium text-center">{ev.name}</p>
+                  {publicBase && <QRCodeSVG value={url} size={180} level="H" />}
+                  <p className="text-xs text-muted-foreground break-all text-center">{url}</p>
+                  <div className="flex items-center gap-2 text-xs">
+                    <span className="text-muted-foreground">状态:</span>
+                    {ev.is_active ? (
+                      <span className="font-medium text-green-600">二维码工作中</span>
+                    ) : (
+                      <span className="font-medium text-foreground">二维码已停用</span>
+                    )}
                   </div>
-                  <div className="flex gap-2 shrink-0">
-                  <Button size="sm" onClick={addEvent}>生成新二维码</Button>
-                  <Dialog>
-                    <DialogTrigger asChild>
-                      <Button size="sm" variant="outline">二维码</Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>{ev.name}</DialogTitle>
-                      </DialogHeader>
-                      <div className="flex flex-col items-center gap-4 py-4">
-                        <QRCodeSVG value={url} size={280} level="H" />
-                        <p className="text-xs text-muted-foreground break-all text-center">{url}</p>
-                        <Button
-                          variant="outline"
-                          onClick={() => {
-                            navigator.clipboard.writeText(url);
-                            toast.success("链接已复制");
-                          }}
-                        >
-                          复制链接
-                        </Button>
-                      </div>
-                    </DialogContent>
-                  </Dialog>
+                  <div className="flex gap-2 flex-wrap justify-center">
+                    <Button size="sm" variant="outline" onClick={() => { navigator.clipboard.writeText(url); toast.success("链接已复制"); }}>
+                      复制链接
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => window.open(url, "_blank", "noopener,noreferrer")}>
+                      打开
+                    </Button>
+                    <Button size="sm" onClick={addEvent}>生成新二维码</Button>
                   </div>
                 </div>
               );
             })}
             {/* 退修会登记 — 与新人登记并排 */}
-            <div className="border border-border/50 rounded-xl p-4 flex items-center justify-between gap-4 bg-gradient-to-r from-primary/10 to-primary/5">
-              <div className="min-w-0">
-                <p className="font-medium truncate">🏔️ 退修会登记</p>
-                <p className="text-xs text-muted-foreground truncate">{publicBase}/retreat</p>
-              </div>
-              <div className="flex gap-2 shrink-0">
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <Button size="sm" variant="outline">二维码</Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>退修会登记</DialogTitle>
-                    </DialogHeader>
-                    <div className="flex flex-col items-center gap-4 py-4">
-                      <QRCodeSVG value={`${publicBase}/retreat`} size={280} level="H" />
-                      <p className="text-xs text-muted-foreground break-all text-center">{publicBase}/retreat</p>
-                      <Button
-                        variant="outline"
-                        onClick={() => {
-                          navigator.clipboard.writeText(`${publicBase}/retreat`);
-                          toast.success("链接已复制");
-                        }}
-                      >
-                        复制链接
-                      </Button>
-                    </div>
-                  </DialogContent>
-                </Dialog>
-                <Button
-                  size="sm"
-                  onClick={() => window.open("/retreat", "_blank", "noopener,noreferrer")}
-                  className="bg-gradient-to-r from-primary to-primary/80"
-                >
-                  打开登记
+            <div className="border border-border/50 rounded-xl p-4 flex flex-col items-center gap-3 bg-gradient-to-br from-primary/10 to-primary/5">
+              <p className="font-medium text-center">🏔️ 退修会登记</p>
+              {publicBase && <QRCodeSVG value={`${publicBase}/retreat`} size={180} level="H" />}
+              <p className="text-xs text-muted-foreground break-all text-center">{publicBase}/retreat</p>
+              <div className="flex gap-2 flex-wrap justify-center">
+                <Button size="sm" variant="outline" onClick={() => { navigator.clipboard.writeText(`${publicBase}/retreat`); toast.success("链接已复制"); }}>
+                  复制链接
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => window.open("/retreat", "_blank", "noopener,noreferrer")}>
+                  打开
                 </Button>
               </div>
             </div>
