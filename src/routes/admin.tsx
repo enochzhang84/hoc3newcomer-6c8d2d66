@@ -2870,6 +2870,11 @@ img{width:480px;height:480px;}@media print{@page{margin:1cm;}}</style></head>
                       class_name: get(["班级", "class", "class_name"]),
                       teacher_name: get(["老师", "teacher", "teacher_name"]),
                       class_location: get(["地点", "location", "class_location"]),
+                      student_count: (() => {
+                        const raw = get(["人数", "count", "student_count"]);
+                        const n = raw ? parseInt(raw, 10) : 0;
+                        return isNaN(n) ? 0 : Math.max(0, n);
+                      })(),
                       sort_order: baseOrder + idx + 1,
                     };
                   }).filter((r) => r.class_name || r.teacher_name || r.class_location);
