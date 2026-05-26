@@ -41,7 +41,26 @@ type Row = {
   need_pickup: number | null;
   user_notes: string | null;
   church: string | null;
+  paid?: boolean | null;
 };
+
+const CHURCHES = ["hoc1", "hoc2", "hoc3", "hoc4", "hoc5", "hoc6", "hoc7"];
+const PROGRAMS: { v: string; label: string }[] = [
+  { v: "M", label: "M — 中文 (Chinese)" },
+  { v: "E", label: "E — 英文 (English)" },
+  { v: "N", label: "N — 9~11 岁" },
+  { v: "S", label: "S — 7~8 岁" },
+  { v: "F", label: "F — 5~6 岁" },
+  { v: "T", label: "T — 4 岁" },
+  { v: "R", label: "R — 3 岁" },
+  { v: "B", label: "B — 0~2 岁" },
+];
+const TOPICS: { v: string; label: string }[] = [
+  { v: "1", label: "1 - 迎接老年时代的来临 - 一个基督徒的立场 - 廖俊惠医师主讲" },
+  { v: "2", label: "2 - 婚姻成长 DIY / 陪孩子走一段路 - 郭磊土疏师母" },
+  { v: "3", label: "3 - 走过悲伤与忧郁：信仰中的关键与盼望 - 林慈敏博士主讲" },
+  { v: "4", label: "4 - 如何在 AI 热潮、高关税、股市高点下做个福音理财好管家 - 陈少豪牧师主讲" },
+];
 
 function RetreatPage() {
   const PUBLISHED_ORIGIN = "https://hoc3newcomer.lovable.app";
@@ -97,9 +116,10 @@ function RetreatPage() {
             program: editing.program,
             topic: editing.topic,
             bed: editing.bed,
-            can_pickup: editing.can_pickup,
             need_pickup: editing.need_pickup,
             user_notes: editing.user_notes,
+            church: editing.church,
+            can_pickup: editing.can_pickup,
           },
         },
       });
@@ -243,14 +263,27 @@ function RetreatPage() {
             <div className="space-y-3">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <Label>中文姓名</Label>
-                  <Input className="mt-1" value={editing.chinese_name} onChange={(e) => setEditing({ ...editing, chinese_name: e.target.value })} />
+                  <Label>基督之家</Label>
+                  <select value={editing.church ?? ""} onChange={(e) => setEditing({ ...editing, church: e.target.value || null })} className="mt-1 w-full h-10 rounded-md border border-input bg-background px-3 text-sm">
+                    <option value="">—</option>
+                    {CHURCHES.map((c) => <option key={c} value={c}>{c.toUpperCase()}</option>)}
+                  </select>
                 </div>
                 <div>
                   <Label>性别</Label>
                   <select value={editing.gender ?? ""} onChange={(e) => setEditing({ ...editing, gender: e.target.value || null })} className="mt-1 w-full h-10 rounded-md border border-input bg-background px-3 text-sm">
                     <option value="">—</option><option value="M">M</option><option value="F">F</option>
                   </select>
+                </div>
+                <div>
+                  <Label>中文姓名</Label>
+                  <Input className="mt-1" value={editing.chinese_name} onChange={(e) => setEditing({ ...editing, chinese_name: e.target.value })} />
+                </div>
+                <div>
+                  <Label>已付费</Label>
+                  <div className="mt-1 h-10 flex items-center px-3 rounded-md border border-input bg-muted/40 text-sm text-muted-foreground">
+                    {editing.paid ? "✓ 已付" : "未付"}
+                  </div>
                 </div>
                 <div>
                   <Label>Last Name</Label>
@@ -261,7 +294,7 @@ function RetreatPage() {
                   <Input className="mt-1" value={editing.first_name ?? ""} onChange={(e) => setEditing({ ...editing, first_name: e.target.value })} />
                 </div>
                 <div>
-                  <Label>手机 Cell</Label>
+                  <Label>Cell</Label>
                   <Input className="mt-1" value={editing.cell ?? ""} onChange={(e) => setEditing({ ...editing, cell: e.target.value })} />
                 </div>
                 <div>
@@ -270,11 +303,15 @@ function RetreatPage() {
                 </div>
                 <div>
                   <Label>Program</Label>
-                  <Input className="mt-1" value={editing.program ?? ""} onChange={(e) => setEditing({ ...editing, program: e.target.value })} />
+                  <select value={editing.program ?? ""} onChange={(e) => setEditing({ ...editing, program: e.target.value || null })} className="mt-1 w-full h-10 rounded-md border border-input bg-background px-3 text-sm">
+                    <option value="">—</option>{PROGRAMS.map((p) => <option key={p.v} value={p.v}>{p.label}</option>)}
+                  </select>
                 </div>
                 <div>
                   <Label>Topic</Label>
-                  <Input className="mt-1" value={editing.topic ?? ""} onChange={(e) => setEditing({ ...editing, topic: e.target.value })} />
+                  <select value={editing.topic ?? ""} onChange={(e) => setEditing({ ...editing, topic: e.target.value || null })} className="mt-1 w-full h-10 rounded-md border border-input bg-background px-3 text-sm">
+                    <option value="">—</option>{TOPICS.map((t) => <option key={t.v} value={t.v}>{t.label}</option>)}
+                  </select>
                 </div>
                 <div>
                   <Label>Bed</Label>
@@ -283,8 +320,11 @@ function RetreatPage() {
                   </select>
                 </div>
                 <div>
-                  <Label>需接送</Label>
-                  <Input type="number" min={0} className="mt-1" value={editing.need_pickup ?? ""} onChange={(e) => setEditing({ ...editing, need_pickup: e.target.value === "" ? null : parseInt(e.target.value, 10) })} />
+                  <Label>可接送 / 需接送</Label>
+                  <div className="mt-1 flex gap-2">
+                    <Input type="number" min={0} placeholder="可接" value={editing.can_pickup ?? ""} onChange={(e) => setEditing({ ...editing, can_pickup: e.target.value === "" ? null : parseInt(e.target.value, 10) })} />
+                    <Input type="number" min={0} placeholder="需接" value={editing.need_pickup ?? ""} onChange={(e) => setEditing({ ...editing, need_pickup: e.target.value === "" ? null : parseInt(e.target.value, 10) })} />
+                  </div>
                 </div>
               </div>
               <div>

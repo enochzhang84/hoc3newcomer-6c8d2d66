@@ -1128,7 +1128,7 @@ function AdminPage() {
             <TabsTrigger value="stats">数据统计</TabsTrigger>
             <TabsTrigger value="welcome">迎宾接待</TabsTrigger>
             <TabsTrigger value="media">影音播放</TabsTrigger>
-            <TabsTrigger value="kitchen">厨房侍工</TabsTrigger>
+            <TabsTrigger value="kitchen">厨房事工</TabsTrigger>
             <TabsTrigger value="sunday">主日学</TabsTrigger>
             <TabsTrigger value="events">活动</TabsTrigger>
           </TabsList>
