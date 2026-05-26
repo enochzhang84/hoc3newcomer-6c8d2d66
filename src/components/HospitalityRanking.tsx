@@ -49,16 +49,17 @@ export function HospitalityRankingSection() {
       if (monthIdx > 0 && d.getMonth() + 1 !== monthIdx) return false;
       return pos.match(e);
     });
-    const map = new Map<string, { name: string; count: number; last: string; months: Set<number> }>();
+    const map = new Map<string, { name: string; last: string; months: Set<number> }>();
     for (const e of filtered) {
       const k = e.worker!;
-      const cur = map.get(k) ?? { name: k, count: 0, last: "", months: new Set<number>() };
-      cur.count += 1;
+      const cur = map.get(k) ?? { name: k, last: "", months: new Set<number>() };
       if (!cur.last || (e.service_date ?? "") > cur.last) cur.last = e.service_date!;
       cur.months.add(new Date(e.service_date!).getMonth() + 1);
       map.set(k, cur);
     }
-    return Array.from(map.values()).sort((a, b) => b.count - a.count || (b.last > a.last ? 1 : -1));
+    return Array.from(map.values())
+      .map((v) => ({ ...v, count: v.months.size }))
+      .sort((a, b) => b.count - a.count || (b.last > a.last ? 1 : -1));
   }, [entries, year, monthIdx, posIdx]);
 
   function rankIcon(i: number) {
@@ -99,9 +100,9 @@ export function HospitalityRankingSection() {
                 <tr className="text-left border-b border-border/60 text-muted-foreground text-xs">
                   <th className="py-2 px-3 w-16">排名</th>
                   <th className="py-2 px-3">姓名</th>
-                  <th className="py-2 px-3 w-24">参与次数</th>
+                  <th className="py-2 px-3 w-24">参与月份数</th>
                   <th className="py-2 px-3 w-32">最近服侍</th>
-                  <th className="py-2 px-3">所属月份</th>
+                  <th className="py-2 px-3">参与月份明细</th>
                 </tr>
               </thead>
               <tbody>
@@ -109,7 +110,7 @@ export function HospitalityRankingSection() {
                   <tr key={r.name} className="border-b border-border/30">
                     <td className="py-2 px-3">{rankIcon(i)}</td>
                     <td className="py-2 px-3 font-medium">{r.name}</td>
-                    <td className="py-2 px-3 tabular-nums">{r.count}</td>
+                    <td className="py-2 px-3 tabular-nums">{r.count} 个月</td>
                     <td className="py-2 px-3 text-muted-foreground">{r.last}</td>
                     <td className="py-2 px-3 text-xs text-muted-foreground">
                       {Array.from(r.months).sort((a, b) => a - b).map((m) => `${m}月`).join("、")}
@@ -129,11 +130,11 @@ export function HospitalityRankingSection() {
                     {rankIcon(i)}
                     <span className="font-medium text-sm">{r.name}</span>
                   </div>
-                  <span className="text-sm tabular-nums">{r.count} 次</span>
+                  <span className="text-sm tabular-nums">{r.count} 个月</span>
                 </div>
                 <div className="text-xs text-muted-foreground flex flex-wrap gap-x-3 gap-y-0.5">
                   <span>最近: {r.last}</span>
-                  <span>月份: {Array.from(r.months).sort((a, b) => a - b).map((m) => `${m}月`).join("、")}</span>
+                  <span>参与月份: {Array.from(r.months).sort((a, b) => a - b).map((m) => `${m}月`).join("、")}</span>
                 </div>
               </div>
             ))}
