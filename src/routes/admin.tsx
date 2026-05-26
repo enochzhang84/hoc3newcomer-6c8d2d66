@@ -2918,6 +2918,7 @@ ${rows.length===0?'<tr><td colspan="4" style="text-align:center;color:#888;paddi
                           <th className="py-2 px-2 w-1/3">班级</th>
                           <th className="py-2 px-2 w-1/3">老师</th>
                           <th className="py-2 px-2">地点</th>
+                          <th className="py-2 px-2 w-20">人数</th>
                           <th className="py-2 px-2 text-right w-16">操作</th>
                         </tr>
                       </thead>
