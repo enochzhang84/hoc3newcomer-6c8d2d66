@@ -2840,9 +2840,10 @@ img{width:480px;height:480px;}@media print{@page{margin:1cm;}}</style></head>
                   "班级": r.class_name ?? "",
                   "老师": r.teacher_name ?? "",
                   "地点": r.class_location ?? "",
+                  "人数": r.student_count ?? 0,
                 }));
                 const ws = XLSX.utils.json_to_sheet(data);
-                ws["!cols"] = [{ wch: 6 }, { wch: 18 }, { wch: 18 }, { wch: 20 }];
+                ws["!cols"] = [{ wch: 6 }, { wch: 18 }, { wch: 18 }, { wch: 20 }, { wch: 8 }];
                 const wb = XLSX.utils.book_new();
                 XLSX.utils.book_append_sheet(wb, ws, "儿童主日学");
                 XLSX.writeFile(wb, `${title}_${new Date().toISOString().slice(0,10)}.xlsx`);
