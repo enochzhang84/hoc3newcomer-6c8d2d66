@@ -3012,7 +3012,7 @@ ${rows.length===0?'<tr><td colspan="4" style="text-align:center;color:#888;paddi
                           </tr>
                         ))}
                         {rows.length === 0 && (
-                          <tr><td colSpan={4} className="py-6 text-center text-muted-foreground">暂无记录</td></tr>
+                          <tr><td colSpan={5} className="py-6 text-center text-muted-foreground">暂无记录</td></tr>
                         )}
                       </tbody>
                     </table>
