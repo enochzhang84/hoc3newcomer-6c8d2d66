@@ -5000,6 +5000,203 @@ function Tag({ children, tone = "primary" }: { children: React.ReactNode; tone?:
   return <span className={`inline-block text-xs px-2 py-0.5 rounded-full ${cls}`}>{children}</span>;
 }
 
+// 儿童主日学统计 — 数据来自「人数统计」录入（attendance_records）
+function KidsAttendanceStats({ records }: { records: AttendanceRecord[] }) {
+  const sow = startOfWeek();
+  const psow = prevStartOfWeek();
+  const som = startOfMonth();
+  const psom = prevStartOfMonth();
+  const inRange = (date: string, from: Date, to?: Date) => {
+    const t = new Date(date + "T00:00:00");
+    return t >= from && (!to || t < to);
+  };
+  const sumIn = (from: Date, to: Date | undefined, key: "children_students" | "children_teachers") =>
+    records.filter((r) => inRange(r.record_date, from, to)).reduce((a, r) => a + (r[key] || 0), 0);
+
+  const wkStudents = sumIn(sow, undefined, "children_students");
+  const lwStudents = sumIn(psow, sow, "children_students");
+  const moStudents = sumIn(som, undefined, "children_students");
+  const lmStudents = sumIn(psom, som, "children_students");
+  const wkTeachers = sumIn(sow, undefined, "children_teachers");
+  const lwTeachers = sumIn(psow, sow, "children_teachers");
+  const moTeachers = sumIn(som, undefined, "children_teachers");
+  const lmTeachers = sumIn(psom, som, "children_teachers");
+
+  return (
+    <div className="bg-card border border-border/50 rounded-2xl p-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <StatDeltaCard label="本周老师" current={wkTeachers} previous={lwTeachers} previousLabel="上周" />
+        <StatDeltaCard label="本月老师" current={moTeachers} previous={lmTeachers} previousLabel="上月" />
+        <StatDeltaCard label="本周学生" current={wkStudents} previous={lwStudents} previousLabel="上周" />
+        <StatDeltaCard label="本月学生" current={moStudents} previous={lmStudents} previousLabel="上月" />
+      </div>
+    </div>
+  );
+}
+
+function StatDeltaCard({
+  label, current, previous, previousLabel,
+}: { label: string; current: number; previous: number; previousLabel: string }) {
+  const delta = current - previous;
+  const pct = previous > 0 ? Math.round((delta / previous) * 100) : (current > 0 ? 100 : 0);
+  const color = delta > 0 ? "text-emerald-600" : delta < 0 ? "text-red-600" : "text-muted-foreground";
+  const glyph = delta > 0 ? "▲" : delta < 0 ? "▼" : "→";
+  return (
+    <div className="border border-border/40 rounded-xl p-4">
+      <div className="text-xs text-muted-foreground">{label}</div>
+      <div className="flex items-baseline gap-2 mt-1 flex-wrap">
+        <div className="text-2xl font-serif">{current}</div>
+        <div className={`text-xs flex items-center gap-1 ${color}`}>
+          <span>{glyph}</span>
+          <span>{delta > 0 ? "+" : ""}{delta} ({pct > 0 ? "+" : ""}{pct}%)</span>
+        </div>
+      </div>
+      <div className="text-[11px] text-muted-foreground mt-1">{previousLabel} {previous} 人次</div>
+    </div>
+  );
+}
+
+type KidsSnapshot = {
+  id: string; class_id: string; track: string; class_name: string | null;
+  student_count: number; snapshot_date: string;
+};
+
+function KidsEnrollmentStats({
+  classes, snapshots,
+}: { classes: KidsRow[]; snapshots: KidsSnapshot[] }) {
+  // 取某 class 在指定区间内"最新"快照（end 为 exclusive 上界，可省略表示当前）
+  const latestIn = (classId: string, end?: Date, start?: Date) => {
+    const list = snapshots
+      .filter((s) => s.class_id === classId)
+      .filter((s) => {
+        const t = new Date(s.snapshot_date + "T00:00:00");
+        if (end && t >= end) return false;
+        if (start && t < start) return false;
+        return true;
+      });
+    return list.length > 0 ? list[0].student_count : null; // snapshots already sorted desc
+  };
+
+  const sow = startOfWeek();
+  const psow = prevStartOfWeek();
+  const som = startOfMonth();
+  const psom = prevStartOfMonth();
+  const now = new Date();
+  const yearStart = new Date(now.getFullYear(), 0, 1);
+  const lastYearStart = new Date(now.getFullYear() - 1, 0, 1);
+
+  const tracks: Array<{ key: string; title: string }> = [
+    { key: KIDS_TRACKS.spring.key, title: KIDS_TRACKS.spring.title },
+    { key: KIDS_TRACKS.fall.key, title: KIDS_TRACKS.fall.title },
+  ];
+
+  const exportExcel = () => {
+    const sheetData: Record<string, unknown>[] = [];
+    for (const t of tracks) {
+      classes.filter((c) => c.track === t.key).forEach((c) => {
+        const current = c.student_count ?? 0;
+        const lastWeekVal = latestIn(c.id, sow, psow) ?? 0;
+        const lastMonthVal = latestIn(c.id, som, psom) ?? 0;
+        const lastYearVal = latestIn(c.id, yearStart, lastYearStart) ?? 0;
+        sheetData.push({
+          "学期": t.title,
+          "班级": c.class_name ?? "",
+          "当前人数": current,
+          "上周人数": lastWeekVal,
+          "本周变化": current - lastWeekVal,
+          "本周变化%": lastWeekVal > 0 ? Math.round(((current - lastWeekVal) / lastWeekVal) * 100) + "%" : "—",
+          "上月人数": lastMonthVal,
+          "本月变化": current - lastMonthVal,
+          "本月变化%": lastMonthVal > 0 ? Math.round(((current - lastMonthVal) / lastMonthVal) * 100) + "%" : "—",
+          "去年同期": lastYearVal,
+          "年度变化": current - lastYearVal,
+        });
+      });
+    }
+    if (sheetData.length === 0) { toast.error("无数据可导出"); return; }
+    const ws = XLSX.utils.json_to_sheet(sheetData);
+    ws["!cols"] = [{ wch: 22 }, { wch: 18 }, { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 12 }, { wch: 10 }, { wch: 10 }, { wch: 12 }, { wch: 10 }, { wch: 10 }];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "儿童班级报名统计");
+    XLSX.writeFile(wb, `儿童班级报名统计_${new Date().toISOString().slice(0,10)}.xlsx`);
+    toast.success("已导出");
+  };
+
+  return (
+    <div className="bg-card border border-border/50 rounded-2xl p-6 space-y-6">
+      <div className="flex justify-end">
+        <Button size="sm" variant="outline" onClick={exportExcel}>导出 Excel</Button>
+      </div>
+      {tracks.map((t) => {
+        const list = classes.filter((c) => c.track === t.key);
+        const total = list.reduce((a, c) => a + (c.student_count ?? 0), 0);
+        return (
+          <div key={t.key} className="space-y-3">
+            <div className="flex items-baseline justify-between flex-wrap gap-2">
+              <h3 className="font-serif text-lg">{t.title}</h3>
+              <span className="text-xs text-muted-foreground">总人数 {total}</span>
+            </div>
+            {list.length === 0 ? (
+              <p className="text-xs text-muted-foreground">暂无班级</p>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {list.map((c) => {
+                  const current = c.student_count ?? 0;
+                  const lastWeekVal = latestIn(c.id, sow, psow);
+                  const lastMonthVal = latestIn(c.id, som, psom);
+                  const lastYearVal = latestIn(c.id, yearStart, lastYearStart);
+                  const wkDelta = current - (lastWeekVal ?? current);
+                  const moDelta = current - (lastMonthVal ?? current);
+                  const yrDelta = current - (lastYearVal ?? current);
+                  const wkPct = lastWeekVal && lastWeekVal > 0 ? Math.round((wkDelta / lastWeekVal) * 100) : null;
+                  const moPct = lastMonthVal && lastMonthVal > 0 ? Math.round((moDelta / lastMonthVal) * 100) : null;
+                  const yrPct = lastYearVal && lastYearVal > 0 ? Math.round((yrDelta / lastYearVal) * 100) : null;
+                  const color = (d: number) => d > 0 ? "text-emerald-600" : d < 0 ? "text-red-600" : "text-muted-foreground";
+                  const glyph = (d: number) => d > 0 ? "▲" : d < 0 ? "▼" : "→";
+                  return (
+                    <div key={c.id} className="border border-border/40 rounded-xl p-4">
+                      <div className="flex items-baseline justify-between mb-2 gap-2 flex-wrap">
+                        <div className="font-medium truncate">{c.class_name || "未命名"}</div>
+                        <div className="text-2xl font-serif">{current}</div>
+                      </div>
+                      <div className="grid grid-cols-3 gap-2 text-xs">
+                        <div>
+                          <div className="text-muted-foreground">本周变化</div>
+                          <div className={`flex items-center gap-1 ${color(wkDelta)}`}>
+                            <span>{glyph(wkDelta)}</span>
+                            <span>{wkDelta > 0 ? "+" : ""}{wkDelta}{wkPct !== null ? ` (${wkPct > 0 ? "+" : ""}${wkPct}%)` : ""}</span>
+                          </div>
+                          <div className="text-[10px] text-muted-foreground">上周 {lastWeekVal ?? "—"}</div>
+                        </div>
+                        <div>
+                          <div className="text-muted-foreground">本月变化</div>
+                          <div className={`flex items-center gap-1 ${color(moDelta)}`}>
+                            <span>{glyph(moDelta)}</span>
+                            <span>{moDelta > 0 ? "+" : ""}{moDelta}{moPct !== null ? ` (${moPct > 0 ? "+" : ""}${moPct}%)` : ""}</span>
+                          </div>
+                          <div className="text-[10px] text-muted-foreground">上月 {lastMonthVal ?? "—"}</div>
+                        </div>
+                        <div>
+                          <div className="text-muted-foreground">今年/去年</div>
+                          <div className={`flex items-center gap-1 ${color(yrDelta)}`}>
+                            <span>{glyph(yrDelta)}</span>
+                            <span>{yrDelta > 0 ? "+" : ""}{yrDelta}{yrPct !== null ? ` (${yrPct > 0 ? "+" : ""}${yrPct}%)` : ""}</span>
+                          </div>
+                          <div className="text-[10px] text-muted-foreground">去年 {lastYearVal ?? "—"}</div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 function NowLabel() {
   const [now, setNow] = useState(() => new Date());
   useEffect(() => {
