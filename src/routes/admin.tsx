@@ -540,6 +540,17 @@ function AdminPage() {
     setKidsRows((data ?? []) as KidsRow[]);
   }, []);
 
+  const loadKidsSnapshots = useCallback(async () => {
+    const { data } = await (supabase as any)
+      .from("kids_class_enrollment_snapshots")
+      .select("*")
+      .order("snapshot_date", { ascending: false });
+    setKidsSnapshots((data ?? []) as Array<{
+      id: string; class_id: string; track: string; class_name: string | null;
+      student_count: number; snapshot_date: string;
+    }>);
+  }, []);
+
   const loadSundayTeachers = useCallback(async () => {
     const { data } = await (supabase as any)
       .from("sunday_school_teachers")
