@@ -2962,6 +2962,43 @@ ${rows.length===0?'<tr><td colspan="4" style="text-align:center;color:#888;paddi
                                 }}
                               />
                             </td>
+                            <td className="py-2 px-2">
+                              <Input
+                                type="number"
+                                min={0}
+                                defaultValue={String(r.student_count ?? 0)}
+                                className="h-8 w-20"
+                                onBlur={async (e) => {
+                                  const n = Math.max(0, parseInt(e.target.value || "0", 10) || 0);
+                                  if (n === (r.student_count ?? 0)) return;
+                                  const { error: upErr } = await (supabase as any)
+                                    .from("sunday_class_schedule")
+                                    .update({ student_count: n })
+                                    .eq("id", r.id);
+                                  if (upErr) { toast.error(upErr.message); return; }
+                                  // 同时写入今日快照（按 class_id + snapshot_date 唯一）
+                                  const today = new Date();
+                                  const y = today.getFullYear();
+                                  const m = String(today.getMonth() + 1).padStart(2, "0");
+                                  const d = String(today.getDate()).padStart(2, "0");
+                                  const snapshot_date = `${y}-${m}-${d}`;
+                                  await (supabase as any)
+                                    .from("kids_class_enrollment_snapshots")
+                                    .upsert(
+                                      {
+                                        class_id: r.id,
+                                        track: r.track,
+                                        class_name: r.class_name,
+                                        student_count: n,
+                                        snapshot_date,
+                                      },
+                                      { onConflict: "class_id,snapshot_date" },
+                                    );
+                                  loadKidsRows();
+                                  loadKidsSnapshots();
+                                }}
+                              />
+                            </td>
                             <td className="py-2 px-2 text-right">
                               <button
                                 className="text-xs text-destructive hover:underline"
