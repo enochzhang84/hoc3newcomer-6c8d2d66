@@ -22,6 +22,7 @@ import { zhCN } from "date-fns/locale";
 import { listUsersWithRoles, setUserRole, deleteUser, createUserWithRole } from "@/lib/users.functions";
 import { updateRegistration } from "@/lib/registrations.functions";
 import { HospitalityMinistrySection } from "@/components/HospitalityMinistry";
+import { HospitalityRankingSection } from "@/components/HospitalityRanking";
 
 type Reg = {
   id: string;
@@ -2132,6 +2133,7 @@ function AdminPage() {
           )}
         </section>
         <HospitalityMinistrySection />
+        <HospitalityRankingSection />
             </TabsContent>
 
             <TabsContent value="media" className="space-y-8 mt-0">
