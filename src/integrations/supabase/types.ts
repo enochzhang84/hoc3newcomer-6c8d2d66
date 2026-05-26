@@ -320,6 +320,36 @@ export type Database = {
         }
         Relationships: []
       }
+      kids_class_enrollment_snapshots: {
+        Row: {
+          class_id: string
+          class_name: string | null
+          created_at: string
+          id: string
+          snapshot_date: string
+          student_count: number
+          track: string
+        }
+        Insert: {
+          class_id: string
+          class_name?: string | null
+          created_at?: string
+          id?: string
+          snapshot_date?: string
+          student_count?: number
+          track: string
+        }
+        Update: {
+          class_id?: string
+          class_name?: string | null
+          created_at?: string
+          id?: string
+          snapshot_date?: string
+          student_count?: number
+          track?: string
+        }
+        Relationships: []
+      }
       meal_plans: {
         Row: {
           attendees: number
@@ -624,6 +654,7 @@ export type Database = {
           notes: string | null
           slot_time: string
           sort_order: number
+          student_count: number
           teacher_name: string | null
           track: string | null
           updated_at: string
@@ -639,6 +670,7 @@ export type Database = {
           notes?: string | null
           slot_time: string
           sort_order?: number
+          student_count?: number
           teacher_name?: string | null
           track?: string | null
           updated_at?: string
@@ -654,6 +686,7 @@ export type Database = {
           notes?: string | null
           slot_time?: string
           sort_order?: number
+          student_count?: number
           teacher_name?: string | null
           track?: string | null
           updated_at?: string
