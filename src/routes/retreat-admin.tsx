@@ -320,7 +320,10 @@ function RetreatAdminPage() {
                     <td className="py-2 px-2">{new Date(r.updated_at).toLocaleString("zh-CN")}</td>
                     <td className="py-2 px-2 max-w-[200px] truncate" title={r.user_notes ?? ""}>{r.user_notes ?? ""}</td>
                     <td className="py-2 px-2">
-                      <button onClick={() => del(r.id, r.chinese_name)} className="text-destructive hover:underline">删除</button>
+                      <div className="flex items-center gap-2">
+                        <button onClick={() => setEditRow(r)} className="text-primary hover:underline">编辑</button>
+                        <button onClick={() => del(r.id, r.chinese_name)} className="text-destructive hover:underline">删除</button>
+                      </div>
                     </td>
                   </tr>
                 ))}
