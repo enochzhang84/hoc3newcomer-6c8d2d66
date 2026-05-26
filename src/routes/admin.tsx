@@ -2133,6 +2133,7 @@ function AdminPage() {
           )}
         </section>
         <HospitalityMinistrySection />
+        <HospitalityRankingSection />
             </TabsContent>
 
             <TabsContent value="media" className="space-y-8 mt-0">
