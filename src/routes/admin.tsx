@@ -1278,6 +1278,18 @@ function AdminPage() {
             />
           </div>
         </section>
+
+        {/* 儿童主日学统计 */}
+        <section>
+          <h2 className="font-serif text-xl mb-4">儿童主日学统计</h2>
+          <KidsAttendanceStats records={attendance} />
+        </section>
+
+        {/* 儿童班级报名统计 */}
+        <section>
+          <h2 className="font-serif text-xl mb-4">儿童班级报名统计</h2>
+          <KidsEnrollmentStats classes={kidsRows} snapshots={kidsSnapshots} />
+        </section>
         <section className="bg-card border border-border/50 rounded-2xl p-6">
           <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
             <h2 className="font-serif text-xl">团契签到记录</h2>
@@ -3059,17 +3071,6 @@ ${rows.length===0?'<tr><td colspan="5" style="text-align:center;color:#888;paddi
           </div>
         </section>
 
-        {/* 儿童主日学统计 */}
-        <section>
-          <h2 className="font-serif text-xl mb-4">儿童主日学统计</h2>
-          <KidsAttendanceStats records={attendance} />
-        </section>
-
-        {/* 儿童班级报名统计 */}
-        <section>
-          <h2 className="font-serif text-xl mb-4">儿童班级报名统计</h2>
-          <KidsEnrollmentStats classes={kidsRows} snapshots={kidsSnapshots} />
-        </section>
             </TabsContent>
 
             <TabsContent value="events" className="space-y-8 mt-0">
