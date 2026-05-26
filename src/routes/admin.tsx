@@ -296,6 +296,9 @@ function AdminPage() {
   const [contactsOpen, setContactsOpen] = useState(false);
   const [contactSearch, setContactSearch] = useState("");
   const [contactForm, setContactForm] = useState<Partial<Contact> | null>(null);
+  const [contactDetail, setContactDetail] = useState<Contact | null>(null);
+  const [contactDetailEditing, setContactDetailEditing] = useState(false);
+  const [contactDetailDraft, setContactDetailDraft] = useState<Partial<Contact> | null>(null);
   // Kids Sunday School settings dialog
   const [kidsSettingsSeason, setKidsSettingsSeason] = useState<"spring" | "fall" | null>(null);
   const [kidsNewTeacher, setKidsNewTeacher] = useState("");
