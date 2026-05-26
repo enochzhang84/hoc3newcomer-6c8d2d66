@@ -1540,19 +1540,6 @@ function AdminPage() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
-
-        {/* Contact detail dialog */}
-        <Dialog
-          open={!!contactDetail}
-          onOpenChange={(o) => {
-            if (!o) {
-              setContactDetail(null);
-              setContactDetailEditing(false);
-              setContactDetailDraft(null);
-            }
-          }}
-        >
-          <DialogContent className="max-w-lg">
             <DialogHeader>
               <DialogTitle className="font-serif text-lg">
                 {contactDetailEditing ? "编辑联系人" : "联系人详情"}
@@ -1658,8 +1645,6 @@ function AdminPage() {
                 </div>
               </div>
             )}
-          </DialogContent>
-        </Dialog>
         )}
         {isSuperAdmin && (
         <section className="bg-card border border-border/50 rounded-2xl p-6">
