@@ -5206,6 +5206,86 @@ function KidsEnrollmentStats({
   );
 }
 
+function SundayParticipationStats({
+  checkins, courses,
+}: { checkins: SundayCheckin[]; courses: Course[] }) {
+  const REQUIRED = [
+    "新旧约书卷", "诗篇及历史书", "丰盛生命", "基要真理",
+    "新约概论", "旧约概论", "主所喜悦的家庭", "因为日期近了", "受洗班",
+  ];
+  const activeNames = courses.filter((c) => c.is_active).map((c) => c.name);
+  const all = Array.from(new Set([...REQUIRED, ...activeNames]));
+
+  const sow = startOfWeek();
+  const psow = prevStartOfWeek();
+  const som = startOfMonth();
+  const psom = prevStartOfMonth();
+  const now = new Date();
+  const yearStart = new Date(now.getFullYear(), 0, 1);
+  const lastYearStart = new Date(now.getFullYear() - 1, 0, 1);
+
+  const countIn = (name: string, from: Date, to?: Date) =>
+    checkins.filter((k) => {
+      if ((k.course_name ?? "") !== name) return false;
+      const t = new Date(k.checkin_date + "T00:00:00");
+      return t >= from && (!to || t < to);
+    }).length;
+
+  const color = (d: number) => d > 0 ? "text-emerald-600" : d < 0 ? "text-red-600" : "text-muted-foreground";
+  const glyph = (d: number) => d > 0 ? "▲" : d < 0 ? "▼" : "→";
+  const pctStr = (cur: number, prev: number) => prev > 0 ? `${cur - prev > 0 ? "+" : ""}${Math.round(((cur - prev) / prev) * 100)}%` : (cur > 0 ? "+100%" : "0%");
+
+  return (
+    <div className="bg-card border border-border/50 rounded-2xl p-6">
+      {all.length === 0 ? (
+        <p className="text-sm text-muted-foreground">暂无课程</p>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {all.map((name) => {
+            const wk = countIn(name, sow);
+            const lwk = countIn(name, psow, sow);
+            const mo = countIn(name, som);
+            const lmo = countIn(name, psom, som);
+            const yr = countIn(name, yearStart);
+            const lyr = countIn(name, lastYearStart, yearStart);
+            return (
+              <div key={name} className="border border-border/40 rounded-xl p-4">
+                <div className="font-medium mb-3 truncate">{name}</div>
+                <div className="grid grid-cols-3 gap-2 text-xs">
+                  <div>
+                    <div className="text-muted-foreground">本周</div>
+                    <div className="text-xl font-serif">{wk}</div>
+                    <div className={`flex items-center gap-1 ${color(wk - lwk)}`}>
+                      <span>{glyph(wk - lwk)}</span><span>{pctStr(wk, lwk)}</span>
+                    </div>
+                    <div className="text-[10px] text-muted-foreground">上周 {lwk}</div>
+                  </div>
+                  <div>
+                    <div className="text-muted-foreground">本月</div>
+                    <div className="text-xl font-serif">{mo}</div>
+                    <div className={`flex items-center gap-1 ${color(mo - lmo)}`}>
+                      <span>{glyph(mo - lmo)}</span><span>{pctStr(mo, lmo)}</span>
+                    </div>
+                    <div className="text-[10px] text-muted-foreground">上月 {lmo}</div>
+                  </div>
+                  <div>
+                    <div className="text-muted-foreground">本年</div>
+                    <div className="text-xl font-serif">{yr}</div>
+                    <div className={`flex items-center gap-1 ${color(yr - lyr)}`}>
+                      <span>{glyph(yr - lyr)}</span><span>{pctStr(yr, lyr)}</span>
+                    </div>
+                    <div className="text-[10px] text-muted-foreground">去年 {lyr}</div>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function NowLabel() {
   const [now, setNow] = useState(() => new Date());
   useEffect(() => {
