@@ -231,22 +231,16 @@ function PreviewPage() {
           </p>
         </header>
 
-        <div className="flex justify-end gap-2 mb-4 print:hidden">
+        <div className="flex items-center justify-end gap-2 mb-4 print:hidden">
           <Button variant="outline" size="sm" onClick={() => setSettingsOpen(true)}>
             <SettingsIcon className="h-4 w-4 mr-1" /> 设置
           </Button>
-          <button
-            onClick={() => window.print()}
-            className="text-sm px-4 py-2 rounded-md border border-border/60 hover:bg-muted/40"
-          >
+          <Button variant="outline" size="sm" onClick={() => window.print()}>
             打印
-          </button>
-          <button
-            onClick={() => window.close()}
-            className="text-sm px-4 py-2 rounded-md border border-border/60 hover:bg-muted/40"
-          >
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => window.close()}>
             关闭
-          </button>
+          </Button>
         </div>
 
         {loading ? (
