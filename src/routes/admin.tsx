@@ -732,6 +732,7 @@ function AdminPage() {
     loadContacts,
     loadAppSettings,
     loadKidsRows,
+    loadKidsSnapshots,
   ]);
 
   // Realtime update of message count badge
