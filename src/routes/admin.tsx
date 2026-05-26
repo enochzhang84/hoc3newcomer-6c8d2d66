@@ -613,6 +613,7 @@ function AdminPage() {
       void loadContacts();
       void loadAppSettings();
       void loadKidsRows();
+      void loadKidsSnapshots();
     };
 
     const handleSession = (sess: { user: CachedAuthUser } | null) => {
