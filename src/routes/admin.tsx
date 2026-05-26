@@ -329,6 +329,10 @@ function AdminPage() {
   const [appSettings, setAppSettings] = useState<Record<string, string>>({});
   // Kids Sunday School
   const [kidsRows, setKidsRows] = useState<KidsRow[]>([]);
+  // Kids class enrollment snapshots (per-class history)
+  const [kidsSnapshots, setKidsSnapshots] = useState<
+    Array<{ id: string; class_id: string; track: string; class_name: string | null; student_count: number; snapshot_date: string }>
+  >([]);
   // Sunday school teachers
   const [sundayTeachers, setSundayTeachers] = useState<SundayTeacher[]>([]);
   const [newTeacherName, setNewTeacherName] = useState("");
