@@ -196,10 +196,14 @@ function RegisterPage() {
             </Field>
           </div>
 
-          <div className="grid sm:grid-cols-2 gap-4">
-            <Field label="电话">
+          <div className="grid sm:grid-cols-2 gap-4 items-start">
+            <div className="space-y-2">
+              <Label className="text-sm">电话</Label>
               <Input type="tel" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
-            </Field>
+              <p className="text-xs text-muted-foreground leading-relaxed break-words">
+                提交后，您同意接收来自 HOC3 的短信或电话联系，用于新人登记确认、聚会通知及相关事工沟通。Message & data rates may apply.
+              </p>
+            </div>
             <Field label="电邮地址">
               <Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
             </Field>
