@@ -88,6 +88,8 @@ function RetreatAdminPage() {
   const [regOpen, setRegOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState(emptyForm());
+  const [editRow, setEditRow] = useState<Row | null>(null);
+  const [editSaving, setEditSaving] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -216,6 +218,35 @@ function RetreatAdminPage() {
       .update({ paid: !r.paid })
       .eq("id", r.id);
     if (error) return toast.error(error.message);
+    load();
+  }
+
+  async function saveEdit() {
+    if (!editRow) return;
+    setEditSaving(true);
+    const { error } = await supabase
+      .from("retreat_registrations")
+      .update({
+        church: editRow.church,
+        chinese_name: editRow.chinese_name,
+        last_name: editRow.last_name,
+        first_name: editRow.first_name,
+        gender: editRow.gender,
+        cell: editRow.cell,
+        email: editRow.email,
+        program: editRow.program,
+        topic: editRow.topic,
+        bed: editRow.bed,
+        can_pickup: editRow.can_pickup,
+        need_pickup: editRow.need_pickup,
+        user_notes: editRow.user_notes,
+        paid: editRow.paid,
+      })
+      .eq("id", editRow.id);
+    setEditSaving(false);
+    if (error) return toast.error(error.message);
+    toast.success("已保存");
+    setEditRow(null);
     load();
   }
 
