@@ -320,6 +320,45 @@ export type Database = {
         }
         Relationships: []
       }
+      hospitality_ministry_entries: {
+        Row: {
+          created_at: string
+          holy_communion: boolean
+          id: string
+          location: string | null
+          panel_key: string
+          service_date: string | null
+          service_item: string | null
+          sort_order: number
+          updated_at: string
+          worker: string | null
+        }
+        Insert: {
+          created_at?: string
+          holy_communion?: boolean
+          id?: string
+          location?: string | null
+          panel_key: string
+          service_date?: string | null
+          service_item?: string | null
+          sort_order?: number
+          updated_at?: string
+          worker?: string | null
+        }
+        Update: {
+          created_at?: string
+          holy_communion?: boolean
+          id?: string
+          location?: string | null
+          panel_key?: string
+          service_date?: string | null
+          service_item?: string | null
+          sort_order?: number
+          updated_at?: string
+          worker?: string | null
+        }
+        Relationships: []
+      }
       kids_class_enrollment_snapshots: {
         Row: {
           class_id: string
