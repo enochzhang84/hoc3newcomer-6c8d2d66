@@ -1291,6 +1291,12 @@ function AdminPage() {
           <h2 className="font-serif text-xl mb-4">儿童班级报名统计</h2>
           <KidsEnrollmentStats classes={kidsRows} snapshots={kidsSnapshots} />
         </section>
+
+        {/* 主日学参与统计 */}
+        <section>
+          <h2 className="font-serif text-xl mb-4">主日学参与统计</h2>
+          <SundayParticipationStats checkins={sundayCheckins} courses={courses} />
+        </section>
         <section className="bg-card border border-border/50 rounded-2xl p-6">
           <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
             <h2 className="font-serif text-xl">团契签到记录</h2>
