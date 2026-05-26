@@ -76,6 +76,28 @@ function formatSourceChannel(r: Pick<Reg, "source_channel">): string {
 
 type AppUser = { id: string; email: string; created_at: string; roles: string[] };
 
+type CachedAuthUser = { id: string; email?: string | null };
+
+function getCachedAuthUser(): CachedAuthUser | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const authKeys = Object.keys(window.localStorage).filter(
+      (key) => key.startsWith("sb-") && key.endsWith("-auth-token"),
+    );
+    for (const key of authKeys) {
+      const raw = window.localStorage.getItem(key);
+      if (!raw) continue;
+      const parsed = JSON.parse(raw);
+      const session = parsed?.currentSession ?? parsed?.session ?? parsed;
+      const user = session?.user ?? parsed?.user;
+      if (user?.id) return { id: user.id, email: user.email ?? null };
+    }
+  } catch {
+    // ignore broken cached auth data
+  }
+  return null;
+}
+
 type ServiceApp = {
   id: string;
   name: string;
@@ -557,14 +579,32 @@ function AdminPage() {
     let cancelled = false;
     let initializing = false;
     let resolved = false;
-    const handleSession = (sess: { user: { id: string; email?: string | null } } | null) => {
+    let unsubscribe: (() => void) | undefined;
+
+    const loadAuthorizedData = () => {
+      void loadData();
+      void loadMessagesCount();
+      void loadSundayCheckins();
+      void loadFellowshipCheckins();
+      void loadFellowships();
+      void loadMealTypes();
+      void loadMealPlans();
+      void loadDutyPersonnel();
+      void loadDutySchedules();
+      void loadSundayTeachers();
+      void loadAdultCheckins();
+      void loadUsers();
+      void loadContacts();
+      void loadAppSettings();
+      void loadKidsRows();
+    };
+
+    const handleSession = (sess: { user: CachedAuthUser } | null) => {
       if (cancelled) return;
-      if (resolved && sess) {
-        // already handled; only react to sign-out below
-        return;
-      }
+      if (resolved && sess) return;
       resolved = true;
       if (!sess) {
+        setChecking(false);
         navigate({ to: "/login" });
         return;
       }
@@ -590,24 +630,8 @@ function AdminPage() {
           setIsAdmin(admin || superAdmin);
           setUserRoleState(role);
           setChecking(false);
-          if (role) {
-            void loadData();
-            void loadMessagesCount();
-           void loadSundayCheckins();
-           void loadFellowshipCheckins();
-           void loadFellowships();
-           void loadMealTypes();
-           void loadMealPlans();
-           void loadDutyPersonnel();
-           void loadDutySchedules();
-           void loadSundayTeachers();
-           void loadAdultCheckins();
-            void loadUsers();
-            void loadContacts();
-            void loadAppSettings();
-            void loadKidsRows();
-          }
-        } catch (e) {
+          if (role) loadAuthorizedData();
+        } catch {
           if (!cancelled) {
             toast.error("后台权限加载失败，请刷新后重试");
             setChecking(false);
@@ -618,65 +642,80 @@ function AdminPage() {
       })();
     };
 
-    // Listen first — INITIAL_SESSION fires reliably even when getSession()
-    // hangs on the Web Locks API (mobile Chrome standard mode with cached session).
-    const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
-      if (
-        event === "INITIAL_SESSION" ||
-        event === "SIGNED_IN" ||
-        event === "TOKEN_REFRESHED" ||
-        event === "USER_UPDATED"
-      ) {
-        handleSession(session ? { user: session.user } : null);
-      } else if (event === "SIGNED_OUT") {
-        resolved = false;
-        handleSession(null);
+    const loadingGuard = window.setTimeout(() => {
+      if (cancelled || resolved) return;
+      const cachedUser = getCachedAuthUser();
+      if (cachedUser) {
+        handleSession({ user: cachedUser });
+        return;
       }
-    });
+      handleSession(null);
+    }, 4500);
 
-    // Fallback: race getSession against a timeout so we never block forever.
+    try {
+      const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
+        if (
+          event === "INITIAL_SESSION" ||
+          event === "SIGNED_IN" ||
+          event === "TOKEN_REFRESHED" ||
+          event === "USER_UPDATED"
+        ) {
+          handleSession(session ? { user: session.user } : null);
+        } else if (event === "SIGNED_OUT") {
+          resolved = false;
+          handleSession(null);
+        }
+      });
+      unsubscribe = () => sub.subscription.unsubscribe();
+    } catch {
+      const cachedUser = getCachedAuthUser();
+      handleSession(cachedUser ? { user: cachedUser } : null);
+    }
+
     void (async () => {
       try {
         const result = await Promise.race([
           supabase.auth.getSession(),
-          new Promise<null>((resolve) => setTimeout(() => resolve(null), 3000)),
+          new Promise<null>((resolve) => window.setTimeout(() => resolve(null), 2500)),
         ]);
         if (cancelled || resolved) return;
         if (result && "data" in result) {
           handleSession(result.data.session ? { user: result.data.session.user } : null);
+          return;
         }
-        // If timed out and still not resolved (Web Locks stuck on iOS Chrome
-        // with a cached session), clear stale supabase auth storage and
-        // redirect to login so the user can sign in again.
-        if (!result) {
-          setTimeout(() => {
-            if (cancelled || resolved) return;
-            try {
-              Object.keys(localStorage)
-                .filter((k) => k.startsWith("sb-") || k.includes("supabase"))
-                .forEach((k) => localStorage.removeItem(k));
-            } catch {
-              // ignore
-            }
-            resolved = true;
-            setChecking(false);
-            toast.error("登录状态已过期，请重新登录");
-            navigate({ to: "/login" });
-          }, 2000);
-        }
+        const cachedUser = getCachedAuthUser();
+        handleSession(cachedUser ? { user: cachedUser } : null);
       } catch {
         if (!cancelled && !resolved) {
-          setChecking(false);
-          toast.error("登录状态加载超时，请刷新页面重试");
+          const cachedUser = getCachedAuthUser();
+          handleSession(cachedUser ? { user: cachedUser } : null);
         }
       }
     })();
 
     return () => {
       cancelled = true;
-      sub.subscription.unsubscribe();
+      window.clearTimeout(loadingGuard);
+      unsubscribe?.();
     };
-  }, [navigate, loadData, loadUsers, loadMessagesCount]);
+  }, [
+    navigate,
+    loadData,
+    loadUsers,
+    loadMessagesCount,
+    loadSundayCheckins,
+    loadFellowshipCheckins,
+    loadFellowships,
+    loadMealTypes,
+    loadMealPlans,
+    loadDutyPersonnel,
+    loadDutySchedules,
+    loadSundayTeachers,
+    loadAdultCheckins,
+    loadContacts,
+    loadAppSettings,
+    loadKidsRows,
+  ]);
 
   // Realtime update of message count badge
   useEffect(() => {
@@ -1039,14 +1078,14 @@ function AdminPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background overflow-x-hidden">
       <header className="border-b border-border/60 bg-card/50">
-        <div className="container mx-auto px-6 py-4 flex items-center justify-between">
-          <Link to="/" className="font-serif text-xl flex items-baseline gap-3">
-            <span>基督之家第三家 控制面板</span>
+        <div className="container mx-auto px-4 sm:px-6 py-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <Link to="/" className="font-serif text-lg sm:text-xl flex flex-col sm:flex-row sm:items-baseline gap-1 sm:gap-3 leading-relaxed">
+            <span className="whitespace-normal sm:whitespace-nowrap">基督之家第三家 控制面板</span>
             <NowLabel />
           </Link>
-          <div className="flex items-center gap-2">
+          <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center sm:justify-end">
             {isAdmin && (
               <Button size="sm" variant="outline" onClick={() => setContactsOpen(true)}>
                 通讯录 ({contacts.length})
@@ -1083,9 +1122,9 @@ function AdminPage() {
         </div>
       </header>
 
-      <main className="container mx-auto px-6 py-8 space-y-8">
-        <Tabs defaultValue="stats" className="w-full">
-          <TabsList className="grid grid-cols-3 md:grid-cols-6 h-auto w-full mb-6">
+      <main className="container mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-8">
+        <Tabs defaultValue="stats" className="w-full min-w-0">
+          <TabsList className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 h-auto w-full mb-6 gap-1">
             <TabsTrigger value="stats">数据统计</TabsTrigger>
             <TabsTrigger value="welcome">迎宾接待</TabsTrigger>
             <TabsTrigger value="media">影音播放</TabsTrigger>
