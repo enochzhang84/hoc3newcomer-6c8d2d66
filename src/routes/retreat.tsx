@@ -116,9 +116,10 @@ function RetreatPage() {
             program: editing.program,
             topic: editing.topic,
             bed: editing.bed,
-            can_pickup: editing.can_pickup,
             need_pickup: editing.need_pickup,
             user_notes: editing.user_notes,
+            church: editing.church,
+            can_pickup: editing.can_pickup,
           },
         },
       });
