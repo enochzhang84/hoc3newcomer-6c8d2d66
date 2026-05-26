@@ -1540,6 +1540,126 @@ function AdminPage() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* Contact detail dialog */}
+        <Dialog
+          open={!!contactDetail}
+          onOpenChange={(o) => {
+            if (!o) {
+              setContactDetail(null);
+              setContactDetailEditing(false);
+              setContactDetailDraft(null);
+            }
+          }}
+        >
+          <DialogContent className="max-w-lg">
+            <DialogHeader>
+              <DialogTitle className="font-serif text-lg">
+                {contactDetailEditing ? "编辑联系人" : "联系人详情"}
+              </DialogTitle>
+            </DialogHeader>
+            {contactDetail && contactDetailDraft && (
+              <div className="space-y-3 text-sm">
+                {([
+                  ["姓名", "name"],
+                  ["电话", "phone"],
+                  ["微信", "wechat"],
+                  ["邮件", "email"],
+                  ["地址", "address"],
+                  ["城市", "city"],
+                  ["邮编", "zip"],
+                  ["团契", "fellowship"],
+                ] as const).map(([label, key]) => (
+                  <div key={key} className="grid grid-cols-[80px_1fr] items-center gap-3">
+                    <Label className="text-muted-foreground">{label}</Label>
+                    {contactDetailEditing ? (
+                      <Input
+                        value={(contactDetailDraft as any)[key] ?? ""}
+                        onChange={(e) =>
+                          setContactDetailDraft({ ...contactDetailDraft, [key]: e.target.value })
+                        }
+                      />
+                    ) : (
+                      <div className="py-1">{(contactDetail as any)[key] || <span className="text-muted-foreground">—</span>}</div>
+                    )}
+                  </div>
+                ))}
+                <div className="grid grid-cols-[80px_1fr] items-start gap-3">
+                  <Label className="text-muted-foreground pt-1">备注</Label>
+                  {contactDetailEditing ? (
+                    <Textarea
+                      rows={3}
+                      value={contactDetailDraft.notes ?? ""}
+                      onChange={(e) => setContactDetailDraft({ ...contactDetailDraft, notes: e.target.value })}
+                    />
+                  ) : (
+                    <div className="py-1 whitespace-pre-wrap">
+                      {contactDetail.notes || <span className="text-muted-foreground">—</span>}
+                    </div>
+                  )}
+                </div>
+                <div className="flex justify-end gap-2 pt-3 border-t">
+                  {contactDetailEditing ? (
+                    <>
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          setContactDetailDraft(contactDetail);
+                          setContactDetailEditing(false);
+                        }}
+                      >
+                        取消
+                      </Button>
+                      <Button
+                        onClick={async () => {
+                          const name = (contactDetailDraft.name ?? "").trim();
+                          if (!name) return toast.error("姓名必填");
+                          const payload: any = {
+                            name,
+                            phone: (contactDetailDraft.phone ?? "").trim() || null,
+                            wechat: (contactDetailDraft.wechat ?? "").trim() || null,
+                            email: (contactDetailDraft.email ?? "").trim() || null,
+                            address: (contactDetailDraft.address ?? "").trim() || null,
+                            city: (contactDetailDraft.city ?? "").trim() || null,
+                            zip: (contactDetailDraft.zip ?? "").trim() || null,
+                            fellowship: (contactDetailDraft.fellowship ?? "").trim() || null,
+                            notes: (contactDetailDraft.notes ?? "").trim() || null,
+                          };
+                          const { error } = await (supabase as any)
+                            .from("contacts")
+                            .update(payload)
+                            .eq("id", contactDetail.id);
+                          if (error) return toast.error(error.message);
+                          toast.success("已保存");
+                          await loadContacts();
+                          const updated = { ...contactDetail, ...payload } as Contact;
+                          setContactDetail(updated);
+                          setContactDetailDraft(updated);
+                          setContactDetailEditing(false);
+                        }}
+                      >
+                        保存
+                      </Button>
+                    </>
+                  ) : (
+                    <>
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          setContactDetail(null);
+                          setContactDetailDraft(null);
+                        }}
+                      >
+                        关闭
+                      </Button>
+                      <Button onClick={() => setContactDetailEditing(true)}>编辑</Button>
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
         )}
         {isSuperAdmin && (
         <section className="bg-card border border-border/50 rounded-2xl p-6">
