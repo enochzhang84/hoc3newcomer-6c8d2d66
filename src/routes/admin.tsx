@@ -2894,7 +2894,7 @@ h1{font-size:20px;margin:0 0 16px;}table{width:100%;border-collapse:collapse;}
 th,td{border:1px solid #888;padding:8px 10px;text-align:left;font-size:14px;}
 th{background:#f4f4f5;}</style></head><body>
 <h1>${title}</h1>
-<table><thead><tr><th style="width:60px">序号</th><th>班级</th><th>老师</th><th>地点</th></tr></thead>
+<table><thead><tr><th style="width:60px">序号</th><th>班级</th><th>老师</th><th>地点</th><th style="width:70px">人数</th></tr></thead>
 <tbody>${rows.map((r,i)=>`<tr><td>${i+1}</td><td>${r.class_name??""}</td><td>${r.teacher_name??""}</td><td>${r.class_location??""}</td><td>${r.student_count??0}</td></tr>`).join("")}
 ${rows.length===0?'<tr><td colspan="5" style="text-align:center;color:#888;padding:24px">暂无数据</td></tr>':""}
 </tbody></table>
