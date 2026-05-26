@@ -296,6 +296,9 @@ function AdminPage() {
   const [contactsOpen, setContactsOpen] = useState(false);
   const [contactSearch, setContactSearch] = useState("");
   const [contactForm, setContactForm] = useState<Partial<Contact> | null>(null);
+  const [contactDetail, setContactDetail] = useState<Contact | null>(null);
+  const [contactDetailEditing, setContactDetailEditing] = useState(false);
+  const [contactDetailDraft, setContactDetailDraft] = useState<Partial<Contact> | null>(null);
   // Kids Sunday School settings dialog
   const [kidsSettingsSeason, setKidsSettingsSeason] = useState<"spring" | "fall" | null>(null);
   const [kidsNewTeacher, setKidsNewTeacher] = useState("");
@@ -3780,6 +3783,7 @@ ${rows.length===0?'<tr><td colspan="4" style="text-align:center;color:#888;paddi
                       <th className="py-2 px-2">微信</th>
                       <th className="py-2 px-2">邮件</th>
                       <th className="py-2 px-2">团契</th>
+                      <th className="py-2 px-2">备注</th>
                       <th className="py-2 px-2 text-right">操作</th>
                     </tr>
                   </thead>
@@ -3795,13 +3799,22 @@ ${rows.length===0?'<tr><td colspan="4" style="text-align:center;color:#888;paddi
                         );
                       })
                       .map((c) => (
-                        <tr key={c.id} className="border-b border-border/30">
+                        <tr
+                          key={c.id}
+                          className="border-b border-border/30 hover:bg-muted/40 cursor-pointer"
+                          onClick={() => {
+                            setContactDetail(c);
+                            setContactDetailDraft(c);
+                            setContactDetailEditing(false);
+                          }}
+                        >
                           <td className="py-2 px-2 font-medium">{c.name}</td>
                           <td className="py-2 px-2">{c.phone ?? ""}</td>
                           <td className="py-2 px-2">{c.wechat ?? ""}</td>
                           <td className="py-2 px-2">{c.email ?? ""}</td>
                           <td className="py-2 px-2">{c.fellowship ?? ""}</td>
-                          <td className="py-2 px-2 text-right whitespace-nowrap">
+                          <td className="py-2 px-2 max-w-[200px] truncate text-muted-foreground">{c.notes ?? ""}</td>
+                          <td className="py-2 px-2 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                             <button className="text-xs text-primary hover:underline mr-3" onClick={() => setContactForm(c)}>编辑</button>
                             <button
                               className="text-xs text-destructive hover:underline"
@@ -3819,13 +3832,133 @@ ${rows.length===0?'<tr><td colspan="4" style="text-align:center;color:#888;paddi
                         </tr>
                       ))}
                     {contacts.length === 0 && (
-                      <tr><td colSpan={6} className="py-8 text-center text-muted-foreground">暂无联系人</td></tr>
+                      <tr><td colSpan={7} className="py-8 text-center text-muted-foreground">暂无联系人</td></tr>
                     )}
                   </tbody>
                 </table>
               </div>
             </div>
           </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Contact detail dialog */}
+        <Dialog
+          open={!!contactDetail}
+          onOpenChange={(o) => {
+            if (!o) {
+              setContactDetail(null);
+              setContactDetailEditing(false);
+              setContactDetailDraft(null);
+            }
+          }}
+        >
+          <DialogContent className="max-w-lg">
+            <DialogHeader>
+              <DialogTitle className="font-serif text-lg">
+                {contactDetailEditing ? "编辑联系人" : "联系人详情"}
+              </DialogTitle>
+            </DialogHeader>
+            {contactDetail && contactDetailDraft && (
+              <div className="space-y-3 text-sm">
+                {([
+                  ["姓名", "name"],
+                  ["电话", "phone"],
+                  ["微信", "wechat"],
+                  ["邮件", "email"],
+                  ["地址", "address"],
+                  ["城市", "city"],
+                  ["邮编", "zip"],
+                  ["团契", "fellowship"],
+                ] as const).map(([label, key]) => (
+                  <div key={key} className="grid grid-cols-[80px_1fr] items-center gap-3">
+                    <Label className="text-muted-foreground">{label}</Label>
+                    {contactDetailEditing ? (
+                      <Input
+                        value={(contactDetailDraft as any)[key] ?? ""}
+                        onChange={(e) =>
+                          setContactDetailDraft({ ...contactDetailDraft, [key]: e.target.value })
+                        }
+                      />
+                    ) : (
+                      <div className="py-1">{(contactDetail as any)[key] || <span className="text-muted-foreground">—</span>}</div>
+                    )}
+                  </div>
+                ))}
+                <div className="grid grid-cols-[80px_1fr] items-start gap-3">
+                  <Label className="text-muted-foreground pt-1">备注</Label>
+                  {contactDetailEditing ? (
+                    <Textarea
+                      rows={3}
+                      value={contactDetailDraft.notes ?? ""}
+                      onChange={(e) => setContactDetailDraft({ ...contactDetailDraft, notes: e.target.value })}
+                    />
+                  ) : (
+                    <div className="py-1 whitespace-pre-wrap">
+                      {contactDetail.notes || <span className="text-muted-foreground">—</span>}
+                    </div>
+                  )}
+                </div>
+                <div className="flex justify-end gap-2 pt-3 border-t">
+                  {contactDetailEditing ? (
+                    <>
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          setContactDetailDraft(contactDetail);
+                          setContactDetailEditing(false);
+                        }}
+                      >
+                        取消
+                      </Button>
+                      <Button
+                        onClick={async () => {
+                          const name = (contactDetailDraft.name ?? "").trim();
+                          if (!name) return toast.error("姓名必填");
+                          const payload: any = {
+                            name,
+                            phone: (contactDetailDraft.phone ?? "").trim() || null,
+                            wechat: (contactDetailDraft.wechat ?? "").trim() || null,
+                            email: (contactDetailDraft.email ?? "").trim() || null,
+                            address: (contactDetailDraft.address ?? "").trim() || null,
+                            city: (contactDetailDraft.city ?? "").trim() || null,
+                            zip: (contactDetailDraft.zip ?? "").trim() || null,
+                            fellowship: (contactDetailDraft.fellowship ?? "").trim() || null,
+                            notes: (contactDetailDraft.notes ?? "").trim() || null,
+                          };
+                          const { error } = await (supabase as any)
+                            .from("contacts")
+                            .update(payload)
+                            .eq("id", contactDetail.id);
+                          if (error) return toast.error(error.message);
+                          toast.success("已保存");
+                          await loadContacts();
+                          const updated = { ...contactDetail, ...payload } as Contact;
+                          setContactDetail(updated);
+                          setContactDetailDraft(updated);
+                          setContactDetailEditing(false);
+                        }}
+                      >
+                        保存
+                      </Button>
+                    </>
+                  ) : (
+                    <>
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          setContactDetail(null);
+                          setContactDetailDraft(null);
+                        }}
+                      >
+                        关闭
+                      </Button>
+                      <Button onClick={() => setContactDetailEditing(true)}>编辑</Button>
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
           </DialogContent>
         </Dialog>
 
