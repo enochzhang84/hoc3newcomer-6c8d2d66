@@ -7,9 +7,54 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
+import { useEffect } from "react";
 
 import appCss from "../styles.css?url";
 import { Toaster } from "@/components/ui/sonner";
+
+// Bump this string whenever you need to force every browser to drop its
+// cached localStorage / sessionStorage state. Supabase auth keys (sb-*) are
+// preserved so logged-in users don't get kicked out.
+const APP_VERSION = "2026-05-26-1";
+
+function useChromeCacheReset() {
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    // 1. Unregister any leftover service workers (kill-switch for old PWA SW).
+    try {
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker
+          .getRegistrations()
+          .then((rs) => rs.forEach((r) => r.unregister()))
+          .catch(() => {});
+      }
+      if (typeof caches !== "undefined" && caches.keys) {
+        caches.keys().then((names) => names.forEach((n) => caches.delete(n))).catch(() => {});
+      }
+    } catch {}
+    // 2. Version-gate localStorage / sessionStorage to flush stale data.
+    try {
+      const stored = window.localStorage.getItem("__app_version");
+      if (stored !== APP_VERSION) {
+        const preserved: Record<string, string> = {};
+        for (let i = 0; i < window.localStorage.length; i++) {
+          const k = window.localStorage.key(i);
+          if (!k) continue;
+          if (k.startsWith("sb-") || k.startsWith("supabase.")) {
+            const v = window.localStorage.getItem(k);
+            if (v !== null) preserved[k] = v;
+          }
+        }
+        window.localStorage.clear();
+        for (const [k, v] of Object.entries(preserved)) {
+          window.localStorage.setItem(k, v);
+        }
+        window.localStorage.setItem("__app_version", APP_VERSION);
+        try { window.sessionStorage.clear(); } catch {}
+      }
+    } catch {}
+  }, []);
+}
 
 function NotFoundComponent() {
   return (
@@ -114,6 +159,7 @@ function RootShell({ children }: { children: React.ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  useChromeCacheReset();
 
   return (
     <QueryClientProvider client={queryClient}>
