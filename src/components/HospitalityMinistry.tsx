@@ -24,6 +24,9 @@ type Entry = {
   sort_order: number;
 };
 
+const SERVICE_ITEMS = ["新人接待", "迎宾接待"];
+const LOCATIONS = ["前门", "后门"];
+
 const DEFAULT_PANELS = [
   { key: "hospitality_q1_jan", title: "2026 第一季度迎宾接待名单 一月份" },
   { key: "hospitality_q1_feb", title: "2026 第一季度迎宾接待名单 二月份" },
@@ -192,16 +195,26 @@ function HospitalityPanel({ panelKey, defaultTitle }: { panelKey: string; defaul
                   }} className="h-7 text-xs" />
                 </td>
                 <td className="py-1 px-1">
-                  <Input defaultValue={e.service_item ?? ""} placeholder="服侍项目" onBlur={(ev) => {
-                    const v = ev.target.value || null;
-                    if (v !== e.service_item) updateRow(e.id, { service_item: v });
-                  }} className="h-7 text-xs" />
+                  <select
+                    value={e.service_item ?? ""}
+                    onChange={(ev) => updateRow(e.id, { service_item: ev.target.value || null })}
+                    className="h-7 text-xs w-full rounded-md border border-input bg-background px-2"
+                  >
+                    <option value="">—</option>
+                    {SERVICE_ITEMS.map((s) => <option key={s} value={s}>{s}</option>)}
+                    {e.service_item && !SERVICE_ITEMS.includes(e.service_item) && <option value={e.service_item}>{e.service_item}</option>}
+                  </select>
                 </td>
                 <td className="py-1 px-1">
-                  <Input defaultValue={e.location ?? ""} placeholder="地点" onBlur={(ev) => {
-                    const v = ev.target.value || null;
-                    if (v !== e.location) updateRow(e.id, { location: v });
-                  }} className="h-7 text-xs" />
+                  <select
+                    value={e.location ?? ""}
+                    onChange={(ev) => updateRow(e.id, { location: ev.target.value || null })}
+                    className="h-7 text-xs w-full rounded-md border border-input bg-background px-2"
+                  >
+                    <option value="">—</option>
+                    {LOCATIONS.map((s) => <option key={s} value={s}>{s}</option>)}
+                    {e.location && !LOCATIONS.includes(e.location) && <option value={e.location}>{e.location}</option>}
+                  </select>
                 </td>
                 <td className="py-1 px-1">
                   <select
