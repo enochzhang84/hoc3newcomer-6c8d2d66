@@ -262,14 +262,27 @@ function RetreatPage() {
             <div className="space-y-3">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <Label>中文姓名</Label>
-                  <Input className="mt-1" value={editing.chinese_name} onChange={(e) => setEditing({ ...editing, chinese_name: e.target.value })} />
+                  <Label>基督之家</Label>
+                  <select value={editing.church ?? ""} onChange={(e) => setEditing({ ...editing, church: e.target.value || null })} className="mt-1 w-full h-10 rounded-md border border-input bg-background px-3 text-sm">
+                    <option value="">—</option>
+                    {CHURCHES.map((c) => <option key={c} value={c}>{c.toUpperCase()}</option>)}
+                  </select>
                 </div>
                 <div>
                   <Label>性别</Label>
                   <select value={editing.gender ?? ""} onChange={(e) => setEditing({ ...editing, gender: e.target.value || null })} className="mt-1 w-full h-10 rounded-md border border-input bg-background px-3 text-sm">
                     <option value="">—</option><option value="M">M</option><option value="F">F</option>
                   </select>
+                </div>
+                <div>
+                  <Label>中文姓名</Label>
+                  <Input className="mt-1" value={editing.chinese_name} onChange={(e) => setEditing({ ...editing, chinese_name: e.target.value })} />
+                </div>
+                <div>
+                  <Label>已付费</Label>
+                  <div className="mt-1 h-10 flex items-center px-3 rounded-md border border-input bg-muted/40 text-sm text-muted-foreground">
+                    {editing.paid ? "✓ 已付" : "未付"}
+                  </div>
                 </div>
                 <div>
                   <Label>Last Name</Label>
@@ -280,7 +293,7 @@ function RetreatPage() {
                   <Input className="mt-1" value={editing.first_name ?? ""} onChange={(e) => setEditing({ ...editing, first_name: e.target.value })} />
                 </div>
                 <div>
-                  <Label>手机 Cell</Label>
+                  <Label>Cell</Label>
                   <Input className="mt-1" value={editing.cell ?? ""} onChange={(e) => setEditing({ ...editing, cell: e.target.value })} />
                 </div>
                 <div>
@@ -289,11 +302,15 @@ function RetreatPage() {
                 </div>
                 <div>
                   <Label>Program</Label>
-                  <Input className="mt-1" value={editing.program ?? ""} onChange={(e) => setEditing({ ...editing, program: e.target.value })} />
+                  <select value={editing.program ?? ""} onChange={(e) => setEditing({ ...editing, program: e.target.value || null })} className="mt-1 w-full h-10 rounded-md border border-input bg-background px-3 text-sm">
+                    <option value="">—</option>{PROGRAMS.map((p) => <option key={p.v} value={p.v}>{p.label}</option>)}
+                  </select>
                 </div>
                 <div>
                   <Label>Topic</Label>
-                  <Input className="mt-1" value={editing.topic ?? ""} onChange={(e) => setEditing({ ...editing, topic: e.target.value })} />
+                  <select value={editing.topic ?? ""} onChange={(e) => setEditing({ ...editing, topic: e.target.value || null })} className="mt-1 w-full h-10 rounded-md border border-input bg-background px-3 text-sm">
+                    <option value="">—</option>{TOPICS.map((t) => <option key={t.v} value={t.v}>{t.label}</option>)}
+                  </select>
                 </div>
                 <div>
                   <Label>Bed</Label>
@@ -302,8 +319,11 @@ function RetreatPage() {
                   </select>
                 </div>
                 <div>
-                  <Label>需接送</Label>
-                  <Input type="number" min={0} className="mt-1" value={editing.need_pickup ?? ""} onChange={(e) => setEditing({ ...editing, need_pickup: e.target.value === "" ? null : parseInt(e.target.value, 10) })} />
+                  <Label>可接送 / 需接送</Label>
+                  <div className="mt-1 flex gap-2">
+                    <Input type="number" min={0} placeholder="可接" value={editing.can_pickup ?? ""} onChange={(e) => setEditing({ ...editing, can_pickup: e.target.value === "" ? null : parseInt(e.target.value, 10) })} />
+                    <Input type="number" min={0} placeholder="需接" value={editing.need_pickup ?? ""} onChange={(e) => setEditing({ ...editing, need_pickup: e.target.value === "" ? null : parseInt(e.target.value, 10) })} />
+                  </div>
                 </div>
               </div>
               <div>
