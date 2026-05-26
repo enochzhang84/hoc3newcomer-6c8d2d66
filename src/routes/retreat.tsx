@@ -41,7 +41,26 @@ type Row = {
   need_pickup: number | null;
   user_notes: string | null;
   church: string | null;
+  paid?: boolean | null;
 };
+
+const CHURCHES = ["hoc1", "hoc2", "hoc3", "hoc4", "hoc5", "hoc6", "hoc7"];
+const PROGRAMS: { v: string; label: string }[] = [
+  { v: "M", label: "M — 中文 (Chinese)" },
+  { v: "E", label: "E — 英文 (English)" },
+  { v: "N", label: "N — 9~11 岁" },
+  { v: "S", label: "S — 7~8 岁" },
+  { v: "F", label: "F — 5~6 岁" },
+  { v: "T", label: "T — 4 岁" },
+  { v: "R", label: "R — 3 岁" },
+  { v: "B", label: "B — 0~2 岁" },
+];
+const TOPICS: { v: string; label: string }[] = [
+  { v: "1", label: "1 - 迎接老年时代的来临 - 一个基督徒的立场 - 廖俊惠医师主讲" },
+  { v: "2", label: "2 - 婚姻成长 DIY / 陪孩子走一段路 - 郭磊土疏师母" },
+  { v: "3", label: "3 - 走过悲伤与忧郁：信仰中的关键与盼望 - 林慈敏博士主讲" },
+  { v: "4", label: "4 - 如何在 AI 热潮、高关税、股市高点下做个福音理财好管家 - 陈少豪牧师主讲" },
+];
 
 function RetreatPage() {
   const PUBLISHED_ORIGIN = "https://hoc3newcomer.lovable.app";
