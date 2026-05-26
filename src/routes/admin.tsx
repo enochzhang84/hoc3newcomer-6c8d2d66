@@ -239,6 +239,7 @@ type KidsRow = {
   class_name: string | null;       // 班级 stored in class_name
   teacher_name: string | null;     // 老师
   class_location: string | null;   // 地点
+  student_count: number | null;    // 人数（手动录入）
   sort_order: number;
 };
 
