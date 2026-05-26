@@ -3783,6 +3783,7 @@ ${rows.length===0?'<tr><td colspan="4" style="text-align:center;color:#888;paddi
                       <th className="py-2 px-2">微信</th>
                       <th className="py-2 px-2">邮件</th>
                       <th className="py-2 px-2">团契</th>
+                      <th className="py-2 px-2">备注</th>
                       <th className="py-2 px-2 text-right">操作</th>
                     </tr>
                   </thead>
@@ -3798,13 +3799,22 @@ ${rows.length===0?'<tr><td colspan="4" style="text-align:center;color:#888;paddi
                         );
                       })
                       .map((c) => (
-                        <tr key={c.id} className="border-b border-border/30">
+                        <tr
+                          key={c.id}
+                          className="border-b border-border/30 hover:bg-muted/40 cursor-pointer"
+                          onClick={() => {
+                            setContactDetail(c);
+                            setContactDetailDraft(c);
+                            setContactDetailEditing(false);
+                          }}
+                        >
                           <td className="py-2 px-2 font-medium">{c.name}</td>
                           <td className="py-2 px-2">{c.phone ?? ""}</td>
                           <td className="py-2 px-2">{c.wechat ?? ""}</td>
                           <td className="py-2 px-2">{c.email ?? ""}</td>
                           <td className="py-2 px-2">{c.fellowship ?? ""}</td>
-                          <td className="py-2 px-2 text-right whitespace-nowrap">
+                          <td className="py-2 px-2 max-w-[200px] truncate text-muted-foreground">{c.notes ?? ""}</td>
+                          <td className="py-2 px-2 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                             <button className="text-xs text-primary hover:underline mr-3" onClick={() => setContactForm(c)}>编辑</button>
                             <button
                               className="text-xs text-destructive hover:underline"
@@ -3822,7 +3832,7 @@ ${rows.length===0?'<tr><td colspan="4" style="text-align:center;color:#888;paddi
                         </tr>
                       ))}
                     {contacts.length === 0 && (
-                      <tr><td colSpan={6} className="py-8 text-center text-muted-foreground">暂无联系人</td></tr>
+                      <tr><td colSpan={7} className="py-8 text-center text-muted-foreground">暂无联系人</td></tr>
                     )}
                   </tbody>
                 </table>
