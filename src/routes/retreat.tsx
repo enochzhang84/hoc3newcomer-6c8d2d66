@@ -275,12 +275,12 @@ function RetreatPage() {
                         <div className="flex gap-2 shrink-0">
                           <Button variant="outline" size="sm" className="rounded-full" onClick={() => setEditing(r)}>编辑</Button>
                           <Button
-                            variant="destructive"
+                            variant="outline"
                             size="sm"
-                            className="rounded-full"
+                            className="rounded-full border-destructive/60 text-destructive hover:bg-destructive/10 hover:text-destructive"
                             onClick={(e) => { e.stopPropagation(); setPendingDelete(r); }}
                           >
-                            删除条目
+                            删除登记信息
                           </Button>
                         </div>
                       </li>
@@ -399,7 +399,13 @@ function RetreatPage() {
               </div>
 
               <DialogFooter className="gap-2 sm:gap-2 pt-2">
-                <Button variant="destructive" className="rounded-full" onClick={() => setPendingDelete(editing)}>删除条目</Button>
+                <Button
+                  variant="outline"
+                  className="rounded-full border-destructive/60 text-destructive hover:bg-destructive/10 hover:text-destructive sm:mr-auto"
+                  onClick={() => setPendingDelete(editing)}
+                >
+                  删除登记信息
+                </Button>
                 <Button variant="outline" className="rounded-full" onClick={() => setEditing(null)}>取消</Button>
                 <Button className="rounded-full" onClick={handleSave} disabled={saving}>{saving ? "保存中…" : "保存"}</Button>
               </DialogFooter>
@@ -412,14 +418,17 @@ function RetreatPage() {
       <AlertDialog open={!!pendingDelete} onOpenChange={(o) => !o && setPendingDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>确认删除?</AlertDialogTitle>
+            <AlertDialogTitle>确认删除 {pendingDelete?.chinese_name} 的登记？</AlertDialogTitle>
             <AlertDialogDescription>
-              将永久删除 {pendingDelete?.chinese_name} 的登记记录,此操作不可撤销。
+              删除前请确认是否已经备份信息。
+              <br />
+              此操作会永久删除您的登记信息，无法恢复。
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>取消</AlertDialogCancel>
             <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               onClick={async () => {
                 const r = pendingDelete;
                 if (!r) return;
@@ -427,7 +436,7 @@ function RetreatPage() {
                 await handleDelete(r);
               }}
             >
-              确定
+              确认删除
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
