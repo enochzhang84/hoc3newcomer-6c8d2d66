@@ -1152,15 +1152,37 @@ function AdminPage() {
       </header>
 
       <main className="container mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-8">
-        <Tabs defaultValue="stats" className="w-full min-w-0">
-          <TabsList className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 h-auto w-full mb-6 gap-1">
-            <TabsTrigger value="stats">数据统计</TabsTrigger>
-            <TabsTrigger value="welcome">迎宾接待</TabsTrigger>
-            <TabsTrigger value="media">影音播放</TabsTrigger>
-            <TabsTrigger value="kitchen">厨房事工</TabsTrigger>
-            <TabsTrigger value="sunday">主日学</TabsTrigger>
-            <TabsTrigger value="events">活动</TabsTrigger>
-          </TabsList>
+        <Tabs value={mainTab} onValueChange={setMainTab} className="w-full min-w-0">
+          {/* Soft UI 主导航栏 — Apple Dashboard 风格 */}
+          <div className="mb-8 p-1.5 bg-[#f5f0e8] rounded-2xl shadow-[0_2px_16px_rgba(0,0,0,0.04)]">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-1">
+              {[
+                { value: "stats", label: "数据统计" },
+                { value: "welcome", label: "迎宾接待" },
+                { value: "media", label: "影音播放" },
+                { value: "kitchen", label: "厨房事工" },
+                { value: "sunday", label: "主日学" },
+                { value: "events", label: "活动" },
+              ].map((tab) => {
+                const isActive = mainTab === tab.value;
+                return (
+                  <button
+                    key={tab.value}
+                    type="button"
+                    onClick={() => setMainTab(tab.value)}
+                    className={cn(
+                      "relative py-3 px-2 text-sm rounded-xl transition-all duration-200 ease-out cursor-pointer select-none outline-none",
+                      isActive
+                        ? "bg-white text-foreground font-semibold shadow-[0_2px_10px_rgba(0,0,0,0.06)] translate-y-[-1px]"
+                        : "bg-transparent text-muted-foreground font-medium hover:bg-white/60 hover:text-foreground/80 hover:translate-y-[-1px]"
+                    )}
+                  >
+                    {tab.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
 
           <fieldset disabled={!isAdmin} className="contents">
 
