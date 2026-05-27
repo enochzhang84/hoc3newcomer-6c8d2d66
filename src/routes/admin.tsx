@@ -666,6 +666,19 @@ function AdminPage() {
           setIsAdmin(admin || superAdmin);
           setUserRoleState(role);
           setChecking(false);
+          // Load current user's service_projects for permission filtering
+          void (async () => {
+            const { data: prof } = await supabase
+              .from("user_profiles")
+              .select("service_projects")
+              .eq("user_id", sess.user.id)
+              .maybeSingle();
+            if (!cancelled) {
+              setCurrentUserProjects(
+                Array.isArray(prof?.service_projects) ? (prof!.service_projects as string[]) : [],
+              );
+            }
+          })();
           if (role) loadAuthorizedData();
         } catch {
           if (!cancelled) {
