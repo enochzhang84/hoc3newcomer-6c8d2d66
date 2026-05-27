@@ -292,6 +292,7 @@ function AdminPage() {
   const [coursePages, setCoursePages] = useState<Record<string, number>>({});
   const [fellowshipPages, setFellowshipPages] = useState<Record<string, number>>({});
   const TAB_PAGE_SIZE = 10;
+  const [mainTab, setMainTab] = useState("stats");
   // Adult class checkins (summer / fall)
   const [adultCheckins, setAdultCheckins] = useState<AdultCheckin[]>([]);
   const [adultSort, setAdultSort] = useState<Record<"summer" | "fall", { col: "name" | "fellowship" | "time"; dir: "asc" | "desc" }>>({
