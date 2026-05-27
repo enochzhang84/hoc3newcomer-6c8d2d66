@@ -1805,7 +1805,7 @@ function AdminPage() {
           </DialogContent>
         </Dialog>
         )}
-        {isSuperAdmin && (
+        {(isSuperAdmin || currentUserProjects.includes("system_tools")) && (
         <section className="bg-card border border-border/50 rounded-2xl p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-serif text-xl">系统工具栏</h2>
