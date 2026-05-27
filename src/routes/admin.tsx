@@ -315,6 +315,7 @@ function AdminPage() {
   const [kitchenSubTab, setKitchenSubTab] = useState<string>("dining");
   const [kitchenDetailRow, setKitchenDetailRow] = useState<AttendanceRecord | null>(null);
   const [sundaySubTab, setSundaySubTab] = useState<string>("adult");
+  const [welcomeSubTab, setWelcomeSubTab] = useState<string>("greet");
   // Event-meal (其他活动订餐计划) form state — shares meal_plans table via category='event'
   const [newEventMealDate, setNewEventMealDate] = useState<string>(format(new Date(), "yyyy-MM-dd"));
   const [newEventMealAttendees, setNewEventMealAttendees] = useState<string>("");
@@ -964,7 +965,7 @@ function AdminPage() {
       return `
         <div class="form">
           <h2>基督之家第三家新人資料表</h2>
-          <div class="row"><span class="lbl">日期：</span><span class="val">${esc(date)}</span><span class="lbl right">區別：</span><span class="val short">${esc(r.district ?? "")}</span></div>
+          <div class="row"><span class="lbl">日期：</span><span class="val grow">${esc(date)}</span></div>
           <div class="row"><span class="lbl">姓名：(中)</span><span class="val">${esc(r.name)}</span><span class="lbl">(英)</span><span class="val">${esc(r.name_en ?? "")}</span><span class="lbl right">性別：${genderText(r)}</span></div>
           <div class="row"><span class="lbl">地址：</span><span class="val grow">${esc(r.address ?? "")}</span></div>
           <div class="row"><span class="lbl">City：</span><span class="val">${esc(r.city ?? "")}</span><span class="lbl">ZIP：</span><span class="val">${esc(r.zip ?? "")}</span></div>
@@ -1843,6 +1844,31 @@ function AdminPage() {
             </TabsContent>
 
             <TabsContent value="welcome" className="space-y-8 mt-0">
+        {/* Chrome-style sub-tabs — 2 equal columns */}
+        <div className="grid grid-cols-2 items-end gap-1 border-b border-border/60 px-2 pt-1 -mb-2">
+          {[
+            { v: "greet", label: "迎宾" },
+            { v: "reception", label: "接待" },
+          ].map((t) => {
+            const active = welcomeSubTab === t.v;
+            return (
+              <button
+                key={t.v}
+                onClick={() => setWelcomeSubTab(t.v)}
+                className={cn(
+                  "w-full text-center px-2 sm:px-4 py-2 text-xs sm:text-sm rounded-t-xl border border-b-0 transition-all truncate",
+                  active
+                    ? "bg-card text-foreground border-border shadow-sm font-medium relative -mb-px"
+                    : "bg-muted/40 text-muted-foreground border-transparent hover:bg-muted/70"
+                )}
+              >
+                {t.label}
+              </button>
+            );
+          })}
+        </div>
+
+        {welcomeSubTab === "greet" && (<>
         <section className="bg-card border border-border/50 rounded-2xl p-6">
           <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
             <h2 className="font-serif text-xl">登记名单</h2>
@@ -2324,8 +2350,11 @@ function AdminPage() {
             </div>
           )}
         </section>
+        </>)}
+        {welcomeSubTab === "reception" && (<>
         <HospitalityMinistrySection />
         <HospitalityRankingSection />
+        </>)}
             </TabsContent>
 
             <TabsContent value="media" className="space-y-8 mt-0">
