@@ -313,6 +313,11 @@ function AdminPage() {
   const [newMealNotes, setNewMealNotes] = useState<string>("");
   const [kitchenSubTab, setKitchenSubTab] = useState<string>("dining");
   const [kitchenDetailRow, setKitchenDetailRow] = useState<AttendanceRecord | null>(null);
+  // Event-meal (其他活动订餐计划) form state — shares meal_plans table via category='event'
+  const [newEventMealDate, setNewEventMealDate] = useState<string>(format(new Date(), "yyyy-MM-dd"));
+  const [newEventMealAttendees, setNewEventMealAttendees] = useState<string>("");
+  const [newEventMealType, setNewEventMealType] = useState<string>("");
+  const [newEventMealNotes, setNewEventMealNotes] = useState<string>("");
   // Duty rosters
   const [dutyPersonnel, setDutyPersonnel] = useState<DutyPerson[]>([]);
   const [dutySchedules, setDutySchedules] = useState<DutySchedule[]>([]);
