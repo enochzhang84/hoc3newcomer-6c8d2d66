@@ -95,6 +95,30 @@ export type Database = {
         }
         Relationships: []
       }
+      chat_messages: {
+        Row: {
+          content: string
+          created_at: string
+          display_name: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          display_name: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          display_name?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       contacts: {
         Row: {
           address: string | null
@@ -854,6 +878,30 @@ export type Database = {
           last_messages_seen_at?: string
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      user_profiles: {
+        Row: {
+          created_at: string
+          service_project: string | null
+          updated_at: string
+          user_id: string
+          worker_name: string | null
+        }
+        Insert: {
+          created_at?: string
+          service_project?: string | null
+          updated_at?: string
+          user_id: string
+          worker_name?: string | null
+        }
+        Update: {
+          created_at?: string
+          service_project?: string | null
+          updated_at?: string
+          user_id?: string
+          worker_name?: string | null
         }
         Relationships: []
       }
