@@ -799,6 +799,28 @@ function AdminPage() {
     setPage(1);
   }, [search, filterDate, statusFilter, dateFilterMode]);
 
+  // Online workers polling (5-min window, refreshed every 30s)
+  useEffect(() => {
+    let stopped = false;
+    const load = async () => {
+      const since = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+      const { data } = await (supabase as any)
+        .from("user_presence")
+        .select("worker_name")
+        .gte("last_seen_at", since);
+      if (stopped) return;
+      const set = new Set<string>();
+      for (const r of (data ?? []) as { worker_name: string | null }[]) {
+        const n = (r.worker_name ?? "").trim();
+        if (n) set.add(n);
+      }
+      setOnlineWorkers(set);
+    };
+    load();
+    const t = setInterval(load, 30 * 1000);
+    return () => { stopped = true; clearInterval(t); };
+  }, []);
+
   if (checking) return <div className="min-h-screen flex items-center justify-center text-muted-foreground">加载中...</div>;
   if (!userRole) {
     return (
