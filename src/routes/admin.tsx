@@ -2377,6 +2377,109 @@ function AdminPage() {
             </TabsContent>
 
             <TabsContent value="kitchen" className="space-y-8 mt-0">
+        {/* Chrome-style sub-tabs */}
+        <div className="flex flex-wrap items-end gap-1 border-b border-border/60 px-2 pt-1 -mb-2">
+          {[
+            { v: "dining", label: "就餐人数统计" },
+            { v: "sunday-meal", label: "主日订餐计划" },
+            { v: "event-meal", label: "其他活动订餐计划" },
+            { v: "tbd", label: "待定" },
+          ].map((t) => {
+            const active = kitchenSubTab === t.v;
+            return (
+              <button
+                key={t.v}
+                onClick={() => setKitchenSubTab(t.v)}
+                className={cn(
+                  "px-4 py-2 text-sm rounded-t-xl border border-b-0 transition-all",
+                  active
+                    ? "bg-card text-foreground border-border shadow-sm font-medium relative -mb-px"
+                    : "bg-muted/40 text-muted-foreground border-transparent hover:bg-muted/70"
+                )}
+              >
+                {t.label}
+              </button>
+            );
+          })}
+        </div>
+
+        {kitchenSubTab === "dining" && (() => {
+          const toLocalDate = (iso: string) => {
+            const d = new Date(iso);
+            return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+          };
+          const newcomersByDate: Record<string, number> = {};
+          for (const r of regs) {
+            const k = toLocalDate(r.created_at);
+            newcomersByDate[k] = (newcomersByDate[k] || 0) + 1;
+          }
+          return (
+            <section className="bg-card border border-border/50 rounded-2xl p-6">
+              <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+                <h2 className="font-serif text-xl">就餐人数统计</h2>
+                <p className="text-xs text-muted-foreground">
+                  数据来源：迎宾接待 → 人数统计 → 历史记录。今日新人仅作显示，不计入总人数。
+                </p>
+              </div>
+              <div className="overflow-x-auto rounded-lg border border-border/50">
+                <table className="w-full text-sm border-collapse">
+                  <thead className="bg-muted/80">
+                    <tr className="text-left text-muted-foreground">
+                      <th className="py-2 px-3 border border-border/60">日期</th>
+                      <th className="py-2 px-3 border border-border/60">大堂</th>
+                      <th className="py-2 px-3 border border-border/60">儿童学生</th>
+                      <th className="py-2 px-3 border border-border/60">儿童老师</th>
+                      <th className="py-2 px-3 border border-border/60">今日新人</th>
+                      <th className="py-2 px-3 border border-border/60">总人数</th>
+                      <th className="py-2 px-3 border border-border/60 text-right">操作</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {attendance.map((a) => {
+                      const tot = a.worship_count + a.children_students + a.children_teachers;
+                      const nc = newcomersByDate[a.record_date] || 0;
+                      return (
+                        <tr
+                          key={a.id}
+                          className="border-b border-border/30 hover:bg-muted/40 cursor-pointer"
+                          onClick={() => setKitchenDetailRow(a)}
+                        >
+                          <td className="py-2 px-3 border border-border/40 whitespace-nowrap">{a.record_date}</td>
+                          <td className="py-2 px-3 border border-border/40">{a.worship_count}</td>
+                          <td className="py-2 px-3 border border-border/40">{a.children_students}</td>
+                          <td className="py-2 px-3 border border-border/40">{a.children_teachers}</td>
+                          <td className="py-2 px-3 border border-border/40 text-primary">{nc}</td>
+                          <td className="py-2 px-3 border border-border/40 font-medium">{tot}</td>
+                          <td className="py-2 px-3 border border-border/40 text-right">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setKitchenDetailRow(a);
+                              }}
+                            >
+                              查看
+                            </Button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                    {attendance.length === 0 && (
+                      <tr>
+                        <td colSpan={7} className="py-8 text-center text-muted-foreground border border-border/40">
+                          暂无人数统计记录
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          );
+        })()}
+
+        {kitchenSubTab === "sunday-meal" && (
         <section className="bg-card border border-border/50 rounded-2xl p-6">
           <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
             <h2 className="font-serif text-xl">主日订餐计划</h2>
@@ -2522,6 +2625,70 @@ function AdminPage() {
             </table>
           </div>
         </section>
+        )}
+
+        {kitchenSubTab === "event-meal" && (
+          <section className="bg-card border border-border/50 rounded-2xl p-6">
+            <h2 className="font-serif text-xl mb-2">其他活动订餐计划</h2>
+            <p className="text-sm text-muted-foreground">即将上线，敬请期待。</p>
+          </section>
+        )}
+
+        {kitchenSubTab === "tbd" && (
+          <section className="bg-card border border-border/50 rounded-2xl p-6">
+            <h2 className="font-serif text-xl mb-2">待定</h2>
+            <p className="text-sm text-muted-foreground">此板块功能待定。</p>
+          </section>
+        )}
+
+        {/* 就餐人数统计 - 详情弹窗 */}
+        <Dialog open={!!kitchenDetailRow} onOpenChange={(o) => !o && setKitchenDetailRow(null)}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>就餐人数 · 详情</DialogTitle>
+              <DialogDescription>
+                来源：迎宾接待 → 人数统计 → 历史记录
+              </DialogDescription>
+            </DialogHeader>
+            {kitchenDetailRow && (() => {
+              const a = kitchenDetailRow;
+              const toLocalDate = (iso: string) => {
+                const d = new Date(iso);
+                return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+              };
+              const nc = regs.filter((r) => toLocalDate(r.created_at) === a.record_date).length;
+              const tot = a.worship_count + a.children_students + a.children_teachers;
+              const rows: [string, string | number][] = [
+                ["日期", a.record_date],
+                ["大堂", a.worship_count],
+                ["儿童学生", a.children_students],
+                ["儿童老师", a.children_teachers],
+                ["今日新人", nc],
+                ["总人数（大堂 + 儿童学生 + 儿童老师）", tot],
+              ];
+              return (
+                <div className="overflow-x-auto rounded-md border border-border/60">
+                  <table className="w-full text-sm border-collapse">
+                    <thead className="bg-muted/80">
+                      <tr>
+                        <th className="py-2 px-3 border border-border/60 text-left w-1/2">字段</th>
+                        <th className="py-2 px-3 border border-border/60 text-left">数值</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {rows.map(([k, v]) => (
+                        <tr key={k} className="odd:bg-muted/20">
+                          <td className="py-2 px-3 border border-border/40 font-medium">{k}</td>
+                          <td className="py-2 px-3 border border-border/40">{v}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              );
+            })()}
+          </DialogContent>
+        </Dialog>
             </TabsContent>
 
             <TabsContent value="sunday" className="space-y-8 mt-0">
