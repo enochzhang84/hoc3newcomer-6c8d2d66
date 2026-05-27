@@ -1499,7 +1499,7 @@ function AdminPage() {
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-serif text-xl">管理员权限</h2>
             <div className="flex items-center gap-2">
-              <Button size="sm" onClick={() => { setNewUserForm({ email: "", password: "", role: "user", workerName: "" }); setNewUserOpen(true); }}>
+              <Button size="sm" onClick={() => { setNewUserForm({ email: "", password: "", role: "user", workerName: "", serviceProjects: [] }); setNewUserOpen(true); }}>
                 + 添加用户
               </Button>
               <Button size="sm" variant="outline" onClick={loadUsers} disabled={usersLoading}>
