@@ -76,7 +76,17 @@ function formatSourceChannel(r: Pick<Reg, "source_channel">): string {
   }
 }
 
-type AppUser = { id: string; email: string; created_at: string; roles: string[]; worker_name?: string | null; service_project?: string | null };
+type AppUser = { id: string; email: string; created_at: string; roles: string[]; worker_name?: string | null; service_project?: string | null; service_projects?: string[] };
+
+const SERVICE_PROJECT_OPTIONS: { value: string; label: string }[] = [
+  { value: "welcome", label: "迎宾接待" },
+  { value: "media", label: "影音播放" },
+  { value: "kitchen", label: "厨房事工" },
+  { value: "sunday", label: "主日学" },
+  { value: "retreat", label: "退修会" },
+  { value: "admin_perm", label: "管理员权限" },
+  { value: "system_tools", label: "系统工具" },
+];
 
 type CachedAuthUser = { id: string; email?: string | null };
 
