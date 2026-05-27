@@ -203,6 +203,29 @@ export function FloatingChat() {
     setMentionQuery(null);
   };
 
+  const startReply = (w: WorkerOption) => {
+    const name = w.worker_name?.trim() || w.display_name?.trim() || "";
+    if (!name || w.user_id === userId) return;
+    const tag = "@" + name + " ";
+    setInput((prev) => (prev.includes(tag) ? prev : tag));
+    setMentionTarget(w);
+    setMentionQuery(null);
+    setTimeout(() => {
+      const el = inputRef.current;
+      if (el) {
+        el.focus();
+        const len = el.value.length;
+        try { el.setSelectionRange(len, len); } catch { /* noop */ }
+      }
+    }, 0);
+  };
+
+  const cancelReply = () => {
+    setMentionTarget(null);
+    setInput((prev) => prev.replace(/^@[^\s@]+\s*/, ""));
+    setMentionQuery(null);
+  };
+
   const send = async () => {
     const content = input.trim();
     if (!content || !userId) return;
