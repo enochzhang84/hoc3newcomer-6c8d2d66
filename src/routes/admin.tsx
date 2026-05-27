@@ -334,6 +334,8 @@ function AdminPage() {
   const [contactDetail, setContactDetail] = useState<Contact | null>(null);
   const [contactDetailEditing, setContactDetailEditing] = useState(false);
   const [contactDetailDraft, setContactDetailDraft] = useState<Partial<Contact> | null>(null);
+  // Online worker names (from user_presence, refreshed every 30s)
+  const [onlineWorkers, setOnlineWorkers] = useState<Set<string>>(new Set());
   // Kids Sunday School settings dialog
   const [kidsSettingsSeason, setKidsSettingsSeason] = useState<"spring" | "fall" | null>(null);
   const [kidsNewTeacher, setKidsNewTeacher] = useState("");
