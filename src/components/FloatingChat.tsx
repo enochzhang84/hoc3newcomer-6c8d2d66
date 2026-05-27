@@ -305,13 +305,32 @@ export function FloatingChat() {
     !q ||
     m.display_name.toLowerCase().includes(q) ||
     m.content.toLowerCase().includes(q);
-  const publicMessages = messages.filter((m) => m.recipient_id === null && matchesSearch(m));
+  const publicMessages = messages.filter(
+    (m) => m.recipient_id === null && matchesSearch(m) && !hiddenIds.has(m.id),
+  );
   const privateMessages = messages.filter(
     (m) =>
       m.recipient_id !== null &&
       (m.user_id === userId || m.recipient_id === userId) &&
-      matchesSearch(m),
+      matchesSearch(m) &&
+      !hiddenIds.has(m.id),
   );
+
+  const DeleteBtn = ({ m, className = "" }: { m: ChatMessage; className?: string }) =>
+    canDelete(m) ? (
+      <button
+        type="button"
+        onClick={(e) => { e.stopPropagation(); setPendingDelete(m); }}
+        aria-label="删除消息"
+        className={
+          "shrink-0 p-1 rounded-md text-red-500 hover:bg-red-50 hover:text-red-600 transition-opacity " +
+          (actionId === m.id ? "opacity-100 " : "opacity-0 group-hover:opacity-100 ") +
+          className
+        }
+      >
+        <Trash2 className="h-3.5 w-3.5" />
+      </button>
+    ) : null;
 
   const renderBubble = (m: ChatMessage) => {
     const mine = m.user_id === userId;
