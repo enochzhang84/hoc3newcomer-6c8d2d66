@@ -1306,6 +1306,70 @@ function AdminPage() {
           <h2 className="font-serif text-xl mb-4">主日学参与统计</h2>
           <SundayParticipationStats checkins={sundayCheckins} courses={courses} />
         </section>
+        {/* 饭食统计 */}
+        <section>
+          <h2 className="font-serif text-xl mb-4">饭食统计</h2>
+          {(() => {
+            const toLocalDate = (s: string) => {
+              // plan_date is already 'YYYY-MM-DD' (date type)
+              return s;
+            };
+            const todayStr = format(new Date(), "yyyy-MM-dd");
+            const now = new Date();
+            // Week range (Sun-Sat, local)
+            const startOfWeek = new Date(now);
+            startOfWeek.setHours(0, 0, 0, 0);
+            startOfWeek.setDate(now.getDate() - now.getDay());
+            const endOfWeek = new Date(startOfWeek);
+            endOfWeek.setDate(startOfWeek.getDate() + 7);
+            // Month range
+            const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+            const startOfNextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+            const inRange = (s: string, a: Date, b: Date) => {
+              const d = new Date(s + "T00:00:00");
+              return d >= a && d < b;
+            };
+            const compute = (rows: MealPlan[]) => {
+              const totalOrders = rows.length;
+              const totalPeople = rows.reduce((s, r) => s + (r.attendees || 0), 0);
+              const todayPeople = rows.filter((r) => toLocalDate(r.plan_date) === todayStr).reduce((s, r) => s + (r.attendees || 0), 0);
+              const weekPeople = rows.filter((r) => inRange(r.plan_date, startOfWeek, endOfWeek)).reduce((s, r) => s + (r.attendees || 0), 0);
+              const monthPeople = rows.filter((r) => inRange(r.plan_date, startOfMonth, startOfNextMonth)).reduce((s, r) => s + (r.attendees || 0), 0);
+              return { totalOrders, totalPeople, todayPeople, weekPeople, monthPeople };
+            };
+            const sundayRows = mealPlans.filter((p) => (p.category ?? "sunday") === "sunday");
+            const eventRows = mealPlans.filter((p) => p.category === "event");
+            const groups: Array<{ title: string; stats: ReturnType<typeof compute> }> = [
+              { title: "主日订餐计划", stats: compute(sundayRows) },
+              { title: "其他活动订餐计划", stats: compute(eventRows) },
+            ];
+            const items: Array<[string, number]> = [];
+            return (
+              <div className="space-y-6">
+                {groups.map((g) => (
+                  <div key={g.title} className="bg-card border border-border/50 rounded-2xl p-6">
+                    <h3 className="font-serif text-lg mb-4">{g.title}</h3>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+                      {([
+                        ["总订餐次数", g.stats.totalOrders],
+                        ["总人数", g.stats.totalPeople],
+                        ["今日人数", g.stats.todayPeople],
+                        ["本周人数", g.stats.weekPeople],
+                        ["本月人数", g.stats.monthPeople],
+                      ] as Array<[string, number]>).map(([label, value]) => (
+                        <div key={label} className="bg-background border border-border/50 rounded-xl p-4 shadow-sm">
+                          <div className="text-xs text-muted-foreground mb-1">{label}</div>
+                          <div className="text-2xl font-semibold">{value}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+                {void items}
+              </div>
+            );
+          })()}
+        </section>
         <section className="bg-card border border-border/50 rounded-2xl p-6">
           <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
             <h2 className="font-serif text-xl">团契签到记录</h2>
