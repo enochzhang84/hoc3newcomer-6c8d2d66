@@ -25,6 +25,15 @@ import {
 } from "@/lib/retreat.functions";
 import logo from "@/assets/logo.png";
 
+function BiLabel({ cn, en }: { cn: string; en: string }) {
+  return (
+    <Label className="flex flex-col items-start gap-0.5">
+      <span>{cn}</span>
+      <span className="text-xs font-normal text-muted-foreground">{en}</span>
+    </Label>
+  );
+}
+
 export const Route = createFileRoute("/retreat")({
   component: RetreatPage,
   head: () => ({
@@ -286,77 +295,109 @@ function RetreatPage() {
           )}
 
           {editing && (
-            <div className="bg-card border border-border/50 rounded-2xl p-5 space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <Label>基督之家</Label>
-                  <select value={editing.church ?? ""} onChange={(e) => setEditing({ ...editing, church: e.target.value || null })} className="mt-1 w-full h-10 rounded-md border border-input bg-background px-3 text-sm">
-                    <option value="">—</option>
-                    {CHURCHES.map((c) => <option key={c} value={c}>{c.toUpperCase()}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <Label>性别</Label>
-                  <select value={editing.gender ?? ""} onChange={(e) => setEditing({ ...editing, gender: e.target.value || null })} className="mt-1 w-full h-10 rounded-md border border-input bg-background px-3 text-sm">
-                    <option value="">—</option><option value="M">M</option><option value="F">F</option>
-                  </select>
-                </div>
-                <div>
-                  <Label>中文姓名</Label>
-                  <Input className="mt-1" value={editing.chinese_name} onChange={(e) => setEditing({ ...editing, chinese_name: e.target.value })} />
-                </div>
-                <div>
-                  <Label>已付费</Label>
-                  <div className="mt-1 h-10 flex items-center px-3 rounded-md border border-input bg-muted/40 text-sm text-muted-foreground">
-                    {editing.paid ? "✓ 已付" : "未付"}
-                  </div>
-                </div>
-                <div>
-                  <Label>Last Name</Label>
-                  <Input className="mt-1" value={editing.last_name ?? ""} onChange={(e) => setEditing({ ...editing, last_name: e.target.value })} />
-                </div>
-                <div>
-                  <Label>First Name</Label>
-                  <Input className="mt-1" value={editing.first_name ?? ""} onChange={(e) => setEditing({ ...editing, first_name: e.target.value })} />
-                </div>
-                <div>
-                  <Label>Cell</Label>
-                  <Input className="mt-1" value={editing.cell ?? ""} onChange={(e) => setEditing({ ...editing, cell: e.target.value })} />
-                </div>
-                <div>
-                  <Label>Email</Label>
-                  <Input className="mt-1" value={editing.email ?? ""} onChange={(e) => setEditing({ ...editing, email: e.target.value })} />
-                </div>
-                <div>
-                  <Label>Program</Label>
-                  <select value={editing.program ?? ""} onChange={(e) => setEditing({ ...editing, program: e.target.value || null })} className="mt-1 w-full h-10 rounded-md border border-input bg-background px-3 text-sm">
-                    <option value="">—</option>{PROGRAMS.map((p) => <option key={p.v} value={p.v}>{p.label}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <Label>Topic</Label>
-                  <select value={editing.topic ?? ""} onChange={(e) => setEditing({ ...editing, topic: e.target.value || null })} className="mt-1 w-full h-10 rounded-md border border-input bg-background px-3 text-sm">
-                    <option value="">—</option>{TOPICS.map((t) => <option key={t.v} value={t.v}>{t.label}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <Label>Bed</Label>
-                  <select value={editing.bed ?? ""} onChange={(e) => setEditing({ ...editing, bed: e.target.value || null })} className="mt-1 w-full h-10 rounded-md border border-input bg-background px-3 text-sm">
-                    <option value="">—</option><option value="yes">占床位</option><option value="no">不占床位</option>
-                  </select>
-                </div>
-                <div>
-                  <Label>可接送 / 需接送</Label>
-                  <div className="mt-1 flex gap-2">
-                    <Input type="number" min={0} placeholder="可接" value={editing.can_pickup ?? ""} onChange={(e) => setEditing({ ...editing, can_pickup: e.target.value === "" ? null : parseInt(e.target.value, 10) })} />
-                    <Input type="number" min={0} placeholder="需接" value={editing.need_pickup ?? ""} onChange={(e) => setEditing({ ...editing, need_pickup: e.target.value === "" ? null : parseInt(e.target.value, 10) })} />
-                  </div>
-                </div>
-              </div>
+            <div className="space-y-5">
               <div>
-                <Label>备注</Label>
-                <Textarea rows={2} className="mt-1" value={editing.user_notes ?? ""} onChange={(e) => setEditing({ ...editing, user_notes: e.target.value })} />
+                <BiLabel cn="基督之家分堂" en="HOC Campus" />
+                <select
+                  value={editing.church ?? ""}
+                  onChange={(e) => setEditing({ ...editing, church: e.target.value || null })}
+                  className="mt-1 w-full h-10 rounded-md border border-input bg-background px-3 text-sm"
+                >
+                  <option value="">—</option>
+                  {CHURCHES.map((c) => <option key={c} value={c}>{c.toUpperCase()}</option>)}
+                </select>
               </div>
+
+              <div className="rounded-xl border border-border/50 bg-muted/20 p-4 sm:p-5 space-y-4">
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  <h3 className="font-medium text-sm">登记人信息 · Registrant</h3>
+                  <span className="text-xs text-muted-foreground">
+                    {editing.paid ? "✓ 已付 / Paid" : "未付 / Unpaid"}
+                  </span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <BiLabel cn="中文姓名" en="Chinese Name" />
+                    <Input className="mt-1" value={editing.chinese_name} onChange={(e) => setEditing({ ...editing, chinese_name: e.target.value })} />
+                  </div>
+                  <div>
+                    <BiLabel cn="性别" en="Gender" />
+                    <select value={editing.gender ?? ""} onChange={(e) => setEditing({ ...editing, gender: e.target.value || null })} className="mt-1 w-full h-10 rounded-md border border-input bg-background px-3 text-sm">
+                      <option value="">—</option>
+                      <option value="M">M (男 / Male)</option>
+                      <option value="F">F (女 / Female)</option>
+                    </select>
+                  </div>
+                  <div>
+                    <BiLabel cn="英文姓 (Last name)" en="Last Name" />
+                    <Input className="mt-1" value={editing.last_name ?? ""} onChange={(e) => setEditing({ ...editing, last_name: e.target.value })} />
+                  </div>
+                  <div>
+                    <BiLabel cn="英文名 (First name)" en="First Name" />
+                    <Input className="mt-1" value={editing.first_name ?? ""} onChange={(e) => setEditing({ ...editing, first_name: e.target.value })} />
+                  </div>
+                  <div>
+                    <BiLabel cn="手机" en="Cell Phone" />
+                    <Input className="mt-1" value={editing.cell ?? ""} onChange={(e) => setEditing({ ...editing, cell: e.target.value })} />
+                  </div>
+                  <div>
+                    <BiLabel cn="电子邮件" en="E-mail" />
+                    <Input className="mt-1" type="email" value={editing.email ?? ""} onChange={(e) => setEditing({ ...editing, email: e.target.value })} />
+                  </div>
+                  <div>
+                    <BiLabel cn="节目代码" en="Program Code" />
+                    <select value={editing.program ?? ""} onChange={(e) => setEditing({ ...editing, program: e.target.value || null })} className="mt-1 w-full h-10 rounded-md border border-input bg-background px-3 text-sm">
+                      <option value="">— 请选择 / Select —</option>
+                      {PROGRAMS.map((p) => <option key={p.v} value={p.v}>{p.label}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <BiLabel cn="床位 (4-11 岁)" en="Bed (ages 4-11)" />
+                    <select value={editing.bed ?? ""} onChange={(e) => setEditing({ ...editing, bed: e.target.value || null })} className="mt-1 w-full h-10 rounded-md border border-input bg-background px-3 text-sm">
+                      <option value="">—</option>
+                      <option value="yes">占床位 ($180) · With Bed</option>
+                      <option value="no">不占床位 ($110) · Without Bed</option>
+                    </select>
+                  </div>
+                </div>
+                <div>
+                  <BiLabel cn="中文部专题 (週六)" en="Saturday Topic" />
+                  <select value={editing.topic ?? ""} onChange={(e) => setEditing({ ...editing, topic: e.target.value || null })} className="mt-1 w-full h-10 rounded-md border border-input bg-background px-3 text-sm">
+                    <option value="">— 请选择 / Select —</option>
+                    {TOPICS.map((t) => <option key={t.v} value={t.v}>{t.label}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <BiLabel cn="备注" en="Notes" />
+                  <Textarea rows={2} className="mt-1" value={editing.user_notes ?? ""} onChange={(e) => setEditing({ ...editing, user_notes: e.target.value })} />
+                </div>
+              </div>
+
+              <div className="grid sm:grid-cols-2 gap-4">
+                <div>
+                  <BiLabel cn="我们可以接送______位" en="We can pick up ___ people" />
+                  <Input
+                    type="number"
+                    min={0}
+                    className="mt-1"
+                    placeholder="0"
+                    value={editing.can_pickup ?? ""}
+                    onChange={(e) => setEditing({ ...editing, can_pickup: e.target.value === "" ? null : parseInt(e.target.value, 10) })}
+                  />
+                </div>
+                <div>
+                  <BiLabel cn="我们有______位需要被接送" en="We need pick-up for ___ people" />
+                  <Input
+                    type="number"
+                    min={0}
+                    className="mt-1"
+                    placeholder="0"
+                    value={editing.need_pickup ?? ""}
+                    onChange={(e) => setEditing({ ...editing, need_pickup: e.target.value === "" ? null : parseInt(e.target.value, 10) })}
+                  />
+                </div>
+              </div>
+
               <DialogFooter className="gap-2 sm:gap-2 pt-2">
                 <Button variant="destructive" className="rounded-full" onClick={() => setPendingDelete(editing)}>删除条目</Button>
                 <Button variant="outline" className="rounded-full" onClick={() => setEditing(null)}>取消</Button>

@@ -314,6 +314,7 @@ function AdminPage() {
   const [newMealNotes, setNewMealNotes] = useState<string>("");
   const [kitchenSubTab, setKitchenSubTab] = useState<string>("dining");
   const [kitchenDetailRow, setKitchenDetailRow] = useState<AttendanceRecord | null>(null);
+  const [sundaySubTab, setSundaySubTab] = useState<string>("adult");
   // Event-meal (其他活动订餐计划) form state — shares meal_plans table via category='event'
   const [newEventMealDate, setNewEventMealDate] = useState<string>(format(new Date(), "yyyy-MM-dd"));
   const [newEventMealAttendees, setNewEventMealAttendees] = useState<string>("");
@@ -2947,6 +2948,31 @@ function AdminPage() {
             </TabsContent>
 
             <TabsContent value="sunday" className="space-y-8 mt-0">
+        {/* Chrome-style sub-tabs — 2 equal columns */}
+        <div className="grid grid-cols-2 items-end gap-1 border-b border-border/60 px-2 pt-1 -mb-2">
+          {[
+            { v: "adult", label: "成人主日学" },
+            { v: "kids", label: "儿童主日学" },
+          ].map((t) => {
+            const active = sundaySubTab === t.v;
+            return (
+              <button
+                key={t.v}
+                onClick={() => setSundaySubTab(t.v)}
+                className={cn(
+                  "w-full text-center px-2 sm:px-4 py-2 text-xs sm:text-sm rounded-t-xl border border-b-0 transition-all truncate",
+                  active
+                    ? "bg-card text-foreground border-border shadow-sm font-medium relative -mb-px"
+                    : "bg-muted/40 text-muted-foreground border-transparent hover:bg-muted/70"
+                )}
+              >
+                {t.label}
+              </button>
+            );
+          })}
+        </div>
+
+        {sundaySubTab === "adult" && (<>
         <section className="bg-card border border-border/50 rounded-2xl p-6">
           <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
             <h2 className="font-serif text-xl">成人主日学</h2>
@@ -3296,7 +3322,9 @@ img{width:480px;height:480px;}@media print{@page{margin:1cm;}}</style></head>
             </section>
           );
         })}
+        </>)}
 
+        {sundaySubTab === "kids" && (<>
         {/* 儿童主日学 */}
         <section className="bg-card border border-border/50 rounded-2xl p-6">
           <h2 className="font-serif text-2xl mb-4">儿童主日学</h2>
@@ -3531,7 +3559,7 @@ ${rows.length===0?'<tr><td colspan="5" style="text-align:center;color:#888;paddi
             })}
           </div>
         </section>
-
+        </>)}
             </TabsContent>
 
             <TabsContent value="events" className="space-y-8 mt-0">
