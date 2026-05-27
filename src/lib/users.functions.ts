@@ -183,7 +183,11 @@ export const updateUserWorkerName = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }) => {
     await assertSuperAdmin(context.userId);
-    const update: Record<string, unknown> = { user_id: data.userId };
+    const update: {
+      user_id: string;
+      worker_name?: string | null;
+      service_projects?: string[];
+    } = { user_id: data.userId };
     if (data.workerName !== undefined) {
       update.worker_name = data.workerName?.trim() || null;
     }
