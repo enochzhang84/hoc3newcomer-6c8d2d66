@@ -1,1 +1,0 @@
-ALTER TABLE public.user_profiles ADD COLUMN IF NOT EXISTS service_projects text[] NOT NULL DEFAULT '{}'::text[];

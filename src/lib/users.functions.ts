@@ -59,13 +59,12 @@ export const listUsersWithRoles = createServerFn({ method: "GET" })
 
     const { data: profiles } = await supabaseAdmin
       .from("user_profiles")
-      .select("user_id, worker_name, service_project, service_projects");
-    const profileByUser = new Map<string, { worker_name: string | null; service_project: string | null; service_projects: string[] }>();
+      .select("user_id, worker_name, service_project");
+    const profileByUser = new Map<string, { worker_name: string | null; service_project: string | null }>();
     for (const p of profiles ?? []) {
       profileByUser.set(p.user_id, {
         worker_name: p.worker_name ?? null,
         service_project: p.service_project ?? null,
-        service_projects: Array.isArray(p.service_projects) ? p.service_projects : [],
       });
     }
 
@@ -76,7 +75,6 @@ export const listUsersWithRoles = createServerFn({ method: "GET" })
       roles: rolesByUser.get(u.id) ?? [],
       worker_name: profileByUser.get(u.id)?.worker_name ?? null,
       service_project: profileByUser.get(u.id)?.service_project ?? null,
-      service_projects: profileByUser.get(u.id)?.service_projects ?? [],
     }));
   });
 
@@ -145,7 +143,6 @@ export const createUserWithRole = createServerFn({ method: "POST" })
       password: z.string().min(6).max(200),
       role: roleSchema,
       workerName: z.string().max(100).optional(),
-      serviceProjects: z.array(z.string().max(50)).max(20).optional(),
     }).parse(input),
   )
   .handler(async ({ context, data }) => {
@@ -162,12 +159,10 @@ export const createUserWithRole = createServerFn({ method: "POST" })
       .from("user_roles")
       .insert({ user_id: newId, role: data.role });
     if (rErr) throw new Error(rErr.message);
-    const wName = data.workerName?.trim();
-    const projects = data.serviceProjects ?? [];
-    if ((wName && wName.length > 0) || projects.length > 0) {
+    if (data.workerName && data.workerName.trim()) {
       await supabaseAdmin
         .from("user_profiles")
-        .upsert({ user_id: newId, worker_name: wName || null, service_projects: projects });
+        .upsert({ user_id: newId, worker_name: data.workerName.trim() });
     }
     return { ok: true, userId: newId };
   });
@@ -177,26 +172,15 @@ export const updateUserWorkerName = createServerFn({ method: "POST" })
   .inputValidator((input) =>
     z.object({
       userId: z.string().uuid(),
-      workerName: z.string().max(100).nullable().optional(),
-      serviceProjects: z.array(z.string().max(50)).max(20).optional(),
+      workerName: z.string().max(100).nullable(),
     }).parse(input),
   )
   .handler(async ({ context, data }) => {
     await assertSuperAdmin(context.userId);
-    const update: {
-      user_id: string;
-      worker_name?: string | null;
-      service_projects?: string[];
-    } = { user_id: data.userId };
-    if (data.workerName !== undefined) {
-      update.worker_name = data.workerName?.trim() || null;
-    }
-    if (data.serviceProjects !== undefined) {
-      update.service_projects = data.serviceProjects;
-    }
+    const name = data.workerName?.trim() || null;
     const { error } = await supabaseAdmin
       .from("user_profiles")
-      .upsert(update, { onConflict: "user_id" });
+      .upsert({ user_id: data.userId, worker_name: name }, { onConflict: "user_id" });
     if (error) throw new Error(error.message);
     return { ok: true };
   });
