@@ -41,6 +41,7 @@ export function FloatingChat() {
   const [onlineIds, setOnlineIds] = useState<Set<string>>(new Set());
   const publicListRef = useRef<HTMLDivElement>(null);
   const privateListRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const openRef = useRef(false);
   const userIdRef = useRef<string | null>(null);
 
@@ -202,6 +203,29 @@ export function FloatingChat() {
     setMentionQuery(null);
   };
 
+  const startReply = (w: WorkerOption) => {
+    const name = w.worker_name?.trim() || w.display_name?.trim() || "";
+    if (!name || w.user_id === userId) return;
+    const tag = "@" + name + " ";
+    setInput((prev) => (prev.includes(tag) ? prev : tag));
+    setMentionTarget(w);
+    setMentionQuery(null);
+    setTimeout(() => {
+      const el = inputRef.current;
+      if (el) {
+        el.focus();
+        const len = el.value.length;
+        try { el.setSelectionRange(len, len); } catch { /* noop */ }
+      }
+    }, 0);
+  };
+
+  const cancelReply = () => {
+    setMentionTarget(null);
+    setInput((prev) => prev.replace(/^@[^\s@]+\s*/, ""));
+    setMentionQuery(null);
+  };
+
   const send = async () => {
     const content = input.trim();
     if (!content || !userId) return;
@@ -261,8 +285,20 @@ export function FloatingChat() {
         : "bg-sky-50 border border-sky-200 text-sky-950";
       const iconClass = mine ? "bg-amber-200 text-amber-900" : "bg-sky-200 text-sky-900";
       const initial = (mine ? "我" : otherName || "私").slice(0, 1);
+      const partnerId = mine ? m.recipient_id! : m.user_id;
+      const partner: WorkerOption =
+        workers.find((w) => w.user_id === partnerId) ?? {
+          user_id: partnerId,
+          worker_name: otherName,
+          display_name: otherName,
+        };
       return (
-        <div key={m.id} className={"w-full rounded-2xl px-3 py-2 " + cardClass}>
+        <button
+          type="button"
+          key={m.id}
+          onClick={() => startReply(partner)}
+          className={"w-full text-left rounded-2xl px-3 py-2 transition-colors hover:brightness-95 " + cardClass}
+        >
           <div className="flex items-center gap-2 mb-1 min-w-0">
             <div className={"h-6 w-6 shrink-0 rounded-full flex items-center justify-center text-[11px] font-medium " + iconClass}>
               {initial}
@@ -271,7 +307,7 @@ export function FloatingChat() {
             <div className="text-[10px] opacity-70 shrink-0">{time}</div>
           </div>
           <div className="text-sm whitespace-pre-wrap break-words pl-8">{m.content}</div>
-        </div>
+        </button>
       );
     }
 
@@ -386,12 +422,20 @@ export function FloatingChat() {
               </div>
             )}
             {mentionTarget && (
-              <div className="text-[11px] text-amber-700 mb-1 px-1">
-                将私聊给：<span className="font-medium">{mentionTarget.worker_name}</span>
+              <div className="flex items-center justify-between gap-2 text-[11px] text-amber-700 mb-1 px-1">
+                <span>正在回复：<span className="font-medium">{mentionTarget.worker_name}</span></span>
+                <button
+                  type="button"
+                  onClick={cancelReply}
+                  className="text-muted-foreground hover:text-foreground underline"
+                >
+                  取消回复
+                </button>
               </div>
             )}
             <div className="flex gap-2">
             <Input
+              ref={inputRef}
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => {
@@ -400,7 +444,7 @@ export function FloatingChat() {
                   send();
                 }
               }}
-              placeholder={mentionTarget ? `私聊 @${mentionTarget.worker_name}` : `公屏：以「${displayName}」发送…`}
+              placeholder={mentionTarget ? `回复 ${mentionTarget.worker_name}` : `公屏：以「${displayName}」发送…`}
               disabled={sending}
               className="flex-1 h-9 text-sm"
             />
