@@ -1730,6 +1730,15 @@ function AdminPage() {
                 />
               </div>
               <div className="space-y-1">
+                <Label className="text-xs">同工姓名 (可选)</Label>
+                <Input
+                  type="text"
+                  value={newUserForm.workerName}
+                  onChange={(e) => setNewUserForm({ ...newUserForm, workerName: e.target.value })}
+                  placeholder="例如：张弟兄"
+                />
+              </div>
+              <div className="space-y-1">
                 <Label className="text-xs">角色</Label>
                 <select
                   value={newUserForm.role}
@@ -1753,7 +1762,7 @@ function AdminPage() {
                   if (newUserForm.password.length < 6) return toast.error("密码至少 6 位");
                   setNewUserSubmitting(true);
                   try {
-                    await createUserFn({ data: { email, password: newUserForm.password, role: newUserForm.role } });
+                    await createUserFn({ data: { email, password: newUserForm.password, role: newUserForm.role, workerName: newUserForm.workerName.trim() || undefined } });
                     toast.success("用户已创建");
                     logAction(`创建用户 ${email} (角色: ${newUserForm.role})`);
                     setNewUserOpen(false);
