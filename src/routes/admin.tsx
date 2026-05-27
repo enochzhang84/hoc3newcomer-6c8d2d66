@@ -2646,10 +2646,7 @@ function AdminPage() {
         <Dialog open={!!kitchenDetailRow} onOpenChange={(o) => !o && setKitchenDetailRow(null)}>
           <DialogContent className="max-w-2xl">
             <DialogHeader>
-              <DialogTitle>就餐人数 · 详情</DialogTitle>
-              <DialogDescription>
-                来源：迎宾接待 → 人数统计 → 历史记录
-              </DialogDescription>
+              <DialogTitle>详情</DialogTitle>
             </DialogHeader>
             {kitchenDetailRow && (() => {
               const a = kitchenDetailRow;
