@@ -965,7 +965,7 @@ function AdminPage() {
       return `
         <div class="form">
           <h2>基督之家第三家新人資料表</h2>
-          <div class="row"><span class="lbl">日期：</span><span class="val">${esc(date)}</span><span class="lbl right">區別：</span><span class="val short">${esc(r.district ?? "")}</span></div>
+          <div class="row"><span class="lbl">日期：</span><span class="val grow">${esc(date)}</span></div>
           <div class="row"><span class="lbl">姓名：(中)</span><span class="val">${esc(r.name)}</span><span class="lbl">(英)</span><span class="val">${esc(r.name_en ?? "")}</span><span class="lbl right">性別：${genderText(r)}</span></div>
           <div class="row"><span class="lbl">地址：</span><span class="val grow">${esc(r.address ?? "")}</span></div>
           <div class="row"><span class="lbl">City：</span><span class="val">${esc(r.city ?? "")}</span><span class="lbl">ZIP：</span><span class="val">${esc(r.zip ?? "")}</span></div>
