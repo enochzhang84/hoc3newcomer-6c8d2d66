@@ -353,11 +353,16 @@ export function FloatingChat() {
           display_name: otherName,
         };
       return (
-        <button
-          type="button"
+        <div
           key={m.id}
+          role="button"
+          tabIndex={0}
           onClick={() => startReply(partner)}
-          className={"w-full text-left rounded-2xl px-3 py-2 transition-colors hover:brightness-95 " + cardClass}
+          onContextMenu={(e) => { if (canDelete(m)) { e.preventDefault(); setActionId(m.id); } }}
+          onTouchStart={() => startLongPress(m)}
+          onTouchEnd={cancelLongPress}
+          onTouchMove={cancelLongPress}
+          className={"group relative w-full text-left rounded-2xl px-3 py-2 transition-colors hover:brightness-95 cursor-pointer " + cardClass}
         >
           <div className="flex items-center gap-2 mb-1 min-w-0">
             <div className={"h-6 w-6 shrink-0 rounded-full flex items-center justify-center text-[11px] font-medium " + iconClass}>
@@ -365,23 +370,32 @@ export function FloatingChat() {
             </div>
             <div className="flex-1 min-w-0 text-xs font-medium truncate">{title}</div>
             <div className="text-[10px] opacity-70 shrink-0">{time}</div>
+            <DeleteBtn m={m} />
           </div>
           <div className="text-sm whitespace-pre-wrap break-words pl-8">{m.content}</div>
-        </button>
+        </div>
       );
     }
 
     const bubbleClass = mine ? "bg-primary text-primary-foreground" : "bg-muted";
     const metaClass = "text-[10px] mb-0.5 " + (mine ? "text-primary-foreground/80" : "text-muted-foreground");
     return (
-      <div key={m.id} className={"flex " + (mine ? "justify-end" : "justify-start")}>
-        <div className={"max-w-[85%] rounded-2xl px-3 py-1.5 " + bubbleClass}>
+      <div key={m.id} className={"group flex items-start gap-1 " + (mine ? "justify-end" : "justify-start")}>
+        {mine && <DeleteBtn m={m} className="self-center" />}
+        <div
+          onContextMenu={(e) => { if (canDelete(m)) { e.preventDefault(); setActionId(m.id); } }}
+          onTouchStart={() => startLongPress(m)}
+          onTouchEnd={cancelLongPress}
+          onTouchMove={cancelLongPress}
+          className={"max-w-[85%] rounded-2xl px-3 py-1.5 " + bubbleClass}
+        >
           <div className={"flex items-baseline gap-2 " + metaClass}>
             <span className="font-medium">{m.display_name}</span>
             <span>{time}</span>
           </div>
           <div className="text-sm whitespace-pre-wrap break-words">{m.content}</div>
         </div>
+        {!mine && <DeleteBtn m={m} className="self-center" />}
       </div>
     );
   };
