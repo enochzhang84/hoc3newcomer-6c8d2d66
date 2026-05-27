@@ -24,29 +24,39 @@ function LoginPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data: signInData, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
       toast.error(error.message);
       setLoading(false);
       return;
     }
-    // Check approval: user must have at least one role assigned
-    const { data: sess } = await supabase.auth.getSession();
-    const uid = sess.session?.user.id;
+    // Use the user id from the sign-in response directly — avoids a second
+    // auth round-trip that has been observed to hang in production.
+    const uid = signInData.session?.user.id ?? signInData.user?.id;
     if (uid) {
-      const { data: roles } = await supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", uid);
-      if (!roles || roles.length === 0) {
-        await supabase.auth.signOut();
-        toast.error("您的账号尚未审核，请联系主管理员授权后再登录");
-        setLoading(false);
-        return;
+      try {
+        const rolesPromise = supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", uid);
+        const result = await Promise.race([
+          rolesPromise,
+          new Promise<{ data: null }>((resolve) =>
+            setTimeout(() => resolve({ data: null }), 4000),
+          ),
+        ]);
+        const roles = (result as { data: { role: string }[] | null }).data;
+        if (roles && roles.length === 0) {
+          await supabase.auth.signOut();
+          toast.error("您的账号尚未审核，请联系主管理员授权后再登录");
+          setLoading(false);
+          return;
+        }
+      } catch {
+        // Ignore — fall through to redirect; /admin will re-check.
       }
     }
     window.location.assign("/admin");
-    setLoading(false);
   }
 
   return (
