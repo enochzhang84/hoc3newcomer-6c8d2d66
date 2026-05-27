@@ -2,7 +2,7 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { MessageCircle, X } from "lucide-react";
+import { MessageCircle, X, Trash2, Eraser } from "lucide-react";
 import { toast } from "sonner";
 
 type ChatMessage = {
@@ -29,6 +29,11 @@ export function FloatingChat() {
   const [userId, setUserId] = useState<string | null>(null);
   const [email, setEmail] = useState("");
   const [workerName, setWorkerName] = useState("");
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [hiddenIds, setHiddenIds] = useState<Set<string>>(new Set());
+  const [actionId, setActionId] = useState<string | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<ChatMessage | null>(null);
+  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [workers, setWorkers] = useState<WorkerOption[]>([]);
@@ -115,6 +120,12 @@ export function FloatingChat() {
         .eq("user_id", data.user.id)
         .maybeSingle();
       if (profile?.worker_name) setWorkerName(profile.worker_name);
+      const { data: roles } = await (supabase as any)
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", data.user.id);
+      const rs = (roles ?? []) as { role: string }[];
+      setIsAdmin(rs.some((r) => r.role === "admin" || r.role === "super_admin"));
       loadWorkers();
       loadPresence();
     })();
