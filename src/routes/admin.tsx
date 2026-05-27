@@ -3000,16 +3000,43 @@ img{width:480px;height:480px;}@media print{@page{margin:1cm;}}</style></head>
               onValueChange={setActiveCourseTab}
               className="w-full"
             >
-              <TabsList className="h-auto flex flex-wrap gap-1 bg-muted/50 p-1">
+              {/* Chrome风格自定义Tab Bar */}
+              <div className="flex flex-wrap relative" style={{ borderBottom: '1px solid rgba(0,0,0,0.08)' }}>
                 {courses.filter((c) => c.is_active).map((c) => {
                   const count = sundayCheckins.filter((k) => k.course_id === c.id).length;
+                  const currentTab = activeCourseTab || courses.find((c2) => c2.is_active)?.id || "";
+                  const isActive = currentTab === c.id;
                   return (
-                    <TabsTrigger key={c.id} value={c.id} className="text-xs">
+                    <button
+                      key={c.id}
+                      type="button"
+                      onClick={() => setActiveCourseTab(c.id)}
+                      className={cn(
+                        "relative px-3 py-2 text-xs transition-all duration-150 cursor-pointer select-none outline-none mr-1",
+                        isActive
+                          ? "bg-white text-foreground font-semibold"
+                          : "bg-[#f5f0e8] text-muted-foreground hover:bg-[#ede8dc] hover:text-foreground/80"
+                      )}
+                      style={isActive ? {
+                        borderRadius: '8px 8px 0 0',
+                        boxShadow: '0 -2px 6px rgba(0,0,0,0.06), 2px 0 4px rgba(0,0,0,0.02), -2px 0 4px rgba(0,0,0,0.02)',
+                        borderTop: '1px solid rgba(0,0,0,0.08)',
+                        borderLeft: '1px solid rgba(0,0,0,0.08)',
+                        borderRight: '1px solid rgba(0,0,0,0.08)',
+                        borderBottom: '1px solid white',
+                        marginBottom: '-1px',
+                        zIndex: 2,
+                      } : {
+                        borderRadius: '6px 6px 0 0',
+                        border: '1px solid transparent',
+                        borderBottom: 'none',
+                      }}
+                    >
                       {c.name} ({count})
-                    </TabsTrigger>
+                    </button>
                   );
                 })}
-              </TabsList>
+              </div>
               {courses.filter((c) => c.is_active).map((c) => {
                 const rows = sundayCheckins.filter((k) => k.course_id === c.id);
                 const pg = coursePages[c.id] ?? 1;
