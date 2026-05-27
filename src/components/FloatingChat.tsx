@@ -21,6 +21,8 @@ type WorkerOption = {
 };
 
 const HEARTBEAT_MS = 30 * 1000;
+const PRESENCE_REFRESH_MS = 30 * 1000;
+const PRESENCE_WINDOW_MS = 5 * 60 * 1000;
 const UNREAD_KEY = "floating_chat_last_read_at";
 
 export function FloatingChat() {
@@ -35,7 +37,10 @@ export function FloatingChat() {
   const [mentionTarget, setMentionTarget] = useState<WorkerOption | null>(null);
   const [mentionQuery, setMentionQuery] = useState<string | null>(null);
   const [unread, setUnread] = useState(0);
-  const listRef = useRef<HTMLDivElement>(null);
+  const [search, setSearch] = useState("");
+  const [onlineIds, setOnlineIds] = useState<Set<string>>(new Set());
+  const publicListRef = useRef<HTMLDivElement>(null);
+  const privateListRef = useRef<HTMLDivElement>(null);
   const openRef = useRef(false);
   const userIdRef = useRef<string | null>(null);
 
@@ -86,6 +91,15 @@ export function FloatingChat() {
     setWorkers((data ?? []) as WorkerOption[]);
   }, []);
 
+  const loadPresence = useCallback(async () => {
+    const since = new Date(Date.now() - PRESENCE_WINDOW_MS).toISOString();
+    const { data } = await (supabase as any)
+      .from("user_presence")
+      .select("user_id,last_seen_at")
+      .gte("last_seen_at", since);
+    setOnlineIds(new Set(((data ?? []) as { user_id: string }[]).map((r) => r.user_id)));
+  }, []);
+
   // Initial auth + load
   useEffect(() => {
     let cancelled = false;
@@ -101,11 +115,19 @@ export function FloatingChat() {
         .maybeSingle();
       if (profile?.worker_name) setWorkerName(profile.worker_name);
       loadWorkers();
+      loadPresence();
     })();
     return () => {
       cancelled = true;
     };
-  }, [loadWorkers]);
+  }, [loadWorkers, loadPresence]);
+
+  // Refresh presence periodically
+  useEffect(() => {
+    if (!userId) return;
+    const id = setInterval(loadPresence, PRESENCE_REFRESH_MS);
+    return () => clearInterval(id);
+  }, [userId, loadPresence]);
 
   // Heartbeat (keep presence updated for admin online dots)
   useEffect(() => {
@@ -149,8 +171,9 @@ export function FloatingChat() {
   }, [userId, loadMessages]);
 
   useEffect(() => {
-    if (open && listRef.current) {
-      listRef.current.scrollTop = listRef.current.scrollHeight;
+    if (open) {
+      if (publicListRef.current) publicListRef.current.scrollTop = publicListRef.current.scrollHeight;
+      if (privateListRef.current) privateListRef.current.scrollTop = privateListRef.current.scrollHeight;
       markAllRead();
     }
   }, [messages, open]);
@@ -211,6 +234,52 @@ export function FloatingChat() {
     return w?.worker_name?.trim() || w?.display_name || "同工";
   };
 
+  const onlineCount = onlineIds.size;
+  const q = search.trim().toLowerCase();
+  const matchesSearch = (m: ChatMessage) =>
+    !q ||
+    m.display_name.toLowerCase().includes(q) ||
+    m.content.toLowerCase().includes(q);
+  const publicMessages = messages.filter((m) => m.recipient_id === null && matchesSearch(m));
+  const privateMessages = messages.filter(
+    (m) =>
+      m.recipient_id !== null &&
+      (m.user_id === userId || m.recipient_id === userId) &&
+      matchesSearch(m),
+  );
+
+  const renderBubble = (m: ChatMessage) => {
+    const mine = m.user_id === userId;
+    const isPrivate = !!m.recipient_id;
+    const bubbleClass = isPrivate
+      ? mine
+        ? "bg-amber-200 text-amber-950 border border-amber-300"
+        : "bg-sky-100 text-sky-950 border border-sky-200"
+      : mine
+        ? "bg-primary text-primary-foreground"
+        : "bg-muted";
+    const metaClass = isPrivate
+      ? "text-[10px] mb-0.5 opacity-80"
+      : "text-[10px] mb-0.5 " + (mine ? "text-primary-foreground/80" : "text-muted-foreground");
+    const tag = isPrivate
+      ? mine
+        ? `私聊给：${workerNameById(m.recipient_id!)}`
+        : `来自：${m.display_name}（私聊）`
+      : null;
+    return (
+      <div key={m.id} className={"flex " + (mine ? "justify-end" : "justify-start")}>
+        <div className={"max-w-[85%] rounded-2xl px-3 py-1.5 " + bubbleClass}>
+          <div className={"flex items-baseline gap-2 " + metaClass}>
+            <span className="font-medium">{m.display_name}</span>
+            <span>{new Date(m.created_at).toLocaleString("zh-CN", { hour: "2-digit", minute: "2-digit", month: "2-digit", day: "2-digit" })}</span>
+          </div>
+          {tag && <div className="text-[10px] font-medium mb-0.5">{tag}</div>}
+          <div className="text-sm whitespace-pre-wrap break-words">{m.content}</div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="fixed z-[60] bottom-4 right-4 sm:bottom-6 sm:right-6 print:hidden">
       {!open && (
@@ -232,16 +301,17 @@ export function FloatingChat() {
         <div
           className="bg-card border border-border/60 rounded-2xl shadow-2xl flex flex-col overflow-hidden"
           style={{
-            width: "min(380px, calc(100vw - 2rem))",
-            height: "min(560px, calc(100vh - 6rem))",
+            width: "min(400px, calc(100vw - 2rem))",
+            height: "min(620px, calc(100vh - 6rem))",
           }}
         >
           <div className="flex items-center justify-between px-3 py-2 border-b border-border/50 bg-muted/30">
-            <div className="min-w-0">
+            <div className="min-w-0 flex items-center gap-2">
               <div className="font-serif text-sm sm:text-base truncate">同工聊天</div>
-              <div className="text-xs text-muted-foreground">
-                输入 @ 可私聊指定同工，否则发送到公屏
-              </div>
+              <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                <span className="h-2 w-2 rounded-full bg-green-500" />
+                在线 {onlineCount} 人
+              </span>
             </div>
             <button
               onClick={() => { setOpen(false); markAllRead(); }}
@@ -252,55 +322,57 @@ export function FloatingChat() {
             </button>
           </div>
 
-          <div ref={listRef} className="flex-1 overflow-y-auto px-3 py-3 space-y-2">
-            {messages.length === 0 && (
-              <p className="text-center text-xs text-muted-foreground py-8">暂无消息</p>
-            )}
-            {messages.map((m) => {
-              const mine = m.user_id === userId;
-              const isPrivate = !!m.recipient_id;
-              const bubbleClass = isPrivate
-                ? mine
-                  ? "bg-amber-200 text-amber-950 border border-amber-300"
-                  : "bg-sky-100 text-sky-950 border border-sky-200"
-                : mine
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-muted";
-              const metaClass = isPrivate
-                ? "text-[10px] mb-0.5 opacity-80"
-                : "text-[10px] mb-0.5 " + (mine ? "text-primary-foreground/80" : "text-muted-foreground");
-              const tag = isPrivate
-                ? mine
-                  ? `私聊给：${workerNameById(m.recipient_id!)}`
-                  : `来自：${m.display_name}（私聊）`
-                : null;
-              return (
-                <div key={m.id} className={"flex " + (mine ? "justify-end" : "justify-start")}>
-                  <div className={"max-w-[80%] rounded-2xl px-3 py-1.5 " + bubbleClass}>
-                    <div className={"flex items-baseline gap-2 " + metaClass}>
-                      <span className="font-medium">{m.display_name}</span>
-                      <span>{new Date(m.created_at).toLocaleString("zh-CN", { hour: "2-digit", minute: "2-digit", month: "2-digit", day: "2-digit" })}</span>
-                    </div>
-                    {tag && <div className="text-[10px] font-medium mb-0.5">{tag}</div>}
-                    <div className="text-sm whitespace-pre-wrap break-words">{m.content}</div>
-                  </div>
-                </div>
-              );
-            })}
+          <div className="px-3 py-2 border-b border-border/50">
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="搜索同工姓名或消息内容…"
+              className="h-8 text-xs"
+            />
+          </div>
+
+          <div className="flex-1 min-h-0 flex flex-col">
+            <div className="flex items-center justify-between px-3 py-1 text-[11px] text-muted-foreground bg-muted/20">
+              <span>公屏</span>
+              <span>{publicMessages.length} 条</span>
+            </div>
+            <div ref={publicListRef} className="flex-1 min-h-0 overflow-y-auto px-3 py-2 space-y-2">
+              {publicMessages.length === 0 ? (
+                <p className="text-center text-xs text-muted-foreground py-4">暂无公屏消息</p>
+              ) : (
+                publicMessages.map(renderBubble)
+              )}
+            </div>
+
+            <div className="flex items-center justify-between px-3 py-1 text-[11px] text-muted-foreground bg-amber-50 border-t border-border/50">
+              <span>私聊</span>
+              <span>{privateMessages.length} 条</span>
+            </div>
+            <div ref={privateListRef} className="flex-1 min-h-0 overflow-y-auto px-3 py-2 space-y-2 bg-amber-50/30">
+              {privateMessages.length === 0 ? (
+                <p className="text-center text-xs text-muted-foreground py-4">暂无私聊消息</p>
+              ) : (
+                privateMessages.map(renderBubble)
+              )}
+            </div>
           </div>
 
           <div className="border-t border-border/50 p-2 relative">
             {mentionQuery !== null && filteredWorkers.length > 0 && (
               <div className="absolute bottom-full left-2 right-2 mb-1 bg-popover border border-border rounded-lg shadow-lg max-h-40 overflow-y-auto z-10">
-                {filteredWorkers.map((w) => (
-                  <button
-                    key={w.user_id}
-                    onClick={() => pickMention(w)}
-                    className="w-full text-left px-3 py-1.5 text-sm hover:bg-muted"
-                  >
-                    @{w.worker_name}
-                  </button>
-                ))}
+                {filteredWorkers.map((w) => {
+                  const online = onlineIds.has(w.user_id);
+                  return (
+                    <button
+                      key={w.user_id}
+                      onClick={() => pickMention(w)}
+                      className="w-full flex items-center justify-between gap-2 text-left px-3 py-1.5 text-sm hover:bg-muted"
+                    >
+                      <span>@{w.worker_name}</span>
+                      <span className={"h-2 w-2 rounded-full " + (online ? "bg-green-500" : "bg-gray-400")} />
+                    </button>
+                  );
+                })}
               </div>
             )}
             {mentionTarget && (
