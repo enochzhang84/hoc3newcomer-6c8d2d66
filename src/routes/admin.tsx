@@ -1173,18 +1173,27 @@ function AdminPage() {
       </header>
 
       <main className="container mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-8">
+        {(() => null)()}
         <Tabs value={mainTab} onValueChange={setMainTab} className="w-full min-w-0">
           {/* Soft UI 主导航栏 — Apple Dashboard 风格 */}
           <div className="mb-8 p-1.5 bg-[#f5f0e8] rounded-2xl shadow-[0_2px_16px_rgba(0,0,0,0.04)]">
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-1">
-              {[
-                { value: "stats", label: "数据统计" },
-                { value: "welcome", label: "迎宾接待" },
-                { value: "media", label: "影音播放" },
-                { value: "kitchen", label: "厨房事工" },
-                { value: "sunday", label: "主日学" },
-                { value: "events", label: "活动" },
-              ].map((tab) => {
+              {(() => {
+                const allTabs = [
+                  { value: "stats", label: "数据统计", perm: null as string | null },
+                  { value: "welcome", label: "迎宾接待", perm: "welcome" },
+                  { value: "media", label: "影音播放", perm: "media" },
+                  { value: "kitchen", label: "厨房事工", perm: "kitchen" },
+                  { value: "sunday", label: "主日学", perm: "sunday" },
+                  { value: "events", label: "活动", perm: null },
+                ];
+                const canSeeTab = (perm: string | null) => {
+                  if (perm == null) return true;
+                  if (isSuperAdmin || userRole === "admin") return true;
+                  return currentUserProjects.includes(perm);
+                };
+                return allTabs.filter((t) => canSeeTab(t.perm));
+              })().map((tab) => {
                 const isActive = mainTab === tab.value;
                 return (
                   <button
