@@ -1844,6 +1844,31 @@ function AdminPage() {
             </TabsContent>
 
             <TabsContent value="welcome" className="space-y-8 mt-0">
+        {/* Chrome-style sub-tabs — 2 equal columns */}
+        <div className="grid grid-cols-2 items-end gap-1 border-b border-border/60 px-2 pt-1 -mb-2">
+          {[
+            { v: "greet", label: "迎宾" },
+            { v: "reception", label: "接待" },
+          ].map((t) => {
+            const active = welcomeSubTab === t.v;
+            return (
+              <button
+                key={t.v}
+                onClick={() => setWelcomeSubTab(t.v)}
+                className={cn(
+                  "w-full text-center px-2 sm:px-4 py-2 text-xs sm:text-sm rounded-t-xl border border-b-0 transition-all truncate",
+                  active
+                    ? "bg-card text-foreground border-border shadow-sm font-medium relative -mb-px"
+                    : "bg-muted/40 text-muted-foreground border-transparent hover:bg-muted/70"
+                )}
+              >
+                {t.label}
+              </button>
+            );
+          })}
+        </div>
+
+        {welcomeSubTab === "greet" && (<>
         <section className="bg-card border border-border/50 rounded-2xl p-6">
           <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
             <h2 className="font-serif text-xl">登记名单</h2>
