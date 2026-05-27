@@ -7,6 +7,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import {
   lookupRetreatByPhone,
@@ -72,6 +82,7 @@ function RetreatPage() {
   const [rows, setRows] = useState<Row[] | null>(null);
   const [editing, setEditing] = useState<Row | null>(null);
   const [saving, setSaving] = useState(false);
+  const [pendingDelete, setPendingDelete] = useState<Row | null>(null);
 
   const lookup = useServerFn(lookupRetreatByPhone);
   const update = useServerFn(updateRetreatByPhone);
@@ -136,7 +147,6 @@ function RetreatPage() {
   }
 
   async function handleDelete(r: Row) {
-    if (!confirm(`确定删除 ${r.chinese_name} 的登记?`)) return;
     try {
       await remove({ data: { id: r.id, phone: phone.trim() } });
       toast.success("已删除");
@@ -213,14 +223,17 @@ function RetreatPage() {
 
       {/* 查看 / 编辑 / 删除 — 通过电话号码 */}
       <Dialog open={lookupOpen} onOpenChange={(o) => { if (!o) resetLookup(); else setLookupOpen(true); }}>
-        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-background p-0 sm:rounded-2xl">
+          <div className="border-b border-border/60 px-6 py-4 bg-card">
           <DialogHeader>
-            <DialogTitle>查看 / 修改我的登记</DialogTitle>
+            <DialogTitle className="font-serif text-xl">查看 / 修改我的登记</DialogTitle>
           </DialogHeader>
+          </div>
+          <div className="px-6 py-5">
 
           {!editing && (
-            <div className="space-y-4">
-              <div>
+            <div className="space-y-5">
+              <div className="bg-card border border-border/50 rounded-2xl p-5">
                 <Label>请输入登记时填写的电话号码</Label>
                 <div className="mt-2 flex gap-2">
                   <Input
@@ -229,7 +242,7 @@ function RetreatPage() {
                     placeholder="例如 510-123-4567"
                     onKeyDown={(e) => { if (e.key === "Enter") handleSearch(); }}
                   />
-                  <Button onClick={handleSearch} disabled={searching}>
+                  <Button onClick={handleSearch} disabled={searching} className="rounded-full px-6">
                     {searching ? "查询中…" : "查询"}
                   </Button>
                 </div>
@@ -238,16 +251,29 @@ function RetreatPage() {
               {rows && rows.length > 0 && (
                 <div className="space-y-2">
                   <p className="text-sm text-muted-foreground">共找到 {rows.length} 条记录,点击进行编辑</p>
-                  <ul className="divide-y divide-border/40 border border-border/40 rounded-lg overflow-hidden">
+                  <ul className="space-y-3">
                     {rows.map((r) => (
-                      <li key={r.id} className="p-3 hover:bg-muted/40 cursor-pointer flex items-center justify-between gap-3" onClick={() => setEditing(r)}>
-                        <div className="text-sm">
+                      <li
+                        key={r.id}
+                        className="rounded-xl border border-border/50 bg-muted/20 p-4 flex items-center justify-between gap-3 hover:bg-muted/40 transition-colors"
+                      >
+                        <div className="text-sm flex-1 cursor-pointer" onClick={() => setEditing(r)}>
                           <div className="font-medium">{r.chinese_name} {r.gender ? `(${r.gender})` : ""}</div>
-                          <div className="text-xs text-muted-foreground">
+                          <div className="text-xs text-muted-foreground mt-1">
                             {r.confirmation_no ?? ""} · {r.cell ?? ""} · {r.program ?? ""}
                           </div>
                         </div>
-                        <Button variant="outline" size="sm">编辑</Button>
+                        <div className="flex gap-2 shrink-0">
+                          <Button variant="outline" size="sm" className="rounded-full" onClick={() => setEditing(r)}>编辑</Button>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            className="rounded-full"
+                            onClick={(e) => { e.stopPropagation(); setPendingDelete(r); }}
+                          >
+                            删除条目
+                          </Button>
+                        </div>
                       </li>
                     ))}
                   </ul>
@@ -260,8 +286,8 @@ function RetreatPage() {
           )}
 
           {editing && (
-            <div className="space-y-3">
-              <div className="grid grid-cols-2 gap-3">
+            <div className="bg-card border border-border/50 rounded-2xl p-5 space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <Label>基督之家</Label>
                   <select value={editing.church ?? ""} onChange={(e) => setEditing({ ...editing, church: e.target.value || null })} className="mt-1 w-full h-10 rounded-md border border-input bg-background px-3 text-sm">
@@ -331,15 +357,40 @@ function RetreatPage() {
                 <Label>备注</Label>
                 <Textarea rows={2} className="mt-1" value={editing.user_notes ?? ""} onChange={(e) => setEditing({ ...editing, user_notes: e.target.value })} />
               </div>
-              <DialogFooter className="gap-2 sm:gap-2">
-                <Button variant="destructive" onClick={() => handleDelete(editing)}>删除</Button>
-                <Button variant="outline" onClick={() => setEditing(null)}>取消</Button>
-                <Button onClick={handleSave} disabled={saving}>{saving ? "保存中…" : "保存"}</Button>
+              <DialogFooter className="gap-2 sm:gap-2 pt-2">
+                <Button variant="destructive" className="rounded-full" onClick={() => setPendingDelete(editing)}>删除条目</Button>
+                <Button variant="outline" className="rounded-full" onClick={() => setEditing(null)}>取消</Button>
+                <Button className="rounded-full" onClick={handleSave} disabled={saving}>{saving ? "保存中…" : "保存"}</Button>
               </DialogFooter>
             </div>
           )}
+          </div>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={!!pendingDelete} onOpenChange={(o) => !o && setPendingDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>确认删除?</AlertDialogTitle>
+            <AlertDialogDescription>
+              将永久删除 {pendingDelete?.chinese_name} 的登记记录,此操作不可撤销。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>取消</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async () => {
+                const r = pendingDelete;
+                if (!r) return;
+                setPendingDelete(null);
+                await handleDelete(r);
+              }}
+            >
+              确定
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
