@@ -19,7 +19,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
 import { zhCN } from "date-fns/locale";
-import { listUsersWithRoles, setUserRole, deleteUser, createUserWithRole } from "@/lib/users.functions";
+import { listUsersWithRoles, setUserRole, deleteUser, createUserWithRole, updateUserWorkerName } from "@/lib/users.functions";
 import { updateRegistration } from "@/lib/registrations.functions";
 import { HospitalityMinistrySection } from "@/components/HospitalityMinistry";
 import { HospitalityRankingSection } from "@/components/HospitalityRanking";
@@ -76,7 +76,7 @@ function formatSourceChannel(r: Pick<Reg, "source_channel">): string {
   }
 }
 
-type AppUser = { id: string; email: string; created_at: string; roles: string[] };
+type AppUser = { id: string; email: string; created_at: string; roles: string[]; worker_name?: string | null; service_project?: string | null };
 
 type CachedAuthUser = { id: string; email?: string | null };
 
@@ -385,8 +385,12 @@ function AdminPage() {
     email: string;
     password: string;
     role: "super_admin" | "admin" | "user" | "viewer";
-  }>({ email: "", password: "", role: "user" });
+    workerName: string;
+  }>({ email: "", password: "", role: "user", workerName: "" });
   const [newUserSubmitting, setNewUserSubmitting] = useState(false);
+  const updateWorkerNameFn = useServerFn(updateUserWorkerName);
+  const [editingWorkerUserId, setEditingWorkerUserId] = useState<string | null>(null);
+  const [editingWorkerDraft, setEditingWorkerDraft] = useState<string>("");
   const updateRegFn = useServerFn(updateRegistration);
   const [editOpen, setEditOpen] = useState(false);
   const [editForm, setEditForm] = useState<Reg | null>(null);
