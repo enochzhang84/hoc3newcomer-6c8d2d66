@@ -1797,6 +1797,12 @@ function AdminPage() {
             </Button>
             <Button
               variant="outline"
+              onClick={() => navigate({ to: "/chat" })}
+            >
+              聊天
+            </Button>
+            <Button
+              variant="outline"
               onClick={() => setQrLibOpen(true)}
             >
               二维码库
