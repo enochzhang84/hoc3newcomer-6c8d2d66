@@ -45,8 +45,10 @@ function LoginPage() {
         return;
       }
     }
-    window.location.assign("/admin");
-    setLoading(false);
+    toast.success("登录成功，正在进入管理后台...");
+    setTimeout(() => {
+      window.location.assign("/admin");
+    }, 3000);
   }
 
   return (
