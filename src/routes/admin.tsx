@@ -76,7 +76,17 @@ function formatSourceChannel(r: Pick<Reg, "source_channel">): string {
   }
 }
 
-type AppUser = { id: string; email: string; created_at: string; roles: string[]; worker_name?: string | null; service_project?: string | null };
+type AppUser = { id: string; email: string; created_at: string; roles: string[]; worker_name?: string | null; service_project?: string | null; service_projects?: string[] };
+
+const SERVICE_PROJECT_OPTIONS: { value: string; label: string }[] = [
+  { value: "welcome", label: "迎宾接待" },
+  { value: "media", label: "影音播放" },
+  { value: "kitchen", label: "厨房事工" },
+  { value: "sunday", label: "主日学" },
+  { value: "retreat", label: "退修会" },
+  { value: "admin_perm", label: "管理员权限" },
+  { value: "system_tools", label: "系统工具" },
+];
 
 type CachedAuthUser = { id: string; email?: string | null };
 
@@ -386,11 +396,14 @@ function AdminPage() {
     password: string;
     role: "super_admin" | "admin" | "user" | "viewer";
     workerName: string;
-  }>({ email: "", password: "", role: "user", workerName: "" });
+    serviceProjects: string[];
+  }>({ email: "", password: "", role: "user", workerName: "", serviceProjects: [] });
   const [newUserSubmitting, setNewUserSubmitting] = useState(false);
   const updateWorkerNameFn = useServerFn(updateUserWorkerName);
   const [editingWorkerUserId, setEditingWorkerUserId] = useState<string | null>(null);
   const [editingWorkerDraft, setEditingWorkerDraft] = useState<string>("");
+  const [editingProjectsDraft, setEditingProjectsDraft] = useState<string[]>([]);
+  const [currentUserProjects, setCurrentUserProjects] = useState<string[]>([]);
   const updateRegFn = useServerFn(updateRegistration);
   const [editOpen, setEditOpen] = useState(false);
   const [editForm, setEditForm] = useState<Reg | null>(null);
@@ -663,6 +676,19 @@ function AdminPage() {
           setIsAdmin(admin || superAdmin);
           setUserRoleState(role);
           setChecking(false);
+          // Load current user's service_projects for permission filtering
+          void (async () => {
+            const { data: prof } = await supabase
+              .from("user_profiles")
+              .select("service_projects")
+              .eq("user_id", sess.user.id)
+              .maybeSingle();
+            if (!cancelled) {
+              setCurrentUserProjects(
+                Array.isArray(prof?.service_projects) ? (prof!.service_projects as string[]) : [],
+              );
+            }
+          })();
           if (role) loadAuthorizedData();
         } catch {
           if (!cancelled) {
@@ -1157,18 +1183,27 @@ function AdminPage() {
       </header>
 
       <main className="container mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-8">
+        {(() => null)()}
         <Tabs value={mainTab} onValueChange={setMainTab} className="w-full min-w-0">
           {/* Soft UI 主导航栏 — Apple Dashboard 风格 */}
           <div className="mb-8 p-1.5 bg-[#f5f0e8] rounded-2xl shadow-[0_2px_16px_rgba(0,0,0,0.04)]">
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-1">
-              {[
-                { value: "stats", label: "数据统计" },
-                { value: "welcome", label: "迎宾接待" },
-                { value: "media", label: "影音播放" },
-                { value: "kitchen", label: "厨房事工" },
-                { value: "sunday", label: "主日学" },
-                { value: "events", label: "活动" },
-              ].map((tab) => {
+              {(() => {
+                const allTabs = [
+                  { value: "stats", label: "数据统计", perm: null as string | null },
+                  { value: "welcome", label: "迎宾接待", perm: "welcome" },
+                  { value: "media", label: "影音播放", perm: "media" },
+                  { value: "kitchen", label: "厨房事工", perm: "kitchen" },
+                  { value: "sunday", label: "主日学", perm: "sunday" },
+                  { value: "events", label: "活动", perm: null },
+                ];
+                const canSeeTab = (perm: string | null) => {
+                  if (perm == null) return true;
+                  if (isSuperAdmin || userRole === "admin") return true;
+                  return currentUserProjects.includes(perm);
+                };
+                return allTabs.filter((t) => canSeeTab(t.perm));
+              })().map((tab) => {
                 const isActive = mainTab === tab.value;
                 return (
                   <button
@@ -1491,12 +1526,12 @@ function AdminPage() {
             </Tabs>
           )}
         </section>
-        {isSuperAdmin && (
+        {(isSuperAdmin || currentUserProjects.includes("admin_perm")) && (
         <section className="bg-card border border-border/50 rounded-2xl p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-serif text-xl">管理员权限</h2>
             <div className="flex items-center gap-2">
-              <Button size="sm" onClick={() => { setNewUserForm({ email: "", password: "", role: "user", workerName: "" }); setNewUserOpen(true); }}>
+              <Button size="sm" onClick={() => { setNewUserForm({ email: "", password: "", role: "user", workerName: "", serviceProjects: [] }); setNewUserOpen(true); }}>
                 + 添加用户
               </Button>
               <Button size="sm" variant="outline" onClick={loadUsers} disabled={usersLoading}>
@@ -1564,8 +1599,55 @@ function AdminPage() {
                           </span>
                         )}
                       </td>
-                      <td className="py-2 px-2 text-muted-foreground">
-                        {u.service_project || <span className="text-muted-foreground/60">—</span>}
+                      <td className="py-2 px-2 text-muted-foreground align-top">
+                        {editingWorkerUserId === u.id ? (
+                          <div className="flex flex-wrap gap-1.5 max-w-[280px]">
+                            {SERVICE_PROJECT_OPTIONS.map((opt) => {
+                              const checked = editingProjectsDraft.includes(opt.value);
+                              return (
+                                <label
+                                  key={opt.value}
+                                  className={cn(
+                                    "inline-flex items-center gap-1 text-[11px] px-2 py-1 rounded-full border cursor-pointer transition-colors",
+                                    checked
+                                      ? "bg-primary/10 border-primary/40 text-foreground"
+                                      : "bg-background border-border hover:bg-muted"
+                                  )}
+                                >
+                                  <input
+                                    type="checkbox"
+                                    className="h-3 w-3"
+                                    checked={checked}
+                                    onChange={(e) => {
+                                      setEditingProjectsDraft((prev) =>
+                                        e.target.checked
+                                          ? [...prev, opt.value]
+                                          : prev.filter((v) => v !== opt.value),
+                                      );
+                                    }}
+                                  />
+                                  {opt.label}
+                                </label>
+                              );
+                            })}
+                          </div>
+                        ) : u.service_projects && u.service_projects.length > 0 ? (
+                          <div className="flex flex-wrap gap-1 max-w-[260px]">
+                            {u.service_projects.map((p) => {
+                              const opt = SERVICE_PROJECT_OPTIONS.find((o) => o.value === p);
+                              return (
+                                <span
+                                  key={p}
+                                  className="inline-flex items-center text-[10px] px-1.5 py-0.5 rounded-full bg-primary/10 text-foreground border border-primary/20"
+                                >
+                                  {opt?.label ?? p}
+                                </span>
+                              );
+                            })}
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground/60">—</span>
+                        )}
                       </td>
                       <td className="py-2 px-2">
                         <select
@@ -1642,8 +1724,8 @@ function AdminPage() {
                             <button
                               onClick={async () => {
                                 try {
-                                  await updateWorkerNameFn({ data: { userId: u.id, workerName: editingWorkerDraft.trim() || null } });
-                                  logAction(`更新 ${u.email} 同工姓名为「${editingWorkerDraft.trim() || "(空)"}」`);
+                                  await updateWorkerNameFn({ data: { userId: u.id, workerName: editingWorkerDraft.trim() || null, serviceProjects: editingProjectsDraft } });
+                                  logAction(`更新 ${u.email} 资料（姓名 / 权限）`);
                                   toast.success("已保存");
                                   setEditingWorkerUserId(null);
                                   loadUsers();
@@ -1656,7 +1738,7 @@ function AdminPage() {
                               保存
                             </button>
                             <button
-                              onClick={() => { setEditingWorkerUserId(null); setEditingWorkerDraft(""); }}
+                              onClick={() => { setEditingWorkerUserId(null); setEditingWorkerDraft(""); setEditingProjectsDraft([]); }}
                               className="text-xs text-muted-foreground hover:underline"
                             >
                               取消
@@ -1664,7 +1746,7 @@ function AdminPage() {
                           </>
                         ) : (
                           <button
-                            onClick={() => { setEditingWorkerUserId(u.id); setEditingWorkerDraft(u.worker_name || ""); }}
+                            onClick={() => { setEditingWorkerUserId(u.id); setEditingWorkerDraft(u.worker_name || ""); setEditingProjectsDraft(u.service_projects ?? []); }}
                             className="text-xs text-primary hover:underline"
                           >
                             编辑
@@ -1739,6 +1821,40 @@ function AdminPage() {
                 />
               </div>
               <div className="space-y-1">
+                <Label className="text-xs">服侍项目 / 功能权限 (可多选)</Label>
+                <div className="flex flex-wrap gap-1.5">
+                  {SERVICE_PROJECT_OPTIONS.map((opt) => {
+                    const checked = newUserForm.serviceProjects.includes(opt.value);
+                    return (
+                      <label
+                        key={opt.value}
+                        className={cn(
+                          "inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full border cursor-pointer transition-colors",
+                          checked
+                            ? "bg-primary/10 border-primary/40 text-foreground"
+                            : "bg-background border-border hover:bg-muted"
+                        )}
+                      >
+                        <input
+                          type="checkbox"
+                          className="h-3 w-3"
+                          checked={checked}
+                          onChange={(e) => {
+                            setNewUserForm((prev) => ({
+                              ...prev,
+                              serviceProjects: e.target.checked
+                                ? [...prev.serviceProjects, opt.value]
+                                : prev.serviceProjects.filter((v) => v !== opt.value),
+                            }));
+                          }}
+                        />
+                        {opt.label}
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+              <div className="space-y-1">
                 <Label className="text-xs">角色</Label>
                 <select
                   value={newUserForm.role}
@@ -1762,7 +1878,7 @@ function AdminPage() {
                   if (newUserForm.password.length < 6) return toast.error("密码至少 6 位");
                   setNewUserSubmitting(true);
                   try {
-                    await createUserFn({ data: { email, password: newUserForm.password, role: newUserForm.role, workerName: newUserForm.workerName.trim() || undefined } });
+                    await createUserFn({ data: { email, password: newUserForm.password, role: newUserForm.role, workerName: newUserForm.workerName.trim() || undefined, serviceProjects: newUserForm.serviceProjects } });
                     toast.success("用户已创建");
                     logAction(`创建用户 ${email} (角色: ${newUserForm.role})`);
                     setNewUserOpen(false);
@@ -1780,7 +1896,7 @@ function AdminPage() {
           </DialogContent>
         </Dialog>
         )}
-        {isSuperAdmin && (
+        {(isSuperAdmin || currentUserProjects.includes("system_tools")) && (
         <section className="bg-card border border-border/50 rounded-2xl p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-serif text-xl">系统工具栏</h2>
@@ -1797,7 +1913,7 @@ function AdminPage() {
             </Button>
             <Button
               variant="outline"
-              onClick={() => navigate({ to: "/chat" })}
+              onClick={() => window.dispatchEvent(new Event("toggle-floating-chat"))}
             >
               聊天
             </Button>
