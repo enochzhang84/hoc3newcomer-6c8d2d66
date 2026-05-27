@@ -1589,8 +1589,55 @@ function AdminPage() {
                           </span>
                         )}
                       </td>
-                      <td className="py-2 px-2 text-muted-foreground">
-                        {u.service_project || <span className="text-muted-foreground/60">—</span>}
+                      <td className="py-2 px-2 text-muted-foreground align-top">
+                        {editingWorkerUserId === u.id ? (
+                          <div className="flex flex-wrap gap-1.5 max-w-[280px]">
+                            {SERVICE_PROJECT_OPTIONS.map((opt) => {
+                              const checked = editingProjectsDraft.includes(opt.value);
+                              return (
+                                <label
+                                  key={opt.value}
+                                  className={cn(
+                                    "inline-flex items-center gap-1 text-[11px] px-2 py-1 rounded-full border cursor-pointer transition-colors",
+                                    checked
+                                      ? "bg-primary/10 border-primary/40 text-foreground"
+                                      : "bg-background border-border hover:bg-muted"
+                                  )}
+                                >
+                                  <input
+                                    type="checkbox"
+                                    className="h-3 w-3"
+                                    checked={checked}
+                                    onChange={(e) => {
+                                      setEditingProjectsDraft((prev) =>
+                                        e.target.checked
+                                          ? [...prev, opt.value]
+                                          : prev.filter((v) => v !== opt.value),
+                                      );
+                                    }}
+                                  />
+                                  {opt.label}
+                                </label>
+                              );
+                            })}
+                          </div>
+                        ) : u.service_projects && u.service_projects.length > 0 ? (
+                          <div className="flex flex-wrap gap-1 max-w-[260px]">
+                            {u.service_projects.map((p) => {
+                              const opt = SERVICE_PROJECT_OPTIONS.find((o) => o.value === p);
+                              return (
+                                <span
+                                  key={p}
+                                  className="inline-flex items-center text-[10px] px-1.5 py-0.5 rounded-full bg-primary/10 text-foreground border border-primary/20"
+                                >
+                                  {opt?.label ?? p}
+                                </span>
+                              );
+                            })}
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground/60">—</span>
+                        )}
                       </td>
                       <td className="py-2 px-2">
                         <select
