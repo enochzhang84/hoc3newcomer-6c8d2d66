@@ -881,6 +881,27 @@ export type Database = {
         }
         Relationships: []
       }
+      user_presence: {
+        Row: {
+          display_name: string | null
+          last_seen_at: string
+          user_id: string
+          worker_name: string | null
+        }
+        Insert: {
+          display_name?: string | null
+          last_seen_at?: string
+          user_id: string
+          worker_name?: string | null
+        }
+        Update: {
+          display_name?: string | null
+          last_seen_at?: string
+          user_id?: string
+          worker_name?: string | null
+        }
+        Relationships: []
+      }
       user_profiles: {
         Row: {
           created_at: string
