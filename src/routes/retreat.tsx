@@ -158,10 +158,14 @@ function RetreatPage() {
   async function handleDelete(r: Row) {
     try {
       await remove({ data: { id: r.id, phone: phone.trim() } });
-      toast.success("已删除");
+      toast.success("登记信息已删除");
       setEditing(null);
       const res = await lookup({ data: { phone: phone.trim() } });
       setRows(res.rows as Row[]);
+      if ((res.rows as Row[]).length === 0) {
+        // 没有剩余记录，关闭弹窗回到主页
+        resetLookup();
+      }
     } catch (e) {
       toast.error((e as Error).message);
     }
@@ -295,7 +299,10 @@ function RetreatPage() {
           )}
 
           {editing && (
-            <div className="space-y-5">
+            <form
+              onSubmit={(e) => { e.preventDefault(); handleSave(); }}
+              className="bg-card border border-border/50 rounded-2xl p-6 space-y-5"
+            >
               <div>
                 <BiLabel cn="基督之家分堂" en="HOC Campus" />
                 <select
@@ -400,16 +407,17 @@ function RetreatPage() {
 
               <DialogFooter className="gap-2 sm:gap-2 pt-2">
                 <Button
+                  type="button"
                   variant="outline"
                   className="rounded-full border-destructive/60 text-destructive hover:bg-destructive/10 hover:text-destructive sm:mr-auto"
                   onClick={() => setPendingDelete(editing)}
                 >
                   删除登记信息
                 </Button>
-                <Button variant="outline" className="rounded-full" onClick={() => setEditing(null)}>取消</Button>
-                <Button className="rounded-full" onClick={handleSave} disabled={saving}>{saving ? "保存中…" : "保存"}</Button>
+                <Button type="button" variant="outline" className="rounded-full" onClick={() => setEditing(null)}>取消</Button>
+                <Button type="submit" className="rounded-full" disabled={saving}>{saving ? "保存中…" : "保存"}</Button>
               </DialogFooter>
-            </div>
+            </form>
           )}
           </div>
         </DialogContent>
@@ -420,9 +428,7 @@ function RetreatPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>确认删除 {pendingDelete?.chinese_name} 的登记？</AlertDialogTitle>
             <AlertDialogDescription>
-              删除前请确认是否已经备份信息。
-              <br />
-              此操作会永久删除您的登记信息，无法恢复。
+              删除后将无法恢复，请确认是否删除该登记信息。
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
