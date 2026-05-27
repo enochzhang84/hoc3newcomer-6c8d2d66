@@ -1913,7 +1913,7 @@ function AdminPage() {
             </Button>
             <Button
               variant="outline"
-              onClick={() => navigate({ to: "/chat" })}
+              onClick={() => window.dispatchEvent(new Event("toggle-floating-chat"))}
             >
               聊天
             </Button>
