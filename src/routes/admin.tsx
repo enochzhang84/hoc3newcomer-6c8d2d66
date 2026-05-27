@@ -1518,6 +1518,8 @@ function AdminPage() {
               <thead>
                 <tr className="text-left border-b border-border/60 text-muted-foreground">
                   <th className="py-2 px-2">邮箱</th>
+                  <th className="py-2 px-2">同工姓名</th>
+                  <th className="py-2 px-2">服侍项目</th>
                   <th className="py-2 px-2">角色</th>
                   <th className="py-2 px-2">注册时间</th>
                   <th className="py-2 px-2 text-right">操作</th>
@@ -1544,6 +1546,26 @@ function AdminPage() {
                       <td className="py-2 px-2 font-medium">
                         {u.email} {isSelf && <span className="text-xs text-muted-foreground">(我)</span>}
                         {isPending && <span className="ml-2 text-xs text-amber-600">待审核</span>}
+                      </td>
+                      <td className="py-2 px-2">
+                        {editingWorkerUserId === u.id ? (
+                          <div className="flex items-center gap-1">
+                            <Input
+                              autoFocus
+                              value={editingWorkerDraft}
+                              onChange={(e) => setEditingWorkerDraft(e.target.value)}
+                              placeholder="同工姓名"
+                              className="h-7 text-xs w-32"
+                            />
+                          </div>
+                        ) : (
+                          <span className={u.worker_name ? "" : "text-muted-foreground/60"}>
+                            {u.worker_name || "—"}
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-2 px-2 text-muted-foreground">
+                        {u.service_project || <span className="text-muted-foreground/60">—</span>}
                       </td>
                       <td className="py-2 px-2">
                         <select
@@ -1615,6 +1637,39 @@ function AdminPage() {
                             确定
                           </button>
                         )}
+                        {editingWorkerUserId === u.id ? (
+                          <>
+                            <button
+                              onClick={async () => {
+                                try {
+                                  await updateWorkerNameFn({ data: { userId: u.id, workerName: editingWorkerDraft.trim() || null } });
+                                  logAction(`更新 ${u.email} 同工姓名为「${editingWorkerDraft.trim() || "(空)"}」`);
+                                  toast.success("已保存");
+                                  setEditingWorkerUserId(null);
+                                  loadUsers();
+                                } catch (e) {
+                                  toast.error((e as Error).message);
+                                }
+                              }}
+                              className="text-xs text-primary hover:underline font-medium"
+                            >
+                              保存
+                            </button>
+                            <button
+                              onClick={() => { setEditingWorkerUserId(null); setEditingWorkerDraft(""); }}
+                              className="text-xs text-muted-foreground hover:underline"
+                            >
+                              取消
+                            </button>
+                          </>
+                        ) : (
+                          <button
+                            onClick={() => { setEditingWorkerUserId(u.id); setEditingWorkerDraft(u.worker_name || ""); }}
+                            className="text-xs text-primary hover:underline"
+                          >
+                            编辑
+                          </button>
+                        )}
                         <button
                           disabled={isSelf || isProtected}
                           onClick={async () => {
@@ -1638,7 +1693,7 @@ function AdminPage() {
                 })}
                 {users.length === 0 && !usersLoading && (
                   <tr>
-                    <td colSpan={4} className="py-8 text-center text-muted-foreground">
+                    <td colSpan={6} className="py-8 text-center text-muted-foreground">
                       暂无用户
                     </td>
                   </tr>
