@@ -251,29 +251,39 @@ export function FloatingChat() {
   const renderBubble = (m: ChatMessage) => {
     const mine = m.user_id === userId;
     const isPrivate = !!m.recipient_id;
-    const bubbleClass = isPrivate
-      ? mine
-        ? "bg-amber-200 text-amber-950 border border-amber-300"
-        : "bg-sky-100 text-sky-950 border border-sky-200"
-      : mine
-        ? "bg-primary text-primary-foreground"
-        : "bg-muted";
-    const metaClass = isPrivate
-      ? "text-[10px] mb-0.5 opacity-80"
-      : "text-[10px] mb-0.5 " + (mine ? "text-primary-foreground/80" : "text-muted-foreground");
-    const tag = isPrivate
-      ? mine
-        ? `私聊给：${workerNameById(m.recipient_id!)}`
-        : `来自：${m.display_name}（私聊）`
-      : null;
+    const time = new Date(m.created_at).toLocaleString("zh-CN", { hour: "2-digit", minute: "2-digit", month: "2-digit", day: "2-digit" });
+
+    if (isPrivate) {
+      const otherName = mine ? workerNameById(m.recipient_id!) : m.display_name;
+      const title = mine ? `我 私聊给 ${otherName}` : `${otherName} 私聊给我`;
+      const cardClass = mine
+        ? "bg-amber-50 border border-amber-200 text-amber-950"
+        : "bg-sky-50 border border-sky-200 text-sky-950";
+      const iconClass = mine ? "bg-amber-200 text-amber-900" : "bg-sky-200 text-sky-900";
+      const initial = (mine ? "我" : otherName || "私").slice(0, 1);
+      return (
+        <div key={m.id} className={"w-full rounded-2xl px-3 py-2 " + cardClass}>
+          <div className="flex items-center gap-2 mb-1 min-w-0">
+            <div className={"h-6 w-6 shrink-0 rounded-full flex items-center justify-center text-[11px] font-medium " + iconClass}>
+              {initial}
+            </div>
+            <div className="flex-1 min-w-0 text-xs font-medium truncate">{title}</div>
+            <div className="text-[10px] opacity-70 shrink-0">{time}</div>
+          </div>
+          <div className="text-sm whitespace-pre-wrap break-words pl-8">{m.content}</div>
+        </div>
+      );
+    }
+
+    const bubbleClass = mine ? "bg-primary text-primary-foreground" : "bg-muted";
+    const metaClass = "text-[10px] mb-0.5 " + (mine ? "text-primary-foreground/80" : "text-muted-foreground");
     return (
       <div key={m.id} className={"flex " + (mine ? "justify-end" : "justify-start")}>
         <div className={"max-w-[85%] rounded-2xl px-3 py-1.5 " + bubbleClass}>
           <div className={"flex items-baseline gap-2 " + metaClass}>
             <span className="font-medium">{m.display_name}</span>
-            <span>{new Date(m.created_at).toLocaleString("zh-CN", { hour: "2-digit", minute: "2-digit", month: "2-digit", day: "2-digit" })}</span>
+            <span>{time}</span>
           </div>
-          {tag && <div className="text-[10px] font-medium mb-0.5">{tag}</div>}
           <div className="text-sm whitespace-pre-wrap break-words">{m.content}</div>
         </div>
       </div>
