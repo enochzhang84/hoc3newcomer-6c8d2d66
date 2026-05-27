@@ -1878,7 +1878,7 @@ function AdminPage() {
                   if (newUserForm.password.length < 6) return toast.error("密码至少 6 位");
                   setNewUserSubmitting(true);
                   try {
-                    await createUserFn({ data: { email, password: newUserForm.password, role: newUserForm.role, workerName: newUserForm.workerName.trim() || undefined } });
+                    await createUserFn({ data: { email, password: newUserForm.password, role: newUserForm.role, workerName: newUserForm.workerName.trim() || undefined, serviceProjects: newUserForm.serviceProjects } });
                     toast.success("用户已创建");
                     logAction(`创建用户 ${email} (角色: ${newUserForm.role})`);
                     setNewUserOpen(false);
