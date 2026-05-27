@@ -175,6 +175,7 @@ type MealPlan = {
   attendees: number;
   meal_type: string | null;
   notes: string | null;
+  category?: string;
 };
 type DutyPerson = { id: string; name: string; sort_order: number; is_active: boolean };
 type DutySchedule = {
@@ -312,6 +313,11 @@ function AdminPage() {
   const [newMealNotes, setNewMealNotes] = useState<string>("");
   const [kitchenSubTab, setKitchenSubTab] = useState<string>("dining");
   const [kitchenDetailRow, setKitchenDetailRow] = useState<AttendanceRecord | null>(null);
+  // Event-meal (其他活动订餐计划) form state — shares meal_plans table via category='event'
+  const [newEventMealDate, setNewEventMealDate] = useState<string>(format(new Date(), "yyyy-MM-dd"));
+  const [newEventMealAttendees, setNewEventMealAttendees] = useState<string>("");
+  const [newEventMealType, setNewEventMealType] = useState<string>("");
+  const [newEventMealNotes, setNewEventMealNotes] = useState<string>("");
   // Duty rosters
   const [dutyPersonnel, setDutyPersonnel] = useState<DutyPerson[]>([]);
   const [dutySchedules, setDutySchedules] = useState<DutySchedule[]>([]);
@@ -1299,6 +1305,68 @@ function AdminPage() {
         <section>
           <h2 className="font-serif text-xl mb-4">主日学参与统计</h2>
           <SundayParticipationStats checkins={sundayCheckins} courses={courses} />
+        </section>
+        {/* 饭食统计 */}
+        <section>
+          <h2 className="font-serif text-xl mb-4">饭食统计</h2>
+          {(() => {
+            const toLocalDate = (s: string) => {
+              // plan_date is already 'YYYY-MM-DD' (date type)
+              return s;
+            };
+            const todayStr = format(new Date(), "yyyy-MM-dd");
+            const now = new Date();
+            // Week range (Sun-Sat, local)
+            const startOfWeek = new Date(now);
+            startOfWeek.setHours(0, 0, 0, 0);
+            startOfWeek.setDate(now.getDate() - now.getDay());
+            const endOfWeek = new Date(startOfWeek);
+            endOfWeek.setDate(startOfWeek.getDate() + 7);
+            // Month range
+            const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+            const startOfNextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+            const inRange = (s: string, a: Date, b: Date) => {
+              const d = new Date(s + "T00:00:00");
+              return d >= a && d < b;
+            };
+            const compute = (rows: MealPlan[]) => {
+              const totalOrders = rows.length;
+              const totalPeople = rows.reduce((s, r) => s + (r.attendees || 0), 0);
+              const todayPeople = rows.filter((r) => toLocalDate(r.plan_date) === todayStr).reduce((s, r) => s + (r.attendees || 0), 0);
+              const weekPeople = rows.filter((r) => inRange(r.plan_date, startOfWeek, endOfWeek)).reduce((s, r) => s + (r.attendees || 0), 0);
+              const monthPeople = rows.filter((r) => inRange(r.plan_date, startOfMonth, startOfNextMonth)).reduce((s, r) => s + (r.attendees || 0), 0);
+              return { totalOrders, totalPeople, todayPeople, weekPeople, monthPeople };
+            };
+            const sundayRows = mealPlans.filter((p) => (p.category ?? "sunday") === "sunday");
+            const eventRows = mealPlans.filter((p) => p.category === "event");
+            const groups: Array<{ title: string; stats: ReturnType<typeof compute> }> = [
+              { title: "主日订餐计划", stats: compute(sundayRows) },
+              { title: "其他活动订餐计划", stats: compute(eventRows) },
+            ];
+            return (
+              <div className="space-y-6">
+                {groups.map((g) => (
+                  <div key={g.title} className="bg-card border border-border/50 rounded-2xl p-6">
+                    <h3 className="font-serif text-lg mb-4">{g.title}</h3>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+                      {([
+                        ["总订餐次数", g.stats.totalOrders],
+                        ["总人数", g.stats.totalPeople],
+                        ["今日人数", g.stats.todayPeople],
+                        ["本周人数", g.stats.weekPeople],
+                        ["本月人数", g.stats.monthPeople],
+                      ] as Array<[string, number]>).map(([label, value]) => (
+                        <div key={label} className="bg-background border border-border/50 rounded-xl p-4 shadow-sm">
+                          <div className="text-xs text-muted-foreground mb-1">{label}</div>
+                          <div className="text-2xl font-semibold">{value}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            );
+          })()}
         </section>
         <section className="bg-card border border-border/50 rounded-2xl p-6">
           <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
@@ -2415,12 +2483,7 @@ function AdminPage() {
           }
           return (
             <section className="bg-card border border-border/50 rounded-2xl p-6">
-              <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
-                <h2 className="font-serif text-xl">就餐人数统计</h2>
-                <p className="text-xs text-muted-foreground">
-                  数据来源：迎宾接待 → 人数统计 → 历史记录。今日新人仅作显示，不计入总人数。
-                </p>
-              </div>
+              <h2 className="font-serif text-xl mb-4">就餐人数统计</h2>
               <div className="overflow-x-auto rounded-lg border border-border/50">
                 <table className="w-full text-sm border-collapse">
                   <thead className="bg-muted/80">
@@ -2523,6 +2586,7 @@ function AdminPage() {
                   attendees: parseInt(newMealAttendees || "0", 10) || 0,
                   meal_type: newMealType || null,
                   notes: newMealNotes || null,
+                  category: "sunday",
                 });
                 if (error) return toast.error(error.message);
                 toast.success("已添加");
@@ -2545,7 +2609,7 @@ function AdminPage() {
                 </tr>
               </thead>
               <tbody>
-                {mealPlans.map((p) => (
+                {mealPlans.filter((p) => (p.category ?? "sunday") === "sunday").map((p) => (
                   <tr key={p.id} className="border-b border-border/30">
                     <td className="py-2 px-2 whitespace-nowrap">
                       <Input
@@ -2616,7 +2680,7 @@ function AdminPage() {
                     </td>
                   </tr>
                 ))}
-                {mealPlans.length === 0 && (
+                {mealPlans.filter((p) => (p.category ?? "sunday") === "sunday").length === 0 && (
                   <tr>
                     <td colSpan={5} className="py-8 text-center text-muted-foreground">暂无订餐计划</td>
                   </tr>
@@ -2628,10 +2692,152 @@ function AdminPage() {
         )}
 
         {kitchenSubTab === "event-meal" && (
-          <section className="bg-card border border-border/50 rounded-2xl p-6">
-            <h2 className="font-serif text-xl mb-2">其他活动订餐计划</h2>
-            <p className="text-sm text-muted-foreground">即将上线，敬请期待。</p>
-          </section>
+        <section className="bg-card border border-border/50 rounded-2xl p-6">
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+            <h2 className="font-serif text-xl">其他活动订餐计划</h2>
+            <Button size="sm" variant="outline" onClick={() => setMealTypesOpen(true)}>
+              饭食种类设置
+            </Button>
+          </div>
+          <div className="grid sm:grid-cols-5 gap-2 mb-4">
+            <Input
+              type="date"
+              value={newEventMealDate}
+              onChange={(e) => setNewEventMealDate(e.target.value)}
+            />
+            <Input
+              type="number"
+              min="0"
+              placeholder="就餐人数"
+              value={newEventMealAttendees}
+              onChange={(e) => setNewEventMealAttendees(e.target.value)}
+            />
+            <select
+              className="h-9 rounded-md border border-input bg-transparent px-3 text-sm"
+              value={newEventMealType}
+              onChange={(e) => setNewEventMealType(e.target.value)}
+            >
+              <option value="">饭食种类</option>
+              {mealTypes.filter((m) => m.is_active).map((m) => (
+                <option key={m.id} value={m.name}>{m.name}</option>
+              ))}
+            </select>
+            <Input
+              placeholder="备注"
+              value={newEventMealNotes}
+              onChange={(e) => setNewEventMealNotes(e.target.value)}
+            />
+            <Button
+              onClick={async () => {
+                if (!newEventMealDate) return toast.error("请选择日期");
+                const { error } = await (supabase as any).from("meal_plans").insert({
+                  plan_date: newEventMealDate,
+                  attendees: parseInt(newEventMealAttendees || "0", 10) || 0,
+                  meal_type: newEventMealType || null,
+                  notes: newEventMealNotes || null,
+                  category: "event",
+                });
+                if (error) return toast.error(error.message);
+                toast.success("已添加");
+                setNewEventMealAttendees(""); setNewEventMealType(""); setNewEventMealNotes("");
+                loadMealPlans();
+              }}
+            >
+              添加
+            </Button>
+          </div>
+          <div className="overflow-x-auto rounded-lg border border-border/50">
+            <table className="w-full text-sm">
+              <thead className="bg-muted/80">
+                <tr className="text-left border-b border-border/60 text-muted-foreground">
+                  <th className="py-2 px-2">日期</th>
+                  <th className="py-2 px-2">就餐人数</th>
+                  <th className="py-2 px-2">饭食种类</th>
+                  <th className="py-2 px-2">备注</th>
+                  <th className="py-2 px-2 text-right">操作</th>
+                </tr>
+              </thead>
+              <tbody>
+                {mealPlans.filter((p) => p.category === "event").map((p) => (
+                  <tr key={p.id} className="border-b border-border/30">
+                    <td className="py-2 px-2 whitespace-nowrap">
+                      <Input
+                        type="date"
+                        defaultValue={p.plan_date}
+                        className="h-8"
+                        onBlur={async (e) => {
+                          const v = e.target.value;
+                          if (!v || v === p.plan_date) return;
+                          await (supabase as any).from("meal_plans").update({ plan_date: v }).eq("id", p.id);
+                          loadMealPlans();
+                        }}
+                      />
+                    </td>
+                    <td className="py-2 px-2">
+                      <Input
+                        type="number"
+                        min="0"
+                        defaultValue={String(p.attendees)}
+                        className="h-8 w-24"
+                        onBlur={async (e) => {
+                          const n = parseInt(e.target.value || "0", 10) || 0;
+                          if (n === p.attendees) return;
+                          await (supabase as any).from("meal_plans").update({ attendees: n }).eq("id", p.id);
+                          loadMealPlans();
+                        }}
+                      />
+                    </td>
+                    <td className="py-2 px-2">
+                      <select
+                        className="h-8 rounded-md border border-input bg-transparent px-2 text-sm"
+                        defaultValue={p.meal_type ?? ""}
+                        onChange={async (e) => {
+                          await (supabase as any).from("meal_plans").update({ meal_type: e.target.value || null }).eq("id", p.id);
+                          loadMealPlans();
+                        }}
+                      >
+                        <option value="">—</option>
+                        {mealTypes.filter((m) => m.is_active).map((m) => (
+                          <option key={m.id} value={m.name}>{m.name}</option>
+                        ))}
+                      </select>
+                    </td>
+                    <td className="py-2 px-2">
+                      <Input
+                        defaultValue={p.notes ?? ""}
+                        className="h-8"
+                        onBlur={async (e) => {
+                          const v = e.target.value;
+                          if (v === (p.notes ?? "")) return;
+                          await (supabase as any).from("meal_plans").update({ notes: v || null }).eq("id", p.id);
+                          loadMealPlans();
+                        }}
+                      />
+                    </td>
+                    <td className="py-2 px-2 text-right">
+                      <button
+                        className="text-xs text-destructive hover:underline"
+                        onClick={async () => {
+                          if (!confirm("删除该条订餐计划?")) return;
+                          await (supabase as any).from("meal_plans").delete().eq("id", p.id);
+                          toast.success("已删除");
+                          loadMealPlans();
+                        }}
+                      >
+                        删除
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+                {mealPlans.filter((p) => p.category === "event").length === 0 && (
+                  <tr>
+                    <td colSpan={5} className="py-8 text-center text-muted-foreground">暂无订餐计划</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </section>
         )}
 
         {kitchenSubTab === "tbd" && (
@@ -2645,10 +2851,7 @@ function AdminPage() {
         <Dialog open={!!kitchenDetailRow} onOpenChange={(o) => !o && setKitchenDetailRow(null)}>
           <DialogContent className="max-w-2xl">
             <DialogHeader>
-              <DialogTitle>就餐人数 · 详情</DialogTitle>
-              <DialogDescription>
-                来源：迎宾接待 → 人数统计 → 历史记录
-              </DialogDescription>
+              <DialogTitle>详情</DialogTitle>
             </DialogHeader>
             {kitchenDetailRow && (() => {
               const a = kitchenDetailRow;
