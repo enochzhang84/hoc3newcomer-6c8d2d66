@@ -386,11 +386,14 @@ function AdminPage() {
     password: string;
     role: "super_admin" | "admin" | "user" | "viewer";
     workerName: string;
-  }>({ email: "", password: "", role: "user", workerName: "" });
+    serviceProjects: string[];
+  }>({ email: "", password: "", role: "user", workerName: "", serviceProjects: [] });
   const [newUserSubmitting, setNewUserSubmitting] = useState(false);
   const updateWorkerNameFn = useServerFn(updateUserWorkerName);
   const [editingWorkerUserId, setEditingWorkerUserId] = useState<string | null>(null);
   const [editingWorkerDraft, setEditingWorkerDraft] = useState<string>("");
+  const [editingProjectsDraft, setEditingProjectsDraft] = useState<string[]>([]);
+  const [currentUserProjects, setCurrentUserProjects] = useState<string[]>([]);
   const updateRegFn = useServerFn(updateRegistration);
   const [editOpen, setEditOpen] = useState(false);
   const [editForm, setEditForm] = useState<Reg | null>(null);
