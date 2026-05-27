@@ -175,6 +175,7 @@ type MealPlan = {
   attendees: number;
   meal_type: string | null;
   notes: string | null;
+  category?: string;
 };
 type DutyPerson = { id: string; name: string; sort_order: number; is_active: boolean };
 type DutySchedule = {
