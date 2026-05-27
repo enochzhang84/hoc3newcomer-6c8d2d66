@@ -57,11 +57,24 @@ export const listUsersWithRoles = createServerFn({ method: "GET" })
       rolesByUser.set(r.user_id, arr);
     }
 
+    const { data: profiles } = await supabaseAdmin
+      .from("user_profiles")
+      .select("user_id, worker_name, service_project");
+    const profileByUser = new Map<string, { worker_name: string | null; service_project: string | null }>();
+    for (const p of profiles ?? []) {
+      profileByUser.set(p.user_id, {
+        worker_name: p.worker_name ?? null,
+        service_project: p.service_project ?? null,
+      });
+    }
+
     return usersData.users.map((u) => ({
       id: u.id,
       email: u.email ?? "",
       created_at: u.created_at,
       roles: rolesByUser.get(u.id) ?? [],
+      worker_name: profileByUser.get(u.id)?.worker_name ?? null,
+      service_project: profileByUser.get(u.id)?.service_project ?? null,
     }));
   });
 
@@ -129,6 +142,7 @@ export const createUserWithRole = createServerFn({ method: "POST" })
       email: z.string().email().max(200),
       password: z.string().min(6).max(200),
       role: roleSchema,
+      workerName: z.string().max(100).optional(),
     }).parse(input),
   )
   .handler(async ({ context, data }) => {
@@ -145,7 +159,30 @@ export const createUserWithRole = createServerFn({ method: "POST" })
       .from("user_roles")
       .insert({ user_id: newId, role: data.role });
     if (rErr) throw new Error(rErr.message);
+    if (data.workerName && data.workerName.trim()) {
+      await supabaseAdmin
+        .from("user_profiles")
+        .upsert({ user_id: newId, worker_name: data.workerName.trim() });
+    }
     return { ok: true, userId: newId };
+  });
+
+export const updateUserWorkerName = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z.object({
+      userId: z.string().uuid(),
+      workerName: z.string().max(100).nullable(),
+    }).parse(input),
+  )
+  .handler(async ({ context, data }) => {
+    await assertSuperAdmin(context.userId);
+    const name = data.workerName?.trim() || null;
+    const { error } = await supabaseAdmin
+      .from("user_profiles")
+      .upsert({ user_id: data.userId, worker_name: name }, { onConflict: "user_id" });
+    if (error) throw new Error(error.message);
+    return { ok: true };
   });
 
 export const setUserRole = createServerFn({ method: "POST" })
