@@ -2351,11 +2351,14 @@ function AdminPage() {
             </div>
           )}
         </section>
-        </>)}
-        {welcomeSubTab === "reception" && (<>
-        <HospitalityMinistrySection />
-        <HospitalityRankingSection />
-        </>)}
+          </div>
+        )}
+        {welcomeSubTab === "reception" && (
+          <div className="space-y-8">
+            <HospitalityMinistrySection />
+            <HospitalityRankingSection />
+          </div>
+        )}
             </TabsContent>
 
             <TabsContent value="media" className="space-y-8 mt-0">
