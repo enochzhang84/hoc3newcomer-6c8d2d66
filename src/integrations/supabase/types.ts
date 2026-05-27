@@ -392,6 +392,7 @@ export type Database = {
       meal_plans: {
         Row: {
           attendees: number
+          category: string
           created_at: string
           id: string
           meal_type: string | null
@@ -401,6 +402,7 @@ export type Database = {
         }
         Insert: {
           attendees?: number
+          category?: string
           created_at?: string
           id?: string
           meal_type?: string | null
@@ -410,6 +412,7 @@ export type Database = {
         }
         Update: {
           attendees?: number
+          category?: string
           created_at?: string
           id?: string
           meal_type?: string | null
