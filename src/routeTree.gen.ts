@@ -25,6 +25,7 @@ import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as FellowshipCheckinRouteImport } from './routes/fellowship-checkin'
 import { Route as FeedbackRouteImport } from './routes/feedback'
 import { Route as DataPreviewRouteImport } from './routes/data-preview'
+import { Route as ChatRouteImport } from './routes/chat'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as TodayPublicTokenRouteImport } from './routes/today-public.$token'
@@ -110,6 +111,11 @@ const DataPreviewRoute = DataPreviewRouteImport.update({
   path: '/data-preview',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ChatRoute = ChatRouteImport.update({
+  id: '/chat',
+  path: '/chat',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminRoute = AdminRouteImport.update({
   id: '/admin',
   path: '/admin',
@@ -134,6 +140,7 @@ const AdultCheckinKindRoute = AdultCheckinKindRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/chat': typeof ChatRoute
   '/data-preview': typeof DataPreviewRoute
   '/feedback': typeof FeedbackRoute
   '/fellowship-checkin': typeof FellowshipCheckinRoute
@@ -156,6 +163,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/chat': typeof ChatRoute
   '/data-preview': typeof DataPreviewRoute
   '/feedback': typeof FeedbackRoute
   '/fellowship-checkin': typeof FellowshipCheckinRoute
@@ -179,6 +187,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/chat': typeof ChatRoute
   '/data-preview': typeof DataPreviewRoute
   '/feedback': typeof FeedbackRoute
   '/fellowship-checkin': typeof FellowshipCheckinRoute
@@ -203,6 +212,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/admin'
+    | '/chat'
     | '/data-preview'
     | '/feedback'
     | '/fellowship-checkin'
@@ -225,6 +235,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/admin'
+    | '/chat'
     | '/data-preview'
     | '/feedback'
     | '/fellowship-checkin'
@@ -247,6 +258,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/admin'
+    | '/chat'
     | '/data-preview'
     | '/feedback'
     | '/fellowship-checkin'
@@ -270,6 +282,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRoute
+  ChatRoute: typeof ChatRoute
   DataPreviewRoute: typeof DataPreviewRoute
   FeedbackRoute: typeof FeedbackRoute
   FellowshipCheckinRoute: typeof FellowshipCheckinRoute
@@ -404,6 +417,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DataPreviewRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/chat': {
+      id: '/chat'
+      path: '/chat'
+      fullPath: '/chat'
+      preLoaderRoute: typeof ChatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin': {
       id: '/admin'
       path: '/admin'
@@ -438,6 +458,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
+  ChatRoute: ChatRoute,
   DataPreviewRoute: DataPreviewRoute,
   FeedbackRoute: FeedbackRoute,
   FellowshipCheckinRoute: FellowshipCheckinRoute,

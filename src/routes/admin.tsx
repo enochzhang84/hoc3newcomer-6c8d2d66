@@ -19,7 +19,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
 import { zhCN } from "date-fns/locale";
-import { listUsersWithRoles, setUserRole, deleteUser, createUserWithRole } from "@/lib/users.functions";
+import { listUsersWithRoles, setUserRole, deleteUser, createUserWithRole, updateUserWorkerName } from "@/lib/users.functions";
 import { updateRegistration } from "@/lib/registrations.functions";
 import { HospitalityMinistrySection } from "@/components/HospitalityMinistry";
 import { HospitalityRankingSection } from "@/components/HospitalityRanking";
@@ -76,7 +76,7 @@ function formatSourceChannel(r: Pick<Reg, "source_channel">): string {
   }
 }
 
-type AppUser = { id: string; email: string; created_at: string; roles: string[] };
+type AppUser = { id: string; email: string; created_at: string; roles: string[]; worker_name?: string | null; service_project?: string | null };
 
 type CachedAuthUser = { id: string; email?: string | null };
 
@@ -385,8 +385,12 @@ function AdminPage() {
     email: string;
     password: string;
     role: "super_admin" | "admin" | "user" | "viewer";
-  }>({ email: "", password: "", role: "user" });
+    workerName: string;
+  }>({ email: "", password: "", role: "user", workerName: "" });
   const [newUserSubmitting, setNewUserSubmitting] = useState(false);
+  const updateWorkerNameFn = useServerFn(updateUserWorkerName);
+  const [editingWorkerUserId, setEditingWorkerUserId] = useState<string | null>(null);
+  const [editingWorkerDraft, setEditingWorkerDraft] = useState<string>("");
   const updateRegFn = useServerFn(updateRegistration);
   const [editOpen, setEditOpen] = useState(false);
   const [editForm, setEditForm] = useState<Reg | null>(null);
@@ -1492,7 +1496,7 @@ function AdminPage() {
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-serif text-xl">管理员权限</h2>
             <div className="flex items-center gap-2">
-              <Button size="sm" onClick={() => { setNewUserForm({ email: "", password: "", role: "user" }); setNewUserOpen(true); }}>
+              <Button size="sm" onClick={() => { setNewUserForm({ email: "", password: "", role: "user", workerName: "" }); setNewUserOpen(true); }}>
                 + 添加用户
               </Button>
               <Button size="sm" variant="outline" onClick={loadUsers} disabled={usersLoading}>
@@ -1514,6 +1518,8 @@ function AdminPage() {
               <thead>
                 <tr className="text-left border-b border-border/60 text-muted-foreground">
                   <th className="py-2 px-2">邮箱</th>
+                  <th className="py-2 px-2">同工姓名</th>
+                  <th className="py-2 px-2">服侍项目</th>
                   <th className="py-2 px-2">角色</th>
                   <th className="py-2 px-2">注册时间</th>
                   <th className="py-2 px-2 text-right">操作</th>
@@ -1540,6 +1546,26 @@ function AdminPage() {
                       <td className="py-2 px-2 font-medium">
                         {u.email} {isSelf && <span className="text-xs text-muted-foreground">(我)</span>}
                         {isPending && <span className="ml-2 text-xs text-amber-600">待审核</span>}
+                      </td>
+                      <td className="py-2 px-2">
+                        {editingWorkerUserId === u.id ? (
+                          <div className="flex items-center gap-1">
+                            <Input
+                              autoFocus
+                              value={editingWorkerDraft}
+                              onChange={(e) => setEditingWorkerDraft(e.target.value)}
+                              placeholder="同工姓名"
+                              className="h-7 text-xs w-32"
+                            />
+                          </div>
+                        ) : (
+                          <span className={u.worker_name ? "" : "text-muted-foreground/60"}>
+                            {u.worker_name || "—"}
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-2 px-2 text-muted-foreground">
+                        {u.service_project || <span className="text-muted-foreground/60">—</span>}
                       </td>
                       <td className="py-2 px-2">
                         <select
@@ -1611,6 +1637,39 @@ function AdminPage() {
                             确定
                           </button>
                         )}
+                        {editingWorkerUserId === u.id ? (
+                          <>
+                            <button
+                              onClick={async () => {
+                                try {
+                                  await updateWorkerNameFn({ data: { userId: u.id, workerName: editingWorkerDraft.trim() || null } });
+                                  logAction(`更新 ${u.email} 同工姓名为「${editingWorkerDraft.trim() || "(空)"}」`);
+                                  toast.success("已保存");
+                                  setEditingWorkerUserId(null);
+                                  loadUsers();
+                                } catch (e) {
+                                  toast.error((e as Error).message);
+                                }
+                              }}
+                              className="text-xs text-primary hover:underline font-medium"
+                            >
+                              保存
+                            </button>
+                            <button
+                              onClick={() => { setEditingWorkerUserId(null); setEditingWorkerDraft(""); }}
+                              className="text-xs text-muted-foreground hover:underline"
+                            >
+                              取消
+                            </button>
+                          </>
+                        ) : (
+                          <button
+                            onClick={() => { setEditingWorkerUserId(u.id); setEditingWorkerDraft(u.worker_name || ""); }}
+                            className="text-xs text-primary hover:underline"
+                          >
+                            编辑
+                          </button>
+                        )}
                         <button
                           disabled={isSelf || isProtected}
                           onClick={async () => {
@@ -1634,7 +1693,7 @@ function AdminPage() {
                 })}
                 {users.length === 0 && !usersLoading && (
                   <tr>
-                    <td colSpan={4} className="py-8 text-center text-muted-foreground">
+                    <td colSpan={6} className="py-8 text-center text-muted-foreground">
                       暂无用户
                     </td>
                   </tr>
@@ -1671,6 +1730,15 @@ function AdminPage() {
                 />
               </div>
               <div className="space-y-1">
+                <Label className="text-xs">同工姓名 (可选)</Label>
+                <Input
+                  type="text"
+                  value={newUserForm.workerName}
+                  onChange={(e) => setNewUserForm({ ...newUserForm, workerName: e.target.value })}
+                  placeholder="例如：张弟兄"
+                />
+              </div>
+              <div className="space-y-1">
                 <Label className="text-xs">角色</Label>
                 <select
                   value={newUserForm.role}
@@ -1694,7 +1762,7 @@ function AdminPage() {
                   if (newUserForm.password.length < 6) return toast.error("密码至少 6 位");
                   setNewUserSubmitting(true);
                   try {
-                    await createUserFn({ data: { email, password: newUserForm.password, role: newUserForm.role } });
+                    await createUserFn({ data: { email, password: newUserForm.password, role: newUserForm.role, workerName: newUserForm.workerName.trim() || undefined } });
                     toast.success("用户已创建");
                     logAction(`创建用户 ${email} (角色: ${newUserForm.role})`);
                     setNewUserOpen(false);
@@ -1726,6 +1794,12 @@ function AdminPage() {
               onClick={() => { loadLogs(); setLogsOpen(true); }}
             >
               操作日志
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => navigate({ to: "/chat" })}
+            >
+              聊天
             </Button>
             <Button
               variant="outline"
