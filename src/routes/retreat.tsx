@@ -25,6 +25,15 @@ import {
 } from "@/lib/retreat.functions";
 import logo from "@/assets/logo.png";
 
+function BiLabel({ cn, en }: { cn: string; en: string }) {
+  return (
+    <Label className="flex flex-col items-start gap-0.5">
+      <span>{cn}</span>
+      <span className="text-xs font-normal text-muted-foreground">{en}</span>
+    </Label>
+  );
+}
+
 export const Route = createFileRoute("/retreat")({
   component: RetreatPage,
   head: () => ({
