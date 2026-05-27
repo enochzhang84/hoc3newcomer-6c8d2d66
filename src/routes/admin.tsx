@@ -2421,12 +2421,7 @@ function AdminPage() {
           }
           return (
             <section className="bg-card border border-border/50 rounded-2xl p-6">
-              <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
-                <h2 className="font-serif text-xl">就餐人数统计</h2>
-                <p className="text-xs text-muted-foreground">
-                  数据来源：迎宾接待 → 人数统计 → 历史记录。今日新人仅作显示，不计入总人数。
-                </p>
-              </div>
+              <h2 className="font-serif text-xl mb-4">就餐人数统计</h2>
               <div className="overflow-x-auto rounded-lg border border-border/50">
                 <table className="w-full text-sm border-collapse">
                   <thead className="bg-muted/80">
