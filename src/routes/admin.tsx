@@ -310,6 +310,8 @@ function AdminPage() {
   const [newMealAttendees, setNewMealAttendees] = useState<string>("");
   const [newMealType, setNewMealType] = useState<string>("");
   const [newMealNotes, setNewMealNotes] = useState<string>("");
+  const [kitchenSubTab, setKitchenSubTab] = useState<string>("dining");
+  const [kitchenDetailRow, setKitchenDetailRow] = useState<AttendanceRecord | null>(null);
   // Duty rosters
   const [dutyPersonnel, setDutyPersonnel] = useState<DutyPerson[]>([]);
   const [dutySchedules, setDutySchedules] = useState<DutySchedule[]>([]);
