@@ -2468,13 +2468,13 @@ function AdminPage() {
             </TabsContent>
 
             <TabsContent value="kitchen" className="space-y-8 mt-0">
-        {/* Chrome-style sub-tabs */}
-        <div className="flex flex-wrap items-end gap-1 border-b border-border/60 px-2 pt-1 -mb-2">
+        {/* Chrome-style sub-tabs — 4 equal columns */}
+        <div className="grid grid-cols-4 items-end gap-1 border-b border-border/60 px-2 pt-1 -mb-2">
           {[
             { v: "dining", label: "就餐人数统计" },
             { v: "sunday-meal", label: "主日订餐计划" },
             { v: "event-meal", label: "其他活动订餐计划" },
-            { v: "tbd", label: "待定" },
+            { v: "messages", label: "留言板" },
           ].map((t) => {
             const active = kitchenSubTab === t.v;
             return (
@@ -2482,7 +2482,7 @@ function AdminPage() {
                 key={t.v}
                 onClick={() => setKitchenSubTab(t.v)}
                 className={cn(
-                  "px-4 py-2 text-sm rounded-t-xl border border-b-0 transition-all",
+                  "w-full text-center px-2 sm:px-4 py-2 text-xs sm:text-sm rounded-t-xl border border-b-0 transition-all truncate",
                   active
                     ? "bg-card text-foreground border-border shadow-sm font-medium relative -mb-px"
                     : "bg-muted/40 text-muted-foreground border-transparent hover:bg-muted/70"
@@ -2863,10 +2863,39 @@ function AdminPage() {
         </section>
         )}
 
-        {kitchenSubTab === "tbd" && (
+        {kitchenSubTab === "messages" && (
           <section className="bg-card border border-border/50 rounded-2xl p-6">
-            <h2 className="font-serif text-xl mb-2">待定</h2>
-            <p className="text-sm text-muted-foreground">此板块功能待定。</p>
+            <h2 className="font-serif text-xl mb-4">留言板</h2>
+            <div className="grid sm:grid-cols-2 gap-4">
+              <div
+                onDoubleClick={() => {
+                  markMessagesSeen();
+                  window.open("/message-board", "_blank");
+                }}
+                title="双击打开留言板"
+                className="relative border border-border/50 rounded-xl p-4 flex flex-col items-start gap-3 cursor-pointer hover:border-primary/60 transition-colors select-none"
+              >
+                {messagesCount > 0 && (
+                  <span
+                    className="absolute -top-2 -right-2 min-w-[22px] h-[22px] px-1.5 rounded-full bg-red-500 text-white text-xs font-semibold flex items-center justify-center shadow-md ring-2 ring-background"
+                    title={`${messagesCount} 条留言`}
+                  >
+                    {messagesCount > 99 ? "99+" : messagesCount}
+                  </span>
+                )}
+                <p className="text-sm text-muted-foreground">留言板(双击打开新页面编辑)</p>
+                <Button
+                  variant="outline"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    markMessagesSeen();
+                    window.open("/message-board", "_blank");
+                  }}
+                >
+                  打开留言板
+                </Button>
+              </div>
+            </div>
           </section>
         )}
 
