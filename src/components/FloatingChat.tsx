@@ -433,13 +433,26 @@ export function FloatingChat() {
                 在线 {onlineCount} 人
               </span>
             </div>
-            <button
-              onClick={() => { setOpen(false); markAllRead(); }}
-              aria-label="关闭"
-              className="p-1 rounded-md hover:bg-muted text-muted-foreground"
-            >
-              <X className="h-4 w-4" />
-            </button>
+            <div className="flex items-center gap-1">
+              {isAdmin && (
+                <button
+                  onClick={clearScreen}
+                  aria-label="清空屏幕"
+                  title="清空屏幕"
+                  className="px-2 py-1 rounded-md text-[11px] text-muted-foreground hover:bg-muted hover:text-foreground inline-flex items-center gap-1"
+                >
+                  <Eraser className="h-3.5 w-3.5" />
+                  清屏
+                </button>
+              )}
+              <button
+                onClick={() => { setOpen(false); markAllRead(); }}
+                aria-label="关闭"
+                className="p-1 rounded-md hover:bg-muted text-muted-foreground"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
           </div>
 
           <div className="px-3 py-2 border-b border-border/50">
