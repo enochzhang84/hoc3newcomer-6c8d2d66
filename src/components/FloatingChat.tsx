@@ -253,6 +253,36 @@ export function FloatingChat() {
     setMentionTarget(null);
   };
 
+  const canDelete = (m: ChatMessage) => isAdmin || m.user_id === userId;
+
+  const handleDelete = async () => {
+    const m = pendingDelete;
+    if (!m) return;
+    setPendingDelete(null);
+    const { error } = await (supabase as any).from("chat_messages").delete().eq("id", m.id);
+    if (error) return toast.error(error.message);
+    setMessages((prev) => prev.filter((x) => x.id !== m.id));
+    setActionId(null);
+  };
+
+  const clearScreen = () => {
+    if (!isAdmin) return;
+    if (!window.confirm("清空当前聊天屏幕显示？不会删除数据库消息。")) return;
+    setHiddenIds(new Set(messages.map((m) => m.id)));
+  };
+
+  const startLongPress = (m: ChatMessage) => {
+    if (!canDelete(m)) return;
+    if (longPressTimer.current) clearTimeout(longPressTimer.current);
+    longPressTimer.current = setTimeout(() => setActionId(m.id), 500);
+  };
+  const cancelLongPress = () => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+  };
+
   if (!userId) return null;
 
   const filteredWorkers = (mentionQuery !== null
