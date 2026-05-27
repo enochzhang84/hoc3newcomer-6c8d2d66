@@ -885,6 +885,7 @@ export type Database = {
         Row: {
           created_at: string
           service_project: string | null
+          service_projects: string[]
           updated_at: string
           user_id: string
           worker_name: string | null
@@ -892,6 +893,7 @@ export type Database = {
         Insert: {
           created_at?: string
           service_project?: string | null
+          service_projects?: string[]
           updated_at?: string
           user_id: string
           worker_name?: string | null
@@ -899,6 +901,7 @@ export type Database = {
         Update: {
           created_at?: string
           service_project?: string | null
+          service_projects?: string[]
           updated_at?: string
           user_id?: string
           worker_name?: string | null
