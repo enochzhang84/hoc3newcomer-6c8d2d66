@@ -2524,6 +2524,7 @@ function AdminPage() {
                   attendees: parseInt(newMealAttendees || "0", 10) || 0,
                   meal_type: newMealType || null,
                   notes: newMealNotes || null,
+                  category: "sunday",
                 });
                 if (error) return toast.error(error.message);
                 toast.success("已添加");
@@ -2546,7 +2547,7 @@ function AdminPage() {
                 </tr>
               </thead>
               <tbody>
-                {mealPlans.map((p) => (
+                {mealPlans.filter((p) => (p.category ?? "sunday") === "sunday").map((p) => (
                   <tr key={p.id} className="border-b border-border/30">
                     <td className="py-2 px-2 whitespace-nowrap">
                       <Input
