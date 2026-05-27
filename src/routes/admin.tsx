@@ -3322,7 +3322,9 @@ img{width:480px;height:480px;}@media print{@page{margin:1cm;}}</style></head>
             </section>
           );
         })}
+        </>)}
 
+        {sundaySubTab === "kids" && (<>
         {/* 儿童主日学 */}
         <section className="bg-card border border-border/50 rounded-2xl p-6">
           <h2 className="font-serif text-2xl mb-4">儿童主日学</h2>
@@ -3557,7 +3559,7 @@ ${rows.length===0?'<tr><td colspan="5" style="text-align:center;color:#888;paddi
             })}
           </div>
         </section>
-
+        </>)}
             </TabsContent>
 
             <TabsContent value="events" className="space-y-8 mt-0">
