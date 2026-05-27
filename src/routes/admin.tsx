@@ -1724,8 +1724,8 @@ function AdminPage() {
                             <button
                               onClick={async () => {
                                 try {
-                                  await updateWorkerNameFn({ data: { userId: u.id, workerName: editingWorkerDraft.trim() || null } });
-                                  logAction(`更新 ${u.email} 同工姓名为「${editingWorkerDraft.trim() || "(空)"}」`);
+                                  await updateWorkerNameFn({ data: { userId: u.id, workerName: editingWorkerDraft.trim() || null, serviceProjects: editingProjectsDraft } });
+                                  logAction(`更新 ${u.email} 资料（姓名 / 权限）`);
                                   toast.success("已保存");
                                   setEditingWorkerUserId(null);
                                   loadUsers();
@@ -1738,7 +1738,7 @@ function AdminPage() {
                               保存
                             </button>
                             <button
-                              onClick={() => { setEditingWorkerUserId(null); setEditingWorkerDraft(""); }}
+                              onClick={() => { setEditingWorkerUserId(null); setEditingWorkerDraft(""); setEditingProjectsDraft([]); }}
                               className="text-xs text-muted-foreground hover:underline"
                             >
                               取消
@@ -1746,7 +1746,7 @@ function AdminPage() {
                           </>
                         ) : (
                           <button
-                            onClick={() => { setEditingWorkerUserId(u.id); setEditingWorkerDraft(u.worker_name || ""); }}
+                            onClick={() => { setEditingWorkerUserId(u.id); setEditingWorkerDraft(u.worker_name || ""); setEditingProjectsDraft(u.service_projects ?? []); }}
                             className="text-xs text-primary hover:underline"
                           >
                             编辑
