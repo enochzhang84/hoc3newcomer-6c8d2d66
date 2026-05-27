@@ -1821,6 +1821,40 @@ function AdminPage() {
                 />
               </div>
               <div className="space-y-1">
+                <Label className="text-xs">服侍项目 / 功能权限 (可多选)</Label>
+                <div className="flex flex-wrap gap-1.5">
+                  {SERVICE_PROJECT_OPTIONS.map((opt) => {
+                    const checked = newUserForm.serviceProjects.includes(opt.value);
+                    return (
+                      <label
+                        key={opt.value}
+                        className={cn(
+                          "inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full border cursor-pointer transition-colors",
+                          checked
+                            ? "bg-primary/10 border-primary/40 text-foreground"
+                            : "bg-background border-border hover:bg-muted"
+                        )}
+                      >
+                        <input
+                          type="checkbox"
+                          className="h-3 w-3"
+                          checked={checked}
+                          onChange={(e) => {
+                            setNewUserForm((prev) => ({
+                              ...prev,
+                              serviceProjects: e.target.checked
+                                ? [...prev.serviceProjects, opt.value]
+                                : prev.serviceProjects.filter((v) => v !== opt.value),
+                            }));
+                          }}
+                        />
+                        {opt.label}
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+              <div className="space-y-1">
                 <Label className="text-xs">角色</Label>
                 <select
                   value={newUserForm.role}
