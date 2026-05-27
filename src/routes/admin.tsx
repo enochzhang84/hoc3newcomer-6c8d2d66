@@ -1343,7 +1343,6 @@ function AdminPage() {
               { title: "主日订餐计划", stats: compute(sundayRows) },
               { title: "其他活动订餐计划", stats: compute(eventRows) },
             ];
-            const items: Array<[string, number]> = [];
             return (
               <div className="space-y-6">
                 {groups.map((g) => (
@@ -1365,7 +1364,6 @@ function AdminPage() {
                     </div>
                   </div>
                 ))}
-                {void items}
               </div>
             );
           })()}
