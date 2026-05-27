@@ -1868,7 +1868,8 @@ function AdminPage() {
           })}
         </div>
 
-        {welcomeSubTab === "greet" && (<>
+        {welcomeSubTab === "greet" && (
+          <div className="space-y-8">
         <section className="bg-card border border-border/50 rounded-2xl p-6">
           <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
             <h2 className="font-serif text-xl">登记名单</h2>
