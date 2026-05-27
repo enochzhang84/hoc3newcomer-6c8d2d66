@@ -540,6 +540,19 @@ export function FloatingChat() {
           </div>
         </div>
       )}
+
+      {pendingDelete && (
+        <div className="fixed inset-0 z-[70] bg-black/40 flex items-center justify-center p-4" onClick={() => setPendingDelete(null)}>
+          <div className="bg-card border border-border rounded-xl shadow-2xl max-w-sm w-full p-4" onClick={(e) => e.stopPropagation()}>
+            <div className="text-sm font-medium mb-1">确认删除该条消息？</div>
+            <div className="text-xs text-muted-foreground mb-3 break-words line-clamp-3">{pendingDelete.content}</div>
+            <div className="flex justify-end gap-2">
+              <Button variant="ghost" size="sm" onClick={() => setPendingDelete(null)}>取消</Button>
+              <Button size="sm" className="bg-red-500 hover:bg-red-600 text-white" onClick={handleDelete}>删除</Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
