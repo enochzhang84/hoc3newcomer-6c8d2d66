@@ -4480,6 +4480,7 @@ ${rows.length===0?'<tr><td colspan="5" style="text-align:center;color:#888;paddi
                   <thead className="bg-muted/80">
                     <tr className="text-left text-muted-foreground border-b border-border/60">
                       <th className="py-2 px-2">姓名</th>
+                      <th className="py-2 px-2">在线状态</th>
                       <th className="py-2 px-2">电话</th>
                       <th className="py-2 px-2">微信</th>
                       <th className="py-2 px-2">邮件</th>
@@ -4510,6 +4511,17 @@ ${rows.length===0?'<tr><td colspan="5" style="text-align:center;color:#888;paddi
                           }}
                         >
                           <td className="py-2 px-2 font-medium">{c.name}</td>
+                          <td className="py-2 px-2 whitespace-nowrap">
+                            {onlineWorkers.has(c.name.trim()) ? (
+                              <span className="inline-flex items-center gap-1 text-green-600">
+                                <span className="h-2 w-2 rounded-full bg-green-500" />在线
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 text-muted-foreground">
+                                <span className="h-2 w-2 rounded-full bg-muted-foreground/40" />离线
+                              </span>
+                            )}
+                          </td>
                           <td className="py-2 px-2">{c.phone ?? ""}</td>
                           <td className="py-2 px-2">{c.wechat ?? ""}</td>
                           <td className="py-2 px-2">{c.email ?? ""}</td>
@@ -4533,7 +4545,7 @@ ${rows.length===0?'<tr><td colspan="5" style="text-align:center;color:#888;paddi
                         </tr>
                       ))}
                     {contacts.length === 0 && (
-                      <tr><td colSpan={7} className="py-8 text-center text-muted-foreground">暂无联系人</td></tr>
+                      <tr><td colSpan={8} className="py-8 text-center text-muted-foreground">暂无联系人</td></tr>
                     )}
                   </tbody>
                 </table>
