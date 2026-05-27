@@ -2,7 +2,7 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { MessageCircle, X } from "lucide-react";
+import { MessageCircle, X, Trash2, Eraser } from "lucide-react";
 import { toast } from "sonner";
 
 type ChatMessage = {
@@ -29,6 +29,11 @@ export function FloatingChat() {
   const [userId, setUserId] = useState<string | null>(null);
   const [email, setEmail] = useState("");
   const [workerName, setWorkerName] = useState("");
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [hiddenIds, setHiddenIds] = useState<Set<string>>(new Set());
+  const [actionId, setActionId] = useState<string | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<ChatMessage | null>(null);
+  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [workers, setWorkers] = useState<WorkerOption[]>([]);
@@ -115,6 +120,12 @@ export function FloatingChat() {
         .eq("user_id", data.user.id)
         .maybeSingle();
       if (profile?.worker_name) setWorkerName(profile.worker_name);
+      const { data: roles } = await (supabase as any)
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", data.user.id);
+      const rs = (roles ?? []) as { role: string }[];
+      setIsAdmin(rs.some((r) => r.role === "admin" || r.role === "super_admin"));
       loadWorkers();
       loadPresence();
     })();
@@ -242,6 +253,36 @@ export function FloatingChat() {
     setMentionTarget(null);
   };
 
+  const canDelete = (m: ChatMessage) => isAdmin || m.user_id === userId;
+
+  const handleDelete = async () => {
+    const m = pendingDelete;
+    if (!m) return;
+    setPendingDelete(null);
+    const { error } = await (supabase as any).from("chat_messages").delete().eq("id", m.id);
+    if (error) return toast.error(error.message);
+    setMessages((prev) => prev.filter((x) => x.id !== m.id));
+    setActionId(null);
+  };
+
+  const clearScreen = () => {
+    if (!isAdmin) return;
+    if (!window.confirm("清空当前聊天屏幕显示？不会删除数据库消息。")) return;
+    setHiddenIds(new Set(messages.map((m) => m.id)));
+  };
+
+  const startLongPress = (m: ChatMessage) => {
+    if (!canDelete(m)) return;
+    if (longPressTimer.current) clearTimeout(longPressTimer.current);
+    longPressTimer.current = setTimeout(() => setActionId(m.id), 500);
+  };
+  const cancelLongPress = () => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+  };
+
   if (!userId) return null;
 
   const filteredWorkers = (mentionQuery !== null
@@ -264,13 +305,32 @@ export function FloatingChat() {
     !q ||
     m.display_name.toLowerCase().includes(q) ||
     m.content.toLowerCase().includes(q);
-  const publicMessages = messages.filter((m) => m.recipient_id === null && matchesSearch(m));
+  const publicMessages = messages.filter(
+    (m) => m.recipient_id === null && matchesSearch(m) && !hiddenIds.has(m.id),
+  );
   const privateMessages = messages.filter(
     (m) =>
       m.recipient_id !== null &&
       (m.user_id === userId || m.recipient_id === userId) &&
-      matchesSearch(m),
+      matchesSearch(m) &&
+      !hiddenIds.has(m.id),
   );
+
+  const DeleteBtn = ({ m, className = "" }: { m: ChatMessage; className?: string }) =>
+    canDelete(m) ? (
+      <button
+        type="button"
+        onClick={(e) => { e.stopPropagation(); setPendingDelete(m); }}
+        aria-label="删除消息"
+        className={
+          "shrink-0 p-1 rounded-md text-red-500 hover:bg-red-50 hover:text-red-600 transition-opacity " +
+          (actionId === m.id ? "opacity-100 " : "opacity-0 group-hover:opacity-100 ") +
+          className
+        }
+      >
+        <Trash2 className="h-3.5 w-3.5" />
+      </button>
+    ) : null;
 
   const renderBubble = (m: ChatMessage) => {
     const mine = m.user_id === userId;
@@ -293,11 +353,16 @@ export function FloatingChat() {
           display_name: otherName,
         };
       return (
-        <button
-          type="button"
+        <div
           key={m.id}
+          role="button"
+          tabIndex={0}
           onClick={() => startReply(partner)}
-          className={"w-full text-left rounded-2xl px-3 py-2 transition-colors hover:brightness-95 " + cardClass}
+          onContextMenu={(e) => { if (canDelete(m)) { e.preventDefault(); setActionId(m.id); } }}
+          onTouchStart={() => startLongPress(m)}
+          onTouchEnd={cancelLongPress}
+          onTouchMove={cancelLongPress}
+          className={"group relative w-full text-left rounded-2xl px-3 py-2 transition-colors hover:brightness-95 cursor-pointer " + cardClass}
         >
           <div className="flex items-center gap-2 mb-1 min-w-0">
             <div className={"h-6 w-6 shrink-0 rounded-full flex items-center justify-center text-[11px] font-medium " + iconClass}>
@@ -305,23 +370,32 @@ export function FloatingChat() {
             </div>
             <div className="flex-1 min-w-0 text-xs font-medium truncate">{title}</div>
             <div className="text-[10px] opacity-70 shrink-0">{time}</div>
+            <DeleteBtn m={m} />
           </div>
           <div className="text-sm whitespace-pre-wrap break-words pl-8">{m.content}</div>
-        </button>
+        </div>
       );
     }
 
     const bubbleClass = mine ? "bg-primary text-primary-foreground" : "bg-muted";
     const metaClass = "text-[10px] mb-0.5 " + (mine ? "text-primary-foreground/80" : "text-muted-foreground");
     return (
-      <div key={m.id} className={"flex " + (mine ? "justify-end" : "justify-start")}>
-        <div className={"max-w-[85%] rounded-2xl px-3 py-1.5 " + bubbleClass}>
+      <div key={m.id} className={"group flex items-start gap-1 " + (mine ? "justify-end" : "justify-start")}>
+        {mine && <DeleteBtn m={m} className="self-center" />}
+        <div
+          onContextMenu={(e) => { if (canDelete(m)) { e.preventDefault(); setActionId(m.id); } }}
+          onTouchStart={() => startLongPress(m)}
+          onTouchEnd={cancelLongPress}
+          onTouchMove={cancelLongPress}
+          className={"max-w-[85%] rounded-2xl px-3 py-1.5 " + bubbleClass}
+        >
           <div className={"flex items-baseline gap-2 " + metaClass}>
             <span className="font-medium">{m.display_name}</span>
             <span>{time}</span>
           </div>
           <div className="text-sm whitespace-pre-wrap break-words">{m.content}</div>
         </div>
+        {!mine && <DeleteBtn m={m} className="self-center" />}
       </div>
     );
   };
@@ -359,13 +433,26 @@ export function FloatingChat() {
                 在线 {onlineCount} 人
               </span>
             </div>
-            <button
-              onClick={() => { setOpen(false); markAllRead(); }}
-              aria-label="关闭"
-              className="p-1 rounded-md hover:bg-muted text-muted-foreground"
-            >
-              <X className="h-4 w-4" />
-            </button>
+            <div className="flex items-center gap-1">
+              {isAdmin && (
+                <button
+                  onClick={clearScreen}
+                  aria-label="清空屏幕"
+                  title="清空屏幕"
+                  className="px-2 py-1 rounded-md text-[11px] text-muted-foreground hover:bg-muted hover:text-foreground inline-flex items-center gap-1"
+                >
+                  <Eraser className="h-3.5 w-3.5" />
+                  清屏
+                </button>
+              )}
+              <button
+                onClick={() => { setOpen(false); markAllRead(); }}
+                aria-label="关闭"
+                className="p-1 rounded-md hover:bg-muted text-muted-foreground"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
           </div>
 
           <div className="px-3 py-2 border-b border-border/50">
@@ -449,6 +536,19 @@ export function FloatingChat() {
               className="flex-1 h-9 text-sm"
             />
             <Button onClick={send} disabled={sending || !input.trim()} size="sm">发送</Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {pendingDelete && (
+        <div className="fixed inset-0 z-[70] bg-black/40 flex items-center justify-center p-4" onClick={() => setPendingDelete(null)}>
+          <div className="bg-card border border-border rounded-xl shadow-2xl max-w-sm w-full p-4" onClick={(e) => e.stopPropagation()}>
+            <div className="text-sm font-medium mb-1">确认删除该条消息？</div>
+            <div className="text-xs text-muted-foreground mb-3 break-words line-clamp-3">{pendingDelete.content}</div>
+            <div className="flex justify-end gap-2">
+              <Button variant="ghost" size="sm" onClick={() => setPendingDelete(null)}>取消</Button>
+              <Button size="sm" className="bg-red-500 hover:bg-red-600 text-white" onClick={handleDelete}>删除</Button>
             </div>
           </div>
         </div>
