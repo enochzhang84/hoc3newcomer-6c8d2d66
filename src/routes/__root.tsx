@@ -11,6 +11,7 @@ import { useEffect } from "react";
 
 import appCss from "../styles.css?url";
 import { Toaster } from "@/components/ui/sonner";
+import { FloatingChat } from "@/components/FloatingChat";
 
 // Bump this string whenever you need to force every browser to drop its
 // cached localStorage / sessionStorage state. Supabase auth keys (sb-*) are
@@ -164,6 +165,7 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <Outlet />
+      <FloatingChat />
       <Toaster richColors position="top-center" />
     </QueryClientProvider>
   );
