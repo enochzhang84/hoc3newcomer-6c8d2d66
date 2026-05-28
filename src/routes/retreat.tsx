@@ -1,38 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { QRCodeSVG } from "qrcode.react";
-import { useState } from "react";
-import { useServerFn } from "@tanstack/react-start";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { toast } from "sonner";
-import {
-  lookupRetreatByPhone,
-  updateRetreatByPhone,
-  deleteRetreatByPhone,
-} from "@/lib/retreat.functions";
 import logo from "@/assets/logo.png";
-
-function BiLabel({ cn, en }: { cn: string; en: string }) {
-  return (
-    <Label className="flex flex-col items-start gap-0.5">
-      <span>{cn}</span>
-      <span className="text-xs font-normal text-muted-foreground">{en}</span>
-    </Label>
-  );
-}
 
 export const Route = createFileRoute("/retreat")({
   component: RetreatPage,
