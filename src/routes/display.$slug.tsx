@@ -24,12 +24,14 @@ type PlaylistItem = {
   sort_order: number;
   content_type: string;
   content_payload: Record<string, unknown> | null;
+  duration_seconds: number | null;
 };
 
 type Playlist = {
   id: string;
   name: string;
   interval_seconds: number;
+  loop_enabled: boolean;
 };
 
 function DisplayScreen() {
