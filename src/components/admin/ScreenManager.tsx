@@ -35,31 +35,57 @@ type PlaylistItem = {
   duration_seconds: number | null;
 };
 
-// Quick-pick content types shown on each screen card
-const QUICK_TYPES: { key: string; label: string; payload?: Record<string, unknown> }[] = [
-  { key: "embed", label: "扫码登记", payload: { url: "/register" } },
-  { key: "retreat", label: "退修会报名" },
-  { key: "meal", label: "用餐通知" },
-  { key: "announcement", label: "教会公告" },
-  { key: "emergency", label: "紧急广播" },
-  { key: "playlist", label: "播放列表" },
+// Content library — pages and named sections from the site that can be
+// played on a TV screen or added to a playlist. Add new entries here as
+// the site grows; no code changes needed elsewhere.
+const CONTENT_LIBRARY: { group: string; items: { label: string; path: string }[] }[] = [
+  {
+    group: "首页",
+    items: [
+      { label: "完整页面", path: "/" },
+      { label: "教会介绍", path: "/#about" },
+      { label: "聚会时间", path: "/#services" },
+      { label: "今日公告", path: "/#announcements" },
+    ],
+  },
+  {
+    group: "扫码登记",
+    items: [{ label: "整页", path: "/register" }],
+  },
+  {
+    group: "退修会",
+    items: [
+      { label: "完整页面", path: "/retreat" },
+      { label: "活动介绍", path: "/retreat#intro" },
+      { label: "报名二维码", path: "/retreat#register-qr" },
+      { label: "时间地点", path: "/retreat#info" },
+    ],
+  },
+  {
+    group: "主日学",
+    items: [
+      { label: "课程介绍 / 课表", path: "/sunday-schedule" },
+    ],
+  },
+  {
+    group: "事工 / 服侍",
+    items: [
+      { label: "儿童事工签到", path: "/sunday-checkin" },
+      { label: "事工申请", path: "/serve-apply" },
+    ],
+  },
+  {
+    group: "互动",
+    items: [
+      { label: "留言板", path: "/message-board" },
+      { label: "意见反馈", path: "/feedback" },
+    ],
+  },
 ];
 
-// Content library — pages and named sections that can be put into playlists
-const CONTENT_LIBRARY: { group: string; label: string; path: string }[] = [
-  { group: "首页", label: "首页（完整）", path: "/" },
-  { group: "首页", label: "首页 - 教会介绍", path: "/#about" },
-  { group: "首页", label: "首页 - 聚会时间", path: "/#services" },
-  { group: "首页", label: "首页 - 最新公告", path: "/#announcements" },
-  { group: "退修会", label: "退修会页面", path: "/retreat" },
-  { group: "退修会", label: "退修会 - 报名二维码", path: "/retreat#register-qr" },
-  { group: "退修会", label: "退修会 - 活动介绍", path: "/retreat#intro" },
-  { group: "登记", label: "扫码登记页面", path: "/register" },
-  { group: "事工", label: "主日学课表", path: "/sunday-schedule" },
-  { group: "事工", label: "儿童事工", path: "/sunday-checkin" },
-  { group: "互动", label: "留言板", path: "/message-board" },
-  { group: "互动", label: "意见反馈", path: "/feedback" },
-];
+const ALL_LIBRARY_ENTRIES = CONTENT_LIBRARY.flatMap((g) =>
+  g.items.map((it) => ({ ...it, group: g.group })),
+);
 
 function isOnline(lastSeen: string | null): boolean {
   if (!lastSeen) return false;
@@ -76,12 +102,16 @@ function timeAgo(ts: string | null): string {
 }
 
 function describeContent(s: Screen): string {
-  const q = QUICK_TYPES.find((t) => t.key === s.current_content_type);
+  const p = (s.current_content_payload ?? {}) as { url?: string; title?: string };
+  if (s.current_content_type === "playlist") return "播放列表";
+  if (s.current_content_type === "emergency") return "🚨 紧急广播";
   if (s.current_content_type === "embed") {
-    const url = (s.current_content_payload as { url?: string } | null)?.url ?? "";
+    const url = p.url ?? "";
+    const match = ALL_LIBRARY_ENTRIES.find((e) => e.path === url);
+    if (match) return `${match.group} · ${match.label}`;
     return `网页：${url || "未设置"}`;
   }
-  return q?.label ?? s.current_content_type;
+  return p.title || s.current_content_type;
 }
 
 export function ScreenManager() {
