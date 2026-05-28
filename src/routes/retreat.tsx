@@ -37,9 +37,6 @@ function RetreatPage() {
             <h1 className="font-serif text-3xl md:text-4xl mb-2 leading-tight">
               欢迎你参加退修会
             </h1>
-            <p className="text-muted-foreground mb-6 text-sm">
-              The Home of Christ Church Joint Retreat Conference
-            </p>
             <div className="text-base leading-relaxed mb-6">
               <p>2026 基督之家联合退修会</p>
               <p>主题：跨越—萬國萬代</p>
