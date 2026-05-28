@@ -180,10 +180,7 @@ function EditRegistrationPage() {
         {/* 查询卡片 */}
         {!editing && (
           <div className="bg-card border border-border/50 rounded-2xl p-5 sm:p-6 space-y-4 shadow-sm">
-            <div>
-              <h1 className="font-serif text-xl sm:text-2xl mb-1">2026 基督之家联合退修会</h1>
-              <p className="text-sm text-muted-foreground">Lookup / Edit My Registration</p>
-            </div>
+            <p className="text-sm text-muted-foreground">Lookup / Edit My Registration</p>
             <div className="space-y-2">
               <Label>请输入登记时填写的电话号码</Label>
               <div className="flex flex-col sm:flex-row gap-2">
