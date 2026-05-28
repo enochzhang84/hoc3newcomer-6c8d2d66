@@ -236,18 +236,23 @@ function RetreatPage() {
 
       {/* 查看 / 编辑 / 删除 — 通过电话号码 */}
       <Dialog open={lookupOpen} onOpenChange={(o) => { if (!o) resetLookup(); else setLookupOpen(true); }}>
-        <DialogContent className="max-w-2xl w-[calc(100vw-1.5rem)] max-h-[90vh] overflow-y-auto bg-background p-0 sm:rounded-2xl border-border/60">
+        <DialogContent className="max-w-3xl w-[calc(100vw-1.5rem)] max-h-[92vh] overflow-y-auto bg-background p-0 sm:rounded-2xl border-border/60">
           <DialogHeader className="sr-only">
             <DialogTitle>查看 / 修改我的登记</DialogTitle>
           </DialogHeader>
-          <div className="px-4 sm:px-6 py-6">
+          {/* 顶部条 — 与 retreat-register 页面 header 同款 */}
+          <div className="border-b border-border/60 px-4 sm:px-6 py-4 flex items-center gap-2 sticky top-0 bg-background z-10">
+            <img src={logo} alt="" className="h-8 w-8 object-contain" />
+            <span className="font-serif text-lg">退修会登记 · Retreat Registration</span>
+          </div>
+          <div className="px-4 sm:px-6 py-6 sm:py-8 space-y-5">
 
           {!editing && (
             <div className="space-y-5">
               <div className="bg-card border border-border/50 rounded-2xl p-6 space-y-3">
                 <div>
-                  <h1 className="font-serif text-2xl mb-1">查看 / 修改我的登记</h1>
-                  <p className="text-sm text-muted-foreground">
+                  <h1 className="font-serif text-2xl mb-1">2026 基督之家联合退修会</h1>
+                  <p className="text-sm text-muted-foreground mb-2">
                     Lookup / Edit My Registration
                   </p>
                 </div>
@@ -266,13 +271,13 @@ function RetreatPage() {
               </div>
 
               {rows && rows.length > 0 && (
-                <div className="space-y-2">
+                <div className="bg-card border border-border/50 rounded-2xl p-6 space-y-3">
                   <p className="text-sm text-muted-foreground">共找到 {rows.length} 条记录,点击进行编辑</p>
                   <ul className="space-y-3">
                     {rows.map((r) => (
                       <li
                         key={r.id}
-                        className="rounded-xl border border-border/50 bg-muted/20 p-4 flex items-center justify-between gap-3 hover:bg-muted/40 transition-colors"
+                        className="rounded-xl border border-border/50 bg-muted/20 p-4 flex items-center justify-between gap-3 flex-wrap hover:bg-muted/40 transition-colors"
                       >
                         <div className="text-sm flex-1 cursor-pointer" onClick={() => setEditing(r)}>
                           <div className="font-medium">{r.chinese_name} {r.gender ? `(${r.gender})` : ""}</div>
@@ -297,7 +302,9 @@ function RetreatPage() {
                 </div>
               )}
               {rows && rows.length === 0 && (
-                <p className="text-center text-sm text-muted-foreground py-6">未找到匹配的登记记录</p>
+                <div className="bg-card border border-border/50 rounded-2xl p-6 text-center text-sm text-muted-foreground">
+                  未找到匹配的登记记录
+                </div>
               )}
             </div>
           )}
@@ -308,7 +315,7 @@ function RetreatPage() {
               className="bg-card border border-border/50 rounded-2xl p-6 space-y-5"
             >
               <div>
-                <h1 className="font-serif text-2xl mb-1">查看 / 修改我的登记</h1>
+                <h1 className="font-serif text-2xl mb-1">2026 基督之家联合退修会</h1>
                 <p className="text-sm text-muted-foreground mb-2">
                   Lookup / Edit My Registration
                 </p>
@@ -416,18 +423,19 @@ function RetreatPage() {
                 </div>
               </div>
 
-              <DialogFooter className="gap-2 sm:gap-2 pt-2">
+              <div className="flex flex-col-reverse sm:flex-row sm:items-center gap-2 pt-2">
                 <Button
                   type="button"
                   variant="outline"
+                  size="lg"
                   className="rounded-full border-destructive/60 text-destructive hover:bg-destructive/10 hover:text-destructive sm:mr-auto"
                   onClick={() => setPendingDelete(editing)}
                 >
                   删除登记信息
                 </Button>
-                <Button type="button" variant="outline" className="rounded-full" onClick={() => setEditing(null)}>取消</Button>
-                <Button type="submit" className="rounded-full" disabled={saving}>{saving ? "保存中…" : "保存"}</Button>
-              </DialogFooter>
+                <Button type="button" variant="outline" size="lg" className="rounded-full" onClick={() => setEditing(null)}>取消</Button>
+                <Button type="submit" size="lg" className="rounded-full" disabled={saving}>{saving ? "保存中…" : "保存"}</Button>
+              </div>
             </form>
           )}
           </div>
