@@ -469,32 +469,60 @@ function ScreenContentEditor({
 
   return (
     <div className="space-y-2">
-      <div className="flex flex-wrap gap-1.5">
-        {QUICK_TYPES.map((c) => (
+      {/* Content library selector — pick any site page or section */}
+      <div className="space-y-1.5">
+        <label className="text-xs text-muted-foreground">内容来源（页面 / 板块）</label>
+        <select
+          className="h-8 rounded-md border border-input bg-background px-2 text-xs w-full"
+          value={
+            screen.current_content_type === "embed"
+              ? ((screen.current_content_payload as { url?: string } | null)?.url ?? "")
+              : ""
+          }
+          onChange={(e) => {
+            const path = e.target.value;
+            if (!path) return;
+            const match = ALL_LIBRARY_ENTRIES.find((it) => it.path === path);
+            onSet("embed", { url: path, title: match?.label ?? "" }, null);
+          }}
+        >
+          <option value="">— 选择页面或板块 —</option>
+          {CONTENT_LIBRARY.map((g) => (
+            <optgroup key={g.group} label={g.group}>
+              {g.items.map((it) => (
+                <option key={g.group + it.path + it.label} value={it.path}>
+                  {it.label}
+                </option>
+              ))}
+            </optgroup>
+          ))}
+        </select>
+        <div className="flex gap-1.5">
           <button
-            key={c.key + c.label}
             onClick={() => {
-              if (c.key === "playlist") {
-                const first = playlists[0];
-                if (!first) return alert("请先创建播放列表");
-                onSet("playlist", {}, first.id);
-              } else if (c.payload) {
-                onSet(c.key, c.payload, null);
-              } else {
-                onSet(c.key, { title, message, url }, null);
-              }
+              const first = playlists[0];
+              if (!first) return alert("请先创建播放列表");
+              onSet("playlist", {}, first.id);
             }}
             className={`text-xs px-2 py-1 rounded border transition ${
-              screen.current_content_type === c.key &&
-              (c.key !== "embed" ||
-                (screen.current_content_payload as { url?: string } | null)?.url === c.payload?.url)
+              screen.current_content_type === "playlist"
                 ? "bg-amber-200 border-amber-400 font-semibold"
                 : "bg-background border-border hover:bg-muted"
             }`}
           >
-            {c.label}
+            ▶ 播放列表
           </button>
-        ))}
+          <button
+            onClick={() => onSet("emergency", { title: "紧急通知", message: message || "请留意现场广播" }, null)}
+            className={`text-xs px-2 py-1 rounded border transition ${
+              screen.current_content_type === "emergency"
+                ? "bg-red-200 border-red-400 font-semibold"
+                : "bg-background border-border hover:bg-muted"
+            }`}
+          >
+            🚨 紧急广播
+          </button>
+        </div>
       </div>
 
       {screen.current_content_type === "playlist" && (
@@ -516,19 +544,19 @@ function ScreenContentEditor({
         onClick={() => setEditing((v) => !v)}
         className="text-xs underline text-muted-foreground"
       >
-        {editing ? "收起" : "编辑文字 / 链接 / 屏幕设置"}
+        {editing ? "收起" : "自定义链接 / 屏幕设置"}
       </button>
       {editing && (
         <div className="space-y-2 pt-1">
           <Input placeholder="标题" value={title} onChange={(e) => setTitle(e.target.value)} />
           <Textarea
-            placeholder="正文 / 描述"
+            placeholder="正文 / 紧急广播内容"
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             rows={2}
           />
           <Input
-            placeholder="链接 / 网页路径（如 /retreat 或 https://...）"
+            placeholder="自定义路径（如 /retreat#xxx 或 https://...）"
             value={url}
             onChange={(e) => setUrl(e.target.value)}
           />
@@ -537,7 +565,7 @@ function ScreenContentEditor({
               size="sm"
               onClick={() =>
                 onSet(
-                  screen.current_content_type,
+                  url ? "embed" : screen.current_content_type,
                   { title, message, url },
                   screen.playlist_id,
                 )
