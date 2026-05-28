@@ -232,10 +232,7 @@ function EditRegistrationPage() {
             className="bg-card border border-border/50 rounded-2xl p-5 sm:p-6 space-y-5 shadow-sm"
           >
             <div className="flex items-center justify-between gap-2 flex-wrap">
-              <div>
-                <h1 className="font-serif text-xl sm:text-2xl mb-1">2026 基督之家联合退修会</h1>
-                <p className="text-sm text-muted-foreground">编辑登记 · Edit Registration</p>
-              </div>
+              <p className="text-sm text-muted-foreground">编辑登记 · Edit Registration</p>
               {rows && rows.length > 1 && (
                 <Button type="button" variant="ghost" size="sm" onClick={() => setEditing(null)}>
                   ← 返回列表
