@@ -180,10 +180,7 @@ function EditRegistrationPage() {
         {/* 查询卡片 */}
         {!editing && (
           <div className="bg-card border border-border/50 rounded-2xl p-5 sm:p-6 space-y-4 shadow-sm">
-            <div>
-              <h1 className="font-serif text-xl sm:text-2xl mb-1">2026 基督之家联合退修会</h1>
-              <p className="text-sm text-muted-foreground">Lookup / Edit My Registration</p>
-            </div>
+            <p className="text-sm text-muted-foreground">Lookup / Edit My Registration</p>
             <div className="space-y-2">
               <Label>请输入登记时填写的电话号码</Label>
               <div className="flex flex-col sm:flex-row gap-2">
@@ -235,10 +232,7 @@ function EditRegistrationPage() {
             className="bg-card border border-border/50 rounded-2xl p-5 sm:p-6 space-y-5 shadow-sm"
           >
             <div className="flex items-center justify-between gap-2 flex-wrap">
-              <div>
-                <h1 className="font-serif text-xl sm:text-2xl mb-1">2026 基督之家联合退修会</h1>
-                <p className="text-sm text-muted-foreground">编辑登记 · Edit Registration</p>
-              </div>
+              <p className="text-sm text-muted-foreground">编辑登记 · Edit Registration</p>
               {rows && rows.length > 1 && (
                 <Button type="button" variant="ghost" size="sm" onClick={() => setEditing(null)}>
                   ← 返回列表
@@ -355,7 +349,7 @@ function EditRegistrationPage() {
           </form>
         )}
         </div>
-        <aside className="hidden lg:block order-2 lg:order-2 space-y-5 lg:sticky lg:top-24">
+        <aside className="order-2 lg:order-2 space-y-5 lg:sticky lg:top-24">
           <div className="bg-card border border-border/50 rounded-2xl p-6">
             <h2 className="font-serif text-2xl text-center leading-tight">2026 基督之家联合退修会</h2>
             <p className="text-center text-sm text-muted-foreground mt-1">
