@@ -104,7 +104,7 @@ function DisplayScreen() {
           .order("sort_order", { ascending: true }),
       ]);
       if (cancelled) return;
-      setPlaylist((pl as Playlist) ?? null);
+      setPlaylist((pl as unknown as Playlist) ?? null);
       setItems((it as PlaylistItem[]) ?? []);
       setPageIdx(0);
     })();
