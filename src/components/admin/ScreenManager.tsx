@@ -35,31 +35,57 @@ type PlaylistItem = {
   duration_seconds: number | null;
 };
 
-// Quick-pick content types shown on each screen card
-const QUICK_TYPES: { key: string; label: string; payload?: Record<string, unknown> }[] = [
-  { key: "embed", label: "扫码登记", payload: { url: "/register" } },
-  { key: "retreat", label: "退修会报名" },
-  { key: "meal", label: "用餐通知" },
-  { key: "announcement", label: "教会公告" },
-  { key: "emergency", label: "紧急广播" },
-  { key: "playlist", label: "播放列表" },
+// Content library — pages and named sections from the site that can be
+// played on a TV screen or added to a playlist. Add new entries here as
+// the site grows; no code changes needed elsewhere.
+const CONTENT_LIBRARY: { group: string; items: { label: string; path: string }[] }[] = [
+  {
+    group: "首页",
+    items: [
+      { label: "完整页面", path: "/" },
+      { label: "教会介绍", path: "/#about" },
+      { label: "聚会时间", path: "/#services" },
+      { label: "今日公告", path: "/#announcements" },
+    ],
+  },
+  {
+    group: "扫码登记",
+    items: [{ label: "整页", path: "/register" }],
+  },
+  {
+    group: "退修会",
+    items: [
+      { label: "完整页面", path: "/retreat" },
+      { label: "活动介绍", path: "/retreat#intro" },
+      { label: "报名二维码", path: "/retreat#register-qr" },
+      { label: "时间地点", path: "/retreat#info" },
+    ],
+  },
+  {
+    group: "主日学",
+    items: [
+      { label: "课程介绍 / 课表", path: "/sunday-schedule" },
+    ],
+  },
+  {
+    group: "事工 / 服侍",
+    items: [
+      { label: "儿童事工签到", path: "/sunday-checkin" },
+      { label: "事工申请", path: "/serve-apply" },
+    ],
+  },
+  {
+    group: "互动",
+    items: [
+      { label: "留言板", path: "/message-board" },
+      { label: "意见反馈", path: "/feedback" },
+    ],
+  },
 ];
 
-// Content library — pages and named sections that can be put into playlists
-const CONTENT_LIBRARY: { group: string; label: string; path: string }[] = [
-  { group: "首页", label: "首页（完整）", path: "/" },
-  { group: "首页", label: "首页 - 教会介绍", path: "/#about" },
-  { group: "首页", label: "首页 - 聚会时间", path: "/#services" },
-  { group: "首页", label: "首页 - 最新公告", path: "/#announcements" },
-  { group: "退修会", label: "退修会页面", path: "/retreat" },
-  { group: "退修会", label: "退修会 - 报名二维码", path: "/retreat#register-qr" },
-  { group: "退修会", label: "退修会 - 活动介绍", path: "/retreat#intro" },
-  { group: "登记", label: "扫码登记页面", path: "/register" },
-  { group: "事工", label: "主日学课表", path: "/sunday-schedule" },
-  { group: "事工", label: "儿童事工", path: "/sunday-checkin" },
-  { group: "互动", label: "留言板", path: "/message-board" },
-  { group: "互动", label: "意见反馈", path: "/feedback" },
-];
+const ALL_LIBRARY_ENTRIES = CONTENT_LIBRARY.flatMap((g) =>
+  g.items.map((it) => ({ ...it, group: g.group })),
+);
 
 function isOnline(lastSeen: string | null): boolean {
   if (!lastSeen) return false;
@@ -76,12 +102,16 @@ function timeAgo(ts: string | null): string {
 }
 
 function describeContent(s: Screen): string {
-  const q = QUICK_TYPES.find((t) => t.key === s.current_content_type);
+  const p = (s.current_content_payload ?? {}) as { url?: string; title?: string };
+  if (s.current_content_type === "playlist") return "播放列表";
+  if (s.current_content_type === "emergency") return "🚨 紧急广播";
   if (s.current_content_type === "embed") {
-    const url = (s.current_content_payload as { url?: string } | null)?.url ?? "";
+    const url = p.url ?? "";
+    const match = ALL_LIBRARY_ENTRIES.find((e) => e.path === url);
+    if (match) return `${match.group} · ${match.label}`;
     return `网页：${url || "未设置"}`;
   }
-  return q?.label ?? s.current_content_type;
+  return p.title || s.current_content_type;
 }
 
 export function ScreenManager() {
@@ -439,32 +469,60 @@ function ScreenContentEditor({
 
   return (
     <div className="space-y-2">
-      <div className="flex flex-wrap gap-1.5">
-        {QUICK_TYPES.map((c) => (
+      {/* Content library selector — pick any site page or section */}
+      <div className="space-y-1.5">
+        <label className="text-xs text-muted-foreground">内容来源（页面 / 板块）</label>
+        <select
+          className="h-8 rounded-md border border-input bg-background px-2 text-xs w-full"
+          value={
+            screen.current_content_type === "embed"
+              ? ((screen.current_content_payload as { url?: string } | null)?.url ?? "")
+              : ""
+          }
+          onChange={(e) => {
+            const path = e.target.value;
+            if (!path) return;
+            const match = ALL_LIBRARY_ENTRIES.find((it) => it.path === path);
+            onSet("embed", { url: path, title: match?.label ?? "" }, null);
+          }}
+        >
+          <option value="">— 选择页面或板块 —</option>
+          {CONTENT_LIBRARY.map((g) => (
+            <optgroup key={g.group} label={g.group}>
+              {g.items.map((it) => (
+                <option key={g.group + it.path + it.label} value={it.path}>
+                  {it.label}
+                </option>
+              ))}
+            </optgroup>
+          ))}
+        </select>
+        <div className="flex gap-1.5">
           <button
-            key={c.key + c.label}
             onClick={() => {
-              if (c.key === "playlist") {
-                const first = playlists[0];
-                if (!first) return alert("请先创建播放列表");
-                onSet("playlist", {}, first.id);
-              } else if (c.payload) {
-                onSet(c.key, c.payload, null);
-              } else {
-                onSet(c.key, { title, message, url }, null);
-              }
+              const first = playlists[0];
+              if (!first) return alert("请先创建播放列表");
+              onSet("playlist", {}, first.id);
             }}
             className={`text-xs px-2 py-1 rounded border transition ${
-              screen.current_content_type === c.key &&
-              (c.key !== "embed" ||
-                (screen.current_content_payload as { url?: string } | null)?.url === c.payload?.url)
+              screen.current_content_type === "playlist"
                 ? "bg-amber-200 border-amber-400 font-semibold"
                 : "bg-background border-border hover:bg-muted"
             }`}
           >
-            {c.label}
+            ▶ 播放列表
           </button>
-        ))}
+          <button
+            onClick={() => onSet("emergency", { title: "紧急通知", message: message || "请留意现场广播" }, null)}
+            className={`text-xs px-2 py-1 rounded border transition ${
+              screen.current_content_type === "emergency"
+                ? "bg-red-200 border-red-400 font-semibold"
+                : "bg-background border-border hover:bg-muted"
+            }`}
+          >
+            🚨 紧急广播
+          </button>
+        </div>
       </div>
 
       {screen.current_content_type === "playlist" && (
@@ -486,19 +544,19 @@ function ScreenContentEditor({
         onClick={() => setEditing((v) => !v)}
         className="text-xs underline text-muted-foreground"
       >
-        {editing ? "收起" : "编辑文字 / 链接 / 屏幕设置"}
+        {editing ? "收起" : "自定义链接 / 屏幕设置"}
       </button>
       {editing && (
         <div className="space-y-2 pt-1">
           <Input placeholder="标题" value={title} onChange={(e) => setTitle(e.target.value)} />
           <Textarea
-            placeholder="正文 / 描述"
+            placeholder="正文 / 紧急广播内容"
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             rows={2}
           />
           <Input
-            placeholder="链接 / 网页路径（如 /retreat 或 https://...）"
+            placeholder="自定义路径（如 /retreat#xxx 或 https://...）"
             value={url}
             onChange={(e) => setUrl(e.target.value)}
           />
@@ -507,7 +565,7 @@ function ScreenContentEditor({
               size="sm"
               onClick={() =>
                 onSet(
-                  screen.current_content_type,
+                  url ? "embed" : screen.current_content_type,
                   { title, message, url },
                   screen.playlist_id,
                 )
@@ -667,10 +725,14 @@ function PlaylistCard({
             onChange={(e) => setLibPick(e.target.value)}
           >
             <option value="">— 选择页面 / 板块 —</option>
-            {CONTENT_LIBRARY.map((e) => (
-              <option key={e.path + e.label} value={e.path + "|" + e.label}>
-                {e.group} · {e.label}
-              </option>
+            {CONTENT_LIBRARY.map((g) => (
+              <optgroup key={g.group} label={g.group}>
+                {g.items.map((it) => (
+                  <option key={g.group + it.path + it.label} value={it.path + "|" + it.label}>
+                    {it.label}
+                  </option>
+                ))}
+              </optgroup>
             ))}
           </select>
           <Button
