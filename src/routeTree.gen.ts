@@ -15,6 +15,7 @@ import { Route as SundayCheckinRouteImport } from './routes/sunday-checkin'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as ServeApplyRouteImport } from './routes/serve-apply'
 import { Route as RetreatRegisterRouteImport } from './routes/retreat-register'
+import { Route as RetreatEditRouteImport } from './routes/retreat-edit'
 import { Route as RetreatAdminRouteImport } from './routes/retreat-admin'
 import { Route as RetreatRouteImport } from './routes/retreat'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
@@ -29,7 +30,6 @@ import { Route as ChatRouteImport } from './routes/chat'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as TodayPublicTokenRouteImport } from './routes/today-public.$token'
-import { Route as RetreatRegisterEditRouteImport } from './routes/retreat-register.edit'
 import { Route as AdultCheckinKindRouteImport } from './routes/adult-checkin.$kind'
 
 const TodayPreviewRoute = TodayPreviewRouteImport.update({
@@ -60,6 +60,11 @@ const ServeApplyRoute = ServeApplyRouteImport.update({
 const RetreatRegisterRoute = RetreatRegisterRouteImport.update({
   id: '/retreat-register',
   path: '/retreat-register',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RetreatEditRoute = RetreatEditRouteImport.update({
+  id: '/retreat-edit',
+  path: '/retreat-edit',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RetreatAdminRoute = RetreatAdminRouteImport.update({
@@ -132,11 +137,6 @@ const TodayPublicTokenRoute = TodayPublicTokenRouteImport.update({
   path: '/today-public/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
-const RetreatRegisterEditRoute = RetreatRegisterEditRouteImport.update({
-  id: '/edit',
-  path: '/edit',
-  getParentRoute: () => RetreatRegisterRoute,
-} as any)
 const AdultCheckinKindRoute = AdultCheckinKindRouteImport.update({
   id: '/adult-checkin/$kind',
   path: '/adult-checkin/$kind',
@@ -157,14 +157,14 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/retreat': typeof RetreatRoute
   '/retreat-admin': typeof RetreatAdminRoute
-  '/retreat-register': typeof RetreatRegisterRouteWithChildren
+  '/retreat-edit': typeof RetreatEditRoute
+  '/retreat-register': typeof RetreatRegisterRoute
   '/serve-apply': typeof ServeApplyRoute
   '/signup': typeof SignupRoute
   '/sunday-checkin': typeof SundayCheckinRoute
   '/sunday-schedule': typeof SundayScheduleRoute
   '/today-preview': typeof TodayPreviewRoute
   '/adult-checkin/$kind': typeof AdultCheckinKindRoute
-  '/retreat-register/edit': typeof RetreatRegisterEditRoute
   '/today-public/$token': typeof TodayPublicTokenRoute
 }
 export interface FileRoutesByTo {
@@ -181,14 +181,14 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/retreat': typeof RetreatRoute
   '/retreat-admin': typeof RetreatAdminRoute
-  '/retreat-register': typeof RetreatRegisterRouteWithChildren
+  '/retreat-edit': typeof RetreatEditRoute
+  '/retreat-register': typeof RetreatRegisterRoute
   '/serve-apply': typeof ServeApplyRoute
   '/signup': typeof SignupRoute
   '/sunday-checkin': typeof SundayCheckinRoute
   '/sunday-schedule': typeof SundayScheduleRoute
   '/today-preview': typeof TodayPreviewRoute
   '/adult-checkin/$kind': typeof AdultCheckinKindRoute
-  '/retreat-register/edit': typeof RetreatRegisterEditRoute
   '/today-public/$token': typeof TodayPublicTokenRoute
 }
 export interface FileRoutesById {
@@ -206,14 +206,14 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/retreat': typeof RetreatRoute
   '/retreat-admin': typeof RetreatAdminRoute
-  '/retreat-register': typeof RetreatRegisterRouteWithChildren
+  '/retreat-edit': typeof RetreatEditRoute
+  '/retreat-register': typeof RetreatRegisterRoute
   '/serve-apply': typeof ServeApplyRoute
   '/signup': typeof SignupRoute
   '/sunday-checkin': typeof SundayCheckinRoute
   '/sunday-schedule': typeof SundayScheduleRoute
   '/today-preview': typeof TodayPreviewRoute
   '/adult-checkin/$kind': typeof AdultCheckinKindRoute
-  '/retreat-register/edit': typeof RetreatRegisterEditRoute
   '/today-public/$token': typeof TodayPublicTokenRoute
 }
 export interface FileRouteTypes {
@@ -232,6 +232,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/retreat'
     | '/retreat-admin'
+    | '/retreat-edit'
     | '/retreat-register'
     | '/serve-apply'
     | '/signup'
@@ -239,7 +240,6 @@ export interface FileRouteTypes {
     | '/sunday-schedule'
     | '/today-preview'
     | '/adult-checkin/$kind'
-    | '/retreat-register/edit'
     | '/today-public/$token'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -256,6 +256,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/retreat'
     | '/retreat-admin'
+    | '/retreat-edit'
     | '/retreat-register'
     | '/serve-apply'
     | '/signup'
@@ -263,7 +264,6 @@ export interface FileRouteTypes {
     | '/sunday-schedule'
     | '/today-preview'
     | '/adult-checkin/$kind'
-    | '/retreat-register/edit'
     | '/today-public/$token'
   id:
     | '__root__'
@@ -280,6 +280,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/retreat'
     | '/retreat-admin'
+    | '/retreat-edit'
     | '/retreat-register'
     | '/serve-apply'
     | '/signup'
@@ -287,7 +288,6 @@ export interface FileRouteTypes {
     | '/sunday-schedule'
     | '/today-preview'
     | '/adult-checkin/$kind'
-    | '/retreat-register/edit'
     | '/today-public/$token'
   fileRoutesById: FileRoutesById
 }
@@ -305,7 +305,8 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   RetreatRoute: typeof RetreatRoute
   RetreatAdminRoute: typeof RetreatAdminRoute
-  RetreatRegisterRoute: typeof RetreatRegisterRouteWithChildren
+  RetreatEditRoute: typeof RetreatEditRoute
+  RetreatRegisterRoute: typeof RetreatRegisterRoute
   ServeApplyRoute: typeof ServeApplyRoute
   SignupRoute: typeof SignupRoute
   SundayCheckinRoute: typeof SundayCheckinRoute
@@ -357,6 +358,13 @@ declare module '@tanstack/react-router' {
       path: '/retreat-register'
       fullPath: '/retreat-register'
       preLoaderRoute: typeof RetreatRegisterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/retreat-edit': {
+      id: '/retreat-edit'
+      path: '/retreat-edit'
+      fullPath: '/retreat-edit'
+      preLoaderRoute: typeof RetreatEditRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/retreat-admin': {
@@ -457,13 +465,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TodayPublicTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/retreat-register/edit': {
-      id: '/retreat-register/edit'
-      path: '/edit'
-      fullPath: '/retreat-register/edit'
-      preLoaderRoute: typeof RetreatRegisterEditRouteImport
-      parentRoute: typeof RetreatRegisterRoute
-    }
     '/adult-checkin/$kind': {
       id: '/adult-checkin/$kind'
       path: '/adult-checkin/$kind'
@@ -473,18 +474,6 @@ declare module '@tanstack/react-router' {
     }
   }
 }
-
-interface RetreatRegisterRouteChildren {
-  RetreatRegisterEditRoute: typeof RetreatRegisterEditRoute
-}
-
-const RetreatRegisterRouteChildren: RetreatRegisterRouteChildren = {
-  RetreatRegisterEditRoute: RetreatRegisterEditRoute,
-}
-
-const RetreatRegisterRouteWithChildren = RetreatRegisterRoute._addFileChildren(
-  RetreatRegisterRouteChildren,
-)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
@@ -500,7 +489,8 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   RetreatRoute: RetreatRoute,
   RetreatAdminRoute: RetreatAdminRoute,
-  RetreatRegisterRoute: RetreatRegisterRouteWithChildren,
+  RetreatEditRoute: RetreatEditRoute,
+  RetreatRegisterRoute: RetreatRegisterRoute,
   ServeApplyRoute: ServeApplyRoute,
   SignupRoute: SignupRoute,
   SundayCheckinRoute: SundayCheckinRoute,
