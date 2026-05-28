@@ -725,10 +725,14 @@ function PlaylistCard({
             onChange={(e) => setLibPick(e.target.value)}
           >
             <option value="">— 选择页面 / 板块 —</option>
-            {CONTENT_LIBRARY.map((e) => (
-              <option key={e.path + e.label} value={e.path + "|" + e.label}>
-                {e.group} · {e.label}
-              </option>
+            {CONTENT_LIBRARY.map((g) => (
+              <optgroup key={g.group} label={g.group}>
+                {g.items.map((it) => (
+                  <option key={g.group + it.path + it.label} value={it.path + "|" + it.label}>
+                    {it.label}
+                  </option>
+                ))}
+              </optgroup>
             ))}
           </select>
           <Button
