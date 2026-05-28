@@ -167,6 +167,116 @@ export type Database = {
         }
         Relationships: []
       }
+      display_playlist_items: {
+        Row: {
+          content_payload: Json
+          content_type: string
+          created_at: string
+          id: string
+          playlist_id: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          content_payload?: Json
+          content_type: string
+          created_at?: string
+          id?: string
+          playlist_id: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          content_payload?: Json
+          content_type?: string
+          created_at?: string
+          id?: string
+          playlist_id?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "display_playlist_items_playlist_id_fkey"
+            columns: ["playlist_id"]
+            isOneToOne: false
+            referencedRelation: "display_playlists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      display_playlists: {
+        Row: {
+          created_at: string
+          id: string
+          interval_seconds: number
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          interval_seconds?: number
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          interval_seconds?: number
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      display_screens: {
+        Row: {
+          created_at: string
+          current_content_payload: Json
+          current_content_type: string
+          id: string
+          is_active: boolean
+          last_seen_at: string | null
+          location: string | null
+          name: string
+          orientation: string
+          playlist_id: string | null
+          slug: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          current_content_payload?: Json
+          current_content_type?: string
+          id?: string
+          is_active?: boolean
+          last_seen_at?: string | null
+          location?: string | null
+          name: string
+          orientation?: string
+          playlist_id?: string | null
+          slug: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          current_content_payload?: Json
+          current_content_type?: string
+          id?: string
+          is_active?: boolean
+          last_seen_at?: string | null
+          location?: string | null
+          name?: string
+          orientation?: string
+          playlist_id?: string | null
+          slug?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       duty_personnel: {
         Row: {
           created_at: string
@@ -965,6 +1075,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      touch_display_screen: { Args: { _slug: string }; Returns: undefined }
     }
     Enums: {
       app_role: "admin" | "user" | "viewer" | "super_admin"

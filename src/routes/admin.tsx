@@ -18,6 +18,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { CalendarIcon, User } from "lucide-react";
 import { format } from "date-fns";
+import { ScreenManager } from "@/components/admin/ScreenManager";
 import { zhCN } from "date-fns/locale";
 import { listUsersWithRoles, setUserRole, deleteUser, createUserWithRole, updateUserWorkerName } from "@/lib/users.functions";
 import { updateRegistration } from "@/lib/registrations.functions";
@@ -2523,6 +2524,8 @@ function AdminPage() {
           </div>
         </section>
         )}
+
+        {mediaSubTab === "screen" && <ScreenManager />}
 
         {mediaSubTab === "ministry" && (
         <div className="grid lg:grid-cols-2 gap-6">

@@ -1,66 +1,93 @@
-## 实施计划（共 5 项）
+## Church Multi-Screen Digital Signage System
 
-### 1. 通讯录（控制面板顶部按钮）
-- 数据库：新建 `contacts` 表
-  - 字段：`name`(必填), `phone`, `wechat`, `email`, `address`, `fellowship`, `notes`
-  - RLS：仅管理员可读写（admin / super_admin）
-- 控制面板：在「基督三家主页」按钮**前面**新增「通讯录」按钮
-- 点击打开弹窗（Dialog）：
-  - 列表显示全部联系人，支持搜索（姓名/电话/团契）
-  - 「添加」按钮 → 弹出输入框（姓名 / 电话 / 微信 / 邮件 / 地址 / 团契 / 备注）
-  - 每行支持「编辑」「删除」
-  - 顶部：导入/导出 Excel（选配，保持一致风格）
+Build a realtime digital signage system under 影音播放 → 屏幕管理, supporting unlimited TV screens with instant content updates via Supabase Realtime.
 
-### 2. 轮值表设置增强
-当前「主日崇拜轮值表」「暑期主日学轮值表」的设置面板新增：
-- **更改名称**：可以重命名「主日崇拜轮值表」「暑期主日学轮值表」这两个标题（存到一个新增的 `app_settings` 键值表，例：`duty_sunday_title` / `duty_summer_title`，admin 可写、所有人可读）
-- **添加同工**：从设置面板直接添加值班人员（写入 `duty_personnel` 表），无需跳到别处
-- 显示页面读取新标题渲染
+### 1. Database (new tables)
 
-### 3. 儿童主日学板块
-- 数据库：复用现有 `sunday_class_schedule` 表，新增字段 `track`（text，可选）用于区分：
-  - `summer_adult` / `fall_adult` / `kids_spring_2026` / `kids_fall_2026`
-  - 或直接复用 `course_id` 指向新建的两门"课程"
-- 控制面板：在「秋季成人主日学」下方新增大区域「儿童主日学」
-  - 左右并排：
-    - 左：`2026年春季儿童主日学`
-    - 右：`2026 秋季儿童主日学`
-  - 每个区域内：表格 = **班级 / 老师 / 地点**
-  - 每个区域底部 4 个按钮：**添加同工 / 导出 Excel / 导入 Excel / 打印**
-  - 左右功能完全一致，仅数据 track 不同
+**`display_screens`** — registry of TVs
+- `id` uuid PK
+- `slug` text unique (e.g. `tv1`, `tv2`, `lobby-east`)
+- `name` text (e.g. "大堂电视 1")
+- `location` text (e.g. "Lobby")
+- `orientation` text default `'landscape'` (`landscape` | `portrait`)
+- `current_content_type` text — one of: `welcome`, `qrcode`, `worship`, `retreat`, `meal`, `announcement`, `emergency`, `playlist`
+- `current_content_payload` jsonb — content-type-specific (QR URL, message text, playlist id, etc.)
+- `playlist_id` uuid nullable → `display_playlists.id`
+- `last_seen_at` timestamptz
+- `is_active` boolean default true
+- `created_at`, `updated_at`
 
-### 4. 退修会登记页面 — 随行人
-- 在「备注」字段**上方**新增「+ 添加随行人」按钮
-- 点击后向下展开一个完整随行人区块（字段与主登记人一致：中文姓名 / 英文姓名 / 性别 / 电话 / 邮箱 / 教会 / 项目 / 主题 / 床位 / 巴士 等）
-- 最多 6 位随行人
-- 响应式：iPhone / iPad / PC / Android 都用 `space-y-*` + `grid grid-cols-1 md:grid-cols-2` 自适应（不固定宽度，避免屏幕受限）
-- 提交时：主登记人 + N 位随行人 → 一次性插入 N+1 条 `retreat_registrations` 记录，共享同一个 confirmation 号段
+**`display_playlists`** — named playlists
+- `id`, `name`, `interval_seconds` (default 10), `created_at`, `updated_at`
 
-### 5. Confirmation # 生成规则
-提交时根据是否有随行人决定编号格式（日期取美东时间 MMDD）：
-- **单人注册**：`MMDD-000-001`、`MMDD-000-002`（同一天每条单人独立递增）
-- **多人注册（一张单含随行人）**：
-  - 一组共用三字母段（`AAA`, `AAB`, … `ZZZ`，每天独立递增）
-  - 同一组内 001, 002, 003… 对应每位人员
-  - 例：`0525-AAA-001` / `0525-AAA-002` / `0525-AAA-003`
-- 实现方式：
-  - 在 `retreat_registrations` 提交服务函数中按 `MMDD` 查询当天已有编号，计算下一个段
-  - 用事务或先 SELECT 最大值再 INSERT（加唯一索引兜底避免并发冲突）
-  - 写入 `confirmation_no` 字段（已存在）
+**`display_playlist_items`** — ordered pages
+- `id`, `playlist_id` FK, `sort_order`, `content_type`, `content_payload` jsonb
 
----
+RLS:
+- Admins (admin / super_admin) full manage on all three
+- Anyone (anon + authenticated) `SELECT` (TV pages render publicly, no login)
+- TVs can `UPDATE last_seen_at` on `display_screens` — handled via a public RPC `touch_display_screen(slug text)` to avoid opening UPDATE to anon
 
-## 技术细节
-- 新建 migration：`contacts` 表 + RLS + `app_settings` 键值表 + `sunday_class_schedule` 加 `track` 字段
-- 新建 server function：`submitRetreatRegistration`（封装编号生成逻辑，避免客户端伪造）
-- 控制面板 `src/routes/admin.tsx` 新增三块 UI（通讯录按钮+弹窗 / 轮值表设置增强 / 儿童主日学板块）
-- 退修会 `src/routes/retreat-register.tsx` 改造表单结构 + 调用新服务函数
-- 所有列表导入/导出沿用现有 `xlsx` 工具风格
+GRANTs included per stack rules. Enable realtime publication on all three tables.
 
-## 确认点
-1. 通讯录是否需要 Excel 导入导出？（默认包含）
-2. 儿童主日学的"班级/老师/地点"是否需要再加日期列？（默认不加，按你描述"班级 老师 地点"三列）
-3. 轮值表"更改名称"是否两个表都允许自由命名？（默认允许）
-4. 随行人是否完整复制所有字段还是简化（只姓名+性别+床位+巴士）？（默认完整复制）
+### 2. TV display route — `/display/$slug`
 
-确认后我开始实施。
+Single dynamic route (replaces the need to hand-create tv1–tv5; works for unlimited screens).
+
+- Fetch screen by slug
+- Subscribe to Supabase Realtime (postgres_changes on `display_screens` filtered by id, and `display_playlist_items` filtered by playlist_id)
+- Render full-screen content based on `current_content_type`:
+  - **welcome**: church logo + welcome message
+  - **qrcode**: large QR (uses existing QR pattern)
+  - **worship**: pulls Sunday worship schedule
+  - **retreat**: retreat registration QR + info
+  - **meal**: meal notice from `meal_plans`
+  - **announcement**: custom text/title
+  - **emergency**: red full-screen alert with message
+  - **playlist**: rotates through items at `interval_seconds`
+- Heartbeat every 20s → calls `touch_display_screen(slug)` RPC to update `last_seen_at`
+- Supports landscape & portrait via `orientation` (CSS rotates or stacks layout)
+- No chrome/nav — pure full-screen black/yellow themed display
+
+`/display/tv1` … `/display/tv5` work out of the box once those slugs exist (seeded). New screens added via admin UI work immediately at `/display/{slug}`.
+
+### 3. Admin UI — 影音播放 → 屏幕管理 → 多屏管理
+
+Inside the existing `mediaSubTab === "screen"` tab (which currently holds 影音投影), add a sub-section "TV 屏幕管理":
+
+- Grid of screen cards showing:
+  - Name + location + slug
+  - Online indicator (green if `last_seen_at` within 60s, gray otherwise) + last seen
+  - Current content type badge
+  - Quick-pick buttons: 欢迎屏 / 二维码 / 主日崇拜 / 退修会 / 用餐通知 / 公告 / 紧急广播 / 播放列表
+  - "打开" link → `/display/{slug}` in new tab
+  - Edit name/location/orientation, delete
+- "+ 新增屏幕" button (slug, name, location, orientation)
+- Playlist editor section: create playlist, add/reorder/edit items, set interval
+- Emergency Broadcast button: pushes red alert to ALL screens at once
+- Announcement input: applies custom message to selected screens
+
+All changes write to DB; TVs receive updates instantly via Realtime.
+
+### 4. Files
+
+New:
+- `supabase/migrations/{ts}_display_signage.sql` — tables, GRANTs, RLS, realtime publication, `touch_display_screen` RPC, seed tv1–tv5
+- `src/routes/display.$slug.tsx` — public full-screen TV route
+- `src/components/admin/ScreenManager.tsx` — admin UI panel
+
+Modified:
+- `src/routes/admin.tsx` — mount `<ScreenManager />` inside the `screen` sub-tab (alongside existing 影音投影)
+
+### 5. Responsive / hardware
+
+- TV route uses `100vw × 100vh`, large font scale, no scrollbars
+- Portrait orientation: stacks vertically with larger text
+- Works on MacBook/Mac Mini browsers, iPad (touch-safe), HDMI-out TVs (no interactivity required on the display page)
+- Admin panel responsive (existing tailwind grid pattern)
+
+### Out of scope (can be added later)
+
+- Per-screen scheduling (time-based content rotation)
+- Image/video upload for custom announcements (current version uses text + existing data)
+- Authentication on TV displays (intentionally public; protected by obscure slug)
