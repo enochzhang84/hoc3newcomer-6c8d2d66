@@ -2524,6 +2524,8 @@ function AdminPage() {
         </section>
         )}
 
+        {mediaSubTab === "screen" && <ScreenManager />}
+
         {mediaSubTab === "ministry" && (
         <div className="grid lg:grid-cols-2 gap-6">
         {(["sunday","summer"] as const).map((kind) => {
