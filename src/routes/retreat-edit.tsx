@@ -23,7 +23,7 @@ import {
 } from "@/lib/retreat.functions";
 import logo from "@/assets/logo.png";
 
-export const Route = createFileRoute("/retreat-register/edit")({
+export const Route = createFileRoute("/retreat-edit")({
   component: EditRegistrationPage,
   head: () => ({
     meta: [

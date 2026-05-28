@@ -54,7 +54,7 @@ function RetreatPage() {
               <div className="mt-1 text-sm text-muted-foreground not-italic">— 哥林多后书 9:8</div>
             </blockquote>
             <div className="mt-8">
-              <Link to="/retreat-register/edit">
+              <Link to="/retreat-edit">
                 <Button
                   size="lg"
                   variant="outline"
@@ -78,7 +78,7 @@ function RetreatPage() {
               <Link to="/retreat-register">
                 <Button size="lg" className="rounded-full px-8">立即登记</Button>
               </Link>
-              <Link to="/retreat-register/edit">
+              <Link to="/retreat-edit">
                 <Button size="lg" variant="outline" className="rounded-full px-8">
                   修改注册信息
                 </Button>
