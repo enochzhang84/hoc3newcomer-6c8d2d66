@@ -75,11 +75,6 @@ function RetreatPage() {
               <Link to="/retreat-register">
                 <Button size="lg" className="rounded-full px-8">立即登记</Button>
               </Link>
-              <Link to="/retreat-edit">
-                <Button size="lg" variant="outline" className="rounded-full px-8">
-                  修改注册信息
-                </Button>
-              </Link>
             </div>
           </div>
         </div>
