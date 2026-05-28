@@ -234,6 +234,17 @@ function ContentRenderer({
   const subSize = portrait ? "text-3xl" : "text-4xl";
 
   switch (type) {
+    case "embed": {
+      const src = url || "/";
+      return (
+        <iframe
+          src={src}
+          title={title || src}
+          className="flex-1 w-full h-full border-0 bg-white"
+          allow="autoplay; fullscreen"
+        />
+      );
+    }
     case "welcome":
       return (
         <div className="flex-1 flex flex-col items-center justify-center text-center px-12 gap-8">
