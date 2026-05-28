@@ -316,6 +316,33 @@ function AdminPage() {
   const [kitchenDetailRow, setKitchenDetailRow] = useState<AttendanceRecord | null>(null);
   const [sundaySubTab, setSundaySubTab] = useState<string>("adult");
   const [welcomeSubTab, setWelcomeSubTab] = useState<string>("greet");
+  const [mediaSubTab, setMediaSubTab] = useState<string>("live");
+  const [youtubeUrl, setYoutubeUrl] = useState<string>(() => {
+    if (typeof window === "undefined") return "";
+    return window.localStorage.getItem("admin_youtube_live_url") || "";
+  });
+  const [youtubeUrlInput, setYoutubeUrlInput] = useState<string>(() => {
+    if (typeof window === "undefined") return "";
+    return window.localStorage.getItem("admin_youtube_live_url") || "";
+  });
+  const youtubeVideoId = (() => {
+    if (!youtubeUrl) return "";
+    try {
+      const u = new URL(youtubeUrl.trim());
+      const host = u.hostname.replace(/^www\./, "");
+      if (host === "youtu.be") return u.pathname.replace(/^\//, "").split("/")[0] || "";
+      if (host.endsWith("youtube.com")) {
+        if (u.searchParams.get("v")) return u.searchParams.get("v") || "";
+        const parts = u.pathname.split("/").filter(Boolean);
+        const idx = parts.findIndex((p) => p === "live" || p === "embed" || p === "shorts");
+        if (idx >= 0 && parts[idx + 1]) return parts[idx + 1];
+      }
+      return "";
+    } catch {
+      const m = youtubeUrl.match(/[?&]v=([a-zA-Z0-9_-]{6,})/);
+      return m ? m[1] : "";
+    }
+  })();
   // Event-meal (其他活动订餐计划) form state — shares meal_plans table via category='event'
   const [newEventMealDate, setNewEventMealDate] = useState<string>(format(new Date(), "yyyy-MM-dd"));
   const [newEventMealAttendees, setNewEventMealAttendees] = useState<string>("");
