@@ -355,7 +355,7 @@ function EditRegistrationPage() {
           </form>
         )}
         </div>
-        <aside className="order-2 lg:order-2 space-y-5 lg:sticky lg:top-24">
+        <aside className="hidden lg:block order-2 lg:order-2 space-y-5 lg:sticky lg:top-24">
           <div className="bg-card border border-border/50 rounded-2xl p-6">
             <h2 className="font-serif text-2xl text-center leading-tight">2026 基督之家联合退修会</h2>
             <p className="text-center text-sm text-muted-foreground mt-1">
