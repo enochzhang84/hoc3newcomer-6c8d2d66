@@ -246,7 +246,7 @@ function RetreatPage() {
 
       {/* 查看 / 编辑 / 删除 — 通过电话号码 */}
       <Dialog open={lookupOpen} onOpenChange={(o) => { if (!o) resetLookup(); else setLookupOpen(true); }}>
-        <DialogContent className="max-w-3xl w-[calc(100vw-1.5rem)] max-h-[92vh] overflow-y-auto bg-background p-0 sm:rounded-2xl border-border/60">
+        <DialogContent className="max-w-6xl w-[calc(100vw-1.5rem)] max-h-[92vh] overflow-y-auto bg-background p-0 sm:rounded-2xl border-border/60">
           <DialogHeader className="sr-only">
             <DialogTitle>查看 / 修改我的登记</DialogTitle>
           </DialogHeader>
@@ -320,9 +320,10 @@ function RetreatPage() {
           )}
 
           {editing && (
+            <div className="grid gap-5 lg:grid-cols-[1fr_320px]">
             <form
               onSubmit={(e) => { e.preventDefault(); handleSave(); }}
-              className="bg-card border border-border/50 rounded-2xl p-6 space-y-5"
+              className="bg-card border border-border/50 rounded-2xl p-6 space-y-5 order-2 lg:order-1"
             >
               <div>
                 <h1 className="font-serif text-2xl mb-1">2026 基督之家联合退修会</h1>
@@ -447,6 +448,33 @@ function RetreatPage() {
                 <Button type="submit" size="lg" className="rounded-full" disabled={saving}>{saving ? "保存中…" : "保存"}</Button>
               </div>
             </form>
+            <aside className="order-1 lg:order-2 space-y-5 lg:sticky lg:top-24 self-start">
+              <div className="bg-card border border-border/50 rounded-2xl p-6">
+                <h2 className="font-serif text-2xl text-center leading-tight">2026 基督之家联合退修会</h2>
+                <p className="text-center text-sm text-muted-foreground mt-1">
+                  The Home of Christ Church Joint Retreat Conference
+                </p>
+                <p className="text-center text-sm mt-2">报名表 · Registration Form</p>
+              </div>
+              <div className="bg-card border border-border/50 rounded-2xl p-6 grid sm:grid-cols-2 lg:grid-cols-1 gap-4 text-sm">
+                <div>
+                  <p className="font-medium mb-1">中文部</p>
+                  <p>主题：跨越—萬國萬代</p>
+                  <p>讲员：柏有成博士</p>
+                </div>
+                <div>
+                  <p className="font-medium mb-1">English Ministry</p>
+                  <p>Theme: —</p>
+                  <p>Speaker: Pastor</p>
+                </div>
+              </div>
+              <div className="bg-card border border-border/50 rounded-2xl p-6 text-sm space-y-2">
+                <p className="font-medium">日期与地点 · Date &amp; Venue</p>
+                <p>7/24 Fri 1:00PM — 7/26 Sun 1:00PM</p>
+                <p>Sonoma State University<br/>1801 E. Cotati Ave., Rohnert Park, CA 94928</p>
+              </div>
+            </aside>
+            </div>
           )}
           </div>
         </DialogContent>
