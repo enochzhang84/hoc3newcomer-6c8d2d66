@@ -236,17 +236,21 @@ function RetreatPage() {
 
       {/* 查看 / 编辑 / 删除 — 通过电话号码 */}
       <Dialog open={lookupOpen} onOpenChange={(o) => { if (!o) resetLookup(); else setLookupOpen(true); }}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-background p-0 sm:rounded-2xl">
-          <div className="border-b border-border/60 px-6 py-4 bg-card">
-          <DialogHeader>
-            <DialogTitle className="font-serif text-xl">查看 / 修改我的登记</DialogTitle>
+        <DialogContent className="max-w-2xl w-[calc(100vw-1.5rem)] max-h-[90vh] overflow-y-auto bg-background p-0 sm:rounded-2xl border-border/60">
+          <DialogHeader className="sr-only">
+            <DialogTitle>查看 / 修改我的登记</DialogTitle>
           </DialogHeader>
-          </div>
-          <div className="px-6 py-5">
+          <div className="px-4 sm:px-6 py-6">
 
           {!editing && (
             <div className="space-y-5">
-              <div className="bg-card border border-border/50 rounded-2xl p-5">
+              <div className="bg-card border border-border/50 rounded-2xl p-6 space-y-3">
+                <div>
+                  <h1 className="font-serif text-2xl mb-1">查看 / 修改我的登记</h1>
+                  <p className="text-sm text-muted-foreground">
+                    Lookup / Edit My Registration
+                  </p>
+                </div>
                 <Label>请输入登记时填写的电话号码</Label>
                 <div className="mt-2 flex gap-2">
                   <Input
@@ -303,6 +307,13 @@ function RetreatPage() {
               onSubmit={(e) => { e.preventDefault(); handleSave(); }}
               className="bg-card border border-border/50 rounded-2xl p-6 space-y-5"
             >
+              <div>
+                <h1 className="font-serif text-2xl mb-1">查看 / 修改我的登记</h1>
+                <p className="text-sm text-muted-foreground mb-2">
+                  Lookup / Edit My Registration
+                </p>
+              </div>
+
               <div>
                 <BiLabel cn="基督之家分堂" en="HOC Campus" />
                 <select
