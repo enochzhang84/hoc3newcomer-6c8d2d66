@@ -186,7 +186,7 @@ function RetreatPage() {
       </header>
 
       <main className="container mx-auto px-6 py-16">
-        <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-3 items-start max-w-6xl mx-auto">
+        <div className="grid gap-12 md:grid-cols-2 items-center max-w-5xl mx-auto">
           <div className="font-kaiti text-foreground">
             <h1 className="font-serif text-3xl md:text-4xl mb-2 leading-tight">
               欢迎你参加退修会
@@ -241,46 +241,6 @@ function RetreatPage() {
               </Button>
             </div>
           </div>
-
-          {/* Conference Information — 显示在 QR 图片板块的右边 */}
-          <section className="bg-card border border-border/50 rounded-2xl p-6 space-y-4 md:col-span-2 lg:col-span-1">
-            <div>
-              <h2 className="font-serif text-2xl mb-1">2026 基督之家联合退修会</h2>
-              <p className="text-sm text-muted-foreground">
-                The Home of Christ Church Joint Retreat Conference
-              </p>
-            </div>
-            <div className="space-y-3">
-              <div className="rounded-xl border border-border/50 bg-muted/20 p-4 space-y-1">
-                <p className="font-medium text-sm">聚会名称 · Conference Name</p>
-                <p className="text-sm text-foreground/90">2026 基督之家联合退修会</p>
-                <p className="text-xs text-muted-foreground">The Home of Christ Church Joint Retreat Conference</p>
-              </div>
-              <div className="rounded-xl border border-border/50 bg-muted/20 p-4 space-y-1">
-                <p className="font-medium text-sm">聚会简介 · Introduction</p>
-                <p className="text-sm text-foreground/90">主题：跨越—萬國萬代</p>
-                <p className="text-xs text-muted-foreground">讲员：柏有成博士</p>
-              </div>
-              <div className="rounded-xl border border-border/50 bg-muted/20 p-4 space-y-1">
-                <p className="font-medium text-sm">时间 · Date &amp; Time</p>
-                <p className="text-sm text-foreground/90">7/24 Fri 1:00PM — 7/26 Sun 1:00PM</p>
-                <p className="text-xs text-muted-foreground">2026年7月24日（五）— 7月26日（日）</p>
-              </div>
-              <div className="rounded-xl border border-border/50 bg-muted/20 p-4 space-y-1">
-                <p className="font-medium text-sm">地点 · Venue</p>
-                <p className="text-sm text-foreground/90">Sonoma State University</p>
-                <p className="text-xs text-muted-foreground">1801 E. Cotati Ave., Rohnert Park, CA 94928</p>
-              </div>
-              <div className="rounded-xl border border-border/50 bg-muted/20 p-4 space-y-1">
-                <p className="font-medium text-sm">注意事项 · Important Notes</p>
-                <ul className="list-disc list-inside space-y-1 text-xs text-muted-foreground">
-                  <li>报名费用：未满 4 岁免费;4–11 岁 $110/$180;12 岁以上必需占床位。</li>
-                  <li>报名截止:6/30/2026,先到先得,额满即止。</li>
-                  <li>携带:圣经、漱洗用具、衣物、常用药品、睡袋(不占床位儿童)。</li>
-                </ul>
-              </div>
-            </div>
-          </section>
         </div>
       </main>
 

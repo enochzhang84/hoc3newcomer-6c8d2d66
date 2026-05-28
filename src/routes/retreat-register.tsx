@@ -293,50 +293,7 @@ function RetreatRegisterPage() {
       </header>
       <main className="container mx-auto px-6 py-10">
         <div className="grid gap-8 lg:grid-cols-2 items-start max-w-6xl mx-auto">
-          <div className="order-1 lg:order-1 space-y-6">
-            {/* Conference Information Section */}
-            <section className="bg-card border border-border/50 rounded-2xl p-6 space-y-5">
-              <div className="text-center">
-                <h2 className="font-serif text-2xl mb-1">2026 基督之家联合退修会</h2>
-                <p className="text-sm text-muted-foreground">
-                  The Home of Christ Church Joint Retreat Conference
-                </p>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="rounded-xl border border-border/50 bg-muted/20 p-4 space-y-2">
-                  <p className="font-medium text-sm">聚会名称 · Conference Name</p>
-                  <p className="text-sm text-foreground/90">2026 基督之家联合退修会</p>
-                  <p className="text-xs text-muted-foreground">The Home of Christ Church Joint Retreat Conference</p>
-                </div>
-                <div className="rounded-xl border border-border/50 bg-muted/20 p-4 space-y-2">
-                  <p className="font-medium text-sm">聚会简介 · Introduction</p>
-                  <p className="text-sm text-foreground/90">主题：跨越—萬國萬代</p>
-                  <p className="text-xs text-muted-foreground">中文部讲员：柏有成博士</p>
-                  <p className="text-xs text-muted-foreground">English Ministry Speaker: Pastor</p>
-                </div>
-                <div className="rounded-xl border border-border/50 bg-muted/20 p-4 space-y-2">
-                  <p className="font-medium text-sm">时间 · Date &amp; Time</p>
-                  <p className="text-sm text-foreground/90">7/24 Fri 1:00PM — 7/26 Sun 1:00PM</p>
-                  <p className="text-xs text-muted-foreground">2026年7月24日（五）— 7月26日（日）</p>
-                </div>
-                <div className="rounded-xl border border-border/50 bg-muted/20 p-4 space-y-2">
-                  <p className="font-medium text-sm">地点 · Venue</p>
-                  <p className="text-sm text-foreground/90">Sonoma State University</p>
-                  <p className="text-xs text-muted-foreground">1801 E. Cotati Ave., Rohnert Park, CA 94928</p>
-                </div>
-                <div className="rounded-xl border border-border/50 bg-muted/20 p-4 space-y-2 sm:col-span-2">
-                  <p className="font-medium text-sm">注意事项 · Important Notes</p>
-                  <ul className="list-disc list-inside space-y-1 text-xs text-muted-foreground">
-                    <li>报名费用：2026/7/15 前，未满 4 岁免费；4–11 岁不占床位 $110，占床位 $180；12 岁以上必需占床位。预估每人 $308。</li>
-                    <li>报名截止：6/30/2026，先到先得，额满即止。</li>
-                    <li>保险规定：未满 18 岁父母未同行者，请填 Medical &amp; Liability Release Form。</li>
-                    <li>携带物品：圣经、笔、漱洗用具、日用衣物、常用药品、游泳衣、手电筒、运动器材等。SSU 提供寝具，不占床位的儿童请自备睡袋。</li>
-                  </ul>
-                </div>
-              </div>
-            </section>
-
-            <form onSubmit={handleSubmit} className="bg-card border border-border/50 rounded-2xl p-6 space-y-5">
+        <form onSubmit={handleSubmit} className="bg-card border border-border/50 rounded-2xl p-6 space-y-5 order-1 lg:order-1">
           <h1 className="font-serif text-2xl mb-1">2026 基督之家联合退修会</h1>
           <p className="text-sm text-muted-foreground mb-2">
             The Home of Christ Church Joint Retreat — Registration Form
@@ -411,7 +368,6 @@ function RetreatRegisterPage() {
             {submitting ? "提交中…" : `提交登记 · Submit (${1 + companions.length} 人)`}
           </Button>
         </form>
-        </div>
         <aside className="order-2 lg:order-2 space-y-5 lg:sticky lg:top-6">
           {/* 1 — 标题 */}
           <div className="bg-card border border-border/50 rounded-2xl p-6">
