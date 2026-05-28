@@ -316,6 +316,33 @@ function AdminPage() {
   const [kitchenDetailRow, setKitchenDetailRow] = useState<AttendanceRecord | null>(null);
   const [sundaySubTab, setSundaySubTab] = useState<string>("adult");
   const [welcomeSubTab, setWelcomeSubTab] = useState<string>("greet");
+  const [mediaSubTab, setMediaSubTab] = useState<string>("live");
+  const [youtubeUrl, setYoutubeUrl] = useState<string>(() => {
+    if (typeof window === "undefined") return "";
+    return window.localStorage.getItem("admin_youtube_live_url") || "";
+  });
+  const [youtubeUrlInput, setYoutubeUrlInput] = useState<string>(() => {
+    if (typeof window === "undefined") return "";
+    return window.localStorage.getItem("admin_youtube_live_url") || "";
+  });
+  const youtubeVideoId = (() => {
+    if (!youtubeUrl) return "";
+    try {
+      const u = new URL(youtubeUrl.trim());
+      const host = u.hostname.replace(/^www\./, "");
+      if (host === "youtu.be") return u.pathname.replace(/^\//, "").split("/")[0] || "";
+      if (host.endsWith("youtube.com")) {
+        if (u.searchParams.get("v")) return u.searchParams.get("v") || "";
+        const parts = u.pathname.split("/").filter(Boolean);
+        const idx = parts.findIndex((p) => p === "live" || p === "embed" || p === "shorts");
+        if (idx >= 0 && parts[idx + 1]) return parts[idx + 1];
+      }
+      return "";
+    } catch {
+      const m = youtubeUrl.match(/[?&]v=([a-zA-Z0-9_-]{6,})/);
+      return m ? m[1] : "";
+    }
+  })();
   // Event-meal (其他活动订餐计划) form state — shares meal_plans table via category='event'
   const [newEventMealDate, setNewEventMealDate] = useState<string>(format(new Date(), "yyyy-MM-dd"));
   const [newEventMealAttendees, setNewEventMealAttendees] = useState<string>("");
@@ -2370,6 +2397,117 @@ function AdminPage() {
             </TabsContent>
 
             <TabsContent value="media" className="space-y-8 mt-0">
+        {/* Chrome-style sub-tabs — 4 equal columns */}
+        <div className="grid grid-cols-4 items-end gap-1 border-b border-border/60 px-2 pt-1 -mb-2">
+          {[
+            { v: "live", label: "聚会直播" },
+            { v: "screen", label: "屏幕管理" },
+            { v: "ministry", label: "事工服侍" },
+            { v: "messages", label: "留言板" },
+          ].map((t) => {
+            const active = mediaSubTab === t.v;
+            return (
+              <button
+                key={t.v}
+                onClick={() => setMediaSubTab(t.v)}
+                className={cn(
+                  "w-full text-center px-2 sm:px-4 py-2 text-xs sm:text-sm rounded-t-xl border border-b-0 transition-all truncate",
+                  active
+                    ? "bg-card text-foreground border-border shadow-sm font-medium relative -mb-px"
+                    : "bg-muted/40 text-muted-foreground border-transparent hover:bg-muted/70"
+                )}
+              >
+                {t.label}
+              </button>
+            );
+          })}
+        </div>
+
+        {mediaSubTab === "live" && (
+          <section className="bg-card border border-border/50 rounded-2xl p-6 space-y-5">
+            <h2 className="font-serif text-xl">聚会直播 · YouTube 直播监视器</h2>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <Input
+                value={youtubeUrlInput}
+                onChange={(e) => setYoutubeUrlInput(e.target.value)}
+                placeholder="粘贴 YouTube 直播或视频地址（支持 watch?v=、youtu.be、/live/、/embed/）"
+                className="flex-1"
+              />
+              <div className="flex gap-2 flex-wrap">
+                <Button
+                  onClick={() => {
+                    const v = youtubeUrlInput.trim();
+                    setYoutubeUrl(v);
+                    if (typeof window !== "undefined") {
+                      window.localStorage.setItem("admin_youtube_live_url", v);
+                    }
+                    if (v) toast.success("已加载直播地址"); else toast.message("已清空地址");
+                  }}
+                >
+                  加载直播
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    const el = document.getElementById("yt-live-iframe") as HTMLIFrameElement | null;
+                    if (el?.requestFullscreen) el.requestFullscreen();
+                    else toast.error("当前浏览器不支持全屏");
+                  }}
+                >
+                  全屏监看
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    const el = document.getElementById("yt-live-iframe") as HTMLIFrameElement | null;
+                    if (el) el.src = el.src;
+                  }}
+                >
+                  刷新画面
+                </Button>
+                <Button
+                  variant="ghost"
+                  onClick={() => {
+                    setYoutubeUrlInput("");
+                    setYoutubeUrl("");
+                    if (typeof window !== "undefined") {
+                      window.localStorage.removeItem("admin_youtube_live_url");
+                    }
+                    toast.message("已清空地址");
+                  }}
+                >
+                  清空地址
+                </Button>
+              </div>
+            </div>
+
+            {youtubeVideoId ? (
+              <div className="w-full overflow-hidden rounded-xl border border-border/50 bg-black">
+                <div className="relative w-full" style={{ paddingTop: "56.25%" }}>
+                  <iframe
+                    id="yt-live-iframe"
+                    src={`https://www.youtube.com/embed/${youtubeVideoId}?autoplay=1`}
+                    title="YouTube 直播监视器"
+                    className="absolute inset-0 w-full h-full"
+                    style={{ minHeight: 320 }}
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    allowFullScreen
+                  />
+                </div>
+              </div>
+            ) : (
+              <div className="rounded-xl border border-border/50 bg-[#f5f0e8] p-8 text-center text-foreground/80">
+                请粘贴 YouTube 直播地址，开始监看聚会直播。
+              </div>
+            )}
+
+            <p className="text-sm text-muted-foreground break-all">
+              当前保存的直播地址：{youtubeUrl || "（未设置）"}
+            </p>
+          </section>
+        )}
+
+        {mediaSubTab === "screen" && (
         <section className="bg-card border border-border/50 rounded-2xl p-6">
           <h2 className="font-serif text-xl mb-4">影音投影</h2>
           <div className="grid sm:grid-cols-2 gap-4">
@@ -2382,37 +2520,11 @@ function AdminPage() {
                 今日登记名单
               </Button>
             </div>
-            <div
-              onDoubleClick={() => {
-                markMessagesSeen();
-                window.open("/message-board", "_blank");
-              }}
-              title="双击打开留言板"
-              className="relative border border-border/50 rounded-xl p-4 flex flex-col items-start gap-3 cursor-pointer hover:border-primary/60 transition-colors select-none"
-            >
-              {messagesCount > 0 && (
-                <span
-                  className="absolute -top-2 -right-2 min-w-[22px] h-[22px] px-1.5 rounded-full bg-red-500 text-white text-xs font-semibold flex items-center justify-center shadow-md ring-2 ring-background"
-                  title={`${messagesCount} 条留言`}
-                >
-                  {messagesCount > 99 ? "99+" : messagesCount}
-                </span>
-              )}
-              <p className="text-sm text-muted-foreground">留言板(双击打开新页面编辑)</p>
-              <Button
-                variant="outline"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  markMessagesSeen();
-                  window.open("/message-board", "_blank");
-                }}
-              >
-                打开留言板
-              </Button>
-            </div>
           </div>
         </section>
+        )}
 
+        {mediaSubTab === "ministry" && (
         <div className="grid lg:grid-cols-2 gap-6">
         {(["sunday","summer"] as const).map((kind) => {
           const settingKey = kind === "sunday" ? "duty_sunday_title" : "duty_summer_title";
@@ -2605,6 +2717,43 @@ function AdminPage() {
           );
         })}
         </div>
+        )}
+
+        {mediaSubTab === "messages" && (
+          <section className="bg-card border border-border/50 rounded-2xl p-6">
+            <h2 className="font-serif text-xl mb-4">留言板</h2>
+            <div className="grid sm:grid-cols-2 gap-4">
+              <div
+                onDoubleClick={() => {
+                  markMessagesSeen();
+                  window.open("/message-board", "_blank");
+                }}
+                title="双击打开留言板"
+                className="relative border border-border/50 rounded-xl p-4 flex flex-col items-start gap-3 cursor-pointer hover:border-primary/60 transition-colors select-none"
+              >
+                {messagesCount > 0 && (
+                  <span
+                    className="absolute -top-2 -right-2 min-w-[22px] h-[22px] px-1.5 rounded-full bg-red-500 text-white text-xs font-semibold flex items-center justify-center shadow-md ring-2 ring-background"
+                    title={`${messagesCount} 条留言`}
+                  >
+                    {messagesCount > 99 ? "99+" : messagesCount}
+                  </span>
+                )}
+                <p className="text-sm text-muted-foreground">留言板(双击打开新页面编辑)</p>
+                <Button
+                  variant="outline"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    markMessagesSeen();
+                    window.open("/message-board", "_blank");
+                  }}
+                >
+                  打开留言板
+                </Button>
+              </div>
+            </div>
+          </section>
+        )}
             </TabsContent>
 
             <TabsContent value="kitchen" className="space-y-8 mt-0">
