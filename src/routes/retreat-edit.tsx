@@ -174,7 +174,9 @@ function EditRegistrationPage() {
         </div>
       </header>
 
-      <main className="container mx-auto px-4 sm:px-6 py-6 sm:py-10 max-w-3xl space-y-6">
+      <main className="container mx-auto px-4 sm:px-6 py-6 sm:py-10 max-w-6xl">
+        <div className="grid gap-6 lg:grid-cols-[1fr_320px] items-start">
+        <div className="space-y-6 order-1 lg:order-1">
         {/* 查询卡片 */}
         {!editing && (
           <div className="bg-card border border-border/50 rounded-2xl p-5 sm:p-6 space-y-4 shadow-sm">
