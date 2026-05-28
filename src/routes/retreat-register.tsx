@@ -411,6 +411,7 @@ function RetreatRegisterPage() {
             {submitting ? "提交中…" : `提交登记 · Submit (${1 + companions.length} 人)`}
           </Button>
         </form>
+        </div>
         <aside className="order-2 lg:order-2 space-y-5 lg:sticky lg:top-6">
           {/* 1 — 标题 */}
           <div className="bg-card border border-border/50 rounded-2xl p-6">
