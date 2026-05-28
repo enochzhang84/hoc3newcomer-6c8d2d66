@@ -207,6 +207,16 @@ function RetreatPage() {
               「神能将各样的恩惠多多地加给你们，使你们凡事常常充足，能多行各样善事。」
               <div className="mt-1 text-sm text-muted-foreground not-italic">— 哥林多后书 9:8</div>
             </blockquote>
+            <div className="mt-8">
+              <Button
+                size="lg"
+                variant="outline"
+                className="rounded-full px-8 border-primary/40 text-foreground"
+                onClick={() => setLookupOpen(true)}
+              >
+                修改注册信息 / Edit Registration
+              </Button>
+            </div>
           </div>
 
           <div className="flex flex-col items-center">
@@ -227,7 +237,7 @@ function RetreatPage() {
                 className="rounded-full px-8"
                 onClick={() => setLookupOpen(true)}
               >
-                查看信息
+                修改注册信息
               </Button>
             </div>
           </div>
