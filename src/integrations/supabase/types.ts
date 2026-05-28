@@ -172,6 +172,7 @@ export type Database = {
           content_payload: Json
           content_type: string
           created_at: string
+          duration_seconds: number | null
           id: string
           playlist_id: string
           sort_order: number
@@ -181,6 +182,7 @@ export type Database = {
           content_payload?: Json
           content_type: string
           created_at?: string
+          duration_seconds?: number | null
           id?: string
           playlist_id: string
           sort_order?: number
@@ -190,6 +192,7 @@ export type Database = {
           content_payload?: Json
           content_type?: string
           created_at?: string
+          duration_seconds?: number | null
           id?: string
           playlist_id?: string
           sort_order?: number
@@ -210,6 +213,7 @@ export type Database = {
           created_at: string
           id: string
           interval_seconds: number
+          loop_enabled: boolean
           name: string
           updated_at: string
         }
@@ -217,6 +221,7 @@ export type Database = {
           created_at?: string
           id?: string
           interval_seconds?: number
+          loop_enabled?: boolean
           name: string
           updated_at?: string
         }
@@ -224,6 +229,7 @@ export type Database = {
           created_at?: string
           id?: string
           interval_seconds?: number
+          loop_enabled?: boolean
           name?: string
           updated_at?: string
         }

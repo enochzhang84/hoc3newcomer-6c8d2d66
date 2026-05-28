@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,24 +19,46 @@ type Screen = {
   sort_order: number;
 };
 
-type Playlist = { id: string; name: string; interval_seconds: number };
+type Playlist = {
+  id: string;
+  name: string;
+  interval_seconds: number;
+  loop_enabled: boolean;
+};
+
 type PlaylistItem = {
   id: string;
   playlist_id: string;
   sort_order: number;
   content_type: string;
   content_payload: Record<string, unknown> | null;
+  duration_seconds: number | null;
 };
 
-const CONTENT_TYPES: { key: string; label: string }[] = [
-  { key: "welcome", label: "欢迎屏" },
-  { key: "qrcode", label: "二维码" },
-  { key: "worship", label: "主日崇拜" },
+// Quick-pick content types shown on each screen card
+const QUICK_TYPES: { key: string; label: string; payload?: Record<string, unknown> }[] = [
+  { key: "embed", label: "扫码登记", payload: { url: "/register" } },
   { key: "retreat", label: "退修会报名" },
   { key: "meal", label: "用餐通知" },
   { key: "announcement", label: "教会公告" },
   { key: "emergency", label: "紧急广播" },
   { key: "playlist", label: "播放列表" },
+];
+
+// Content library — pages and named sections that can be put into playlists
+const CONTENT_LIBRARY: { group: string; label: string; path: string }[] = [
+  { group: "首页", label: "首页（完整）", path: "/" },
+  { group: "首页", label: "首页 - 教会介绍", path: "/#about" },
+  { group: "首页", label: "首页 - 聚会时间", path: "/#services" },
+  { group: "首页", label: "首页 - 最新公告", path: "/#announcements" },
+  { group: "退修会", label: "退修会页面", path: "/retreat" },
+  { group: "退修会", label: "退修会 - 报名二维码", path: "/retreat#register-qr" },
+  { group: "退修会", label: "退修会 - 活动介绍", path: "/retreat#intro" },
+  { group: "登记", label: "扫码登记页面", path: "/register" },
+  { group: "事工", label: "主日学课表", path: "/sunday-schedule" },
+  { group: "事工", label: "儿童事工", path: "/sunday-checkin" },
+  { group: "互动", label: "留言板", path: "/message-board" },
+  { group: "互动", label: "意见反馈", path: "/feedback" },
 ];
 
 function isOnline(lastSeen: string | null): boolean {
@@ -53,13 +75,21 @@ function timeAgo(ts: string | null): string {
   return `${Math.floor(sec / 86400)}天前`;
 }
 
+function describeContent(s: Screen): string {
+  const q = QUICK_TYPES.find((t) => t.key === s.current_content_type);
+  if (s.current_content_type === "embed") {
+    const url = (s.current_content_payload as { url?: string } | null)?.url ?? "";
+    return `网页：${url || "未设置"}`;
+  }
+  return q?.label ?? s.current_content_type;
+}
+
 export function ScreenManager() {
   const [screens, setScreens] = useState<Screen[]>([]);
   const [playlists, setPlaylists] = useState<Playlist[]>([]);
   const [items, setItems] = useState<PlaylistItem[]>([]);
   const [, setTick] = useState(0);
 
-  // Re-render every 15s to refresh "online" badge
   useEffect(() => {
     const t = setInterval(() => setTick((x) => x + 1), 15_000);
     return () => clearInterval(t);
@@ -89,9 +119,11 @@ export function ScreenManager() {
     };
   }, []);
 
-  // ---------- screen actions ----------
   const updateScreen = async (id: string, patch: Partial<Screen>) => {
-    const { error } = await supabase.from("display_screens" as never).update(patch as never).eq("id", id);
+    const { error } = await supabase
+      .from("display_screens" as never)
+      .update(patch as never)
+      .eq("id", id);
     if (error) toast.error(error.message);
     else toast.success("已更新");
   };
@@ -110,7 +142,12 @@ export function ScreenManager() {
   };
 
   const [showNew, setShowNew] = useState(false);
-  const [draft, setDraft] = useState({ slug: "", name: "", location: "", orientation: "landscape" });
+  const [draft, setDraft] = useState({
+    slug: "",
+    name: "",
+    location: "",
+    orientation: "landscape",
+  });
   const createScreen = async () => {
     if (!draft.slug || !draft.name) return toast.error("请填写 slug 和名称");
     const { error } = await supabase
@@ -128,7 +165,7 @@ export function ScreenManager() {
     if (error) toast.error(error.message);
   };
 
-  // ---------- emergency broadcast ----------
+  // Emergency
   const [emergencyMsg, setEmergencyMsg] = useState("");
   const broadcastEmergency = async () => {
     if (!emergencyMsg.trim()) return toast.error("请输入紧急通知内容");
@@ -144,25 +181,7 @@ export function ScreenManager() {
     else toast.success("已广播");
   };
 
-  // ---------- announcement push ----------
-  const [annTitle, setAnnTitle] = useState("");
-  const [annMessage, setAnnMessage] = useState("");
-  const [annTargets, setAnnTargets] = useState<Record<string, boolean>>({});
-  const pushAnnouncement = async () => {
-    const ids = Object.keys(annTargets).filter((id) => annTargets[id]);
-    if (ids.length === 0) return toast.error("请选择目标屏幕");
-    const { error } = await supabase
-      .from("display_screens" as never)
-      .update({
-        current_content_type: "announcement",
-        current_content_payload: { title: annTitle, message: annMessage },
-      } as never)
-      .in("id", ids);
-    if (error) toast.error(error.message);
-    else toast.success(`已推送到 ${ids.length} 块屏幕`);
-  };
-
-  // ---------- playlists ----------
+  // Playlists
   const [newPlName, setNewPlName] = useState("");
   const [newPlInterval, setNewPlInterval] = useState(10);
   const createPlaylist = async () => {
@@ -184,17 +203,28 @@ export function ScreenManager() {
     if (error) toast.error(error.message);
   };
 
-  const addPlaylistItem = async (playlistId: string, content_type: string) => {
+  const addLibraryItem = async (
+    playlistId: string,
+    entry: { label: string; path: string },
+  ) => {
     const cur = items.filter((it) => it.playlist_id === playlistId);
     const sort = (cur[cur.length - 1]?.sort_order ?? 0) + 10;
-    const { error } = await supabase
-      .from("display_playlist_items" as never)
-      .insert([{ playlist_id: playlistId, sort_order: sort, content_type, content_payload: {} } as never]);
+    const { error } = await supabase.from("display_playlist_items" as never).insert([
+      {
+        playlist_id: playlistId,
+        sort_order: sort,
+        content_type: "embed",
+        content_payload: { url: entry.path, title: entry.label },
+      } as never,
+    ]);
     if (error) toast.error(error.message);
   };
 
   const updatePlaylistItem = async (id: string, patch: Partial<PlaylistItem>) => {
-    const { error } = await supabase.from("display_playlist_items" as never).update(patch as never).eq("id", id);
+    const { error } = await supabase
+      .from("display_playlist_items" as never)
+      .update(patch as never)
+      .eq("id", id);
     if (error) toast.error(error.message);
   };
 
@@ -203,31 +233,50 @@ export function ScreenManager() {
     if (error) toast.error(error.message);
   };
 
+  const moveItem = async (id: string, dir: -1 | 1) => {
+    const list = items
+      .filter((it) => it.playlist_id === items.find((x) => x.id === id)?.playlist_id)
+      .sort((a, b) => a.sort_order - b.sort_order);
+    const idx = list.findIndex((it) => it.id === id);
+    const nb = list[idx + dir];
+    if (!nb) return;
+    await Promise.all([
+      updatePlaylistItem(id, { sort_order: nb.sort_order }),
+      updatePlaylistItem(nb.id, { sort_order: list[idx].sort_order }),
+    ]);
+  };
+
   const updatePlaylist = async (id: string, patch: Partial<Playlist>) => {
-    const { error } = await supabase.from("display_playlists" as never).update(patch as never).eq("id", id);
+    const { error } = await supabase
+      .from("display_playlists" as never)
+      .update(patch as never)
+      .eq("id", id);
     if (error) toast.error(error.message);
   };
 
   return (
     <section className="bg-card border border-border/50 rounded-2xl p-6 space-y-8">
       <div className="flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <h2 className="font-serif text-xl">TV 屏幕管理（多屏数字标牌）</h2>
-          <p className="text-sm text-muted-foreground mt-1">
-            访问地址：<code className="bg-muted px-1 rounded">/display/&lt;slug&gt;</code>　·　实时推送，无需刷新
-          </p>
-        </div>
-        <Button onClick={() => setShowNew((v) => !v)}>{showNew ? "取消" : "+ 新增屏幕"}</Button>
+        <h2 className="font-serif text-xl">TV 屏幕管理（多屏数字标牌）</h2>
+        <Button onClick={() => setShowNew((v) => !v)}>
+          {showNew ? "取消" : "+ 新增屏幕"}
+        </Button>
       </div>
 
       {showNew && (
         <div className="grid sm:grid-cols-4 gap-3 border border-border/50 rounded-xl p-4 bg-muted/30">
           <Input
-            placeholder="slug (如 tv6 / lobby-east)"
+            placeholder="标识 (如 lobby / front-door)"
             value={draft.slug}
-            onChange={(e) => setDraft({ ...draft, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "") })}
+            onChange={(e) =>
+              setDraft({ ...draft, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "") })
+            }
           />
-          <Input placeholder="名称" value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} />
+          <Input
+            placeholder="名称"
+            value={draft.name}
+            onChange={(e) => setDraft({ ...draft, name: e.target.value })}
+          />
           <Input
             placeholder="位置"
             value={draft.location}
@@ -252,7 +301,10 @@ export function ScreenManager() {
         {screens.map((s) => {
           const online = isOnline(s.last_seen_at);
           return (
-            <div key={s.id} className="border border-border/50 rounded-xl p-4 flex flex-col gap-3 bg-background">
+            <div
+              key={s.id}
+              className="border border-border/50 rounded-xl p-4 flex flex-col gap-3 bg-background"
+            >
               <div className="flex items-start justify-between gap-2">
                 <div>
                   <div className="font-semibold flex items-center gap-2">
@@ -264,19 +316,24 @@ export function ScreenManager() {
                     {s.name}
                   </div>
                   <div className="text-xs text-muted-foreground mt-0.5">
-                    /{s.slug} · {s.location || "—"} · {s.orientation === "portrait" ? "竖屏" : "横屏"}
+                    {s.location || "—"} · {s.orientation === "portrait" ? "竖屏" : "横屏"}
                   </div>
                   <div className="text-xs text-muted-foreground mt-0.5">
                     {online ? "在线" : "离线"} · 最后在线 {timeAgo(s.last_seen_at)}
                   </div>
                   <div className="text-xs mt-1">
-                    当前：<span className="px-2 py-0.5 rounded bg-amber-100 text-amber-900">
-                      {CONTENT_TYPES.find((c) => c.key === s.current_content_type)?.label || s.current_content_type}
+                    当前：
+                    <span className="px-2 py-0.5 rounded bg-amber-100 text-amber-900">
+                      {describeContent(s)}
                     </span>
                   </div>
                 </div>
                 <div className="flex flex-col gap-1">
-                  <Button size="sm" variant="outline" onClick={() => window.open(`/display/${s.slug}`, "_blank")}>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => window.open(`/display/${s.slug}`, "_blank")}
+                  >
                     打开
                   </Button>
                   <Button size="sm" variant="ghost" onClick={() => deleteScreen(s.id)}>
@@ -312,38 +369,13 @@ export function ScreenManager() {
         </div>
       </div>
 
-      {/* Announcement push */}
-      <div className="border border-border/50 rounded-xl p-4 space-y-3">
-        <h3 className="font-semibold">推送教会公告</h3>
-        <Input placeholder="标题" value={annTitle} onChange={(e) => setAnnTitle(e.target.value)} />
-        <Textarea
-          placeholder="公告内容"
-          rows={3}
-          value={annMessage}
-          onChange={(e) => setAnnMessage(e.target.value)}
-        />
-        <div className="flex flex-wrap gap-2">
-          {screens.map((s) => (
-            <label key={s.id} className="inline-flex items-center gap-1 text-sm">
-              <input
-                type="checkbox"
-                checked={!!annTargets[s.id]}
-                onChange={(e) => setAnnTargets({ ...annTargets, [s.id]: e.target.checked })}
-              />
-              {s.name}
-            </label>
-          ))}
-        </div>
-        <Button onClick={pushAnnouncement}>推送到选中屏幕</Button>
-      </div>
-
       {/* Playlists */}
       <div className="border border-border/50 rounded-xl p-4 space-y-4">
-        <h3 className="font-semibold">播放列表（自动轮播）</h3>
+        <h3 className="font-semibold">播放列表（自动轮播 · 任意页面/板块）</h3>
         <div className="flex flex-wrap gap-2 items-center">
           <Input
             className="max-w-xs"
-            placeholder="新播放列表名称"
+            placeholder="新播放列表名称（如：大厅、前门、饭堂）"
             value={newPlName}
             onChange={(e) => setNewPlName(e.target.value)}
           />
@@ -354,19 +386,23 @@ export function ScreenManager() {
             value={newPlInterval}
             onChange={(e) => setNewPlInterval(Number(e.target.value) || 10)}
           />
-          <span className="text-sm text-muted-foreground">秒/页</span>
+          <span className="text-sm text-muted-foreground">默认秒/页</span>
           <Button onClick={createPlaylist}>创建</Button>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-4">
+        <div className="grid lg:grid-cols-2 gap-4">
           {playlists.map((pl) => (
             <PlaylistCard
               key={pl.id}
               playlist={pl}
-              items={items.filter((i) => i.playlist_id === pl.id)}
-              onAdd={(type) => addPlaylistItem(pl.id, type)}
+              items={items
+                .filter((i) => i.playlist_id === pl.id)
+                .sort((a, b) => a.sort_order - b.sort_order)}
+              onAddLibrary={(entry) => addLibraryItem(pl.id, entry)}
+              onAddCustom={(label, path) => addLibraryItem(pl.id, { label, path })}
               onUpdateItem={updatePlaylistItem}
               onDeleteItem={deletePlaylistItem}
+              onMoveItem={moveItem}
               onUpdate={(patch) => updatePlaylist(pl.id, patch)}
               onDelete={() => deletePlaylist(pl.id)}
             />
@@ -395,28 +431,33 @@ function ScreenContentEditor({
   const [editing, setEditing] = useState(false);
 
   useEffect(() => {
-    setTitle(((screen.current_content_payload ?? {}).title as string) ?? "");
-    setMessage(((screen.current_content_payload ?? {}).message as string) ?? "");
-    setUrl(((screen.current_content_payload ?? {}).url as string) ?? "");
+    const p = screen.current_content_payload ?? {};
+    setTitle((p.title as string) ?? "");
+    setMessage((p.message as string) ?? "");
+    setUrl((p.url as string) ?? "");
   }, [screen.id, screen.current_content_type, screen.current_content_payload]);
 
   return (
     <div className="space-y-2">
       <div className="flex flex-wrap gap-1.5">
-        {CONTENT_TYPES.map((c) => (
+        {QUICK_TYPES.map((c) => (
           <button
-            key={c.key}
+            key={c.key + c.label}
             onClick={() => {
               if (c.key === "playlist") {
                 const first = playlists[0];
                 if (!first) return alert("请先创建播放列表");
                 onSet("playlist", {}, first.id);
+              } else if (c.payload) {
+                onSet(c.key, c.payload, null);
               } else {
                 onSet(c.key, { title, message, url }, null);
               }
             }}
             className={`text-xs px-2 py-1 rounded border transition ${
-              screen.current_content_type === c.key
+              screen.current_content_type === c.key &&
+              (c.key !== "embed" ||
+                (screen.current_content_payload as { url?: string } | null)?.url === c.payload?.url)
                 ? "bg-amber-200 border-amber-400 font-semibold"
                 : "bg-background border-border hover:bg-muted"
             }`}
@@ -457,14 +498,20 @@ function ScreenContentEditor({
             rows={2}
           />
           <Input
-            placeholder="链接（用于二维码/退修会）"
+            placeholder="链接 / 网页路径（如 /retreat 或 https://...）"
             value={url}
             onChange={(e) => setUrl(e.target.value)}
           />
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Button
               size="sm"
-              onClick={() => onSet(screen.current_content_type, { title, message, url }, screen.playlist_id)}
+              onClick={() =>
+                onSet(
+                  screen.current_content_type,
+                  { title, message, url },
+                  screen.playlist_id,
+                )
+              }
             >
               保存内容
             </Button>
@@ -477,7 +524,7 @@ function ScreenContentEditor({
               <option value="portrait">竖屏</option>
             </select>
             <Input
-              className="h-8"
+              className="h-8 max-w-[160px]"
               value={screen.name}
               onChange={(e) => onSettings({ name: e.target.value })}
             />
@@ -491,26 +538,33 @@ function ScreenContentEditor({
 function PlaylistCard({
   playlist,
   items,
-  onAdd,
+  onAddLibrary,
+  onAddCustom,
   onUpdateItem,
   onDeleteItem,
+  onMoveItem,
   onUpdate,
   onDelete,
 }: {
   playlist: Playlist;
   items: PlaylistItem[];
-  onAdd: (type: string) => void;
+  onAddLibrary: (entry: { label: string; path: string }) => void;
+  onAddCustom: (label: string, path: string) => void;
   onUpdateItem: (id: string, patch: Partial<PlaylistItem>) => void;
   onDeleteItem: (id: string) => void;
+  onMoveItem: (id: string, dir: -1 | 1) => void;
   onUpdate: (patch: Partial<Playlist>) => void;
   onDelete: () => void;
 }) {
-  const [addType, setAddType] = useState("welcome");
+  const [libPick, setLibPick] = useState("");
+  const [customLabel, setCustomLabel] = useState("");
+  const [customPath, setCustomPath] = useState("");
+
   return (
     <div className="border border-border/50 rounded-xl p-3 bg-background space-y-2">
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <Input
-          className="h-8"
+          className="h-8 max-w-[180px]"
           value={playlist.name}
           onChange={(e) => onUpdate({ name: e.target.value })}
         />
@@ -518,77 +572,146 @@ function PlaylistCard({
           type="number"
           className="h-8 w-20"
           value={playlist.interval_seconds}
-          onChange={(e) => onUpdate({ interval_seconds: Number(e.target.value) || 10 })}
+          onChange={(e) =>
+            onUpdate({ interval_seconds: Number(e.target.value) || 10 })
+          }
         />
-        <span className="text-xs text-muted-foreground">秒</span>
-        <Button size="sm" variant="ghost" onClick={onDelete}>删除</Button>
+        <span className="text-xs text-muted-foreground">秒/页</span>
+        <label className="inline-flex items-center gap-1 text-xs">
+          <input
+            type="checkbox"
+            checked={playlist.loop_enabled}
+            onChange={(e) => onUpdate({ loop_enabled: e.target.checked })}
+          />
+          循环播放
+        </label>
+        <Button size="sm" variant="ghost" onClick={onDelete}>
+          删除
+        </Button>
       </div>
 
       <div className="space-y-1">
-        {items.length === 0 && <div className="text-xs text-muted-foreground">暂无页面</div>}
+        {items.length === 0 && (
+          <div className="text-xs text-muted-foreground">暂无内容。从下方"内容库"选择页面/板块加入。</div>
+        )}
         {items.map((it, idx) => {
-          const payload = it.content_payload ?? {};
+          const p = it.content_payload ?? {};
           return (
-            <div key={it.id} className="border border-border/40 rounded p-2 space-y-1">
-              <div className="flex items-center gap-2 text-xs">
-                <span className="font-mono">#{idx + 1}</span>
-                <select
-                  className="h-7 rounded border border-input bg-background px-1 text-xs"
-                  value={it.content_type}
-                  onChange={(e) => onUpdateItem(it.id, { content_type: e.target.value })}
+            <div
+              key={it.id}
+              className="border border-border/40 rounded p-2 grid grid-cols-[auto,1fr,auto,auto] items-center gap-2 text-xs"
+            >
+              <span className="font-mono text-muted-foreground">#{idx + 1}</span>
+              <Input
+                className="h-7 text-xs"
+                placeholder="标题"
+                defaultValue={(p.title as string) ?? ""}
+                onBlur={(e) =>
+                  onUpdateItem(it.id, {
+                    content_payload: { ...p, title: e.target.value },
+                  })
+                }
+              />
+              <Input
+                className="h-7 w-16 text-xs"
+                type="number"
+                placeholder="秒"
+                defaultValue={it.duration_seconds ?? ""}
+                onBlur={(e) =>
+                  onUpdateItem(it.id, {
+                    duration_seconds: e.target.value ? Number(e.target.value) : null,
+                  })
+                }
+              />
+              <div className="flex gap-1">
+                <button
+                  onClick={() => onMoveItem(it.id, -1)}
+                  className="px-1 text-muted-foreground hover:text-foreground"
                 >
-                  {CONTENT_TYPES.filter((c) => c.key !== "playlist").map((c) => (
-                    <option key={c.key} value={c.key}>{c.label}</option>
-                  ))}
-                </select>
+                  ↑
+                </button>
+                <button
+                  onClick={() => onMoveItem(it.id, 1)}
+                  className="px-1 text-muted-foreground hover:text-foreground"
+                >
+                  ↓
+                </button>
+                <button onClick={() => onDeleteItem(it.id)} className="text-red-600 px-1">
+                  ×
+                </button>
+              </div>
+              <div className="col-span-4">
                 <Input
-                  className="h-7 text-xs flex-1"
-                  placeholder="标题"
-                  defaultValue={(payload.title as string) ?? ""}
+                  className="h-7 text-xs"
+                  placeholder="页面路径"
+                  defaultValue={(p.url as string) ?? ""}
                   onBlur={(e) =>
                     onUpdateItem(it.id, {
-                      content_payload: { ...payload, title: e.target.value },
+                      content_payload: { ...p, url: e.target.value },
                     })
                   }
                 />
-                <button onClick={() => onDeleteItem(it.id)} className="text-red-600 text-xs">×</button>
               </div>
-              <Input
-                className="h-7 text-xs"
-                placeholder="正文"
-                defaultValue={(payload.message as string) ?? ""}
-                onBlur={(e) =>
-                  onUpdateItem(it.id, {
-                    content_payload: { ...payload, message: e.target.value },
-                  })
-                }
-              />
-              <Input
-                className="h-7 text-xs"
-                placeholder="链接（二维码/退修会）"
-                defaultValue={(payload.url as string) ?? ""}
-                onBlur={(e) =>
-                  onUpdateItem(it.id, {
-                    content_payload: { ...payload, url: e.target.value },
-                  })
-                }
-              />
             </div>
           );
         })}
       </div>
 
-      <div className="flex items-center gap-2">
-        <select
-          className="h-8 rounded border border-input bg-background px-2 text-sm"
-          value={addType}
-          onChange={(e) => setAddType(e.target.value)}
-        >
-          {CONTENT_TYPES.filter((c) => c.key !== "playlist").map((c) => (
-            <option key={c.key} value={c.key}>{c.label}</option>
-          ))}
-        </select>
-        <Button size="sm" variant="outline" onClick={() => onAdd(addType)}>+ 添加页面</Button>
+      {/* Content library picker */}
+      <div className="border-t border-border/40 pt-2 space-y-2">
+        <div className="text-xs font-semibold text-muted-foreground">内容库</div>
+        <div className="flex gap-2">
+          <select
+            className="h-8 rounded border border-input bg-background px-2 text-xs flex-1"
+            value={libPick}
+            onChange={(e) => setLibPick(e.target.value)}
+          >
+            <option value="">— 选择页面 / 板块 —</option>
+            {CONTENT_LIBRARY.map((e) => (
+              <option key={e.path + e.label} value={e.path + "|" + e.label}>
+                {e.group} · {e.label}
+              </option>
+            ))}
+          </select>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => {
+              if (!libPick) return;
+              const [path, label] = libPick.split("|");
+              onAddLibrary({ path, label });
+              setLibPick("");
+            }}
+          >
+            + 加入
+          </Button>
+        </div>
+        <div className="flex gap-2">
+          <Input
+            className="h-8 text-xs max-w-[140px]"
+            placeholder="自定义名称"
+            value={customLabel}
+            onChange={(e) => setCustomLabel(e.target.value)}
+          />
+          <Input
+            className="h-8 text-xs flex-1"
+            placeholder="自定义路径（如 /xxx#section）"
+            value={customPath}
+            onChange={(e) => setCustomPath(e.target.value)}
+          />
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => {
+              if (!customPath.trim()) return;
+              onAddCustom(customLabel || customPath, customPath.trim());
+              setCustomLabel("");
+              setCustomPath("");
+            }}
+          >
+            + 加入
+          </Button>
+        </div>
       </div>
     </div>
   );

@@ -24,12 +24,14 @@ type PlaylistItem = {
   sort_order: number;
   content_type: string;
   content_payload: Record<string, unknown> | null;
+  duration_seconds: number | null;
 };
 
 type Playlist = {
   id: string;
   name: string;
   interval_seconds: number;
+  loop_enabled: boolean;
 };
 
 function DisplayScreen() {
@@ -141,10 +143,18 @@ function DisplayScreen() {
   useEffect(() => {
     if (screen?.current_content_type !== "playlist") return;
     if (items.length <= 1) return;
-    const ms = Math.max(2, playlist?.interval_seconds ?? 10) * 1000;
-    const t = setInterval(() => setPageIdx((i) => (i + 1) % items.length), ms);
-    return () => clearInterval(t);
-  }, [screen?.current_content_type, items.length, playlist?.interval_seconds]);
+    const cur = items[pageIdx % items.length];
+    const sec = cur.duration_seconds ?? playlist?.interval_seconds ?? 10;
+    const ms = Math.max(2, sec) * 1000;
+    const t = setTimeout(() => {
+      setPageIdx((i) => {
+        const next = i + 1;
+        if (next >= items.length && playlist?.loop_enabled === false) return i;
+        return next % items.length;
+      });
+    }, ms);
+    return () => clearTimeout(t);
+  }, [screen?.current_content_type, items, pageIdx, playlist?.interval_seconds, playlist?.loop_enabled]);
 
   // Heartbeat
   useEffect(() => {
@@ -224,6 +234,17 @@ function ContentRenderer({
   const subSize = portrait ? "text-3xl" : "text-4xl";
 
   switch (type) {
+    case "embed": {
+      const src = url || "/";
+      return (
+        <iframe
+          src={src}
+          title={title || src}
+          className="flex-1 w-full h-full border-0 bg-white"
+          allow="autoplay; fullscreen"
+        />
+      );
+    }
     case "welcome":
       return (
         <div className="flex-1 flex flex-col items-center justify-center text-center px-12 gap-8">
