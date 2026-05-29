@@ -13,6 +13,7 @@ import { Route as TodayPreviewRouteImport } from './routes/today-preview'
 import { Route as SundayScheduleRouteImport } from './routes/sunday-schedule'
 import { Route as SundayCheckinRouteImport } from './routes/sunday-checkin'
 import { Route as SignupRouteImport } from './routes/signup'
+import { Route as SignageRouteImport } from './routes/signage'
 import { Route as ServeApplyRouteImport } from './routes/serve-apply'
 import { Route as RetreatRegisterRouteImport } from './routes/retreat-register'
 import { Route as RetreatEditRouteImport } from './routes/retreat-edit'
@@ -32,6 +33,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as TodayPublicTokenRouteImport } from './routes/today-public.$token'
 import { Route as DisplaySlugRouteImport } from './routes/display.$slug'
 import { Route as AdultCheckinKindRouteImport } from './routes/adult-checkin.$kind'
+import { Route as DisplayPosterIdRouteImport } from './routes/display.poster.$id'
 
 const TodayPreviewRoute = TodayPreviewRouteImport.update({
   id: '/today-preview',
@@ -51,6 +53,11 @@ const SundayCheckinRoute = SundayCheckinRouteImport.update({
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
   path: '/signup',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SignageRoute = SignageRouteImport.update({
+  id: '/signage',
+  path: '/signage',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ServeApplyRoute = ServeApplyRouteImport.update({
@@ -148,6 +155,11 @@ const AdultCheckinKindRoute = AdultCheckinKindRouteImport.update({
   path: '/adult-checkin/$kind',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DisplayPosterIdRoute = DisplayPosterIdRouteImport.update({
+  id: '/display/poster/$id',
+  path: '/display/poster/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -166,6 +178,7 @@ export interface FileRoutesByFullPath {
   '/retreat-edit': typeof RetreatEditRoute
   '/retreat-register': typeof RetreatRegisterRoute
   '/serve-apply': typeof ServeApplyRoute
+  '/signage': typeof SignageRoute
   '/signup': typeof SignupRoute
   '/sunday-checkin': typeof SundayCheckinRoute
   '/sunday-schedule': typeof SundayScheduleRoute
@@ -173,6 +186,7 @@ export interface FileRoutesByFullPath {
   '/adult-checkin/$kind': typeof AdultCheckinKindRoute
   '/display/$slug': typeof DisplaySlugRoute
   '/today-public/$token': typeof TodayPublicTokenRoute
+  '/display/poster/$id': typeof DisplayPosterIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -191,6 +205,7 @@ export interface FileRoutesByTo {
   '/retreat-edit': typeof RetreatEditRoute
   '/retreat-register': typeof RetreatRegisterRoute
   '/serve-apply': typeof ServeApplyRoute
+  '/signage': typeof SignageRoute
   '/signup': typeof SignupRoute
   '/sunday-checkin': typeof SundayCheckinRoute
   '/sunday-schedule': typeof SundayScheduleRoute
@@ -198,6 +213,7 @@ export interface FileRoutesByTo {
   '/adult-checkin/$kind': typeof AdultCheckinKindRoute
   '/display/$slug': typeof DisplaySlugRoute
   '/today-public/$token': typeof TodayPublicTokenRoute
+  '/display/poster/$id': typeof DisplayPosterIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -217,6 +233,7 @@ export interface FileRoutesById {
   '/retreat-edit': typeof RetreatEditRoute
   '/retreat-register': typeof RetreatRegisterRoute
   '/serve-apply': typeof ServeApplyRoute
+  '/signage': typeof SignageRoute
   '/signup': typeof SignupRoute
   '/sunday-checkin': typeof SundayCheckinRoute
   '/sunday-schedule': typeof SundayScheduleRoute
@@ -224,6 +241,7 @@ export interface FileRoutesById {
   '/adult-checkin/$kind': typeof AdultCheckinKindRoute
   '/display/$slug': typeof DisplaySlugRoute
   '/today-public/$token': typeof TodayPublicTokenRoute
+  '/display/poster/$id': typeof DisplayPosterIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -244,6 +262,7 @@ export interface FileRouteTypes {
     | '/retreat-edit'
     | '/retreat-register'
     | '/serve-apply'
+    | '/signage'
     | '/signup'
     | '/sunday-checkin'
     | '/sunday-schedule'
@@ -251,6 +270,7 @@ export interface FileRouteTypes {
     | '/adult-checkin/$kind'
     | '/display/$slug'
     | '/today-public/$token'
+    | '/display/poster/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -269,6 +289,7 @@ export interface FileRouteTypes {
     | '/retreat-edit'
     | '/retreat-register'
     | '/serve-apply'
+    | '/signage'
     | '/signup'
     | '/sunday-checkin'
     | '/sunday-schedule'
@@ -276,6 +297,7 @@ export interface FileRouteTypes {
     | '/adult-checkin/$kind'
     | '/display/$slug'
     | '/today-public/$token'
+    | '/display/poster/$id'
   id:
     | '__root__'
     | '/'
@@ -294,6 +316,7 @@ export interface FileRouteTypes {
     | '/retreat-edit'
     | '/retreat-register'
     | '/serve-apply'
+    | '/signage'
     | '/signup'
     | '/sunday-checkin'
     | '/sunday-schedule'
@@ -301,6 +324,7 @@ export interface FileRouteTypes {
     | '/adult-checkin/$kind'
     | '/display/$slug'
     | '/today-public/$token'
+    | '/display/poster/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -320,6 +344,7 @@ export interface RootRouteChildren {
   RetreatEditRoute: typeof RetreatEditRoute
   RetreatRegisterRoute: typeof RetreatRegisterRoute
   ServeApplyRoute: typeof ServeApplyRoute
+  SignageRoute: typeof SignageRoute
   SignupRoute: typeof SignupRoute
   SundayCheckinRoute: typeof SundayCheckinRoute
   SundayScheduleRoute: typeof SundayScheduleRoute
@@ -327,6 +352,7 @@ export interface RootRouteChildren {
   AdultCheckinKindRoute: typeof AdultCheckinKindRoute
   DisplaySlugRoute: typeof DisplaySlugRoute
   TodayPublicTokenRoute: typeof TodayPublicTokenRoute
+  DisplayPosterIdRoute: typeof DisplayPosterIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -357,6 +383,13 @@ declare module '@tanstack/react-router' {
       path: '/signup'
       fullPath: '/signup'
       preLoaderRoute: typeof SignupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/signage': {
+      id: '/signage'
+      path: '/signage'
+      fullPath: '/signage'
+      preLoaderRoute: typeof SignageRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/serve-apply': {
@@ -492,6 +525,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdultCheckinKindRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/display/poster/$id': {
+      id: '/display/poster/$id'
+      path: '/display/poster/$id'
+      fullPath: '/display/poster/$id'
+      preLoaderRoute: typeof DisplayPosterIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -512,6 +552,7 @@ const rootRouteChildren: RootRouteChildren = {
   RetreatEditRoute: RetreatEditRoute,
   RetreatRegisterRoute: RetreatRegisterRoute,
   ServeApplyRoute: ServeApplyRoute,
+  SignageRoute: SignageRoute,
   SignupRoute: SignupRoute,
   SundayCheckinRoute: SundayCheckinRoute,
   SundayScheduleRoute: SundayScheduleRoute,
@@ -519,7 +560,18 @@ const rootRouteChildren: RootRouteChildren = {
   AdultCheckinKindRoute: AdultCheckinKindRoute,
   DisplaySlugRoute: DisplaySlugRoute,
   TodayPublicTokenRoute: TodayPublicTokenRoute,
+  DisplayPosterIdRoute: DisplayPosterIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
