@@ -1733,6 +1733,10 @@ function AdminPage() {
             </Button>
           </div>
         </section>
+        )}
+
+        {statsSubTab === "sunday" && (
+        <>
         <section>
           <h2 className="font-serif text-xl mb-4">活动签到统计</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -1759,15 +1763,48 @@ function AdminPage() {
 
         {/* 儿童班级报名统计 */}
         <section>
-          <h2 className="font-serif text-xl mb-4">儿童班级报名统计</h2>
-          <KidsEnrollmentStats classes={kidsRows} snapshots={kidsSnapshots} />
+          <Collapsible open={kidsEnrollOpen} onOpenChange={setKidsEnrollOpen}>
+            <div className="flex items-center justify-between mb-3">
+              <CollapsibleTrigger className="flex items-center gap-2 font-serif text-xl hover:opacity-80">
+                <span>{kidsEnrollOpen ? "▼" : "▶"}</span>
+                <span>儿童班级报名统计</span>
+              </CollapsibleTrigger>
+              {!kidsEnrollOpen && (
+                <span className="text-xs text-muted-foreground">
+                  👦 {kidsRows.reduce((s, r: any) => s + (r.student_count ?? 0), 0)} 人 ·
+                  📚 {kidsRows.length} 班
+                </span>
+              )}
+            </div>
+            <CollapsibleContent>
+              <KidsEnrollmentStats classes={kidsRows} snapshots={kidsSnapshots} />
+            </CollapsibleContent>
+          </Collapsible>
         </section>
 
         {/* 主日学参与统计 */}
         <section>
-          <h2 className="font-serif text-xl mb-4">主日学参与统计</h2>
-          <SundayParticipationStats checkins={sundayCheckins} courses={courses} />
+          <Collapsible open={sundayParticipationOpen} onOpenChange={setSundayParticipationOpen}>
+            <div className="flex items-center justify-between mb-3">
+              <CollapsibleTrigger className="flex items-center gap-2 font-serif text-xl hover:opacity-80">
+                <span>{sundayParticipationOpen ? "▼" : "▶"}</span>
+                <span>课程统计</span>
+              </CollapsibleTrigger>
+              {!sundayParticipationOpen && (
+                <span className="text-xs text-muted-foreground">
+                  📚 {courses.length} 门课程 · 🙋 {sundayCheckins.length} 次签到
+                </span>
+              )}
+            </div>
+            <CollapsibleContent>
+              <SundayParticipationStats checkins={sundayCheckins} courses={courses} />
+            </CollapsibleContent>
+          </Collapsible>
         </section>
+        </>
+        )}
+
+        {statsSubTab === "meals" && (
         {/* 饭食统计 */}
         <section>
           <h2 className="font-serif text-xl mb-4">饭食统计</h2>
@@ -1830,6 +1867,35 @@ function AdminPage() {
             );
           })()}
         </section>
+        )}
+
+        {statsSubTab === "service" && (
+          <section className="bg-card border border-border/50 rounded-2xl p-10 text-center">
+            <div className="text-5xl mb-3">🙏</div>
+            <h2 className="font-serif text-xl mb-2">服侍统计</h2>
+            <p className="text-sm text-muted-foreground">
+              本年度参与服侍同工：<span className="font-semibold text-foreground">{ministryWorkerYearCount}</span> 人
+            </p>
+            <p className="text-xs text-muted-foreground mt-2">详细服侍统计模块敬请期待</p>
+          </section>
+        )}
+
+        {statsSubTab === "baptism" && (
+          <section className="bg-card border border-border/50 rounded-2xl p-10 text-center">
+            <div className="text-5xl mb-3">💧</div>
+            <h2 className="font-serif text-xl mb-2">决志与受洗统计</h2>
+            <p className="text-sm text-muted-foreground">该模块将在下一阶段上线（年度决志 / 受洗记录 / 转化率 / 历年趋势图）</p>
+          </section>
+        )}
+
+        {statsSubTab === "annual" && (
+          <section className="bg-card border border-border/50 rounded-2xl p-10 text-center">
+            <div className="text-5xl mb-3">📈</div>
+            <h2 className="font-serif text-xl mb-2">年度报告</h2>
+            <p className="text-sm text-muted-foreground">年度综合报告将在下一阶段上线</p>
+          </section>
+        )}
+
         {isSuperAdmin && (
         <section className="bg-card border border-border/50 rounded-2xl p-6">
           <div className="flex items-center justify-between mb-4">
