@@ -24,6 +24,7 @@ import { listUsersWithRoles, setUserRole, deleteUser, createUserWithRole, update
 import { updateRegistration } from "@/lib/registrations.functions";
 import { HospitalityCalendarSection } from "@/components/HospitalityCalendar";
 import { HospitalityRankingSection } from "@/components/HospitalityRanking";
+import { DutyCalendarSection } from "@/components/DutyCalendar";
 
 type Reg = {
   id: string;
