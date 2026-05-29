@@ -1898,6 +1898,12 @@ function AdminPage() {
 
         {statsSubTab === "baptism" && <DecisionBaptismPanel />}
 
+        <LongAbsenceDialog
+          open={absenceDialogOpen}
+          onOpenChange={setAbsenceDialogOpen}
+          checkins={fellowshipCheckins}
+        />
+
         {statsSubTab === "annual" && (
           <section className="bg-card border border-border/50 rounded-2xl p-10 text-center">
             <div className="text-5xl mb-3">📈</div>
