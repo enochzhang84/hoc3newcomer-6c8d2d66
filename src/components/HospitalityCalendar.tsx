@@ -199,7 +199,7 @@ export function HospitalityCalendarSection() {
       {/* Toolbar */}
       <div className="flex items-center justify-between gap-3 mb-5 flex-wrap print:hidden">
         <div className="flex items-center gap-2">
-          <h2 className="font-serif text-xl">迎宾接待 · 年度月历</h2>
+          <h2 className="font-serif text-xl">轮值表</h2>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           <Button size="sm" variant="outline" onClick={() => setYear((y) => y - 1)}>
