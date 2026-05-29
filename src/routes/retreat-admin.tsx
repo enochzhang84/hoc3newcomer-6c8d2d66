@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import * as XLSX from "xlsx";
 import logo from "@/assets/logo.png";
 import { pickVerse } from "./retreat-register";
+import { RetreatGroupEditor, type GroupMember } from "@/components/RetreatGroupEditor";
 
 export const Route = createFileRoute("/retreat-admin")({
   component: RetreatAdminPage,
@@ -89,7 +90,7 @@ function RetreatAdminPage() {
   const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState(emptyForm());
   const [editRow, setEditRow] = useState<Row | null>(null);
-  const [editSaving, setEditSaving] = useState(false);
+  const [editGroup, setEditGroup] = useState<GroupMember[] | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -221,33 +222,22 @@ function RetreatAdminPage() {
     load();
   }
 
-  async function saveEdit() {
-    if (!editRow) return;
-    setEditSaving(true);
-    const { error } = await supabase
-      .from("retreat_registrations")
-      .update({
-        church: editRow.church,
-        chinese_name: editRow.chinese_name,
-        last_name: editRow.last_name,
-        first_name: editRow.first_name,
-        gender: editRow.gender,
-        cell: editRow.cell,
-        email: editRow.email,
-        program: editRow.program,
-        topic: editRow.topic,
-        bed: editRow.bed,
-        can_pickup: editRow.can_pickup,
-        need_pickup: editRow.need_pickup,
-        user_notes: editRow.user_notes,
-        paid: editRow.paid,
-      })
-      .eq("id", editRow.id);
-    setEditSaving(false);
-    if (error) return toast.error(error.message);
-    toast.success("已保存");
-    setEditRow(null);
-    load();
+  async function openGroupEdit(r: Row) {
+    // Expand to all siblings in the same registration form
+    const conf = r.confirmation_no ?? "";
+    const parts = conf.split("-");
+    if (parts.length === 3 && parts[1] !== "000") {
+      const prefix = `${parts[0]}-${parts[1]}-`;
+      const { data, error } = await supabase
+        .from("retreat_registrations")
+        .select("*")
+        .like("confirmation_no", `${prefix}%`)
+        .order("confirmation_no", { ascending: true });
+      if (error) return toast.error(error.message);
+      setEditGroup((data ?? [r]) as GroupMember[]);
+    } else {
+      setEditGroup([r] as GroupMember[]);
+    }
   }
 
   return (
