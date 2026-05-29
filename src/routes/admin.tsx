@@ -994,11 +994,13 @@ function AdminPage() {
     setPage(1);
   }, [search, filterDate, statusFilter, dateFilterMode]);
 
-  // Online workers polling (5-min window, refreshed every 30s)
+  // Online workers — single source of truth: user_presence table
+  // 60s window aligned with 15s heartbeat. Realtime subscription so all
+  // devices show identical online status without manual refresh.
   useEffect(() => {
     let stopped = false;
     const load = async () => {
-      const since = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+      const since = new Date(Date.now() - 60 * 1000).toISOString();
       const { data } = await (supabase as any)
         .from("user_presence")
         .select("worker_name")
@@ -1012,8 +1014,20 @@ function AdminPage() {
       setOnlineWorkers(set);
     };
     load();
-    const t = setInterval(load, 30 * 1000);
-    return () => { stopped = true; clearInterval(t); };
+    const t = setInterval(load, 20 * 1000);
+    const ch = supabase
+      .channel("admin_user_presence_realtime")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "user_presence" },
+        () => load(),
+      )
+      .subscribe();
+    return () => {
+      stopped = true;
+      clearInterval(t);
+      supabase.removeChannel(ch);
+    };
   }, []);
 
   if (checking) return <div className="min-h-screen flex items-center justify-center text-muted-foreground">加载中...</div>;
@@ -1021,7 +1035,14 @@ function AdminPage() {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-4">
         <p className="text-muted-foreground">您的账号尚未审核，请联系管理员授权</p>
-        <Button onClick={async () => { await supabase.auth.signOut(); navigate({ to: "/login" }); }}>退出登录</Button>
+        <Button onClick={async () => {
+          try {
+            const { data } = await supabase.auth.getUser();
+            if (data.user) await (supabase as any).from("user_presence").delete().eq("user_id", data.user.id);
+          } catch {}
+          await supabase.auth.signOut();
+          navigate({ to: "/login" });
+        }}>退出登录</Button>
       </div>
     );
   }
@@ -1373,6 +1394,12 @@ function AdminPage() {
               variant="ghost"
               size="sm"
               onClick={async () => {
+                try {
+                  const { data } = await supabase.auth.getUser();
+                  if (data.user) {
+                    await (supabase as any).from("user_presence").delete().eq("user_id", data.user.id);
+                  }
+                } catch {}
                 await supabase.auth.signOut();
                 navigate({ to: "/login" });
               }}

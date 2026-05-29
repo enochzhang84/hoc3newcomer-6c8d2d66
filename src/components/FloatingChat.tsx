@@ -20,9 +20,12 @@ type WorkerOption = {
   display_name: string | null;
 };
 
-const HEARTBEAT_MS = 30 * 1000;
-const PRESENCE_REFRESH_MS = 30 * 1000;
-const PRESENCE_WINDOW_MS = 5 * 60 * 1000;
+// Single source of truth: user_presence table. All devices see the same
+// online list because everyone uses the same heartbeat + window + realtime
+// subscription. Heartbeat every 15s, considered offline after 60s.
+const HEARTBEAT_MS = 15 * 1000;
+const PRESENCE_REFRESH_MS = 20 * 1000;
+const PRESENCE_WINDOW_MS = 60 * 1000;
 const UNREAD_KEY = "floating_chat_last_read_at";
 
 export function FloatingChat() {
@@ -157,14 +160,47 @@ export function FloatingChat() {
         },
         { onConflict: "user_id" },
       );
+      if (!stopped) loadPresence();
     };
     heartbeat();
     const hb = setInterval(heartbeat, HEARTBEAT_MS);
+    // Best-effort: clear presence row on tab close / sign-out
+    const clearPresence = () => {
+      try {
+        (supabase as any).from("user_presence").delete().eq("user_id", userId);
+      } catch {}
+    };
+    const onBeforeUnload = () => clearPresence();
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") heartbeat();
+    };
+    window.addEventListener("beforeunload", onBeforeUnload);
+    window.addEventListener("pagehide", onBeforeUnload);
+    document.addEventListener("visibilitychange", onVisibility);
     return () => {
       stopped = true;
       clearInterval(hb);
+      window.removeEventListener("beforeunload", onBeforeUnload);
+      window.removeEventListener("pagehide", onBeforeUnload);
+      document.removeEventListener("visibilitychange", onVisibility);
     };
-  }, [userId, workerName, displayName]);
+  }, [userId, workerName, displayName, loadPresence]);
+
+  // Realtime subscription: every device updates the moment presence changes
+  useEffect(() => {
+    if (!userId) return;
+    const ch = supabase
+      .channel("user_presence_realtime")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "user_presence" },
+        () => loadPresence(),
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(ch);
+    };
+  }, [userId, loadPresence]);
 
   // Load messages on first open + subscribe realtime
   useEffect(() => {
