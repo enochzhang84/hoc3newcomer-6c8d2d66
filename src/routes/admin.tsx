@@ -2472,8 +2472,8 @@ function AdminPage() {
           {[
             { v: "live", label: "聚会直播" },
             { v: "screen", label: "屏幕管理" },
-            { v: "ministry", label: "事工服侍" },
-            { v: "messages", label: "留言板" },
+            { v: "ministry", label: "主日轮值" },
+            { v: "messages", label: "事工服侍" },
           ].map((t) => {
             const active = mediaSubTab === t.v;
             return (
