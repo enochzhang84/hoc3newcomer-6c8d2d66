@@ -31,6 +31,7 @@ import MealPlanCalendar from "@/components/MealPlanCalendar";
 import EventMealNotebook from "@/components/EventMealNotebook";
 import MinistryServiceCalendar from "@/components/MinistryServiceCalendar";
 import { DecisionBaptismPanel } from "@/components/admin/DecisionBaptismPanel";
+import { LongAbsenceDialog } from "@/components/admin/LongAbsenceDialog";
 
 type Reg = {
   id: string;
@@ -456,6 +457,7 @@ function AdminPage() {
   const [ministryWorkerYearCount, setMinistryWorkerYearCount] = useState<number>(0);
   const [baptismYearCount, setBaptismYearCount] = useState<number>(0);
   const [decisionYearCount, setDecisionYearCount] = useState<number>(0);
+  const [absenceDialogOpen, setAbsenceDialogOpen] = useState(false);
   // Adult class checkins (summer / fall)
   const [adultCheckins, setAdultCheckins] = useState<AdultCheckin[]>([]);
   const [adultSort, setAdultSort] = useState<Record<"summer" | "fall", { col: "name" | "fellowship" | "time"; dir: "asc" | "desc" }>>({
