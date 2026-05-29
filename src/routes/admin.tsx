@@ -3400,7 +3400,41 @@ img{width:480px;height:480px;}@media print{@page{margin:1cm;}}</style></head>
           <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
             <h2 className="font-serif text-xl">团契签到记录</h2>
             <div className="flex flex-wrap items-center gap-2">
-              <YearFilterPicker value={fellowshipYearFilter} onChange={setFellowshipYearFilter} />
+              <DateLevelPicker value={fellowshipFilter} onChange={setFellowshipFilter} />
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  const { year, month, day } = fellowshipFilter;
+                  const match = (d: string) => {
+                    if (!d) return false;
+                    if (d.slice(0, 4) !== String(year)) return false;
+                    if (month !== null && d.slice(5, 7) !== _pad2(month)) return false;
+                    if (day !== null && d.slice(8, 10) !== _pad2(day)) return false;
+                    return true;
+                  };
+                  const rows = fellowshipCheckins
+                    .filter((k) => match(k.checkin_date ?? ""))
+                    .map((k) => ({
+                      团契: k.fellowship,
+                      日期: k.checkin_date,
+                      姓名: k.name,
+                      "电话/微信": k.contact ?? "",
+                      邮件: k.email ?? "",
+                      代祷备注: k.prayer_request ?? "",
+                    }));
+                  if (rows.length === 0) { toast.error("当前范围无记录"); return; }
+                  const ws = XLSX.utils.json_to_sheet(rows);
+                  const wb = XLSX.utils.book_new();
+                  XLSX.utils.book_append_sheet(wb, ws, "团契签到");
+                  let suffix = String(year);
+                  if (month !== null) suffix += `-${_pad2(month)}`;
+                  if (day !== null) suffix += `-${_pad2(day)}`;
+                  XLSX.writeFile(wb, `团契签到记录_${suffix}.xlsx`);
+                }}
+              >
+                导出 Excel
+              </Button>
               <Button size="sm" variant="outline" onClick={() => loadFellowshipCheckins()}>
                 刷新
               </Button>
@@ -3416,8 +3450,15 @@ img{width:480px;height:480px;}@media print{@page{margin:1cm;}}</style></head>
             >
               <TabsList className="h-auto w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 bg-[#f5f0e8]/60 p-2 rounded-xl">
                 {fellowships.filter((f) => f.is_active).map((f) => {
+                  const matchDate = (d: string) => {
+                    if (!d) return false;
+                    if (d.slice(0, 4) !== String(fellowshipFilter.year)) return false;
+                    if (fellowshipFilter.month !== null && d.slice(5, 7) !== _pad2(fellowshipFilter.month)) return false;
+                    if (fellowshipFilter.day !== null && d.slice(8, 10) !== _pad2(fellowshipFilter.day)) return false;
+                    return true;
+                  };
                   const count = fellowshipCheckins.filter(
-                    (k) => k.fellowship === f.name && (k.checkin_date ?? "").slice(0, 4) === String(fellowshipYearFilter),
+                    (k) => k.fellowship === f.name && matchDate(k.checkin_date ?? ""),
                   ).length;
                   return (
                     <TabsTrigger
@@ -3432,8 +3473,15 @@ img{width:480px;height:480px;}@media print{@page{margin:1cm;}}</style></head>
                 })}
               </TabsList>
               {fellowships.filter((f) => f.is_active).map((f) => {
+                const matchDate = (d: string) => {
+                  if (!d) return false;
+                  if (d.slice(0, 4) !== String(fellowshipFilter.year)) return false;
+                  if (fellowshipFilter.month !== null && d.slice(5, 7) !== _pad2(fellowshipFilter.month)) return false;
+                  if (fellowshipFilter.day !== null && d.slice(8, 10) !== _pad2(fellowshipFilter.day)) return false;
+                  return true;
+                };
                 const rows = fellowshipCheckins.filter(
-                  (k) => k.fellowship === f.name && (k.checkin_date ?? "").slice(0, 4) === String(fellowshipYearFilter),
+                  (k) => k.fellowship === f.name && matchDate(k.checkin_date ?? ""),
                 );
                 const pg = fellowshipPages[f.id] ?? 1;
                 const totalPg = Math.max(1, Math.ceil(rows.length / TAB_PAGE_SIZE));
