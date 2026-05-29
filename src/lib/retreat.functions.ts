@@ -144,7 +144,8 @@ export const updateRetreatByPhone = createServerFn({ method: "POST" })
     }).parse(d)
   )
   .handler(async ({ data }) => {
-    await verifyOwnership(data.id, data.phone);
+    // Group-aware: phone may match any member of the same registration form.
+    await verifyGroupOwnership(data.id, data.phone);
     const { error } = await supabaseAdmin
       .from("retreat_registrations")
       .update(data.patch)
@@ -158,13 +159,13 @@ export const deleteRetreatByPhone = createServerFn({ method: "POST" })
     z.object({ id: z.string().uuid(), phone: phoneSchema }).parse(d)
   )
   .handler(async ({ data }) => {
-    await verifyOwnership(data.id, data.phone);
+    const groupRows = await verifyGroupOwnership(data.id, data.phone);
     const { error } = await supabaseAdmin
       .from("retreat_registrations")
       .delete()
       .eq("id", data.id);
     if (error) throw new Error(error.message);
-    return { success: true };
+    return { success: true, remaining: Math.max(0, groupRows.length - 1) };
   });
 
 function mmddInPacific(d = new Date()): string {
