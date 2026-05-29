@@ -17,6 +17,7 @@ import { Route as SignageRouteImport } from './routes/signage'
 import { Route as ServeApplyRouteImport } from './routes/serve-apply'
 import { Route as RetreatRegisterRouteImport } from './routes/retreat-register'
 import { Route as RetreatInfoRouteImport } from './routes/retreat-info'
+import { Route as RetreatHighlightsRouteImport } from './routes/retreat-highlights'
 import { Route as RetreatEditRouteImport } from './routes/retreat-edit'
 import { Route as RetreatAdminRouteImport } from './routes/retreat-admin'
 import { Route as RetreatRouteImport } from './routes/retreat'
@@ -74,6 +75,11 @@ const RetreatRegisterRoute = RetreatRegisterRouteImport.update({
 const RetreatInfoRoute = RetreatInfoRouteImport.update({
   id: '/retreat-info',
   path: '/retreat-info',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RetreatHighlightsRoute = RetreatHighlightsRouteImport.update({
+  id: '/retreat-highlights',
+  path: '/retreat-highlights',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RetreatEditRoute = RetreatEditRouteImport.update({
@@ -182,6 +188,7 @@ export interface FileRoutesByFullPath {
   '/retreat': typeof RetreatRoute
   '/retreat-admin': typeof RetreatAdminRoute
   '/retreat-edit': typeof RetreatEditRoute
+  '/retreat-highlights': typeof RetreatHighlightsRoute
   '/retreat-info': typeof RetreatInfoRoute
   '/retreat-register': typeof RetreatRegisterRoute
   '/serve-apply': typeof ServeApplyRoute
@@ -210,6 +217,7 @@ export interface FileRoutesByTo {
   '/retreat': typeof RetreatRoute
   '/retreat-admin': typeof RetreatAdminRoute
   '/retreat-edit': typeof RetreatEditRoute
+  '/retreat-highlights': typeof RetreatHighlightsRoute
   '/retreat-info': typeof RetreatInfoRoute
   '/retreat-register': typeof RetreatRegisterRoute
   '/serve-apply': typeof ServeApplyRoute
@@ -239,6 +247,7 @@ export interface FileRoutesById {
   '/retreat': typeof RetreatRoute
   '/retreat-admin': typeof RetreatAdminRoute
   '/retreat-edit': typeof RetreatEditRoute
+  '/retreat-highlights': typeof RetreatHighlightsRoute
   '/retreat-info': typeof RetreatInfoRoute
   '/retreat-register': typeof RetreatRegisterRoute
   '/serve-apply': typeof ServeApplyRoute
@@ -269,6 +278,7 @@ export interface FileRouteTypes {
     | '/retreat'
     | '/retreat-admin'
     | '/retreat-edit'
+    | '/retreat-highlights'
     | '/retreat-info'
     | '/retreat-register'
     | '/serve-apply'
@@ -297,6 +307,7 @@ export interface FileRouteTypes {
     | '/retreat'
     | '/retreat-admin'
     | '/retreat-edit'
+    | '/retreat-highlights'
     | '/retreat-info'
     | '/retreat-register'
     | '/serve-apply'
@@ -325,6 +336,7 @@ export interface FileRouteTypes {
     | '/retreat'
     | '/retreat-admin'
     | '/retreat-edit'
+    | '/retreat-highlights'
     | '/retreat-info'
     | '/retreat-register'
     | '/serve-apply'
@@ -354,6 +366,7 @@ export interface RootRouteChildren {
   RetreatRoute: typeof RetreatRoute
   RetreatAdminRoute: typeof RetreatAdminRoute
   RetreatEditRoute: typeof RetreatEditRoute
+  RetreatHighlightsRoute: typeof RetreatHighlightsRoute
   RetreatInfoRoute: typeof RetreatInfoRoute
   RetreatRegisterRoute: typeof RetreatRegisterRoute
   ServeApplyRoute: typeof ServeApplyRoute
@@ -424,6 +437,13 @@ declare module '@tanstack/react-router' {
       path: '/retreat-info'
       fullPath: '/retreat-info'
       preLoaderRoute: typeof RetreatInfoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/retreat-highlights': {
+      id: '/retreat-highlights'
+      path: '/retreat-highlights'
+      fullPath: '/retreat-highlights'
+      preLoaderRoute: typeof RetreatHighlightsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/retreat-edit': {
@@ -570,6 +590,7 @@ const rootRouteChildren: RootRouteChildren = {
   RetreatRoute: RetreatRoute,
   RetreatAdminRoute: RetreatAdminRoute,
   RetreatEditRoute: RetreatEditRoute,
+  RetreatHighlightsRoute: RetreatHighlightsRoute,
   RetreatInfoRoute: RetreatInfoRoute,
   RetreatRegisterRoute: RetreatRegisterRoute,
   ServeApplyRoute: ServeApplyRoute,
