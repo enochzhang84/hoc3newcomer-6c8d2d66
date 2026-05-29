@@ -1806,6 +1806,7 @@ function AdminPage() {
                 <span className="text-xs text-muted-foreground">
                   📚 {courses.length} 门课程 · 🙋 {sundayCheckins.length} 次签到
                 </span>
+              )}
             </div>
             <CollapsibleContent>
               <SundayParticipationStats checkins={sundayCheckins} courses={courses} />
