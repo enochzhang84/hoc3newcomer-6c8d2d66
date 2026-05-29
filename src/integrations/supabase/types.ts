@@ -472,6 +472,54 @@ export type Database = {
         }
         Relationships: []
       }
+      event_meal_notes: {
+        Row: {
+          attachments: string[]
+          attendees: number
+          created_at: string
+          event_category: string
+          event_date: string
+          event_name: string
+          event_time: string | null
+          id: string
+          meal_type: string | null
+          notes: string | null
+          organizer: string | null
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          attachments?: string[]
+          attendees?: number
+          created_at?: string
+          event_category?: string
+          event_date: string
+          event_name?: string
+          event_time?: string | null
+          id?: string
+          meal_type?: string | null
+          notes?: string | null
+          organizer?: string | null
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          attachments?: string[]
+          attendees?: number
+          created_at?: string
+          event_category?: string
+          event_date?: string
+          event_name?: string
+          event_time?: string | null
+          id?: string
+          meal_type?: string | null
+          notes?: string | null
+          organizer?: string | null
+          phone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       events: {
         Row: {
           created_at: string
