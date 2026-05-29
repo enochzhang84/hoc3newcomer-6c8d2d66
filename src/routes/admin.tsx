@@ -16,6 +16,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { CalendarIcon, User } from "lucide-react";
 import { format } from "date-fns";
 import { ScreenManager } from "@/components/admin/ScreenManager";
@@ -445,6 +446,13 @@ function AdminPage() {
   const [fellowshipPages, setFellowshipPages] = useState<Record<string, number>>({});
   const TAB_PAGE_SIZE = 10;
   const [mainTab, setMainTab] = useState("stats");
+  const [statsSubTab, setStatsSubTab] = useState<
+    "overview" | "newcomer" | "sunday" | "meals" | "service" | "baptism" | "annual"
+  >("overview");
+  const [kidsEnrollOpen, setKidsEnrollOpen] = useState(false);
+  const [sundayParticipationOpen, setSundayParticipationOpen] = useState(false);
+  const [retreatCount, setRetreatCount] = useState<number>(0);
+  const [ministryWorkerYearCount, setMinistryWorkerYearCount] = useState<number>(0);
   // Adult class checkins (summer / fall)
   const [adultCheckins, setAdultCheckins] = useState<AdultCheckin[]>([]);
   const [adultSort, setAdultSort] = useState<Record<"summer" | "fall", { col: "name" | "fellowship" | "time"; dir: "asc" | "desc" }>>({
@@ -650,6 +658,25 @@ function AdminPage() {
     setAttendance((a ?? []) as AttendanceRecord[]);
     setFeedbacks((f ?? []) as Feedback[]);
     setCourses((cs ?? []) as Course[]);
+    // Stats overview extras
+    try {
+      const yearStart = new Date(new Date().getFullYear(), 0, 1).toISOString();
+      const [retreatRes, ministryRes] = await Promise.all([
+        (supabase as any).from("retreat_registrations").select("id", { count: "exact", head: true }),
+        (supabase as any)
+          .from("ministry_service_entries")
+          .select("worker")
+          .gte("entry_date", yearStart.slice(0, 10)),
+      ]);
+      setRetreatCount(retreatRes.count ?? 0);
+      const workers = new Set<string>();
+      ((ministryRes.data ?? []) as { worker: string | null }[]).forEach((m) => {
+        if (m.worker && m.worker.trim()) workers.add(m.worker.trim());
+      });
+      setMinistryWorkerYearCount(workers.size);
+    } catch {
+      // non-fatal
+    }
   }, []);
 
   const loadCourses = useCallback(async () => {
@@ -1446,6 +1473,159 @@ function AdminPage() {
           <fieldset disabled={!isAdmin} className="contents">
 
             <TabsContent value="stats" className="space-y-8 mt-0">
+        {/* Chrome-style sub-tabs for 数据统计 */}
+        <div className="grid grid-cols-3 sm:grid-cols-7 items-end gap-1 border-b border-border/60 px-2 pt-1 -mb-2">
+          {[
+            { v: "overview", label: "📊 概览" },
+            { v: "newcomer", label: "🆕 新人" },
+            { v: "sunday", label: "📖 主日学" },
+            { v: "meals", label: "🍱 饭食" },
+            { v: "service", label: "🙏 服侍" },
+            { v: "baptism", label: "💧 决志受洗" },
+            { v: "annual", label: "📈 年度报告" },
+          ].map((t) => {
+            const active = statsSubTab === t.v;
+            return (
+              <button
+                key={t.v}
+                type="button"
+                onClick={() => setStatsSubTab(t.v as typeof statsSubTab)}
+                className={cn(
+                  "px-3 py-2 text-sm rounded-t-lg border border-b-0 transition-colors text-center truncate",
+                  active
+                    ? "bg-card border-border/60 text-foreground font-medium shadow-sm"
+                    : "bg-transparent border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/40",
+                )}
+              >
+                {t.label}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* 概览 — 长老仪表板 */}
+        {statsSubTab === "overview" && (() => {
+          const now = new Date();
+          const yearStart = new Date(now.getFullYear(), 0, 1);
+          const fourWeeksAgo = new Date(now.getTime() - 28 * 24 * 60 * 60 * 1000);
+          // 主日出席：取最近一次 attendance_records.worship_count
+          const latestWorship = attendance.length > 0 ? attendance[0].worship_count : 0;
+          // 新人：本年度
+          const newcomersYear = regs.filter((r) => new Date(r.created_at) >= yearStart).length;
+          // 团契参与率：最近 4 周活跃人数 / 历史不重复人数
+          const fellowshipNamesAll = new Set(fellowshipCheckins.map((c) => c.name?.trim()).filter(Boolean));
+          const fellowshipNames4w = new Set(
+            fellowshipCheckins
+              .filter((c) => new Date(c.checkin_date) >= fourWeeksAgo)
+              .map((c) => c.name?.trim()).filter(Boolean),
+          );
+          const fellowshipRate = fellowshipNamesAll.size > 0
+            ? Math.round((fellowshipNames4w.size / fellowshipNamesAll.size) * 100)
+            : 0;
+          // 长期缺席：曾经出现过、但 4 周内未签到的人
+          const longAbsentNames = new Set<string>();
+          const latestPerName = new Map<string, Date>();
+          fellowshipCheckins.forEach((c) => {
+            const n = c.name?.trim();
+            if (!n) return;
+            const d = new Date(c.checkin_date);
+            const prev = latestPerName.get(n);
+            if (!prev || d > prev) latestPerName.set(n, d);
+          });
+          latestPerName.forEach((d, n) => {
+            if (d < fourWeeksAgo) longAbsentNames.add(n);
+          });
+          // 主日学参与率
+          const sundayNamesAll = new Set(sundayCheckins.map((c) => c.name?.trim()).filter(Boolean));
+          const sundayNames4w = new Set(
+            sundayCheckins
+              .filter((c) => new Date(c.checkin_date) >= fourWeeksAgo)
+              .map((c) => c.name?.trim()).filter(Boolean),
+          );
+          const sundayRate = sundayNamesAll.size > 0
+            ? Math.round((sundayNames4w.size / sundayNamesAll.size) * 100)
+            : 0;
+
+          const cards: Array<{
+            icon: string;
+            label: string;
+            value: string | number;
+            sub?: string;
+            tone?: "ok" | "warn" | "alert";
+            jump?: () => void;
+          }> = [
+            { icon: "👥", label: "主日出席人数", value: latestWorship, sub: "最近一次崇拜", tone: "ok" },
+            { icon: "🆕", label: "新人数量", value: newcomersYear, sub: `${now.getFullYear()}年累计`, tone: "ok", jump: () => setStatsSubTab("newcomer") },
+            {
+              icon: "⚠️",
+              label: "长期缺席人数",
+              value: longAbsentNames.size,
+              sub: "团契超4周未签到",
+              tone: longAbsentNames.size > 10 ? "alert" : longAbsentNames.size > 5 ? "warn" : "ok",
+            },
+            {
+              icon: "🤝",
+              label: "团契参与率",
+              value: `${fellowshipRate}%`,
+              sub: `近4周 ${fellowshipNames4w.size}/${fellowshipNamesAll.size} 人`,
+              tone: fellowshipRate >= 70 ? "ok" : fellowshipRate >= 40 ? "warn" : "alert",
+              jump: () => setStatsSubTab("sunday"),
+            },
+            {
+              icon: "📖",
+              label: "主日学参与率",
+              value: `${sundayRate}%`,
+              sub: `近4周 ${sundayNames4w.size}/${sundayNamesAll.size} 人`,
+              tone: sundayRate >= 50 ? "ok" : sundayRate >= 25 ? "warn" : "alert",
+              jump: () => setStatsSubTab("sunday"),
+            },
+            { icon: "💧", label: "年度受洗人数", value: "—", sub: "敬请期待", tone: "ok", jump: () => setStatsSubTab("baptism") },
+            { icon: "🙏", label: "年度服侍人数", value: ministryWorkerYearCount, sub: `${now.getFullYear()}年同工`, tone: "ok", jump: () => setStatsSubTab("service") },
+            { icon: "🏕", label: "退修会报名人数", value: retreatCount, sub: "累计报名", tone: "ok" },
+          ];
+
+          const toneClass = (t?: "ok" | "warn" | "alert") =>
+            t === "alert"
+              ? "border-red-300 bg-red-50"
+              : t === "warn"
+                ? "border-amber-300 bg-amber-50"
+                : "border-emerald-200 bg-emerald-50/60";
+          const toneText = (t?: "ok" | "warn" | "alert") =>
+            t === "alert" ? "text-red-700" : t === "warn" ? "text-amber-700" : "text-emerald-700";
+
+          return (
+            <section>
+              <div className="flex items-baseline justify-between mb-3">
+                <h2 className="font-serif text-xl">📊 长老仪表板</h2>
+                <span className="text-xs text-muted-foreground">点击卡片查看详细统计</span>
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {cards.map((c) => (
+                  <button
+                    key={c.label}
+                    type="button"
+                    onClick={c.jump}
+                    disabled={!c.jump}
+                    className={cn(
+                      "text-left border rounded-2xl p-4 transition-all",
+                      toneClass(c.tone),
+                      c.jump ? "hover:shadow-md cursor-pointer" : "cursor-default",
+                    )}
+                  >
+                    <div className="text-2xl">{c.icon}</div>
+                    <div className="text-xs text-muted-foreground mt-1">{c.label}</div>
+                    <div className={cn("text-3xl font-serif mt-1 tabular-nums", toneText(c.tone))}>
+                      {c.value}
+                    </div>
+                    {c.sub && <div className="text-xs text-muted-foreground mt-1">{c.sub}</div>}
+                  </button>
+                ))}
+              </div>
+            </section>
+          );
+        })()}
+
+        {statsSubTab === "newcomer" && (
         <section>
           <h2 className="font-serif text-xl mb-4">登记统计</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -1553,6 +1733,10 @@ function AdminPage() {
             </Button>
           </div>
         </section>
+        )}
+
+        {statsSubTab === "sunday" && (
+        <>
         <section>
           <h2 className="font-serif text-xl mb-4">活动签到统计</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -1579,16 +1763,48 @@ function AdminPage() {
 
         {/* 儿童班级报名统计 */}
         <section>
-          <h2 className="font-serif text-xl mb-4">儿童班级报名统计</h2>
-          <KidsEnrollmentStats classes={kidsRows} snapshots={kidsSnapshots} />
+          <Collapsible open={kidsEnrollOpen} onOpenChange={setKidsEnrollOpen}>
+            <div className="flex items-center justify-between mb-3">
+              <CollapsibleTrigger className="flex items-center gap-2 font-serif text-xl hover:opacity-80">
+                <span>{kidsEnrollOpen ? "▼" : "▶"}</span>
+                <span>儿童班级报名统计</span>
+              </CollapsibleTrigger>
+              {!kidsEnrollOpen && (
+                <span className="text-xs text-muted-foreground">
+                  👦 {kidsRows.reduce((s, r: any) => s + (r.student_count ?? 0), 0)} 人 ·
+                  📚 {kidsRows.length} 班
+                </span>
+              )}
+            </div>
+            <CollapsibleContent>
+              <KidsEnrollmentStats classes={kidsRows} snapshots={kidsSnapshots} />
+            </CollapsibleContent>
+          </Collapsible>
         </section>
 
         {/* 主日学参与统计 */}
         <section>
-          <h2 className="font-serif text-xl mb-4">主日学参与统计</h2>
-          <SundayParticipationStats checkins={sundayCheckins} courses={courses} />
+          <Collapsible open={sundayParticipationOpen} onOpenChange={setSundayParticipationOpen}>
+            <div className="flex items-center justify-between mb-3">
+              <CollapsibleTrigger className="flex items-center gap-2 font-serif text-xl hover:opacity-80">
+                <span>{sundayParticipationOpen ? "▼" : "▶"}</span>
+                <span>课程统计</span>
+              </CollapsibleTrigger>
+              {!sundayParticipationOpen && (
+                <span className="text-xs text-muted-foreground">
+                  📚 {courses.length} 门课程 · 🙋 {sundayCheckins.length} 次签到
+                </span>
+              )}
+            </div>
+            <CollapsibleContent>
+              <SundayParticipationStats checkins={sundayCheckins} courses={courses} />
+            </CollapsibleContent>
+          </Collapsible>
         </section>
-        {/* 饭食统计 */}
+        </>
+        )}
+
+        {statsSubTab === "meals" && (
         <section>
           <h2 className="font-serif text-xl mb-4">饭食统计</h2>
           {(() => {
@@ -1650,6 +1866,35 @@ function AdminPage() {
             );
           })()}
         </section>
+        )}
+
+        {statsSubTab === "service" && (
+          <section className="bg-card border border-border/50 rounded-2xl p-10 text-center">
+            <div className="text-5xl mb-3">🙏</div>
+            <h2 className="font-serif text-xl mb-2">服侍统计</h2>
+            <p className="text-sm text-muted-foreground">
+              本年度参与服侍同工：<span className="font-semibold text-foreground">{ministryWorkerYearCount}</span> 人
+            </p>
+            <p className="text-xs text-muted-foreground mt-2">详细服侍统计模块敬请期待</p>
+          </section>
+        )}
+
+        {statsSubTab === "baptism" && (
+          <section className="bg-card border border-border/50 rounded-2xl p-10 text-center">
+            <div className="text-5xl mb-3">💧</div>
+            <h2 className="font-serif text-xl mb-2">决志与受洗统计</h2>
+            <p className="text-sm text-muted-foreground">该模块将在下一阶段上线（年度决志 / 受洗记录 / 转化率 / 历年趋势图）</p>
+          </section>
+        )}
+
+        {statsSubTab === "annual" && (
+          <section className="bg-card border border-border/50 rounded-2xl p-10 text-center">
+            <div className="text-5xl mb-3">📈</div>
+            <h2 className="font-serif text-xl mb-2">年度报告</h2>
+            <p className="text-sm text-muted-foreground">年度综合报告将在下一阶段上线</p>
+          </section>
+        )}
+
         {isSuperAdmin && (
         <section className="bg-card border border-border/50 rounded-2xl p-6">
           <div className="flex items-center justify-between mb-4">
