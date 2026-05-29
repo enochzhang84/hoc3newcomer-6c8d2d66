@@ -1817,8 +1817,7 @@ function AdminPage() {
         )}
 
         {statsSubTab === "meals" && (
-        <section>
-          <h2 className="font-serif text-xl mb-4">饭食统计</h2>
+        <section className="mt-6">
           {(() => {
             const toLocalDate = (s: string) => {
               // plan_date is already 'YYYY-MM-DD' (date type)
@@ -1857,29 +1856,14 @@ function AdminPage() {
             const sundayRows = mealPlans.filter((p) => (p.category ?? "sunday") === "sunday");
             const eventRows = mealPlans.filter((p) => p.category === "event");
             const groups: Array<{ title: string; stats: ReturnType<typeof compute> }> = [
-              { title: "主日订餐计划", stats: compute(sundayRows) },
+              { title: "", stats: compute(sundayRows) },
               { title: "其他活动订餐计划", stats: compute(eventRows) },
             ];
-            const exportMeals = () => {
-              const ws = XLSX.utils.json_to_sheet(mealPlans.map((p) => ({
-                日期: p.plan_date,
-                类别: p.category === "event" ? "其他活动" : "主日",
-                餐别: p.meal_type ?? "",
-                人数: p.attendees ?? 0,
-                备注: p.notes ?? "",
-              })));
-              const wb = XLSX.utils.book_new();
-              XLSX.utils.book_append_sheet(wb, ws, "饭食统计");
-              XLSX.writeFile(wb, `饭食统计_${todayStr}.xlsx`);
-            };
             return (
               <div className="space-y-6">
-                <div className="flex justify-end">
-                  <Button size="sm" variant="outline" onClick={exportMeals}>📊 导出 Excel</Button>
-                </div>
                 {groups.map((g) => (
-                  <div key={g.title} className="bg-card border border-border/50 rounded-2xl p-6">
-                    <h3 className="font-serif text-lg mb-4">{g.title}</h3>
+                  <div key={g.title || "sunday"} className="bg-card border border-border/50 rounded-2xl p-6">
+                    {g.title && <h3 className="font-serif text-lg mb-4">{g.title}</h3>}
                     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
                       {([
                         ["总订餐次数", g.stats.totalOrders],
