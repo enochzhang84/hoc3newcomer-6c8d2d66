@@ -1387,6 +1387,12 @@ function AdminPage() {
               variant="ghost"
               size="sm"
               onClick={async () => {
+                try {
+                  const { data } = await supabase.auth.getUser();
+                  if (data.user) {
+                    await (supabase as any).from("user_presence").delete().eq("user_id", data.user.id);
+                  }
+                } catch {}
                 await supabase.auth.signOut();
                 navigate({ to: "/login" });
               }}
