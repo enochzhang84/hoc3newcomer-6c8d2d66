@@ -10,6 +10,7 @@ import {
 
 type Entry = {
   id: string;
+  panel_key?: string | null;
   service_date: string | null;
   service_item: string | null;
   location: string | null;
@@ -22,6 +23,9 @@ const PIE_COLORS = ["#d4a373", "#a98467", "#6c584c", "#e9c46a", "#bc6c25", "#dda
 
 function isFront(e: Entry) { return e.location === "前门" || e.service_item === "新人接待"; }
 function isBack(e: Entry) { return e.location === "后门" || e.service_item === "迎宾接待"; }
+/** Only count rows that are an actual front/back duty (not communion-only markers). */
+function isDuty(e: Entry) { return isFront(e) || isBack(e); }
+const PANEL_PREFIX = "hospitality_calendar_";
 
 function rankIcon(i: number) {
   if (i === 0) return <Trophy className="size-4 text-yellow-500" />;
@@ -68,11 +72,13 @@ export function HospitalityRankingSection() {
     (async () => {
       const { data } = await (supabase as any)
         .from("hospitality_ministry_entries")
-        .select("id,service_date,service_item,location,worker,holy_communion")
+        .select("id,panel_key,service_date,service_item,location,worker,holy_communion")
+        .like("panel_key", `${PANEL_PREFIX}%`)
         .not("service_date", "is", null);
-      // Dedupe + drop empty workers up front so every chart/ranking uses the
-      // same canonical set of "current valid" records.
-      setEntries(dedupe((data ?? []) as Entry[]));
+      // Dedupe + drop empty workers + drop communion-only markers so every
+      // chart/ranking uses the same canonical set as the calendar view.
+      const cleaned = ((data ?? []) as Entry[]).filter(isDuty);
+      setEntries(dedupe(cleaned));
     })();
   }, [refreshTick]);
 
@@ -83,7 +89,11 @@ export function HospitalityRankingSection() {
   }, [entries, now]);
 
   const yearEntries = useMemo(
-    () => entries.filter((e) => e.service_date && Number(e.service_date.slice(0, 4)) === year),
+    () => entries.filter((e) =>
+      e.service_date &&
+      Number(e.service_date.slice(0, 4)) === year &&
+      e.panel_key === `${PANEL_PREFIX}${year}`,
+    ),
     [entries, year],
   );
 
@@ -113,10 +123,6 @@ export function HospitalityRankingSection() {
   }, [scoped, monthIdx, now]);
   const frontRank = useMemo(() => tally(scoped.filter(isFront), (e) => e.worker), [scoped]);
   const backRank = useMemo(() => tally(scoped.filter(isBack), (e) => e.worker), [scoped]);
-  const communionRank = useMemo(
-    () => tally(scoped.filter((e) => e.holy_communion && e.worker), (e) => e.worker),
-    [scoped],
-  );
 
   // ── Fairness ─────────────────────────────
   const fairness = useMemo(() => {
@@ -140,12 +146,10 @@ export function HospitalityRankingSection() {
   // ── Report ───────────────────────────────
   const report = useMemo(() => {
     const sundays = new Set(scoped.map((e) => e.service_date));
-    const communionSundays = new Set(scoped.filter((e) => e.holy_communion).map((e) => e.service_date));
     return {
       sundays: sundays.size,
       services: scoped.filter((e) => e.worker).length,
       workers: new Set(scoped.map((e) => e.worker).filter(Boolean)).size,
-      communion: communionSundays.size,
       front: scoped.filter((e) => isFront(e) && e.worker).length,
       back: scoped.filter((e) => isBack(e) && e.worker).length,
     };
@@ -163,10 +167,9 @@ export function HospitalityRankingSection() {
       [`${monthRank.month}月排行`, monthRank.list.map((r, i) => ({ 排名: i + 1, 姓名: r.name, 次数: r.count }))],
       ["新人接待", frontRank.map((r, i) => ({ 排名: i + 1, 姓名: r.name, 次数: r.count }))],
       ["迎宾接待", backRank.map((r, i) => ({ 排名: i + 1, 姓名: r.name, 次数: r.count }))],
-      ["圣餐发放", communionRank.map((r, i) => ({ 排名: i + 1, 姓名: r.name, 次数: r.count }))],
       ["年度报告", [{
         年份: year, 主日数: report.sundays, 服侍人次: report.services,
-        参与同工: report.workers, 圣餐次数: report.communion,
+        参与同工: report.workers,
         新人接待: report.front, 迎宾接待: report.back,
         平均: fairness.avg.toFixed(2), 标准差: fairness.stddev.toFixed(2),
         公平度: fairness.score,
@@ -220,7 +223,6 @@ export function HospitalityRankingSection() {
             { label: "主日数", value: report.sundays },
             { label: "服侍人次", value: report.services },
             { label: "参与同工", value: report.workers },
-            { label: "圣餐次数", value: report.communion },
             { label: "新人接待", value: report.front },
             { label: "迎宾接待", value: report.back },
           ].map((s) => (
@@ -274,8 +276,13 @@ export function HospitalityRankingSection() {
         <RankCard title="📅 月度服侍排行" subtitle={`${monthRank.month} 月`} list={monthRank.list} />
         <RankCard title="🚪 新人接待 (前门)" list={frontRank} />
         <RankCard title="🤝 迎宾接待 (后门)" list={backRank} />
-        <RankCard title="🍞 圣餐发放" list={communionRank} />
         <FairnessCard fairness={fairness} count={yearRank.length} />
+      </div>
+      {/* Debug info */}
+      <div className="text-[11px] text-muted-foreground border-t border-border/40 pt-3 flex flex-wrap gap-x-4 gap-y-1">
+        <span>统计月份：{monthIdx > 0 ? `${year}-${String(monthIdx).padStart(2, "0")}` : `${year} 全年`}</span>
+        <span>读取记录：{scoped.length} 条</span>
+        <span>来源：年度月历轮值表 ({`${"hospitality_calendar_"}${year}`})</span>
       </div>
     </section>
   );
