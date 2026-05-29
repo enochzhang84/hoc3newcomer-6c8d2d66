@@ -167,6 +167,7 @@ function RootComponent() {
     pathname === "/" ||
     pathname === "/retreat" ||
     pathname === "/retreat-info" ||
+    pathname === "/retreat-highlights" ||
     pathname.startsWith("/retreat-register") ||
     pathname.startsWith("/retreat-edit") ||
     pathname.startsWith("/display") ||
