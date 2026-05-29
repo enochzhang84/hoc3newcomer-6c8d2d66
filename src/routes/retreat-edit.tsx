@@ -182,56 +182,29 @@ function EditRegistrationPage() {
         </div>
       </main>
 
-      {/* 底部固定操作栏 */}
-      {editing && (
-        <div className="fixed bottom-0 inset-x-0 z-30 bg-background/95 backdrop-blur border-t border-border/60">
-          <div className="container mx-auto max-w-3xl px-4 sm:px-6 py-3 flex flex-col-reverse sm:flex-row sm:items-center gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              size="lg"
-              className="rounded-full border-destructive/60 text-destructive hover:bg-destructive/10 hover:text-destructive sm:mr-auto"
-              onClick={() => setPendingDelete(editing)}
-            >
-              删除这条注册信息 / Delete
-            </Button>
-            <Button
-              type="button"
-              size="lg"
-              className="rounded-full"
-              disabled={saving}
-              onClick={handleSave}
-            >
-              {saving ? "保存中…" : "保存修改 / Save Changes"}
-            </Button>
-          </div>
-        </div>
+      {activeGroup && (
+        <RetreatGroupEditor
+          open={!!activeGroup}
+          onClose={() => setActiveKey(null)}
+          members={activeGroup.members}
+          phone={phone}
+          onChanged={async (next) => {
+            if (next.length === 0) {
+              // Group fully deleted — re-run lookup to refresh remaining groups
+              try {
+                const res = await lookup({ data: { phone: phone.trim() } });
+                setGroups(res.groups as Group[]);
+              } catch {/* ignore */}
+              setActiveKey(null);
+            } else {
+              setGroups((prev) => {
+                if (!prev) return prev;
+                return prev.map((g) => g.key === activeKey ? { ...g, members: next } : g);
+              });
+            }
+          }}
+        />
       )}
-
-      <AlertDialog open={!!pendingDelete} onOpenChange={(o) => !o && setPendingDelete(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>确定要删除这条注册信息吗？</AlertDialogTitle>
-            <AlertDialogDescription>
-              此操作无法恢复。只会删除当前选中的这一条记录。
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>取消</AlertDialogCancel>
-            <AlertDialogAction
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              onClick={async () => {
-                const r = pendingDelete;
-                if (!r) return;
-                setPendingDelete(null);
-                await handleDelete(r);
-              }}
-            >
-              确认删除
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 }
