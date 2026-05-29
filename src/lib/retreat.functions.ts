@@ -122,18 +122,7 @@ const editPatchSchema = z.object({
   church: z.string().trim().max(10).nullable().optional(),
 });
 
-async function verifyOwnership(id: string, phone: string) {
-  const { data: row, error } = await supabaseAdmin
-    .from("retreat_registrations")
-    .select("cell")
-    .eq("id", id)
-    .maybeSingle();
-  if (error) throw new Error(error.message);
-  if (!row) throw new Error("记录不存在");
-  const a = normalize(row.cell ?? "");
-  const b = normalize(phone);
-  if (!a || !b || a !== b) throw new Error("电话号码不匹配，无法修改此记录");
-}
+// (legacy verifyOwnership replaced by group-aware verifyGroupOwnership above)
 
 export const updateRetreatByPhone = createServerFn({ method: "POST" })
   .inputValidator((d) =>
