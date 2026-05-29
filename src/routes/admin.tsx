@@ -27,6 +27,7 @@ import { HospitalityCalendarSection } from "@/components/HospitalityCalendar";
 import { HospitalityRankingSection } from "@/components/HospitalityRanking";
 import { DutyCalendarSection } from "@/components/DutyCalendar";
 import MealPlanCalendar from "@/components/MealPlanCalendar";
+import EventMealNotebook from "@/components/EventMealNotebook";
 import MinistryServiceCalendar from "@/components/MinistryServiceCalendar";
 
 type Reg = {
