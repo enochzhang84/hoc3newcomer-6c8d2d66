@@ -305,6 +305,11 @@ function AdminPage() {
   const ADULT_PAGE_SIZE = 15;
   const [adultDateFilter, setAdultDateFilter] = useState<Record<"summer" | "fall", Date | undefined>>({ summer: undefined, fall: undefined });
   const [adultDateOpen, setAdultDateOpen] = useState<Record<"summer" | "fall", boolean>>({ summer: false, fall: false });
+  // Year filters for checkin sections (按年查询)
+  const _currentYear = new Date().getFullYear();
+  const [courseYearFilter, setCourseYearFilter] = useState<number>(_currentYear);
+  const [fellowshipYearFilter, setFellowshipYearFilter] = useState<number>(_currentYear);
+  const [adultYearFilter, setAdultYearFilter] = useState<Record<"summer" | "fall", number>>({ summer: _currentYear, fall: _currentYear });
   // Kitchen meal plans
   const [mealTypes, setMealTypes] = useState<MealType[]>([]);
   const [mealPlans, setMealPlans] = useState<MealPlan[]>([]);
