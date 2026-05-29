@@ -273,45 +273,47 @@ function RetreatAdminPage() {
 
         <div className="bg-card border border-border/50 rounded-2xl overflow-hidden">
           <div className="max-h-[600px] overflow-auto">
-            <table className="w-full text-xs whitespace-nowrap">
-              <thead className="sticky top-0 z-10 bg-muted/80 backdrop-blur">
-                <tr className="text-left text-muted-foreground border-b border-border/60">
-                  {["Entry #","Confirmation #","已付费?","基督之家","序号","中文姓名","LastName","FirstName","Cell","Email","Gender","Program","Topic","Bed","可接送","需接送","Bus","Creation Time","Changed By","Modify Time","userNotes","操作"].map((h) => (
-                    <th key={h} className="py-2 px-2 font-medium">{h}</th>
+            <table className="w-full text-xs whitespace-nowrap border-separate border-spacing-0">
+              <thead className="sticky top-0 z-20 bg-muted/95 backdrop-blur">
+                <tr className="text-left text-muted-foreground">
+                  <th className="py-2 px-2 font-medium sticky left-0 z-30 bg-muted/95 backdrop-blur border-b border-border/60 w-[64px]">序号</th>
+                  <th className="py-2 px-2 font-medium sticky left-[64px] z-30 bg-muted/95 backdrop-blur border-b border-border/60 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.15)] min-w-[110px]">中文姓名</th>
+                  {["Entry #","Confirmation #","已付费?","基督之家","LastName","FirstName","Cell","Email","Gender","Program","Topic","Bed","可接送","需接送","Bus","Creation Time","Changed By","Modify Time","userNotes","操作"].map((h) => (
+                    <th key={h} className="py-2 px-2 font-medium border-b border-border/60">{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {pageRows.map((r, i) => (
-                  <tr key={r.id} className="border-b border-border/30 hover:bg-muted/30">
-                    <td className="py-2 px-2">{r.entry_no}</td>
-                    <td className="py-2 px-2">{r.confirmation_no ?? ""}</td>
-                    <td className="py-2 px-2">
+                  <tr key={r.id} className="hover:bg-muted/30 group">
+                    <td className="py-2 px-2 sticky left-0 z-10 bg-card group-hover:bg-muted/30 border-b border-border/30 w-[64px]">{r.serial_no ?? (page - 1) * PAGE_SIZE + i + 1}</td>
+                    <td className="py-2 px-2 sticky left-[64px] z-10 bg-card group-hover:bg-muted/30 font-medium border-b border-border/30 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.15)] min-w-[110px]">{r.chinese_name}</td>
+                    <td className="py-2 px-2 border-b border-border/30">{r.entry_no}</td>
+                    <td className="py-2 px-2 border-b border-border/30">{r.confirmation_no ?? ""}</td>
+                    <td className="py-2 px-2 border-b border-border/30">
                       <button onClick={() => togglePaid(r)} className={r.paid ? "text-green-600" : "text-muted-foreground hover:text-foreground"}>
                         {r.paid ? "✓ 已付" : "未付"}
                       </button>
                     </td>
-                    <td className="py-2 px-2">{r.church ?? ""}</td>
-                    <td className="py-2 px-2">{r.serial_no ?? (page - 1) * PAGE_SIZE + i + 1}</td>
-                    <td className="py-2 px-2 font-medium">{r.chinese_name}</td>
-                    <td className="py-2 px-2">{r.last_name ?? ""}</td>
-                    <td className="py-2 px-2">{r.first_name ?? ""}</td>
-                    <td className="py-2 px-2">{r.cell ?? ""}</td>
-                    <td className="py-2 px-2">{r.email ?? ""}</td>
-                    <td className="py-2 px-2">{r.gender ?? ""}</td>
-                    <td className="py-2 px-2">{r.program ?? ""}</td>
-                    <td className="py-2 px-2">{r.topic ? (TOPIC_LABEL[r.topic] ?? r.topic) : ""}</td>
-                    <td className="py-2 px-2">{r.bed ?? ""}</td>
-                    <td className="py-2 px-2">{r.can_pickup ?? ""}</td>
-                    <td className="py-2 px-2">{r.need_pickup ?? ""}</td>
-                    <td className="py-2 px-2">{r.bus ?? ""}</td>
-                    <td className="py-2 px-2">{new Date(r.created_at).toLocaleString("zh-CN")}</td>
-                    <td className="py-2 px-2"></td>
-                    <td className="py-2 px-2">{new Date(r.updated_at).toLocaleString("zh-CN")}</td>
-                    <td className="py-2 px-2 max-w-[200px] truncate" title={r.user_notes ?? ""}>{r.user_notes ?? ""}</td>
-                    <td className="py-2 px-2">
+                    <td className="py-2 px-2 border-b border-border/30">{r.church ?? ""}</td>
+                    <td className="py-2 px-2 border-b border-border/30">{r.last_name ?? ""}</td>
+                    <td className="py-2 px-2 border-b border-border/30">{r.first_name ?? ""}</td>
+                    <td className="py-2 px-2 border-b border-border/30">{r.cell ?? ""}</td>
+                    <td className="py-2 px-2 border-b border-border/30">{r.email ?? ""}</td>
+                    <td className="py-2 px-2 border-b border-border/30">{r.gender ?? ""}</td>
+                    <td className="py-2 px-2 border-b border-border/30">{r.program ?? ""}</td>
+                    <td className="py-2 px-2 border-b border-border/30">{r.topic ? (TOPIC_LABEL[r.topic] ?? r.topic) : ""}</td>
+                    <td className="py-2 px-2 border-b border-border/30">{r.bed ?? ""}</td>
+                    <td className="py-2 px-2 border-b border-border/30">{r.can_pickup ?? ""}</td>
+                    <td className="py-2 px-2 border-b border-border/30">{r.need_pickup ?? ""}</td>
+                    <td className="py-2 px-2 border-b border-border/30">{r.bus ?? ""}</td>
+                    <td className="py-2 px-2 border-b border-border/30">{new Date(r.created_at).toLocaleString("zh-CN")}</td>
+                    <td className="py-2 px-2 border-b border-border/30"></td>
+                    <td className="py-2 px-2 border-b border-border/30">{new Date(r.updated_at).toLocaleString("zh-CN")}</td>
+                    <td className="py-2 px-2 max-w-[200px] truncate border-b border-border/30" title={r.user_notes ?? ""}>{r.user_notes ?? ""}</td>
+                    <td className="py-2 px-2 border-b border-border/30">
                       <div className="flex items-center gap-2">
-                        <button onClick={() => setEditRow(r)} className="text-primary hover:underline">编辑</button>
+                        <button onClick={() => openGroupEdit(r)} className="text-primary hover:underline">编辑</button>
                         <button onClick={() => del(r.id, r.chinese_name)} className="text-destructive hover:underline">删除</button>
                       </div>
                     </td>
