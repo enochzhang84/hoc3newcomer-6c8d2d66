@@ -658,6 +658,25 @@ function AdminPage() {
     setAttendance((a ?? []) as AttendanceRecord[]);
     setFeedbacks((f ?? []) as Feedback[]);
     setCourses((cs ?? []) as Course[]);
+    // Stats overview extras
+    try {
+      const yearStart = new Date(new Date().getFullYear(), 0, 1).toISOString();
+      const [retreatRes, ministryRes] = await Promise.all([
+        (supabase as any).from("retreat_registrations").select("id", { count: "exact", head: true }),
+        (supabase as any)
+          .from("ministry_service_entries")
+          .select("worker")
+          .gte("entry_date", yearStart.slice(0, 10)),
+      ]);
+      setRetreatCount(retreatRes.count ?? 0);
+      const workers = new Set<string>();
+      ((ministryRes.data ?? []) as { worker: string | null }[]).forEach((m) => {
+        if (m.worker && m.worker.trim()) workers.add(m.worker.trim());
+      });
+      setMinistryWorkerYearCount(workers.size);
+    } catch {
+      // non-fatal
+    }
   }, []);
 
   const loadCourses = useCallback(async () => {
