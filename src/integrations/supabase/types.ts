@@ -95,6 +95,84 @@ export type Database = {
         }
         Relationships: []
       }
+      av_broadcasts: {
+        Row: {
+          body: string
+          created_at: string
+          duration_seconds: number | null
+          expires_at: string | null
+          id: string
+          is_active: boolean
+          level: string
+          stopped_at: string | null
+          targets: string[]
+          title: string
+        }
+        Insert: {
+          body?: string
+          created_at?: string
+          duration_seconds?: number | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          level?: string
+          stopped_at?: string | null
+          targets?: string[]
+          title: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          duration_seconds?: number | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          level?: string
+          stopped_at?: string | null
+          targets?: string[]
+          title?: string
+        }
+        Relationships: []
+      }
+      av_notes: {
+        Row: {
+          category: string
+          content: string
+          created_at: string
+          id: string
+          images: string[]
+          is_favorite: boolean
+          is_pinned: boolean
+          sort_order: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          content?: string
+          created_at?: string
+          id?: string
+          images?: string[]
+          is_favorite?: boolean
+          is_pinned?: boolean
+          sort_order?: number
+          title?: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          content?: string
+          created_at?: string
+          id?: string
+          images?: string[]
+          is_favorite?: boolean
+          is_pinned?: boolean
+          sort_order?: number
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       chat_messages: {
         Row: {
           content: string
