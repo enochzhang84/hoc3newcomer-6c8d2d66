@@ -163,7 +163,15 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   useChromeCacheReset();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const hideChat = pathname === "/";
+  const hideChat =
+    pathname === "/" ||
+    pathname === "/retreat" ||
+    pathname.startsWith("/retreat-register") ||
+    pathname.startsWith("/retreat-edit") ||
+    pathname.startsWith("/display") ||
+    pathname.startsWith("/today-public") ||
+    pathname === "/today-preview" ||
+    pathname === "/chat";
 
   return (
     <QueryClientProvider client={queryClient}>
