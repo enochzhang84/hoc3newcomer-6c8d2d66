@@ -407,91 +407,18 @@ function RetreatAdminPage() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={!!editRow} onOpenChange={(o) => { if (!o) setEditRow(null); }}>
-        <DialogContent className="max-w-xl max-h-[85vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>编辑登记 · {editRow?.chinese_name}</DialogTitle>
-          </DialogHeader>
-          {editRow && (
-            <div className="space-y-3">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <Label>基督之家</Label>
-                  <select value={editRow.church ?? ""} onChange={(e) => setEditRow({ ...editRow, church: e.target.value || null })} className="mt-1 w-full h-10 rounded-md border border-input bg-background px-3 text-sm">
-                    <option value="">—</option>
-                    {CHURCHES.map((c) => <option key={c} value={c}>{c.toUpperCase()}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <Label>性别</Label>
-                  <select value={editRow.gender ?? ""} onChange={(e) => setEditRow({ ...editRow, gender: e.target.value || null })} className="mt-1 w-full h-10 rounded-md border border-input bg-background px-3 text-sm">
-                    <option value="">—</option><option value="M">M</option><option value="F">F</option>
-                  </select>
-                </div>
-                <div>
-                  <Label>中文姓名</Label>
-                  <Input className="mt-1" value={editRow.chinese_name} onChange={(e) => setEditRow({ ...editRow, chinese_name: e.target.value })} />
-                </div>
-                <div>
-                  <Label>已付费</Label>
-                  <select value={editRow.paid ? "1" : "0"} onChange={(e) => setEditRow({ ...editRow, paid: e.target.value === "1" })} className="mt-1 w-full h-10 rounded-md border border-input bg-background px-3 text-sm">
-                    <option value="0">未付</option><option value="1">已付</option>
-                  </select>
-                </div>
-                <div>
-                  <Label>Last Name</Label>
-                  <Input className="mt-1" value={editRow.last_name ?? ""} onChange={(e) => setEditRow({ ...editRow, last_name: e.target.value })} />
-                </div>
-                <div>
-                  <Label>First Name</Label>
-                  <Input className="mt-1" value={editRow.first_name ?? ""} onChange={(e) => setEditRow({ ...editRow, first_name: e.target.value })} />
-                </div>
-                <div>
-                  <Label>Cell</Label>
-                  <Input className="mt-1" value={editRow.cell ?? ""} onChange={(e) => setEditRow({ ...editRow, cell: e.target.value })} />
-                </div>
-                <div>
-                  <Label>Email</Label>
-                  <Input className="mt-1" value={editRow.email ?? ""} onChange={(e) => setEditRow({ ...editRow, email: e.target.value })} />
-                </div>
-                <div>
-                  <Label>Program</Label>
-                  <select value={editRow.program ?? ""} onChange={(e) => setEditRow({ ...editRow, program: e.target.value || null })} className="mt-1 w-full h-10 rounded-md border border-input bg-background px-3 text-sm">
-                    <option value="">—</option>{PROGRAMS.map((p) => <option key={p.v} value={p.v}>{p.label}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <Label>Topic</Label>
-                  <select value={editRow.topic ?? ""} onChange={(e) => setEditRow({ ...editRow, topic: e.target.value || null })} className="mt-1 w-full h-10 rounded-md border border-input bg-background px-3 text-sm">
-                    <option value="">—</option>{TOPICS.map((t) => <option key={t.v} value={t.v}>{t.label}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <Label>Bed</Label>
-                  <select value={editRow.bed ?? ""} onChange={(e) => setEditRow({ ...editRow, bed: e.target.value || null })} className="mt-1 w-full h-10 rounded-md border border-input bg-background px-3 text-sm">
-                    <option value="">—</option><option value="yes">占床位</option><option value="no">不占床位</option>
-                  </select>
-                </div>
-                <div>
-                  <Label>可接送 / 需接送</Label>
-                  <div className="mt-1 flex gap-2">
-                    <Input type="number" min={0} placeholder="可接" value={editRow.can_pickup ?? ""} onChange={(e) => setEditRow({ ...editRow, can_pickup: e.target.value === "" ? null : parseInt(e.target.value, 10) })} />
-                    <Input type="number" min={0} placeholder="需接" value={editRow.need_pickup ?? ""} onChange={(e) => setEditRow({ ...editRow, need_pickup: e.target.value === "" ? null : parseInt(e.target.value, 10) })} />
-                  </div>
-                </div>
-              </div>
-              <div>
-                <Label>备注</Label>
-                <Textarea rows={2} className="mt-1" value={editRow.user_notes ?? ""} onChange={(e) => setEditRow({ ...editRow, user_notes: e.target.value })} />
-              </div>
-              <div className="flex justify-end gap-2 pt-2">
-                <Button variant="outline" onClick={() => setEditRow(null)}>取消</Button>
-                <Button onClick={saveEdit} disabled={editSaving}>{editSaving ? "保存中…" : "保存"}</Button>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+      {editGroup && (
+        <RetreatGroupEditor
+          open={!!editGroup}
+          onClose={() => setEditGroup(null)}
+          members={editGroup}
+          onChanged={(next) => {
+            if (next.length === 0) setEditGroup(null);
+            else setEditGroup(next);
+            load();
+          }}
+        />
+      )}
     </div>
   );
 }
