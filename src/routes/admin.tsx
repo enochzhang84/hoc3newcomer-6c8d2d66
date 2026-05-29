@@ -453,8 +453,18 @@ function AdminPage() {
   const [adultDateOpen, setAdultDateOpen] = useState<Record<"summer" | "fall", boolean>>({ summer: false, fall: false });
   // Year filters for checkin sections (按年查询)
   const _currentYear = new Date().getFullYear();
-  const [courseYearFilter, setCourseYearFilter] = useState<number>(_currentYear);
-  const [fellowshipYearFilter, setFellowshipYearFilter] = useState<number>(_currentYear);
+  const _pad2 = (n: number) => String(n).padStart(2, "0");
+  const _curMonthStr = `${_currentYear}-01`;
+  const _curMonthEndStr = `${_currentYear}-12`;
+  const [courseRange, setCourseRange] = useState<{ start: string; end: string }>({
+    start: _curMonthStr,
+    end: _curMonthEndStr,
+  });
+  const [fellowshipFilter, setFellowshipFilter] = useState<DateLevelFilter>({
+    year: _currentYear,
+    month: null,
+    day: null,
+  });
   const [adultYearFilter, setAdultYearFilter] = useState<Record<"summer" | "fall", number>>({ summer: _currentYear, fall: _currentYear });
   // Kitchen meal plans
   const [mealTypes, setMealTypes] = useState<MealType[]>([]);
