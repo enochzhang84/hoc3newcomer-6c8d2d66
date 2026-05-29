@@ -638,6 +638,26 @@ export function FloatingChat() {
           </div>
         </div>
       )}
+
+      {chooserTarget && (
+        <div className="fixed inset-0 z-[70] bg-black/40 flex items-center justify-center p-4" onClick={() => setChooserTarget(null)}>
+          <div className="bg-card border border-border rounded-xl shadow-2xl max-w-sm w-full p-4" onClick={(e) => e.stopPropagation()}>
+            <div className="text-sm font-medium mb-1">
+              与 <span className="text-primary">{chooserTarget.worker_name || chooserTarget.display_name}</span> 发起聊天
+            </div>
+            <div className="text-xs text-muted-foreground mb-4">请选择聊天方式：</div>
+            <div className="flex flex-col gap-2">
+              <Button size="sm" onClick={() => startPublicMention(chooserTarget)}>
+                公屏聊天 @{chooserTarget.worker_name || chooserTarget.display_name}
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => startPrivateChat(chooserTarget)}>
+                私聊：{chooserTarget.worker_name || chooserTarget.display_name}
+              </Button>
+              <Button size="sm" variant="ghost" onClick={() => setChooserTarget(null)}>取消</Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
