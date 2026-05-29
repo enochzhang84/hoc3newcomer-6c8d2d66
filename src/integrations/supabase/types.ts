@@ -619,6 +619,66 @@ export type Database = {
         }
         Relationships: []
       }
+      ministries: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      ministry_service_entries: {
+        Row: {
+          created_at: string
+          entry_date: string
+          id: string
+          ministry: string | null
+          notes: string | null
+          service_project: string | null
+          updated_at: string
+          worker: string | null
+        }
+        Insert: {
+          created_at?: string
+          entry_date: string
+          id?: string
+          ministry?: string | null
+          notes?: string | null
+          service_project?: string | null
+          updated_at?: string
+          worker?: string | null
+        }
+        Update: {
+          created_at?: string
+          entry_date?: string
+          id?: string
+          ministry?: string | null
+          notes?: string | null
+          service_project?: string | null
+          updated_at?: string
+          worker?: string | null
+        }
+        Relationships: []
+      }
       registrations: {
         Row: {
           address: string | null
@@ -827,6 +887,44 @@ export type Database = {
           wechat?: string | null
         }
         Relationships: []
+      }
+      service_projects: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          ministry_id: string | null
+          name: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          ministry_id?: string | null
+          name: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          ministry_id?: string | null
+          name?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_projects_ministry_id_fkey"
+            columns: ["ministry_id"]
+            isOneToOne: false
+            referencedRelation: "ministries"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       sunday_class_schedule: {
         Row: {
