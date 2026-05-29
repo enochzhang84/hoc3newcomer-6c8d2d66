@@ -1808,9 +1808,8 @@ function AdminPage() {
                 </span>
               )}
             </div>
-            <CollapsibleContent>
-              <SundayParticipationStats checkins={sundayCheckins} courses={courses} />
             </CollapsibleContent>
+          </Collapsible>
         </section>
         </div>
         )}
