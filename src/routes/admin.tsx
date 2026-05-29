@@ -2528,7 +2528,11 @@ function AdminPage() {
 
         {mediaSubTab === "screen" && <ScreenManager />}
 
-        {mediaSubTab === "ministry" && <DutyCalendarSection />}
+        {mediaSubTab === "ministry" && (
+          <div className="pt-6 md:pt-8 lg:pt-10">
+            <DutyCalendarSection />
+          </div>
+        )}
 
 
         {mediaSubTab === "messages" && (
