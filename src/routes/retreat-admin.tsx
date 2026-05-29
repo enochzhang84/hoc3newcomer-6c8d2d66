@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import * as XLSX from "xlsx";
 import logo from "@/assets/logo.png";
 import { pickVerse } from "./retreat-register";
+import { RetreatGroupEditor, type GroupMember } from "@/components/RetreatGroupEditor";
 
 export const Route = createFileRoute("/retreat-admin")({
   component: RetreatAdminPage,
@@ -89,7 +90,7 @@ function RetreatAdminPage() {
   const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState(emptyForm());
   const [editRow, setEditRow] = useState<Row | null>(null);
-  const [editSaving, setEditSaving] = useState(false);
+  const [editGroup, setEditGroup] = useState<GroupMember[] | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -221,33 +222,22 @@ function RetreatAdminPage() {
     load();
   }
 
-  async function saveEdit() {
-    if (!editRow) return;
-    setEditSaving(true);
-    const { error } = await supabase
-      .from("retreat_registrations")
-      .update({
-        church: editRow.church,
-        chinese_name: editRow.chinese_name,
-        last_name: editRow.last_name,
-        first_name: editRow.first_name,
-        gender: editRow.gender,
-        cell: editRow.cell,
-        email: editRow.email,
-        program: editRow.program,
-        topic: editRow.topic,
-        bed: editRow.bed,
-        can_pickup: editRow.can_pickup,
-        need_pickup: editRow.need_pickup,
-        user_notes: editRow.user_notes,
-        paid: editRow.paid,
-      })
-      .eq("id", editRow.id);
-    setEditSaving(false);
-    if (error) return toast.error(error.message);
-    toast.success("已保存");
-    setEditRow(null);
-    load();
+  async function openGroupEdit(r: Row) {
+    // Expand to all siblings in the same registration form
+    const conf = r.confirmation_no ?? "";
+    const parts = conf.split("-");
+    if (parts.length === 3 && parts[1] !== "000") {
+      const prefix = `${parts[0]}-${parts[1]}-`;
+      const { data, error } = await supabase
+        .from("retreat_registrations")
+        .select("*")
+        .like("confirmation_no", `${prefix}%`)
+        .order("confirmation_no", { ascending: true });
+      if (error) return toast.error(error.message);
+      setEditGroup((data ?? [r]) as GroupMember[]);
+    } else {
+      setEditGroup([r] as GroupMember[]);
+    }
   }
 
   return (
@@ -283,45 +273,47 @@ function RetreatAdminPage() {
 
         <div className="bg-card border border-border/50 rounded-2xl overflow-hidden">
           <div className="max-h-[600px] overflow-auto">
-            <table className="w-full text-xs whitespace-nowrap">
-              <thead className="sticky top-0 z-10 bg-muted/80 backdrop-blur">
-                <tr className="text-left text-muted-foreground border-b border-border/60">
-                  {["Entry #","Confirmation #","已付费?","基督之家","序号","中文姓名","LastName","FirstName","Cell","Email","Gender","Program","Topic","Bed","可接送","需接送","Bus","Creation Time","Changed By","Modify Time","userNotes","操作"].map((h) => (
-                    <th key={h} className="py-2 px-2 font-medium">{h}</th>
+            <table className="w-full text-xs whitespace-nowrap border-separate border-spacing-0">
+              <thead className="sticky top-0 z-20 bg-muted/95 backdrop-blur">
+                <tr className="text-left text-muted-foreground">
+                  <th className="py-2 px-2 font-medium sticky left-0 z-30 bg-muted/95 backdrop-blur border-b border-border/60 w-[64px]">序号</th>
+                  <th className="py-2 px-2 font-medium sticky left-[64px] z-30 bg-muted/95 backdrop-blur border-b border-border/60 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.15)] min-w-[110px]">中文姓名</th>
+                  {["Entry #","Confirmation #","已付费?","基督之家","LastName","FirstName","Cell","Email","Gender","Program","Topic","Bed","可接送","需接送","Bus","Creation Time","Changed By","Modify Time","userNotes","操作"].map((h) => (
+                    <th key={h} className="py-2 px-2 font-medium border-b border-border/60">{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {pageRows.map((r, i) => (
-                  <tr key={r.id} className="border-b border-border/30 hover:bg-muted/30">
-                    <td className="py-2 px-2">{r.entry_no}</td>
-                    <td className="py-2 px-2">{r.confirmation_no ?? ""}</td>
-                    <td className="py-2 px-2">
+                  <tr key={r.id} className="hover:bg-muted/30 group">
+                    <td className="py-2 px-2 sticky left-0 z-10 bg-card group-hover:bg-muted/30 border-b border-border/30 w-[64px]">{r.serial_no ?? (page - 1) * PAGE_SIZE + i + 1}</td>
+                    <td className="py-2 px-2 sticky left-[64px] z-10 bg-card group-hover:bg-muted/30 font-medium border-b border-border/30 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.15)] min-w-[110px]">{r.chinese_name}</td>
+                    <td className="py-2 px-2 border-b border-border/30">{r.entry_no}</td>
+                    <td className="py-2 px-2 border-b border-border/30">{r.confirmation_no ?? ""}</td>
+                    <td className="py-2 px-2 border-b border-border/30">
                       <button onClick={() => togglePaid(r)} className={r.paid ? "text-green-600" : "text-muted-foreground hover:text-foreground"}>
                         {r.paid ? "✓ 已付" : "未付"}
                       </button>
                     </td>
-                    <td className="py-2 px-2">{r.church ?? ""}</td>
-                    <td className="py-2 px-2">{r.serial_no ?? (page - 1) * PAGE_SIZE + i + 1}</td>
-                    <td className="py-2 px-2 font-medium">{r.chinese_name}</td>
-                    <td className="py-2 px-2">{r.last_name ?? ""}</td>
-                    <td className="py-2 px-2">{r.first_name ?? ""}</td>
-                    <td className="py-2 px-2">{r.cell ?? ""}</td>
-                    <td className="py-2 px-2">{r.email ?? ""}</td>
-                    <td className="py-2 px-2">{r.gender ?? ""}</td>
-                    <td className="py-2 px-2">{r.program ?? ""}</td>
-                    <td className="py-2 px-2">{r.topic ? (TOPIC_LABEL[r.topic] ?? r.topic) : ""}</td>
-                    <td className="py-2 px-2">{r.bed ?? ""}</td>
-                    <td className="py-2 px-2">{r.can_pickup ?? ""}</td>
-                    <td className="py-2 px-2">{r.need_pickup ?? ""}</td>
-                    <td className="py-2 px-2">{r.bus ?? ""}</td>
-                    <td className="py-2 px-2">{new Date(r.created_at).toLocaleString("zh-CN")}</td>
-                    <td className="py-2 px-2"></td>
-                    <td className="py-2 px-2">{new Date(r.updated_at).toLocaleString("zh-CN")}</td>
-                    <td className="py-2 px-2 max-w-[200px] truncate" title={r.user_notes ?? ""}>{r.user_notes ?? ""}</td>
-                    <td className="py-2 px-2">
+                    <td className="py-2 px-2 border-b border-border/30">{r.church ?? ""}</td>
+                    <td className="py-2 px-2 border-b border-border/30">{r.last_name ?? ""}</td>
+                    <td className="py-2 px-2 border-b border-border/30">{r.first_name ?? ""}</td>
+                    <td className="py-2 px-2 border-b border-border/30">{r.cell ?? ""}</td>
+                    <td className="py-2 px-2 border-b border-border/30">{r.email ?? ""}</td>
+                    <td className="py-2 px-2 border-b border-border/30">{r.gender ?? ""}</td>
+                    <td className="py-2 px-2 border-b border-border/30">{r.program ?? ""}</td>
+                    <td className="py-2 px-2 border-b border-border/30">{r.topic ? (TOPIC_LABEL[r.topic] ?? r.topic) : ""}</td>
+                    <td className="py-2 px-2 border-b border-border/30">{r.bed ?? ""}</td>
+                    <td className="py-2 px-2 border-b border-border/30">{r.can_pickup ?? ""}</td>
+                    <td className="py-2 px-2 border-b border-border/30">{r.need_pickup ?? ""}</td>
+                    <td className="py-2 px-2 border-b border-border/30">{r.bus ?? ""}</td>
+                    <td className="py-2 px-2 border-b border-border/30">{new Date(r.created_at).toLocaleString("zh-CN")}</td>
+                    <td className="py-2 px-2 border-b border-border/30"></td>
+                    <td className="py-2 px-2 border-b border-border/30">{new Date(r.updated_at).toLocaleString("zh-CN")}</td>
+                    <td className="py-2 px-2 max-w-[200px] truncate border-b border-border/30" title={r.user_notes ?? ""}>{r.user_notes ?? ""}</td>
+                    <td className="py-2 px-2 border-b border-border/30">
                       <div className="flex items-center gap-2">
-                        <button onClick={() => setEditRow(r)} className="text-primary hover:underline">编辑</button>
+                        <button onClick={() => openGroupEdit(r)} className="text-primary hover:underline">编辑</button>
                         <button onClick={() => del(r.id, r.chinese_name)} className="text-destructive hover:underline">删除</button>
                       </div>
                     </td>
@@ -415,91 +407,18 @@ function RetreatAdminPage() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={!!editRow} onOpenChange={(o) => { if (!o) setEditRow(null); }}>
-        <DialogContent className="max-w-xl max-h-[85vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>编辑登记 · {editRow?.chinese_name}</DialogTitle>
-          </DialogHeader>
-          {editRow && (
-            <div className="space-y-3">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <Label>基督之家</Label>
-                  <select value={editRow.church ?? ""} onChange={(e) => setEditRow({ ...editRow, church: e.target.value || null })} className="mt-1 w-full h-10 rounded-md border border-input bg-background px-3 text-sm">
-                    <option value="">—</option>
-                    {CHURCHES.map((c) => <option key={c} value={c}>{c.toUpperCase()}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <Label>性别</Label>
-                  <select value={editRow.gender ?? ""} onChange={(e) => setEditRow({ ...editRow, gender: e.target.value || null })} className="mt-1 w-full h-10 rounded-md border border-input bg-background px-3 text-sm">
-                    <option value="">—</option><option value="M">M</option><option value="F">F</option>
-                  </select>
-                </div>
-                <div>
-                  <Label>中文姓名</Label>
-                  <Input className="mt-1" value={editRow.chinese_name} onChange={(e) => setEditRow({ ...editRow, chinese_name: e.target.value })} />
-                </div>
-                <div>
-                  <Label>已付费</Label>
-                  <select value={editRow.paid ? "1" : "0"} onChange={(e) => setEditRow({ ...editRow, paid: e.target.value === "1" })} className="mt-1 w-full h-10 rounded-md border border-input bg-background px-3 text-sm">
-                    <option value="0">未付</option><option value="1">已付</option>
-                  </select>
-                </div>
-                <div>
-                  <Label>Last Name</Label>
-                  <Input className="mt-1" value={editRow.last_name ?? ""} onChange={(e) => setEditRow({ ...editRow, last_name: e.target.value })} />
-                </div>
-                <div>
-                  <Label>First Name</Label>
-                  <Input className="mt-1" value={editRow.first_name ?? ""} onChange={(e) => setEditRow({ ...editRow, first_name: e.target.value })} />
-                </div>
-                <div>
-                  <Label>Cell</Label>
-                  <Input className="mt-1" value={editRow.cell ?? ""} onChange={(e) => setEditRow({ ...editRow, cell: e.target.value })} />
-                </div>
-                <div>
-                  <Label>Email</Label>
-                  <Input className="mt-1" value={editRow.email ?? ""} onChange={(e) => setEditRow({ ...editRow, email: e.target.value })} />
-                </div>
-                <div>
-                  <Label>Program</Label>
-                  <select value={editRow.program ?? ""} onChange={(e) => setEditRow({ ...editRow, program: e.target.value || null })} className="mt-1 w-full h-10 rounded-md border border-input bg-background px-3 text-sm">
-                    <option value="">—</option>{PROGRAMS.map((p) => <option key={p.v} value={p.v}>{p.label}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <Label>Topic</Label>
-                  <select value={editRow.topic ?? ""} onChange={(e) => setEditRow({ ...editRow, topic: e.target.value || null })} className="mt-1 w-full h-10 rounded-md border border-input bg-background px-3 text-sm">
-                    <option value="">—</option>{TOPICS.map((t) => <option key={t.v} value={t.v}>{t.label}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <Label>Bed</Label>
-                  <select value={editRow.bed ?? ""} onChange={(e) => setEditRow({ ...editRow, bed: e.target.value || null })} className="mt-1 w-full h-10 rounded-md border border-input bg-background px-3 text-sm">
-                    <option value="">—</option><option value="yes">占床位</option><option value="no">不占床位</option>
-                  </select>
-                </div>
-                <div>
-                  <Label>可接送 / 需接送</Label>
-                  <div className="mt-1 flex gap-2">
-                    <Input type="number" min={0} placeholder="可接" value={editRow.can_pickup ?? ""} onChange={(e) => setEditRow({ ...editRow, can_pickup: e.target.value === "" ? null : parseInt(e.target.value, 10) })} />
-                    <Input type="number" min={0} placeholder="需接" value={editRow.need_pickup ?? ""} onChange={(e) => setEditRow({ ...editRow, need_pickup: e.target.value === "" ? null : parseInt(e.target.value, 10) })} />
-                  </div>
-                </div>
-              </div>
-              <div>
-                <Label>备注</Label>
-                <Textarea rows={2} className="mt-1" value={editRow.user_notes ?? ""} onChange={(e) => setEditRow({ ...editRow, user_notes: e.target.value })} />
-              </div>
-              <div className="flex justify-end gap-2 pt-2">
-                <Button variant="outline" onClick={() => setEditRow(null)}>取消</Button>
-                <Button onClick={saveEdit} disabled={editSaving}>{editSaving ? "保存中…" : "保存"}</Button>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+      {editGroup && (
+        <RetreatGroupEditor
+          open={!!editGroup}
+          onClose={() => setEditGroup(null)}
+          members={editGroup}
+          onChanged={(next) => {
+            if (next.length === 0) setEditGroup(null);
+            else setEditGroup(next);
+            load();
+          }}
+        />
+      )}
     </div>
   );
 }

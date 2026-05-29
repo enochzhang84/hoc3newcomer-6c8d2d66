@@ -29,6 +29,56 @@ function normalize(p: string) {
   return p.replace(/\D/g, "");
 }
 
+/** Split a confirmation_no like "0725-AAA-002" → { mmdd, code, seq }. */
+function parseConfNo(c: string | null) {
+  if (!c) return null;
+  const parts = c.split("-");
+  if (parts.length !== 3) return null;
+  const [mmdd, code, seqStr] = parts;
+  const seq = parseInt(seqStr, 10);
+  if (!mmdd || !code || isNaN(seq)) return null;
+  return { mmdd, code, seq };
+}
+
+/** Stable group key. Family groups share letter codes (AAA, BBB…);
+ *  a solo "000" registration is its own group (keyed by full confNo). */
+function groupKeyOf(c: string | null): string | null {
+  const p = parseConfNo(c);
+  if (!p) return c;
+  if (p.code === "000") return c;
+  return `${p.mmdd}-${p.code}`;
+}
+
+/** Fetch every row in `refId`'s group. */
+async function fetchGroupRows(refId: string) {
+  const { data: ref, error } = await supabaseAdmin
+    .from("retreat_registrations")
+    .select("*")
+    .eq("id", refId)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!ref) throw new Error("记录不存在");
+  const parsed = parseConfNo(ref.confirmation_no);
+  if (!parsed || parsed.code === "000") return { ref, rows: [ref] };
+  const prefix = `${parsed.mmdd}-${parsed.code}-`;
+  const { data: siblings, error: e2 } = await supabaseAdmin
+    .from("retreat_registrations")
+    .select("*")
+    .like("confirmation_no", `${prefix}%`)
+    .order("confirmation_no", { ascending: true });
+  if (e2) throw new Error(e2.message);
+  return { ref, rows: siblings ?? [] };
+}
+
+async function verifyGroupOwnership(refId: string, phone: string) {
+  const { rows } = await fetchGroupRows(refId);
+  const target = normalize(phone);
+  if (!target) throw new Error("电话号码无效");
+  const ok = rows.some((r) => normalize(r.cell ?? "") === target);
+  if (!ok) throw new Error("电话号码不匹配，无法修改此登记单");
+  return rows;
+}
+
 /** Public lookup by phone — returns retreat registrations whose `cell`
  * matches the supplied phone (exact, or last-7-digit fuzzy match). */
 export const lookupRetreatByPhone = createServerFn({ method: "POST" })
@@ -72,18 +122,7 @@ const editPatchSchema = z.object({
   church: z.string().trim().max(10).nullable().optional(),
 });
 
-async function verifyOwnership(id: string, phone: string) {
-  const { data: row, error } = await supabaseAdmin
-    .from("retreat_registrations")
-    .select("cell")
-    .eq("id", id)
-    .maybeSingle();
-  if (error) throw new Error(error.message);
-  if (!row) throw new Error("记录不存在");
-  const a = normalize(row.cell ?? "");
-  const b = normalize(phone);
-  if (!a || !b || a !== b) throw new Error("电话号码不匹配，无法修改此记录");
-}
+// (legacy verifyOwnership replaced by group-aware verifyGroupOwnership above)
 
 export const updateRetreatByPhone = createServerFn({ method: "POST" })
   .inputValidator((d) =>
@@ -94,7 +133,8 @@ export const updateRetreatByPhone = createServerFn({ method: "POST" })
     }).parse(d)
   )
   .handler(async ({ data }) => {
-    await verifyOwnership(data.id, data.phone);
+    // Group-aware: phone may match any member of the same registration form.
+    await verifyGroupOwnership(data.id, data.phone);
     const { error } = await supabaseAdmin
       .from("retreat_registrations")
       .update(data.patch)
@@ -108,13 +148,13 @@ export const deleteRetreatByPhone = createServerFn({ method: "POST" })
     z.object({ id: z.string().uuid(), phone: phoneSchema }).parse(d)
   )
   .handler(async ({ data }) => {
-    await verifyOwnership(data.id, data.phone);
+    const groupRows = await verifyGroupOwnership(data.id, data.phone);
     const { error } = await supabaseAdmin
       .from("retreat_registrations")
       .delete()
       .eq("id", data.id);
     if (error) throw new Error(error.message);
-    return { success: true };
+    return { success: true, remaining: Math.max(0, groupRows.length - 1) };
   });
 
 function mmddInPacific(d = new Date()): string {
@@ -211,4 +251,154 @@ export const submitRetreatRegistration = createServerFn({ method: "POST" })
       success: true,
       confirmation_numbers: inserts.map((i) => i.confirmation_no),
     };
+  });
+
+// ─────────────────────────────────────────────────────────────
+// Group lookup / add-member endpoints (used by phone-edit + admin)
+// ─────────────────────────────────────────────────────────────
+
+/** Lookup by phone, expanding each match to its full registration form. */
+export const lookupRetreatGroupByPhone = createServerFn({ method: "POST" })
+  .inputValidator((d) => z.object({ phone: phoneSchema }).parse(d))
+  .handler(async ({ data }) => {
+    const phone = data.phone.trim();
+    const norm = normalize(phone);
+    if (norm.length < 3) throw new Error("电话号码无效");
+
+    let { data: matches, error } = await supabaseAdmin
+      .from("retreat_registrations")
+      .select("*")
+      .eq("cell", phone);
+    if (error) throw new Error(error.message);
+    if (!matches || matches.length === 0) {
+      const tail = norm.slice(-7);
+      const fuzzy = await supabaseAdmin
+        .from("retreat_registrations")
+        .select("*")
+        .ilike("cell", `%${tail}%`);
+      if (fuzzy.error) throw new Error(fuzzy.error.message);
+      matches = fuzzy.data ?? [];
+    }
+    if (matches.length === 0) return { groups: [] };
+
+    const seen = new Map<string, any[]>();
+    for (const m of matches) {
+      const key = groupKeyOf(m.confirmation_no) ?? m.id;
+      if (seen.has(key)) continue;
+      const { rows } = await fetchGroupRows(m.id);
+      seen.set(key, rows);
+    }
+    return {
+      groups: Array.from(seen.entries()).map(([key, members]) => ({ key, members })),
+    };
+  });
+
+/** Admin-trusted: fetch full group given any member's id. */
+export const fetchRetreatGroupById = createServerFn({ method: "POST" })
+  .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data }) => {
+    const { rows } = await fetchGroupRows(data.id);
+    return { members: rows };
+  });
+
+async function nextLetterCodeForDay(mmdd: string): Promise<string> {
+  const { data, error } = await supabaseAdmin
+    .from("retreat_registrations")
+    .select("confirmation_no")
+    .like("confirmation_no", `${mmdd}-%`);
+  if (error) throw new Error(error.message);
+  let maxLetters: string | null = null;
+  for (const r of data ?? []) {
+    const p = parseConfNo(r.confirmation_no);
+    if (!p || p.code === "000") continue;
+    if (!/^([A-Z])\1\1$/.test(p.code)) continue;
+    if (maxLetters === null || p.code > maxLetters) maxLetters = p.code;
+  }
+  return nextLetters(maxLetters);
+}
+
+async function insertGroupMember(
+  refId: string,
+  person: z.infer<typeof personSchema>,
+) {
+  const { ref, rows } = await fetchGroupRows(refId);
+  const refParsed = parseConfNo(ref.confirmation_no);
+
+  let prefix: string;
+  if (!refParsed) {
+    const mmdd = mmddInPacific();
+    prefix = `${mmdd}-${await nextLetterCodeForDay(mmdd)}-`;
+  } else if (refParsed.code === "000") {
+    // Promote solo → fresh letter group, rename existing row to seq 001
+    const newCode = await nextLetterCodeForDay(refParsed.mmdd);
+    const promoted = `${refParsed.mmdd}-${newCode}-001`;
+    const { error: upErr } = await supabaseAdmin
+      .from("retreat_registrations")
+      .update({ confirmation_no: promoted })
+      .eq("id", ref.id);
+    if (upErr) throw new Error(upErr.message);
+    prefix = `${refParsed.mmdd}-${newCode}-`;
+  } else {
+    prefix = `${refParsed.mmdd}-${refParsed.code}-`;
+  }
+
+  // Re-query within prefix to get latest seq (handles promotion case)
+  const { data: latest, error: qErr } = await supabaseAdmin
+    .from("retreat_registrations")
+    .select("confirmation_no")
+    .like("confirmation_no", `${prefix}%`);
+  if (qErr) throw new Error(qErr.message);
+  let maxSeq = 0;
+  for (const r of latest ?? []) {
+    const p = parseConfNo(r.confirmation_no);
+    if (p && p.seq > maxSeq) maxSeq = p.seq;
+  }
+  const confNo = `${prefix}${String(maxSeq + 1).padStart(3, "0")}`;
+
+  const { error } = await supabaseAdmin.from("retreat_registrations").insert({
+    confirmation_no: confNo,
+    church: ref.church ?? null,
+    chinese_name: person.chinese_name,
+    last_name: person.last_name ?? null,
+    first_name: person.first_name ?? null,
+    gender: person.gender ?? null,
+    cell: person.cell ?? null,
+    email: person.email ?? null,
+    program: person.program ?? null,
+    topic: person.topic ?? null,
+    bed: person.bed ?? null,
+    user_notes: person.user_notes ?? null,
+  });
+  if (error) throw new Error(error.message);
+  // Suppress unused-var lint (rows is used implicitly for prefix decision)
+  void rows;
+  return confNo;
+}
+
+/** Public: phone-verified add member. */
+export const addRetreatGroupMember = createServerFn({ method: "POST" })
+  .inputValidator((d) =>
+    z.object({
+      groupRefId: z.string().uuid(),
+      phone: phoneSchema,
+      person: personSchema,
+    }).parse(d),
+  )
+  .handler(async ({ data }) => {
+    await verifyGroupOwnership(data.groupRefId, data.phone);
+    const confNo = await insertGroupMember(data.groupRefId, data.person);
+    return { success: true, confirmation_no: confNo };
+  });
+
+/** Admin-trusted add member (no phone check). */
+export const adminAddRetreatGroupMember = createServerFn({ method: "POST" })
+  .inputValidator((d) =>
+    z.object({
+      groupRefId: z.string().uuid(),
+      person: personSchema,
+    }).parse(d),
+  )
+  .handler(async ({ data }) => {
+    const confNo = await insertGroupMember(data.groupRefId, data.person);
+    return { success: true, confirmation_no: confNo };
   });
