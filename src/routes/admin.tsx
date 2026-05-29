@@ -1640,7 +1640,7 @@ function AdminPage() {
           );
         })()}
         {statsSubTab === "newcomer" && (
-        <section>
+        <section className="mt-6">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <Stat label="总登记数" value={regs.length} />
           <Stat label="希望探访" value={regs.filter((r) => r.wants_visit).length} />
@@ -1749,7 +1749,7 @@ function AdminPage() {
         )}
 
         {statsSubTab === "sunday" && (
-        <>
+        <div className="mt-6 space-y-6">
         <section>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <CheckinActivityCard
@@ -1811,9 +1811,8 @@ function AdminPage() {
             <CollapsibleContent>
               <SundayParticipationStats checkins={sundayCheckins} courses={courses} />
             </CollapsibleContent>
-          </Collapsible>
         </section>
-        </>
+        </div>
         )}
 
         {statsSubTab === "meals" && (
