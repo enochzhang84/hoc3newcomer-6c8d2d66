@@ -1638,7 +1638,7 @@ function AdminPage() {
               </div>
             </section>
           );
-
+        })()}
         {statsSubTab === "newcomer" && (
         <section>
           <h2 className="font-serif text-xl mb-4">登记统计</h2>
