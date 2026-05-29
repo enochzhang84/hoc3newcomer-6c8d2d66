@@ -288,7 +288,7 @@ function NotesSection() {
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [customCategories, setCustomCategories] = useState<string[]>([]);
   const [previewImg, setPreviewImg] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const allCategories = useMemo(
     () => Array.from(new Set([...DEFAULT_CATEGORIES, ...customCategories])),
@@ -498,7 +498,7 @@ function NoteEditor({
   onDelete: () => void;
   onUpload: (files: FileList | File[]) => void;
   onPreview: (url: string) => void;
-  fileInputRef: React.RefObject<HTMLInputElement>;
+  fileInputRef: React.RefObject<HTMLInputElement | null>;
 }) {
   const [title, setTitle] = useState(note.title);
   const [content, setContent] = useState(note.content);
