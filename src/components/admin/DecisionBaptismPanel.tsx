@@ -187,8 +187,7 @@ export function DecisionBaptismPanel() {
 
   return (
     <section className="bg-card border border-border/50 rounded-2xl p-6">
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-        <h2 className="font-serif text-xl">💧 决志与受洗统计</h2>
+      <div className="flex flex-wrap items-center justify-end gap-3 mb-4">
         <div className="flex items-center gap-2">
           <Label className="text-sm">年份</Label>
           <select
