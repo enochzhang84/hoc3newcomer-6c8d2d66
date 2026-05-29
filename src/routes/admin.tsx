@@ -3107,9 +3107,12 @@ img{width:480px;height:480px;}@media print{@page{margin:1cm;}}</style></head>
         <section className="bg-card border border-border/50 rounded-2xl p-6">
           <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
             <h2 className="font-serif text-xl">课程签到记录</h2>
-            <Button size="sm" variant="outline" onClick={() => loadSundayCheckins()}>
-              刷新
-            </Button>
+            <div className="flex flex-wrap items-center gap-2">
+              <YearFilterPicker value={courseYearFilter} onChange={setCourseYearFilter} />
+              <Button size="sm" variant="outline" onClick={() => loadSundayCheckins()}>
+                刷新
+              </Button>
+            </div>
           </div>
           {courses.filter((c) => c.is_active).length === 0 ? (
             <p className="text-sm text-muted-foreground">暂无课程。添加课程后此处会自动生成标签页。</p>
@@ -3122,7 +3125,7 @@ img{width:480px;height:480px;}@media print{@page{margin:1cm;}}</style></head>
               {/* Chrome风格自定义Tab Bar */}
               <div className="flex flex-wrap relative" style={{ borderBottom: '1px solid rgba(0,0,0,0.08)' }}>
                 {courses.filter((c) => c.is_active).map((c) => {
-                  const count = sundayCheckins.filter((k) => k.course_id === c.id).length;
+                  const count = sundayCheckins.filter((k) => k.course_id === c.id && (k.checkin_date ?? "").slice(0, 4) === String(courseYearFilter)).length;
                   const currentTab = activeCourseTab || courses.find((c2) => c2.is_active)?.id || "";
                   const isActive = currentTab === c.id;
                   return (
@@ -3157,7 +3160,7 @@ img{width:480px;height:480px;}@media print{@page{margin:1cm;}}</style></head>
                 })}
               </div>
               {courses.filter((c) => c.is_active).map((c) => {
-                const rows = sundayCheckins.filter((k) => k.course_id === c.id);
+                const rows = sundayCheckins.filter((k) => k.course_id === c.id && (k.checkin_date ?? "").slice(0, 4) === String(courseYearFilter));
                 const pg = coursePages[c.id] ?? 1;
                 const totalPg = Math.max(1, Math.ceil(rows.length / TAB_PAGE_SIZE));
                 const slice = rows.slice((pg - 1) * TAB_PAGE_SIZE, pg * TAB_PAGE_SIZE);
