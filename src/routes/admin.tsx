@@ -1933,6 +1933,12 @@ function AdminPage() {
             </Button>
             <Button
               variant="outline"
+              onClick={() => window.open("/signage", "_blank")}
+            >
+              📢 宣传栏
+            </Button>
+            <Button
+              variant="outline"
               onClick={() => setQrLibOpen(true)}
             >
               二维码库
