@@ -1035,7 +1035,14 @@ function AdminPage() {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-4">
         <p className="text-muted-foreground">您的账号尚未审核，请联系管理员授权</p>
-        <Button onClick={async () => { await supabase.auth.signOut(); navigate({ to: "/login" }); }}>退出登录</Button>
+        <Button onClick={async () => {
+          try {
+            const { data } = await supabase.auth.getUser();
+            if (data.user) await (supabase as any).from("user_presence").delete().eq("user_id", data.user.id);
+          } catch {}
+          await supabase.auth.signOut();
+          navigate({ to: "/login" });
+        }}>退出登录</Button>
       </div>
     );
   }
