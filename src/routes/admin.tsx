@@ -664,12 +664,21 @@ function AdminPage() {
     // Stats overview extras
     try {
       const yearStart = new Date(new Date().getFullYear(), 0, 1).toISOString();
-      const [retreatRes, ministryRes] = await Promise.all([
+      const yearStartDate = yearStart.slice(0, 10);
+      const [retreatRes, ministryRes, bapRes, decRes] = await Promise.all([
         (supabase as any).from("retreat_registrations").select("id", { count: "exact", head: true }),
         (supabase as any)
           .from("ministry_service_entries")
           .select("worker")
-          .gte("entry_date", yearStart.slice(0, 10)),
+          .gte("entry_date", yearStartDate),
+        (supabase as any)
+          .from("baptisms")
+          .select("id", { count: "exact", head: true })
+          .gte("baptism_date", yearStartDate),
+        (supabase as any)
+          .from("decisions")
+          .select("id", { count: "exact", head: true })
+          .gte("decision_date", yearStartDate),
       ]);
       setRetreatCount(retreatRes.count ?? 0);
       const workers = new Set<string>();
@@ -677,6 +686,8 @@ function AdminPage() {
         if (m.worker && m.worker.trim()) workers.add(m.worker.trim());
       });
       setMinistryWorkerYearCount(workers.size);
+      setBaptismYearCount(bapRes.count ?? 0);
+      setDecisionYearCount(decRes.count ?? 0);
     } catch {
       // non-fatal
     }
