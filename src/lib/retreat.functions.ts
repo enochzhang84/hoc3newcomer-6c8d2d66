@@ -29,6 +29,56 @@ function normalize(p: string) {
   return p.replace(/\D/g, "");
 }
 
+/** Split a confirmation_no like "0725-AAA-002" → { mmdd, code, seq }. */
+function parseConfNo(c: string | null) {
+  if (!c) return null;
+  const parts = c.split("-");
+  if (parts.length !== 3) return null;
+  const [mmdd, code, seqStr] = parts;
+  const seq = parseInt(seqStr, 10);
+  if (!mmdd || !code || isNaN(seq)) return null;
+  return { mmdd, code, seq };
+}
+
+/** Stable group key. Family groups share letter codes (AAA, BBB…);
+ *  a solo "000" registration is its own group (keyed by full confNo). */
+function groupKeyOf(c: string | null): string | null {
+  const p = parseConfNo(c);
+  if (!p) return c;
+  if (p.code === "000") return c;
+  return `${p.mmdd}-${p.code}`;
+}
+
+/** Fetch every row in `refId`'s group. */
+async function fetchGroupRows(refId: string) {
+  const { data: ref, error } = await supabaseAdmin
+    .from("retreat_registrations")
+    .select("*")
+    .eq("id", refId)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!ref) throw new Error("记录不存在");
+  const parsed = parseConfNo(ref.confirmation_no);
+  if (!parsed || parsed.code === "000") return { ref, rows: [ref] };
+  const prefix = `${parsed.mmdd}-${parsed.code}-`;
+  const { data: siblings, error: e2 } = await supabaseAdmin
+    .from("retreat_registrations")
+    .select("*")
+    .like("confirmation_no", `${prefix}%`)
+    .order("confirmation_no", { ascending: true });
+  if (e2) throw new Error(e2.message);
+  return { ref, rows: siblings ?? [] };
+}
+
+async function verifyGroupOwnership(refId: string, phone: string) {
+  const { rows } = await fetchGroupRows(refId);
+  const target = normalize(phone);
+  if (!target) throw new Error("电话号码无效");
+  const ok = rows.some((r) => normalize(r.cell ?? "") === target);
+  if (!ok) throw new Error("电话号码不匹配，无法修改此登记单");
+  return rows;
+}
+
 /** Public lookup by phone — returns retreat registrations whose `cell`
  * matches the supplied phone (exact, or last-7-digit fuzzy match). */
 export const lookupRetreatByPhone = createServerFn({ method: "POST" })
