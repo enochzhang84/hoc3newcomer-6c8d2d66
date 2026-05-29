@@ -19,6 +19,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { CalendarIcon, User } from "lucide-react";
 import { format } from "date-fns";
 import { ScreenManager } from "@/components/admin/ScreenManager";
+import { AVMinistryWorkspace } from "@/components/admin/AVMinistryWorkspace";
 import { zhCN } from "date-fns/locale";
 import { listUsersWithRoles, setUserRole, deleteUser, createUserWithRole, updateUserWorkerName } from "@/lib/users.functions";
 import { updateRegistration } from "@/lib/registrations.functions";
@@ -2611,7 +2612,7 @@ function AdminPage() {
 
         {mediaSubTab === "messages" && (
           <div className="pt-6 md:pt-8">
-            <MinistryServiceCalendar />
+            <AVMinistryWorkspace />
           </div>
         )}
             </TabsContent>
