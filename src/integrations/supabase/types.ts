@@ -173,6 +173,62 @@ export type Database = {
         }
         Relationships: []
       }
+      baptisms: {
+        Row: {
+          baptism_date: string
+          baptism_type: string | null
+          baptizing_elder: string | null
+          created_at: string
+          decision_id: string | null
+          email: string | null
+          fellowship: string | null
+          gender: string | null
+          id: string
+          name: string
+          notes: string | null
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          baptism_date: string
+          baptism_type?: string | null
+          baptizing_elder?: string | null
+          created_at?: string
+          decision_id?: string | null
+          email?: string | null
+          fellowship?: string | null
+          gender?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          baptism_date?: string
+          baptism_type?: string | null
+          baptizing_elder?: string | null
+          created_at?: string
+          decision_id?: string | null
+          email?: string | null
+          fellowship?: string | null
+          gender?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "baptisms_decision_id_fkey"
+            columns: ["decision_id"]
+            isOneToOne: false
+            referencedRelation: "decisions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       chat_messages: {
         Row: {
           content: string
@@ -242,6 +298,57 @@ export type Database = {
           updated_at?: string
           wechat?: string | null
           zip?: string | null
+        }
+        Relationships: []
+      }
+      decisions: {
+        Row: {
+          created_at: string
+          decision_date: string
+          email: string | null
+          fellowship: string | null
+          follow_up_person: string | null
+          follow_up_status: string
+          gender: string | null
+          id: string
+          is_baptized: boolean
+          name: string
+          notes: string | null
+          phone: string | null
+          source: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          decision_date: string
+          email?: string | null
+          fellowship?: string | null
+          follow_up_person?: string | null
+          follow_up_status?: string
+          gender?: string | null
+          id?: string
+          is_baptized?: boolean
+          name: string
+          notes?: string | null
+          phone?: string | null
+          source?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          decision_date?: string
+          email?: string | null
+          fellowship?: string | null
+          follow_up_person?: string | null
+          follow_up_status?: string
+          gender?: string | null
+          id?: string
+          is_baptized?: boolean
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          source?: string | null
+          updated_at?: string
         }
         Relationships: []
       }

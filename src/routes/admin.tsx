@@ -30,6 +30,7 @@ import { DutyCalendarSection } from "@/components/DutyCalendar";
 import MealPlanCalendar from "@/components/MealPlanCalendar";
 import EventMealNotebook from "@/components/EventMealNotebook";
 import MinistryServiceCalendar from "@/components/MinistryServiceCalendar";
+import { DecisionBaptismPanel } from "@/components/admin/DecisionBaptismPanel";
 
 type Reg = {
   id: string;
@@ -453,6 +454,8 @@ function AdminPage() {
   const [sundayParticipationOpen, setSundayParticipationOpen] = useState(false);
   const [retreatCount, setRetreatCount] = useState<number>(0);
   const [ministryWorkerYearCount, setMinistryWorkerYearCount] = useState<number>(0);
+  const [baptismYearCount, setBaptismYearCount] = useState<number>(0);
+  const [decisionYearCount, setDecisionYearCount] = useState<number>(0);
   // Adult class checkins (summer / fall)
   const [adultCheckins, setAdultCheckins] = useState<AdultCheckin[]>([]);
   const [adultSort, setAdultSort] = useState<Record<"summer" | "fall", { col: "name" | "fellowship" | "time"; dir: "asc" | "desc" }>>({
@@ -661,12 +664,21 @@ function AdminPage() {
     // Stats overview extras
     try {
       const yearStart = new Date(new Date().getFullYear(), 0, 1).toISOString();
-      const [retreatRes, ministryRes] = await Promise.all([
+      const yearStartDate = yearStart.slice(0, 10);
+      const [retreatRes, ministryRes, bapRes, decRes] = await Promise.all([
         (supabase as any).from("retreat_registrations").select("id", { count: "exact", head: true }),
         (supabase as any)
           .from("ministry_service_entries")
           .select("worker")
-          .gte("entry_date", yearStart.slice(0, 10)),
+          .gte("entry_date", yearStartDate),
+        (supabase as any)
+          .from("baptisms")
+          .select("id", { count: "exact", head: true })
+          .gte("baptism_date", yearStartDate),
+        (supabase as any)
+          .from("decisions")
+          .select("id", { count: "exact", head: true })
+          .gte("decision_date", yearStartDate),
       ]);
       setRetreatCount(retreatRes.count ?? 0);
       const workers = new Set<string>();
@@ -674,6 +686,8 @@ function AdminPage() {
         if (m.worker && m.worker.trim()) workers.add(m.worker.trim());
       });
       setMinistryWorkerYearCount(workers.size);
+      setBaptismYearCount(bapRes.count ?? 0);
+      setDecisionYearCount(decRes.count ?? 0);
     } catch {
       // non-fatal
     }
@@ -1579,7 +1593,7 @@ function AdminPage() {
               tone: sundayRate >= 50 ? "ok" : sundayRate >= 25 ? "warn" : "alert",
               jump: () => setStatsSubTab("sunday"),
             },
-            { icon: "💧", label: "年度受洗人数", value: "—", sub: "敬请期待", tone: "ok", jump: () => setStatsSubTab("baptism") },
+            { icon: "💧", label: "年度受洗人数", value: baptismYearCount, sub: `${now.getFullYear()}年 决志 ${decisionYearCount}`, tone: "ok", jump: () => setStatsSubTab("baptism") },
             { icon: "🙏", label: "年度服侍人数", value: ministryWorkerYearCount, sub: `${now.getFullYear()}年同工`, tone: "ok", jump: () => setStatsSubTab("service") },
             { icon: "🏕", label: "退修会报名人数", value: retreatCount, sub: "累计报名", tone: "ok" },
           ];
@@ -1879,13 +1893,7 @@ function AdminPage() {
           </section>
         )}
 
-        {statsSubTab === "baptism" && (
-          <section className="bg-card border border-border/50 rounded-2xl p-10 text-center">
-            <div className="text-5xl mb-3">💧</div>
-            <h2 className="font-serif text-xl mb-2">决志与受洗统计</h2>
-            <p className="text-sm text-muted-foreground">该模块将在下一阶段上线（年度决志 / 受洗记录 / 转化率 / 历年趋势图）</p>
-          </section>
-        )}
+        {statsSubTab === "baptism" && <DecisionBaptismPanel />}
 
         {statsSubTab === "annual" && (
           <section className="bg-card border border-border/50 rounded-2xl p-10 text-center">
