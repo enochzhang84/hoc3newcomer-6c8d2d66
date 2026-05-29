@@ -43,6 +43,7 @@ export function FloatingChat() {
   const [mentionQuery, setMentionQuery] = useState<string | null>(null);
   const [unread, setUnread] = useState(0);
   const [search, setSearch] = useState("");
+  const [chooserTarget, setChooserTarget] = useState<WorkerOption | null>(null);
   const [onlineIds, setOnlineIds] = useState<Set<string>>(new Set());
   const publicListRef = useRef<HTMLDivElement>(null);
   const privateListRef = useRef<HTMLDivElement>(null);
@@ -235,6 +236,64 @@ export function FloatingChat() {
     setMentionTarget(null);
     setInput((prev) => prev.replace(/^@[^\s@]+\s*/, ""));
     setMentionQuery(null);
+  };
+
+  const focusInput = () => {
+    setTimeout(() => {
+      const el = inputRef.current;
+      if (!el) return;
+      el.focus();
+      try { el.setSelectionRange(el.value.length, el.value.length); } catch { /* noop */ }
+    }, 0);
+  };
+
+  const matchesWorker = (w: WorkerOption, q: string) => {
+    const s = q.trim().toLowerCase();
+    if (!s) return false;
+    const name = (w.worker_name || "").toLowerCase();
+    const disp = (w.display_name || "").toLowerCase();
+    return name.includes(s) || disp.includes(s);
+  };
+  const searchMatches = search.trim()
+    ? workers.filter((w) => w.user_id !== userId && matchesWorker(w, search))
+    : [];
+
+  const startPublicMention = (w: WorkerOption) => {
+    const name = w.worker_name?.trim() || w.display_name?.trim() || "";
+    if (!name) return;
+    setMentionTarget(null);
+    setInput((prev) => {
+      const stripped = prev.replace(/^@[^\s@]+\s*/, "");
+      const tag = `@${name} `;
+      return stripped.startsWith(tag) ? stripped : tag + stripped;
+    });
+    setSearch("");
+    setChooserTarget(null);
+    focusInput();
+  };
+
+  const startPrivateChat = (w: WorkerOption) => {
+    const name = w.worker_name?.trim() || w.display_name?.trim() || "";
+    if (!name || w.user_id === userId) return;
+    setMentionTarget(w);
+    setInput((prev) => {
+      const stripped = prev.replace(/^@[^\s@]+\s*/, "");
+      const tag = `@${name} `;
+      return stripped.startsWith(tag) ? stripped : tag + stripped;
+    });
+    setSearch("");
+    setChooserTarget(null);
+    focusInput();
+  };
+
+  const handleSearchEnter = () => {
+    const q = search.trim();
+    if (!q) return;
+    if (searchMatches.length === 0) {
+      toast.error("未找到该同工");
+      return;
+    }
+    setChooserTarget(searchMatches[0]);
   };
 
   const send = async () => {
@@ -459,9 +518,35 @@ export function FloatingChat() {
             <Input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") { e.preventDefault(); handleSearchEnter(); }
+              }}
               placeholder="搜索同工姓名或消息内容…"
               className="h-8 text-xs"
             />
+            {search.trim() && searchMatches.length > 0 && (
+              <div className="mt-2 bg-popover border border-border rounded-md shadow-sm max-h-40 overflow-y-auto">
+                <div className="px-2 py-1 text-[10px] text-muted-foreground bg-muted/40">
+                  找到 {searchMatches.length} 位同工 · 点击发起聊天
+                </div>
+                {searchMatches.slice(0, 8).map((w) => {
+                  const online = onlineIds.has(w.user_id);
+                  return (
+                    <button
+                      key={w.user_id}
+                      onClick={() => setChooserTarget(w)}
+                      className="w-full flex items-center justify-between gap-2 text-left px-3 py-1.5 text-sm hover:bg-muted border-t border-border/40 first:border-0"
+                    >
+                      <span className="truncate">{w.worker_name || w.display_name || "(未命名)"}</span>
+                      <span className={"h-2 w-2 rounded-full shrink-0 " + (online ? "bg-green-500" : "bg-gray-400")} />
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+            {search.trim() && searchMatches.length === 0 && (
+              <div className="mt-2 text-[11px] text-muted-foreground px-1">未找到该同工</div>
+            )}
           </div>
 
           <div className="flex-1 min-h-0 flex flex-col">
