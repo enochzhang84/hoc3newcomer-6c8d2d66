@@ -1601,21 +1601,17 @@ function AdminPage() {
             { icon: "🏕", label: "退修会报名人数", value: retreatCount, sub: "累计报名", tone: "ok" },
           ];
 
-          const toneClass = (t?: "ok" | "warn" | "alert") =>
+          const toneBorder = (t?: "ok" | "warn" | "alert") =>
             t === "alert"
-              ? "border-red-300 bg-red-50"
+              ? "border-t-4 border-t-red-400"
               : t === "warn"
-                ? "border-amber-300 bg-amber-50"
-                : "border-emerald-200 bg-emerald-50/60";
+                ? "border-t-4 border-t-amber-400"
+                : "border-t-4 border-t-emerald-400";
           const toneText = (t?: "ok" | "warn" | "alert") =>
-            t === "alert" ? "text-red-700" : t === "warn" ? "text-amber-700" : "text-emerald-700";
+            t === "alert" ? "text-red-600" : t === "warn" ? "text-amber-600" : "text-emerald-600";
 
           return (
-            <section>
-              <div className="flex items-baseline justify-between mb-3">
-                <h2 className="font-serif text-xl">📊 长老仪表板</h2>
-                <span className="text-xs text-muted-foreground">点击卡片查看详细统计</span>
-              </div>
+            <section className="mt-6">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {cards.map((c) => (
                   <button
@@ -1624,23 +1620,24 @@ function AdminPage() {
                     onClick={c.jump}
                     disabled={!c.jump}
                     className={cn(
-                      "text-left border rounded-2xl p-4 transition-all",
-                      toneClass(c.tone),
-                      c.jump ? "hover:shadow-md cursor-pointer" : "cursor-default",
+                      "text-left bg-card border border-border/60 rounded-2xl p-5 h-full flex flex-col transition-all shadow-sm",
+                      toneBorder(c.tone),
+                      c.jump
+                        ? "hover:shadow-md hover:-translate-y-0.5 cursor-pointer"
+                        : "cursor-default",
                     )}
                   >
-                    <div className="text-2xl">{c.icon}</div>
-                    <div className="text-xs text-muted-foreground mt-1">{c.label}</div>
-                    <div className={cn("text-3xl font-serif mt-1 tabular-nums", toneText(c.tone))}>
+                    <div className="text-xl leading-none">{c.icon}</div>
+                    <div className="text-sm text-muted-foreground mt-2">{c.label}</div>
+                    <div className={cn("text-4xl font-bold mt-2 tabular-nums tracking-tight", toneText(c.tone))}>
                       {c.value}
                     </div>
-                    {c.sub && <div className="text-xs text-muted-foreground mt-1">{c.sub}</div>}
+                    {c.sub && <div className="text-xs text-muted-foreground/80 mt-2">{c.sub}</div>}
                   </button>
                 ))}
               </div>
             </section>
           );
-        })()}
 
         {statsSubTab === "newcomer" && (
         <section>
