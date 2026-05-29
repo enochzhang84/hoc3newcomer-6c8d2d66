@@ -311,9 +311,6 @@ export function ScreenManager() {
           可在屏幕「自定义链接」中输入 <code>/display/poster/&lt;slug&gt;</code> 投放宣传内容，或选择下方播放列表添加宣传栏内容。
         </div>
       )}
-      <div className="hidden">{/* keep linter quiet */}{JSON.stringify(posters.length)}</div>
-      <div className="-mb-4">
-      </div>
 
       {showNew && (
         <div className="grid sm:grid-cols-4 gap-3 border border-border/50 rounded-xl p-4 bg-muted/30">
