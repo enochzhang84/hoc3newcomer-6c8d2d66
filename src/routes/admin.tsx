@@ -16,6 +16,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { CalendarIcon, User } from "lucide-react";
 import { format } from "date-fns";
 import { ScreenManager } from "@/components/admin/ScreenManager";
@@ -445,6 +446,13 @@ function AdminPage() {
   const [fellowshipPages, setFellowshipPages] = useState<Record<string, number>>({});
   const TAB_PAGE_SIZE = 10;
   const [mainTab, setMainTab] = useState("stats");
+  const [statsSubTab, setStatsSubTab] = useState<
+    "overview" | "newcomer" | "sunday" | "meals" | "service" | "baptism" | "annual"
+  >("overview");
+  const [kidsEnrollOpen, setKidsEnrollOpen] = useState(false);
+  const [sundayParticipationOpen, setSundayParticipationOpen] = useState(false);
+  const [retreatCount, setRetreatCount] = useState<number>(0);
+  const [ministryWorkerYearCount, setMinistryWorkerYearCount] = useState<number>(0);
   // Adult class checkins (summer / fall)
   const [adultCheckins, setAdultCheckins] = useState<AdultCheckin[]>([]);
   const [adultSort, setAdultSort] = useState<Record<"summer" | "fall", { col: "name" | "fellowship" | "time"; dir: "asc" | "desc" }>>({
