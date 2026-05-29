@@ -62,6 +62,7 @@ function tally(entries: Entry[], keyFn: (e: Entry) => string | null) {
 
 export function HospitalityRankingSection() {
   const [entries, setEntries] = useState<Entry[]>([]);
+  const [communionRows, setCommunionRows] = useState<Entry[]>([]);
   const [refreshTick, setRefreshTick] = useState(0);
   const now = new Date();
   const [year, setYear] = useState<number>(now.getFullYear());
@@ -75,10 +76,12 @@ export function HospitalityRankingSection() {
         .select("id,panel_key,service_date,service_item,location,worker,holy_communion")
         .like("panel_key", `${PANEL_PREFIX}%`)
         .not("service_date", "is", null);
-      // Dedupe + drop empty workers + drop communion-only markers so every
-      // chart/ranking uses the same canonical set as the calendar view.
-      const cleaned = ((data ?? []) as Entry[]).filter(isDuty);
-      setEntries(dedupe(cleaned));
+      const all = (data ?? []) as Entry[];
+      // Rankings: dedupe + drop empty workers + drop communion-only markers
+      // so every chart/ranking uses the same canonical set as the calendar view.
+      setEntries(dedupe(all.filter(isDuty)));
+      // Communion: any row flagged holy_communion contributes a Sunday tally.
+      setCommunionRows(all.filter((e) => e.holy_communion === true));
     })();
   }, [refreshTick]);
 
@@ -146,14 +149,26 @@ export function HospitalityRankingSection() {
   // ── Report ───────────────────────────────
   const report = useMemo(() => {
     const sundays = new Set(scoped.map((e) => e.service_date));
+    // Communion = distinct service dates flagged in current panel & scope
+    const communionDates = new Set(
+      communionRows
+        .filter((e) =>
+          e.service_date &&
+          e.panel_key === `${PANEL_PREFIX}${year}` &&
+          Number(e.service_date.slice(0, 4)) === year &&
+          (monthIdx === 0 || Number(e.service_date.slice(5, 7)) === monthIdx),
+        )
+        .map((e) => e.service_date),
+    );
     return {
       sundays: sundays.size,
       services: scoped.filter((e) => e.worker).length,
       workers: new Set(scoped.map((e) => e.worker).filter(Boolean)).size,
       front: scoped.filter((e) => isFront(e) && e.worker).length,
       back: scoped.filter((e) => isBack(e) && e.worker).length,
+      communion: communionDates.size,
     };
-  }, [scoped]);
+  }, [scoped, communionRows, year, monthIdx]);
 
   const pieData = useMemo(() => ([
     { name: "新人接待 (前门)", value: report.front },
@@ -170,7 +185,7 @@ export function HospitalityRankingSection() {
       ["年度报告", [{
         年份: year, 主日数: report.sundays, 服侍人次: report.services,
         参与同工: report.workers,
-        新人接待: report.front, 迎宾接待: report.back,
+        新人接待: report.front, 迎宾接待: report.back, 圣餐次数: report.communion,
         平均: fairness.avg.toFixed(2), 标准差: fairness.stddev.toFixed(2),
         公平度: fairness.score,
       }]],
@@ -225,6 +240,7 @@ export function HospitalityRankingSection() {
             { label: "参与同工", value: report.workers },
             { label: "新人接待", value: report.front },
             { label: "迎宾接待", value: report.back },
+            { label: "圣餐次数", value: report.communion },
           ].map((s) => (
             <div key={s.label} className="border border-border/50 rounded-xl p-3 bg-background/40">
               <div className="text-[11px] text-muted-foreground">{s.label}</div>
