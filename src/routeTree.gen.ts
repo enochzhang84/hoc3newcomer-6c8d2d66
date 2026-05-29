@@ -16,6 +16,7 @@ import { Route as SignupRouteImport } from './routes/signup'
 import { Route as SignageRouteImport } from './routes/signage'
 import { Route as ServeApplyRouteImport } from './routes/serve-apply'
 import { Route as RetreatRegisterRouteImport } from './routes/retreat-register'
+import { Route as RetreatInfoRouteImport } from './routes/retreat-info'
 import { Route as RetreatEditRouteImport } from './routes/retreat-edit'
 import { Route as RetreatAdminRouteImport } from './routes/retreat-admin'
 import { Route as RetreatRouteImport } from './routes/retreat'
@@ -68,6 +69,11 @@ const ServeApplyRoute = ServeApplyRouteImport.update({
 const RetreatRegisterRoute = RetreatRegisterRouteImport.update({
   id: '/retreat-register',
   path: '/retreat-register',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RetreatInfoRoute = RetreatInfoRouteImport.update({
+  id: '/retreat-info',
+  path: '/retreat-info',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RetreatEditRoute = RetreatEditRouteImport.update({
@@ -176,6 +182,7 @@ export interface FileRoutesByFullPath {
   '/retreat': typeof RetreatRoute
   '/retreat-admin': typeof RetreatAdminRoute
   '/retreat-edit': typeof RetreatEditRoute
+  '/retreat-info': typeof RetreatInfoRoute
   '/retreat-register': typeof RetreatRegisterRoute
   '/serve-apply': typeof ServeApplyRoute
   '/signage': typeof SignageRoute
@@ -203,6 +210,7 @@ export interface FileRoutesByTo {
   '/retreat': typeof RetreatRoute
   '/retreat-admin': typeof RetreatAdminRoute
   '/retreat-edit': typeof RetreatEditRoute
+  '/retreat-info': typeof RetreatInfoRoute
   '/retreat-register': typeof RetreatRegisterRoute
   '/serve-apply': typeof ServeApplyRoute
   '/signage': typeof SignageRoute
@@ -231,6 +239,7 @@ export interface FileRoutesById {
   '/retreat': typeof RetreatRoute
   '/retreat-admin': typeof RetreatAdminRoute
   '/retreat-edit': typeof RetreatEditRoute
+  '/retreat-info': typeof RetreatInfoRoute
   '/retreat-register': typeof RetreatRegisterRoute
   '/serve-apply': typeof ServeApplyRoute
   '/signage': typeof SignageRoute
@@ -260,6 +269,7 @@ export interface FileRouteTypes {
     | '/retreat'
     | '/retreat-admin'
     | '/retreat-edit'
+    | '/retreat-info'
     | '/retreat-register'
     | '/serve-apply'
     | '/signage'
@@ -287,6 +297,7 @@ export interface FileRouteTypes {
     | '/retreat'
     | '/retreat-admin'
     | '/retreat-edit'
+    | '/retreat-info'
     | '/retreat-register'
     | '/serve-apply'
     | '/signage'
@@ -314,6 +325,7 @@ export interface FileRouteTypes {
     | '/retreat'
     | '/retreat-admin'
     | '/retreat-edit'
+    | '/retreat-info'
     | '/retreat-register'
     | '/serve-apply'
     | '/signage'
@@ -342,6 +354,7 @@ export interface RootRouteChildren {
   RetreatRoute: typeof RetreatRoute
   RetreatAdminRoute: typeof RetreatAdminRoute
   RetreatEditRoute: typeof RetreatEditRoute
+  RetreatInfoRoute: typeof RetreatInfoRoute
   RetreatRegisterRoute: typeof RetreatRegisterRoute
   ServeApplyRoute: typeof ServeApplyRoute
   SignageRoute: typeof SignageRoute
@@ -404,6 +417,13 @@ declare module '@tanstack/react-router' {
       path: '/retreat-register'
       fullPath: '/retreat-register'
       preLoaderRoute: typeof RetreatRegisterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/retreat-info': {
+      id: '/retreat-info'
+      path: '/retreat-info'
+      fullPath: '/retreat-info'
+      preLoaderRoute: typeof RetreatInfoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/retreat-edit': {
@@ -550,6 +570,7 @@ const rootRouteChildren: RootRouteChildren = {
   RetreatRoute: RetreatRoute,
   RetreatAdminRoute: RetreatAdminRoute,
   RetreatEditRoute: RetreatEditRoute,
+  RetreatInfoRoute: RetreatInfoRoute,
   RetreatRegisterRoute: RetreatRegisterRoute,
   ServeApplyRoute: ServeApplyRoute,
   SignageRoute: SignageRoute,
@@ -565,3 +586,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
