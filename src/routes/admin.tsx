@@ -1893,13 +1893,7 @@ function AdminPage() {
           </section>
         )}
 
-        {statsSubTab === "baptism" && (
-          <section className="bg-card border border-border/50 rounded-2xl p-10 text-center">
-            <div className="text-5xl mb-3">💧</div>
-            <h2 className="font-serif text-xl mb-2">决志与受洗统计</h2>
-            <p className="text-sm text-muted-foreground">该模块将在下一阶段上线（年度决志 / 受洗记录 / 转化率 / 历年趋势图）</p>
-          </section>
-        )}
+        {statsSubTab === "baptism" && <DecisionBaptismPanel />}
 
         {statsSubTab === "annual" && (
           <section className="bg-card border border-border/50 rounded-2xl p-10 text-center">
