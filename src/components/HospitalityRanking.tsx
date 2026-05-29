@@ -10,6 +10,7 @@ import {
 
 type Entry = {
   id: string;
+  panel_key?: string | null;
   service_date: string | null;
   service_item: string | null;
   location: string | null;
@@ -22,6 +23,9 @@ const PIE_COLORS = ["#d4a373", "#a98467", "#6c584c", "#e9c46a", "#bc6c25", "#dda
 
 function isFront(e: Entry) { return e.location === "前门" || e.service_item === "新人接待"; }
 function isBack(e: Entry) { return e.location === "后门" || e.service_item === "迎宾接待"; }
+/** Only count rows that are an actual front/back duty (not communion-only markers). */
+function isDuty(e: Entry) { return isFront(e) || isBack(e); }
+const PANEL_PREFIX = "hospitality_calendar_";
 
 function rankIcon(i: number) {
   if (i === 0) return <Trophy className="size-4 text-yellow-500" />;
@@ -68,11 +72,13 @@ export function HospitalityRankingSection() {
     (async () => {
       const { data } = await (supabase as any)
         .from("hospitality_ministry_entries")
-        .select("id,service_date,service_item,location,worker,holy_communion")
+        .select("id,panel_key,service_date,service_item,location,worker,holy_communion")
+        .like("panel_key", `${PANEL_PREFIX}%`)
         .not("service_date", "is", null);
-      // Dedupe + drop empty workers up front so every chart/ranking uses the
-      // same canonical set of "current valid" records.
-      setEntries(dedupe((data ?? []) as Entry[]));
+      // Dedupe + drop empty workers + drop communion-only markers so every
+      // chart/ranking uses the same canonical set as the calendar view.
+      const cleaned = ((data ?? []) as Entry[]).filter(isDuty);
+      setEntries(dedupe(cleaned));
     })();
   }, [refreshTick]);
 
@@ -83,7 +89,11 @@ export function HospitalityRankingSection() {
   }, [entries, now]);
 
   const yearEntries = useMemo(
-    () => entries.filter((e) => e.service_date && Number(e.service_date.slice(0, 4)) === year),
+    () => entries.filter((e) =>
+      e.service_date &&
+      Number(e.service_date.slice(0, 4)) === year &&
+      e.panel_key === `${PANEL_PREFIX}${year}`,
+    ),
     [entries, year],
   );
 
@@ -113,10 +123,6 @@ export function HospitalityRankingSection() {
   }, [scoped, monthIdx, now]);
   const frontRank = useMemo(() => tally(scoped.filter(isFront), (e) => e.worker), [scoped]);
   const backRank = useMemo(() => tally(scoped.filter(isBack), (e) => e.worker), [scoped]);
-  const communionRank = useMemo(
-    () => tally(scoped.filter((e) => e.holy_communion && e.worker), (e) => e.worker),
-    [scoped],
-  );
 
   // ── Fairness ─────────────────────────────
   const fairness = useMemo(() => {
