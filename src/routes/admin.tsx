@@ -22,7 +22,7 @@ import { ScreenManager } from "@/components/admin/ScreenManager";
 import { zhCN } from "date-fns/locale";
 import { listUsersWithRoles, setUserRole, deleteUser, createUserWithRole, updateUserWorkerName } from "@/lib/users.functions";
 import { updateRegistration } from "@/lib/registrations.functions";
-import { HospitalityMinistrySection } from "@/components/HospitalityMinistry";
+import { HospitalityCalendarSection } from "@/components/HospitalityCalendar";
 import { HospitalityRankingSection } from "@/components/HospitalityRanking";
 
 type Reg = {
@@ -2391,7 +2391,7 @@ function AdminPage() {
         )}
         {welcomeSubTab === "reception" && (
           <div className="space-y-8">
-            <HospitalityMinistrySection />
+            <HospitalityCalendarSection />
             <HospitalityRankingSection />
           </div>
         )}
