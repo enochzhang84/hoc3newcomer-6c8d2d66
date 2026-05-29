@@ -1805,7 +1805,6 @@ function AdminPage() {
         )}
 
         {statsSubTab === "meals" && (
-        {/* 饭食统计 */}
         <section>
           <h2 className="font-serif text-xl mb-4">饭食统计</h2>
           {(() => {
