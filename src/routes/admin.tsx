@@ -25,6 +25,8 @@ import { updateRegistration } from "@/lib/registrations.functions";
 import { HospitalityCalendarSection } from "@/components/HospitalityCalendar";
 import { HospitalityRankingSection } from "@/components/HospitalityRanking";
 import { DutyCalendarSection } from "@/components/DutyCalendar";
+import MealPlanCalendar from "@/components/MealPlanCalendar";
+import MinistryServiceCalendar from "@/components/MinistryServiceCalendar";
 
 type Reg = {
   id: string;
