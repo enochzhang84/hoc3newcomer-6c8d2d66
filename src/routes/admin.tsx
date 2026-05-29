@@ -3237,7 +3237,38 @@ img{width:480px;height:480px;}@media print{@page{margin:1cm;}}</style></head>
           <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
             <h2 className="font-serif text-xl">课程签到记录</h2>
             <div className="flex flex-wrap items-center gap-2">
-              <YearFilterPicker value={courseYearFilter} onChange={setCourseYearFilter} />
+              <MonthRangePicker
+                start={courseRange.start}
+                end={courseRange.end}
+                onChange={(s, e) => setCourseRange({ start: s, end: e })}
+              />
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  const inRange = (d: string) => {
+                    const ym = (d ?? "").slice(0, 7);
+                    return ym >= courseRange.start && ym <= courseRange.end;
+                  };
+                  const activeCourses = courses.filter((c) => c.is_active);
+                  const rows = sundayCheckins
+                    .filter((k) => inRange(k.checkin_date ?? ""))
+                    .map((k) => ({
+                      课程: activeCourses.find((c) => c.id === k.course_id)?.name ?? k.course_name ?? "",
+                      日期: k.checkin_date,
+                      姓名: k.name,
+                      "电话/微信": k.contact ?? "",
+                      邮件: k.email ?? "",
+                    }));
+                  if (rows.length === 0) { toast.error("当前范围无记录"); return; }
+                  const ws = XLSX.utils.json_to_sheet(rows);
+                  const wb = XLSX.utils.book_new();
+                  XLSX.utils.book_append_sheet(wb, ws, "课程签到");
+                  XLSX.writeFile(wb, `课程签到记录_${courseRange.start}至${courseRange.end}.xlsx`);
+                }}
+              >
+                导出 Excel
+              </Button>
               <Button size="sm" variant="outline" onClick={() => loadSundayCheckins()}>
                 刷新
               </Button>
@@ -3254,7 +3285,11 @@ img{width:480px;height:480px;}@media print{@page{margin:1cm;}}</style></head>
               {/* Chrome风格自定义Tab Bar */}
               <div className="flex flex-wrap relative" style={{ borderBottom: '1px solid rgba(0,0,0,0.08)' }}>
                 {courses.filter((c) => c.is_active).map((c) => {
-                  const count = sundayCheckins.filter((k) => k.course_id === c.id && (k.checkin_date ?? "").slice(0, 4) === String(courseYearFilter)).length;
+                  const count = sundayCheckins.filter((k) => {
+                    if (k.course_id !== c.id) return false;
+                    const ym = (k.checkin_date ?? "").slice(0, 7);
+                    return ym >= courseRange.start && ym <= courseRange.end;
+                  }).length;
                   const currentTab = activeCourseTab || courses.find((c2) => c2.is_active)?.id || "";
                   const isActive = currentTab === c.id;
                   return (
@@ -3289,7 +3324,11 @@ img{width:480px;height:480px;}@media print{@page{margin:1cm;}}</style></head>
                 })}
               </div>
               {courses.filter((c) => c.is_active).map((c) => {
-                const rows = sundayCheckins.filter((k) => k.course_id === c.id && (k.checkin_date ?? "").slice(0, 4) === String(courseYearFilter));
+                const rows = sundayCheckins.filter((k) => {
+                  if (k.course_id !== c.id) return false;
+                  const ym = (k.checkin_date ?? "").slice(0, 7);
+                  return ym >= courseRange.start && ym <= courseRange.end;
+                });
                 const pg = coursePages[c.id] ?? 1;
                 const totalPg = Math.max(1, Math.ceil(rows.length / TAB_PAGE_SIZE));
                 const slice = rows.slice((pg - 1) * TAB_PAGE_SIZE, pg * TAB_PAGE_SIZE);
