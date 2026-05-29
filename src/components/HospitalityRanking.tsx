@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Trophy, Medal, Award, Download, Printer } from "lucide-react";
+import { Trophy, Medal, Award, Download, Printer, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import * as XLSX from "xlsx";
 import {
@@ -30,10 +30,26 @@ function rankIcon(i: number) {
   return <span className="text-xs text-muted-foreground tabular-nums">#{i + 1}</span>;
 }
 
+/** Dedupe same person + same date + same post (service_item|location). */
+function dedupe(entries: Entry[]): Entry[] {
+  const seen = new Set<string>();
+  const out: Entry[] = [];
+  for (const e of entries) {
+    const name = (e.worker ?? "").trim();
+    if (!name) continue;
+    if (!e.service_date) continue;
+    const key = `${name}|${e.service_date}|${e.service_item ?? ""}|${e.location ?? ""}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push({ ...e, worker: name });
+  }
+  return out;
+}
+
 function tally(entries: Entry[], keyFn: (e: Entry) => string | null) {
   const m = new Map<string, number>();
   for (const e of entries) {
-    const k = keyFn(e);
+    const k = (keyFn(e) ?? "").trim();
     if (!k) continue;
     m.set(k, (m.get(k) ?? 0) + 1);
   }
@@ -42,6 +58,7 @@ function tally(entries: Entry[], keyFn: (e: Entry) => string | null) {
 
 export function HospitalityRankingSection() {
   const [entries, setEntries] = useState<Entry[]>([]);
+  const [refreshTick, setRefreshTick] = useState(0);
   const now = new Date();
   const [year, setYear] = useState<number>(now.getFullYear());
   const [monthIdx, setMonthIdx] = useState<number>(0); // 0 = 全年
@@ -51,10 +68,13 @@ export function HospitalityRankingSection() {
     (async () => {
       const { data } = await (supabase as any)
         .from("hospitality_ministry_entries")
-        .select("id,service_date,service_item,location,worker,holy_communion");
-      setEntries((data ?? []) as Entry[]);
+        .select("id,service_date,service_item,location,worker,holy_communion")
+        .not("service_date", "is", null);
+      // Dedupe + drop empty workers up front so every chart/ranking uses the
+      // same canonical set of "current valid" records.
+      setEntries(dedupe((data ?? []) as Entry[]));
     })();
-  }, []);
+  }, [refreshTick]);
 
   const years = useMemo(() => {
     const ys = new Set<number>([now.getFullYear()]);
@@ -180,6 +200,9 @@ export function HospitalityRankingSection() {
             <option value="__all__">全部同工</option>
             {allWorkers.map((w) => <option key={w} value={w}>{w}</option>)}
           </select>
+          <Button size="sm" variant="outline" onClick={() => setRefreshTick((t) => t + 1)}>
+            <RefreshCw className="size-4" /> 重新统计
+          </Button>
           <Button size="sm" variant="outline" onClick={exportExcel}>
             <Download className="size-4" /> 导出 Excel
           </Button>
