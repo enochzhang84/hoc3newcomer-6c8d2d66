@@ -118,6 +118,7 @@ export function ScreenManager() {
   const [screens, setScreens] = useState<Screen[]>([]);
   const [playlists, setPlaylists] = useState<Playlist[]>([]);
   const [items, setItems] = useState<PlaylistItem[]>([]);
+  const [posters, setPosters] = useState<{ id: string; slug: string | null; title: string; is_active: boolean }[]>([]);
   const [, setTick] = useState(0);
 
   useEffect(() => {
@@ -126,14 +127,20 @@ export function ScreenManager() {
   }, []);
 
   const load = async () => {
-    const [{ data: s }, { data: p }, { data: i }] = await Promise.all([
+    const [{ data: s }, { data: p }, { data: i }, { data: po }] = await Promise.all([
       supabase.from("display_screens" as never).select("*").order("sort_order"),
       supabase.from("display_playlists" as never).select("*").order("name"),
       supabase.from("display_playlist_items" as never).select("*").order("sort_order"),
+      supabase
+        .from("display_posters" as never)
+        .select("id, slug, title, is_active")
+        .eq("is_active", true)
+        .order("sort_order"),
     ]);
     setScreens((s as unknown as Screen[]) ?? []);
     setPlaylists((p as unknown as Playlist[]) ?? []);
     setItems((i as unknown as PlaylistItem[]) ?? []);
+    setPosters((po as unknown as { id: string; slug: string | null; title: string; is_active: boolean }[]) ?? []);
   };
 
   useEffect(() => {
@@ -143,6 +150,7 @@ export function ScreenManager() {
       .on("postgres_changes", { event: "*", schema: "public", table: "display_screens" }, load)
       .on("postgres_changes", { event: "*", schema: "public", table: "display_playlists" }, load)
       .on("postgres_changes", { event: "*", schema: "public", table: "display_playlist_items" }, load)
+      .on("postgres_changes", { event: "*", schema: "public", table: "display_posters" }, load)
       .subscribe();
     return () => {
       supabase.removeChannel(ch);
@@ -288,10 +296,21 @@ export function ScreenManager() {
     <section className="bg-card border border-border/50 rounded-2xl p-6 space-y-8">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <h2 className="font-serif text-xl">TV 屏幕管理（多屏数字标牌）</h2>
-        <Button onClick={() => setShowNew((v) => !v)}>
-          {showNew ? "取消" : "+ 新增屏幕"}
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => window.open("/signage", "_blank")}>
+            📢 宣传栏
+          </Button>
+          <Button onClick={() => setShowNew((v) => !v)}>
+            {showNew ? "取消" : "+ 新增屏幕"}
+          </Button>
+        </div>
       </div>
+
+      {posters.length > 0 && (
+        <div className="text-xs text-muted-foreground">
+          可在屏幕「自定义链接」中输入 <code>/display/poster/&lt;slug&gt;</code> 投放宣传内容，或选择下方播放列表添加宣传栏内容。
+        </div>
+      )}
 
       {showNew && (
         <div className="grid sm:grid-cols-4 gap-3 border border-border/50 rounded-xl p-4 bg-muted/30">

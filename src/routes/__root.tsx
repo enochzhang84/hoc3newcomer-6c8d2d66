@@ -169,6 +169,7 @@ function RootComponent() {
     pathname.startsWith("/retreat-register") ||
     pathname.startsWith("/retreat-edit") ||
     pathname.startsWith("/display") ||
+    pathname.startsWith("/signage") ||
     pathname.startsWith("/today-public") ||
     pathname === "/today-preview" ||
     pathname === "/chat";
