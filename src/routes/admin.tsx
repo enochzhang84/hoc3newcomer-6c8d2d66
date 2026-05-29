@@ -1890,7 +1890,7 @@ function AdminPage() {
         )}
 
         {statsSubTab === "service" && (
-          <section className="bg-card border border-border/50 rounded-2xl p-10 text-center">
+          <section className="mt-6 bg-card border border-border/50 rounded-2xl p-10 text-center">
             <div className="text-5xl mb-3">🙏</div>
             <h2 className="font-serif text-xl mb-2">服侍统计</h2>
             <p className="text-sm text-muted-foreground">
@@ -1900,7 +1900,11 @@ function AdminPage() {
           </section>
         )}
 
-        {statsSubTab === "baptism" && <DecisionBaptismPanel />}
+        {statsSubTab === "baptism" && (
+          <div className="mt-6">
+            <DecisionBaptismPanel />
+          </div>
+        )}
 
         <LongAbsenceDialog
           open={absenceDialogOpen}
@@ -1909,7 +1913,7 @@ function AdminPage() {
         />
 
         {statsSubTab === "annual" && (
-          <section className="bg-card border border-border/50 rounded-2xl p-10 text-center">
+          <section className="mt-6 bg-card border border-border/50 rounded-2xl p-10 text-center">
             <div className="text-5xl mb-3">📈</div>
             <h2 className="font-serif text-xl mb-2">年度报告</h2>
             <p className="text-sm text-muted-foreground">年度综合报告将在下一阶段上线</p>
