@@ -454,6 +454,8 @@ function AdminPage() {
   const [sundayParticipationOpen, setSundayParticipationOpen] = useState(false);
   const [retreatCount, setRetreatCount] = useState<number>(0);
   const [ministryWorkerYearCount, setMinistryWorkerYearCount] = useState<number>(0);
+  const [baptismYearCount, setBaptismYearCount] = useState<number>(0);
+  const [decisionYearCount, setDecisionYearCount] = useState<number>(0);
   // Adult class checkins (summer / fall)
   const [adultCheckins, setAdultCheckins] = useState<AdultCheckin[]>([]);
   const [adultSort, setAdultSort] = useState<Record<"summer" | "fall", { col: "name" | "fellowship" | "time"; dir: "asc" | "desc" }>>({
