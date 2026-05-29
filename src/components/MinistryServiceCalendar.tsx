@@ -31,10 +31,21 @@ const pad = (n: number) => String(n).padStart(2, "0");
 const toISO = (y: number, m: number, d: number) => `${y}-${pad(m + 1)}-${pad(d)}`;
 const todayISO = () => { const d = new Date(); return toISO(d.getFullYear(), d.getMonth(), d.getDate()); };
 
+const MONTHS_CN = ["1月","2月","3月","4月","5月","6月","7月","8月","9月","10月","11月","12月"];
+
+function sundaysOfMonth(year: number, monthIdx: number): string[] {
+  const out: string[] = [];
+  const d = new Date(year, monthIdx, 1);
+  while (d.getMonth() === monthIdx) {
+    if (d.getDay() === 0) out.push(toISO(year, monthIdx, d.getDate()));
+    d.setDate(d.getDate() + 1);
+  }
+  return out;
+}
+
 export default function MinistryServiceCalendar() {
   const now = new Date();
   const [year, setYear] = useState(now.getFullYear());
-  const [month, setMonth] = useState(now.getMonth());
   const [entries, setEntries] = useState<Entry[]>([]);
   const [ministries, setMinistries] = useState<Ministry[]>([]);
   const [projects, setProjects] = useState<ServiceProject[]>([]);
@@ -42,24 +53,21 @@ export default function MinistryServiceCalendar() {
   const [editEntry, setEditEntry] = useState<Entry | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
 
-  const monthStart = useMemo(() => toISO(year, month, 1), [year, month]);
-  const monthEnd = useMemo(() => {
-    const last = new Date(year, month + 1, 0).getDate();
-    return toISO(year, month, last);
-  }, [year, month]);
+  const yearStart = useMemo(() => toISO(year, 0, 1), [year]);
+  const yearEnd = useMemo(() => toISO(year, 11, 31), [year]);
 
   const load = useCallback(async () => {
     const [{ data: m }, { data: p }, { data: e }] = await Promise.all([
       supabase.from("ministries").select("*").order("sort_order"),
       supabase.from("service_projects").select("*").order("sort_order"),
       supabase.from("ministry_service_entries").select("*")
-        .gte("entry_date", monthStart).lte("entry_date", monthEnd)
+        .gte("entry_date", yearStart).lte("entry_date", yearEnd)
         .order("entry_date"),
     ]);
     setMinistries((m as Ministry[]) ?? []);
     setProjects((p as ServiceProject[]) ?? []);
     setEntries((e as Entry[]) ?? []);
-  }, [monthStart, monthEnd]);
+  }, [yearStart, yearEnd]);
 
   useEffect(() => { void load(); }, [load]);
 
@@ -69,23 +77,9 @@ export default function MinistryServiceCalendar() {
     return m;
   }, [entries]);
 
-  const cells = useMemo(() => {
-    const first = new Date(year, month, 1);
-    const startDow = first.getDay();
-    const daysIn = new Date(year, month + 1, 0).getDate();
-    const arr: { date: string | null; day: number }[] = [];
-    for (let i = 0; i < startDow; i++) arr.push({ date: null, day: 0 });
-    for (let d = 1; d <= daysIn; d++) arr.push({ date: toISO(year, month, d), day: d });
-    while (arr.length % 7 !== 0) arr.push({ date: null, day: 0 });
-    return arr;
-  }, [year, month]);
-
-  const goPrev = () => { if (month === 0) { setYear(year - 1); setMonth(11); } else setMonth(month - 1); };
-  const goNext = () => { if (month === 11) { setYear(year + 1); setMonth(0); } else setMonth(month + 1); };
-
-  const exportXlsx = async (scope: "month" | "all") => {
+  const exportXlsx = async (scope: "year" | "all") => {
     let rows: Entry[] = [];
-    if (scope === "month") rows = entries.slice().sort((a, b) => a.entry_date.localeCompare(b.entry_date));
+    if (scope === "year") rows = entries.slice().sort((a, b) => a.entry_date.localeCompare(b.entry_date));
     else {
       const { data } = await supabase.from("ministry_service_entries").select("*").order("entry_date");
       rows = (data as Entry[]) ?? [];
@@ -99,11 +93,9 @@ export default function MinistryServiceCalendar() {
     })));
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "事工服侍");
-    const fname = scope === "month" ? `事工服侍_${year}-${pad(month + 1)}.xlsx` : `事工服侍_全部.xlsx`;
+    const fname = scope === "year" ? `事工服侍_${year}.xlsx` : `事工服侍_全部.xlsx`;
     XLSX.writeFile(wb, fname);
   };
-
-  const weekdays = ["日", "一", "二", "三", "四", "五", "六"];
 
   const openCreate = (date: string) => {
     setEditDate(date);
@@ -115,24 +107,24 @@ export default function MinistryServiceCalendar() {
       <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
         <h2 className="font-serif text-xl">事工服侍</h2>
         <div className="flex flex-wrap items-center gap-2">
-          <Button size="sm" variant="outline" onClick={goPrev}><ChevronLeft className="w-4 h-4" /></Button>
-          <select className="h-9 rounded-md border border-input bg-transparent px-2 text-sm" value={year} onChange={(e) => setYear(parseInt(e.target.value, 10))}>
-            {Array.from({ length: 11 }, (_, i) => now.getFullYear() - 5 + i).map((y) => (
-              <option key={y} value={y}>{y} 年</option>
-            ))}
-          </select>
-          <select className="h-9 rounded-md border border-input bg-transparent px-2 text-sm" value={month} onChange={(e) => setMonth(parseInt(e.target.value, 10))}>
-            {Array.from({ length: 12 }, (_, i) => i).map((m) => (
-              <option key={m} value={m}>{m + 1} 月</option>
-            ))}
-          </select>
-          <Button size="sm" variant="outline" onClick={goNext}><ChevronRight className="w-4 h-4" /></Button>
-          <Button size="sm" variant="ghost" onClick={() => { const d = new Date(); setYear(d.getFullYear()); setMonth(d.getMonth()); }}>今天</Button>
+          <Button size="sm" variant="outline" onClick={() => setYear((y) => y - 1)}>
+            <ChevronLeft className="w-4 h-4" /> 上一年
+          </Button>
+          <Input
+            type="number"
+            value={year}
+            onChange={(e) => { const v = Number(e.target.value); if (v >= 1900 && v <= 2999) setYear(v); }}
+            className="h-8 w-24 text-center"
+          />
+          <Button size="sm" variant="outline" onClick={() => setYear((y) => y + 1)}>
+            下一年 <ChevronRight className="w-4 h-4" />
+          </Button>
+          <Button size="sm" variant="ghost" onClick={() => setYear(now.getFullYear())}>今年</Button>
           <Button size="sm" variant="outline" onClick={() => setSettingsOpen(true)}>
             <Settings2 className="w-4 h-4 mr-1" />设置
           </Button>
-          <Button size="sm" variant="outline" onClick={() => exportXlsx("month")}>
-            <Download className="w-4 h-4 mr-1" />本月
+          <Button size="sm" variant="outline" onClick={() => exportXlsx("year")}>
+            <Download className="w-4 h-4 mr-1" />本年
           </Button>
           <Button size="sm" variant="outline" onClick={() => exportXlsx("all")}>
             <Download className="w-4 h-4 mr-1" />全部
@@ -140,43 +132,49 @@ export default function MinistryServiceCalendar() {
         </div>
       </div>
 
-      <div className="grid grid-cols-7 text-xs sm:text-sm text-muted-foreground border-b border-border/50 mb-1">
-        {weekdays.map((w) => <div key={w} className="py-2 text-center font-medium">{w}</div>)}
-      </div>
-      <div className="grid grid-cols-7 gap-1">
-        {cells.map((c, i) => {
-          if (!c.date) return <div key={i} className="aspect-square sm:aspect-[4/3] bg-muted/20 rounded-md" />;
-          const dayEntries = entriesByDate[c.date] ?? [];
-          const isToday = c.date === todayISO();
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {MONTHS_CN.map((label, idx) => {
+          const sundays = sundaysOfMonth(year, idx);
           return (
-            <div
-              key={i}
-              onClick={() => openCreate(c.date!)}
-              className={cn(
-                "aspect-square sm:aspect-[4/3] min-h-[72px] rounded-md border text-left p-1.5 sm:p-2 flex flex-col gap-0.5 transition-all hover:border-primary/60 hover:bg-primary/5 cursor-pointer overflow-hidden",
-                isToday ? "border-primary bg-primary/10" : "border-border/50 bg-background",
-              )}
-            >
-              <div className="flex items-center justify-between">
-                <span className={cn("text-xs sm:text-sm font-medium", isToday && "text-primary")}>{c.day}</span>
-                {dayEntries.length > 0 && (
-                  <span className="text-[10px] text-primary font-medium">{dayEntries.length}</span>
-                )}
+            <div key={idx} className="border border-border/60 rounded-xl p-3 bg-background/50">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="font-medium text-sm">{label}</h3>
+                <span className="text-[10px] text-muted-foreground">{sundays.length} 个主日</span>
               </div>
-              <div className="space-y-0.5 overflow-hidden">
-                {dayEntries.slice(0, 3).map((e) => (
-                  <div
-                    key={e.id}
-                    onClick={(ev) => { ev.stopPropagation(); setEditDate(c.date); setEditEntry(e); }}
-                    className="text-[10px] sm:text-xs leading-tight truncate px-1 py-0.5 rounded bg-primary/10 hover:bg-primary/20"
-                    title={`${e.ministry ?? ""} ${e.service_project ?? ""} ${e.worker ?? ""}`}
-                  >
-                    {e.worker || e.service_project || e.ministry || "—"}
-                  </div>
-                ))}
-                {dayEntries.length > 3 && (
-                  <div className="text-[10px] text-muted-foreground">+{dayEntries.length - 3}</div>
-                )}
+              <div className="space-y-1.5">
+                {sundays.map((iso) => {
+                  const dayEntries = entriesByDate[iso] ?? [];
+                  const isToday = iso === todayISO();
+                  const [, mm, dd] = iso.split("-");
+                  return (
+                    <button
+                      key={iso}
+                      onClick={() => openCreate(iso)}
+                      className={cn(
+                        "w-full text-left rounded-lg border border-border/40 px-2.5 py-1.5 text-xs transition hover:bg-accent/60 hover:border-primary/40",
+                        isToday && "ring-1 ring-primary/40 bg-primary/5",
+                      )}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="font-medium">{Number(mm)}/{Number(dd)}</span>
+                        {dayEntries.length > 0 && (
+                          <span className="text-[10px] text-primary font-medium">{dayEntries.length} 条</span>
+                        )}
+                      </div>
+                      <div className="mt-1 space-y-0.5 text-[11px] text-muted-foreground">
+                        {dayEntries.slice(0, 3).map((e) => (
+                          <div key={e.id} className="truncate">
+                            {e.worker || e.service_project || e.ministry || "—"}
+                          </div>
+                        ))}
+                        {dayEntries.length === 0 && <div className="opacity-40">—</div>}
+                        {dayEntries.length > 3 && (
+                          <div className="opacity-60">+{dayEntries.length - 3}</div>
+                        )}
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
             </div>
           );
