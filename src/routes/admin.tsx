@@ -284,6 +284,125 @@ function YearFilterPicker({ value, onChange }: { value: number; onChange: (y: nu
   );
 }
 
+// 月份范围（YYYY-MM）选择器
+function MonthRangePicker({
+  start,
+  end,
+  onChange,
+}: {
+  start: string;
+  end: string;
+  onChange: (start: string, end: string) => void;
+}) {
+  const now = new Date();
+  const curY = now.getFullYear();
+  const curM = now.getMonth() + 1;
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const ym = (y: number, m: number) => `${y}-${pad(m)}`;
+  const setPreset = (key: string) => {
+    if (key === "thisYear") onChange(ym(curY, 1), ym(curY, 12));
+    else if (key === "lastYear") onChange(ym(curY - 1, 1), ym(curY - 1, 12));
+    else if (key === "thisQuarter") {
+      const q = Math.floor((curM - 1) / 3);
+      onChange(ym(curY, q * 3 + 1), ym(curY, q * 3 + 3));
+    } else if (key === "lastQuarter") {
+      let q = Math.floor((curM - 1) / 3) - 1;
+      let y = curY;
+      if (q < 0) { q = 3; y -= 1; }
+      onChange(ym(y, q * 3 + 1), ym(y, q * 3 + 3));
+    }
+  };
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <div className="flex items-center gap-1 text-xs">
+        <span className="text-muted-foreground">从</span>
+        <input
+          type="month"
+          value={start}
+          onChange={(e) => onChange(e.target.value || start, end)}
+          className="h-8 text-xs bg-background border border-input rounded px-2"
+        />
+        <span className="text-muted-foreground">到</span>
+        <input
+          type="month"
+          value={end}
+          onChange={(e) => onChange(start, e.target.value || end)}
+          className="h-8 text-xs bg-background border border-input rounded px-2"
+        />
+      </div>
+      <div className="flex flex-wrap gap-1">
+        <Button size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={() => setPreset("thisYear")}>今年</Button>
+        <Button size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={() => setPreset("lastYear")}>去年</Button>
+        <Button size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={() => setPreset("thisQuarter")}>本季度</Button>
+        <Button size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={() => setPreset("lastQuarter")}>上季度</Button>
+      </div>
+    </div>
+  );
+}
+
+// 年 / 月 / 日 多级筛选
+type DateLevelFilter = { year: number; month: number | null; day: number | null };
+function DateLevelPicker({
+  value,
+  onChange,
+}: {
+  value: DateLevelFilter;
+  onChange: (v: DateLevelFilter) => void;
+}) {
+  const now = new Date();
+  const curY = now.getFullYear();
+  const years: number[] = [];
+  for (let y = curY - 5; y <= curY + 2; y++) years.push(y);
+  if (!years.includes(value.year)) years.push(value.year);
+  years.sort((a, b) => a - b);
+  const daysInMonth = value.month ? new Date(value.year, value.month, 0).getDate() : 31;
+  const setPreset = (key: string) => {
+    if (key === "today") onChange({ year: curY, month: now.getMonth() + 1, day: now.getDate() });
+    else if (key === "thisMonth") onChange({ year: curY, month: now.getMonth() + 1, day: null });
+    else if (key === "thisYear") onChange({ year: curY, month: null, day: null });
+    else if (key === "lastYear") onChange({ year: curY - 1, month: null, day: null });
+  };
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <div className="flex items-center gap-1 text-xs">
+        <select
+          value={value.year}
+          onChange={(e) => onChange({ ...value, year: Number(e.target.value) })}
+          className="h-8 text-xs bg-background border border-input rounded px-2 cursor-pointer"
+        >
+          {years.map((y) => <option key={y} value={y}>{y}年</option>)}
+        </select>
+        <select
+          value={value.month ?? ""}
+          onChange={(e) => {
+            const m = e.target.value === "" ? null : Number(e.target.value);
+            onChange({ ...value, month: m, day: m === null ? null : value.day });
+          }}
+          className="h-8 text-xs bg-background border border-input rounded px-2 cursor-pointer"
+        >
+          <option value="">全年</option>
+          {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => <option key={m} value={m}>{m}月</option>)}
+        </select>
+        <select
+          value={value.day ?? ""}
+          disabled={value.month === null}
+          onChange={(e) => onChange({ ...value, day: e.target.value === "" ? null : Number(e.target.value) })}
+          className="h-8 text-xs bg-background border border-input rounded px-2 cursor-pointer disabled:opacity-50"
+        >
+          <option value="">全月</option>
+          {Array.from({ length: daysInMonth }, (_, i) => i + 1).map((d) => <option key={d} value={d}>{d}日</option>)}
+        </select>
+      </div>
+      <div className="flex flex-wrap gap-1">
+        <Button size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={() => setPreset("today")}>今天</Button>
+        <Button size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={() => setPreset("thisMonth")}>本月</Button>
+        <Button size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={() => setPreset("thisYear")}>今年</Button>
+        <Button size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={() => setPreset("lastYear")}>去年</Button>
+      </div>
+    </div>
+  );
+}
+
 function AdminPage() {
   const navigate = useNavigate();
   const [checking, setChecking] = useState(true);
