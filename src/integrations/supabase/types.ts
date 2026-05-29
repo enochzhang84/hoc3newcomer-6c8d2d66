@@ -235,6 +235,54 @@ export type Database = {
         }
         Relationships: []
       }
+      display_posters: {
+        Row: {
+          background: string | null
+          body: string | null
+          created_at: string
+          id: string
+          image_url: string | null
+          is_active: boolean
+          kind: string
+          link_url: string | null
+          slug: string | null
+          sort_order: number
+          subtitle: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          background?: string | null
+          body?: string | null
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          kind?: string
+          link_url?: string | null
+          slug?: string | null
+          sort_order?: number
+          subtitle?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          background?: string | null
+          body?: string | null
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          kind?: string
+          link_url?: string | null
+          slug?: string | null
+          sort_order?: number
+          subtitle?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       display_screens: {
         Row: {
           created_at: string
