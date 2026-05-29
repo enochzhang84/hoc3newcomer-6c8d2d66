@@ -34,6 +34,20 @@ const todayISO = () => {
   return toISO(d.getFullYear(), d.getMonth(), d.getDate());
 };
 
+const MONTHS_CN = [
+  "1月", "2月", "3月", "4月", "5月", "6月",
+  "7月", "8月", "9月", "10月", "11月", "12月",
+];
+function sundaysOfMonth(year: number, monthIdx: number): string[] {
+  const out: string[] = [];
+  const d = new Date(year, monthIdx, 1);
+  while (d.getMonth() === monthIdx) {
+    if (d.getDay() === 0) out.push(toISO(d.getFullYear(), d.getMonth(), d.getDate()));
+    d.setDate(d.getDate() + 1);
+  }
+  return out;
+}
+
 export default function MealPlanCalendar({
   category,
   title,
@@ -42,6 +56,8 @@ export default function MealPlanCalendar({
   title: string;
 }) {
   const now = new Date();
+  // sunday → 年度主日视图（与接待事工轮值表一致）；event → 仍是月视图
+  const yearView = category === "sunday";
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth());
   const [plans, setPlans] = useState<MealPlan[]>([]);
@@ -51,11 +67,15 @@ export default function MealPlanCalendar({
   const [typesOpen, setTypesOpen] = useState(false);
   const [newType, setNewType] = useState("");
 
-  const monthStart = useMemo(() => toISO(year, month, 1), [year, month]);
-  const monthEnd = useMemo(() => {
+  const rangeStart = useMemo(
+    () => (yearView ? toISO(year, 0, 1) : toISO(year, month, 1)),
+    [yearView, year, month],
+  );
+  const rangeEnd = useMemo(() => {
+    if (yearView) return toISO(year, 11, 31);
     const last = new Date(year, month + 1, 0).getDate();
     return toISO(year, month, last);
-  }, [year, month]);
+  }, [yearView, year, month]);
 
   const load = useCallback(async () => {
     const [{ data: mt }, { data: mp }, { data: at }] = await Promise.all([
@@ -64,14 +84,14 @@ export default function MealPlanCalendar({
         .from("meal_plans")
         .select("*")
         .eq("category", category)
-        .gte("plan_date", monthStart)
-        .lte("plan_date", monthEnd),
+        .gte("plan_date", rangeStart)
+        .lte("plan_date", rangeEnd),
       category === "sunday"
         ? supabase
             .from("attendance_records")
             .select("record_date,worship_count")
-            .gte("record_date", monthStart)
-            .lte("record_date", monthEnd)
+            .gte("record_date", rangeStart)
+            .lte("record_date", rangeEnd)
         : Promise.resolve({ data: [] as Attendance[] }),
     ]);
     setMealTypes((mt as MealType[]) ?? []);
@@ -79,7 +99,7 @@ export default function MealPlanCalendar({
     const m: Record<string, number> = {};
     for (const r of (at ?? []) as Attendance[]) m[r.record_date] = r.worship_count ?? 0;
     setAttendance(m);
-  }, [category, monthStart, monthEnd]);
+  }, [category, rangeStart, rangeEnd]);
 
   useEffect(() => {
     void load();
@@ -134,7 +154,9 @@ export default function MealPlanCalendar({
     XLSX.utils.book_append_sheet(wb, ws, "订餐计划");
     const fname =
       scope === "month"
-        ? `${title}_${year}-${pad(month + 1)}.xlsx`
+        ? yearView
+          ? `${title}_${year}.xlsx`
+          : `${title}_${year}-${pad(month + 1)}.xlsx`
         : `${title}_全部.xlsx`;
     XLSX.writeFile(wb, fname);
   };
@@ -157,7 +179,9 @@ export default function MealPlanCalendar({
       <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
         <h2 className="font-serif text-xl">{title}</h2>
         <div className="flex flex-wrap items-center gap-2">
-          <Button size="sm" variant="outline" onClick={goPrev}><ChevronLeft className="w-4 h-4" /></Button>
+          <Button size="sm" variant="outline" onClick={() => (yearView ? setYear(year - 1) : goPrev())}>
+            <ChevronLeft className="w-4 h-4" />{yearView && <span className="ml-1">上一年</span>}
+          </Button>
           <select
             className="h-9 rounded-md border border-input bg-transparent px-2 text-sm"
             value={year}
@@ -167,22 +191,28 @@ export default function MealPlanCalendar({
               <option key={y} value={y}>{y} 年</option>
             ))}
           </select>
-          <select
-            className="h-9 rounded-md border border-input bg-transparent px-2 text-sm"
-            value={month}
-            onChange={(e) => setMonth(parseInt(e.target.value, 10))}
-          >
-            {Array.from({ length: 12 }, (_, i) => i).map((m) => (
-              <option key={m} value={m}>{m + 1} 月</option>
-            ))}
-          </select>
-          <Button size="sm" variant="outline" onClick={goNext}><ChevronRight className="w-4 h-4" /></Button>
-          <Button size="sm" variant="ghost" onClick={() => { const d = new Date(); setYear(d.getFullYear()); setMonth(d.getMonth()); }}>今天</Button>
+          {!yearView && (
+            <select
+              className="h-9 rounded-md border border-input bg-transparent px-2 text-sm"
+              value={month}
+              onChange={(e) => setMonth(parseInt(e.target.value, 10))}
+            >
+              {Array.from({ length: 12 }, (_, i) => i).map((m) => (
+                <option key={m} value={m}>{m + 1} 月</option>
+              ))}
+            </select>
+          )}
+          <Button size="sm" variant="outline" onClick={() => (yearView ? setYear(year + 1) : goNext())}>
+            {yearView && <span className="mr-1">下一年</span>}<ChevronRight className="w-4 h-4" />
+          </Button>
+          <Button size="sm" variant="ghost" onClick={() => { const d = new Date(); setYear(d.getFullYear()); setMonth(d.getMonth()); }}>
+            {yearView ? "今年" : "今天"}
+          </Button>
           <Button size="sm" variant="outline" onClick={() => setTypesOpen(true)}>
             <Settings2 className="w-4 h-4 mr-1" />饭食种类
           </Button>
           <Button size="sm" variant="outline" onClick={() => exportXlsx("month")}>
-            <Download className="w-4 h-4 mr-1" />本月
+            <Download className="w-4 h-4 mr-1" />{yearView ? "本年" : "本月"}
           </Button>
           <Button size="sm" variant="outline" onClick={() => exportXlsx("all")}>
             <Download className="w-4 h-4 mr-1" />全部
@@ -190,42 +220,95 @@ export default function MealPlanCalendar({
         </div>
       </div>
 
-      <div className="grid grid-cols-7 text-xs sm:text-sm text-muted-foreground border-b border-border/50 mb-1">
-        {weekdays.map((w) => (
-          <div key={w} className="py-2 text-center font-medium">{w}</div>
-        ))}
-      </div>
-      <div className="grid grid-cols-7 gap-1">
-        {cells.map((c, i) => {
-          if (!c.date) return <div key={i} className="aspect-square sm:aspect-[4/3] bg-muted/20 rounded-md" />;
-          const p = planByDate[c.date];
-          const autoAtt = attendance[c.date];
-          const isToday = c.date === todayISO();
-          return (
-            <button
-              key={i}
-              onClick={() => setEditDate(c.date)}
-              className={cn(
-                "aspect-square sm:aspect-[4/3] min-h-[64px] rounded-md border text-left p-1.5 sm:p-2 flex flex-col gap-0.5 transition-all hover:border-primary/60 hover:bg-primary/5",
-                isToday ? "border-primary bg-primary/10" : "border-border/50 bg-background",
-              )}
-            >
-              <div className="flex items-center justify-between">
-                <span className={cn("text-xs sm:text-sm font-medium", isToday && "text-primary")}>{c.day}</span>
-                {p && <span className="w-1.5 h-1.5 rounded-full bg-primary" />}
-              </div>
-              {p ? (
-                <div className="text-[10px] sm:text-xs leading-tight space-y-0.5 overflow-hidden">
-                  <div className="font-medium">{p.attendees} 人</div>
-                  {p.meal_type && <div className="text-muted-foreground truncate">{p.meal_type}</div>}
+      {yearView ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {MONTHS_CN.map((label, idx) => {
+            const sundays = sundaysOfMonth(year, idx);
+            return (
+              <div key={idx} className="border border-border/60 rounded-xl p-3 bg-background/50">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="font-medium text-sm">{label}</h3>
+                  <span className="text-[10px] text-muted-foreground">{sundays.length} 个主日</span>
                 </div>
-              ) : autoAtt ? (
-                <div className="text-[10px] sm:text-xs text-muted-foreground">出席 {autoAtt}</div>
-              ) : null}
-            </button>
-          );
-        })}
-      </div>
+                <div className="space-y-1.5">
+                  {sundays.map((iso) => {
+                    const p = planByDate[iso];
+                    const autoAtt = attendance[iso];
+                    const isToday = iso === todayISO();
+                    const [, mm, dd] = iso.split("-");
+                    return (
+                      <button
+                        key={iso}
+                        onClick={() => setEditDate(iso)}
+                        className={cn(
+                          "w-full text-left rounded-lg border border-border/40 px-2.5 py-1.5 text-xs transition hover:bg-accent/60 hover:border-primary/40",
+                          isToday && "ring-1 ring-primary/40 bg-primary/5",
+                        )}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="font-medium">{parseInt(mm, 10)}/{parseInt(dd, 10)}</span>
+                          {p && <span className="w-1.5 h-1.5 rounded-full bg-primary" />}
+                        </div>
+                        <div className="mt-1 space-y-0.5 text-[11px] text-muted-foreground">
+                          {p ? (
+                            <>
+                              <div><span className="text-foreground/70">就餐：</span>{p.attendees} 人</div>
+                              {p.meal_type && <div className="truncate"><span className="text-foreground/70">饭食：</span>{p.meal_type}</div>}
+                            </>
+                          ) : autoAtt ? (
+                            <div><span className="text-foreground/70">出席：</span>{autoAtt} 人</div>
+                          ) : (
+                            <div className="opacity-40">—</div>
+                          )}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        <>
+          <div className="grid grid-cols-7 text-xs sm:text-sm text-muted-foreground border-b border-border/50 mb-1">
+            {weekdays.map((w) => (
+              <div key={w} className="py-2 text-center font-medium">{w}</div>
+            ))}
+          </div>
+          <div className="grid grid-cols-7 gap-1">
+            {cells.map((c, i) => {
+              if (!c.date) return <div key={i} className="aspect-square sm:aspect-[4/3] bg-muted/20 rounded-md" />;
+              const p = planByDate[c.date];
+              const autoAtt = attendance[c.date];
+              const isToday = c.date === todayISO();
+              return (
+                <button
+                  key={i}
+                  onClick={() => setEditDate(c.date)}
+                  className={cn(
+                    "aspect-square sm:aspect-[4/3] min-h-[64px] rounded-md border text-left p-1.5 sm:p-2 flex flex-col gap-0.5 transition-all hover:border-primary/60 hover:bg-primary/5",
+                    isToday ? "border-primary bg-primary/10" : "border-border/50 bg-background",
+                  )}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className={cn("text-xs sm:text-sm font-medium", isToday && "text-primary")}>{c.day}</span>
+                    {p && <span className="w-1.5 h-1.5 rounded-full bg-primary" />}
+                  </div>
+                  {p ? (
+                    <div className="text-[10px] sm:text-xs leading-tight space-y-0.5 overflow-hidden">
+                      <div className="font-medium">{p.attendees} 人</div>
+                      {p.meal_type && <div className="text-muted-foreground truncate">{p.meal_type}</div>}
+                    </div>
+                  ) : autoAtt ? (
+                    <div className="text-[10px] sm:text-xs text-muted-foreground">出席 {autoAtt}</div>
+                  ) : null}
+                </button>
+              );
+            })}
+          </div>
+        </>
+      )}
 
       {/* Edit Dialog */}
       <Dialog open={!!editDate} onOpenChange={(o) => !o && setEditDate(null)}>
