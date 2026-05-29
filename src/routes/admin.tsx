@@ -2624,7 +2624,7 @@ function AdminPage() {
           {[
             { v: "dining", label: "就餐人数统计" },
             { v: "sunday-meal", label: "主日订餐计划" },
-            { v: "event-meal", label: "其他活动订餐计划" },
+            { v: "event-meal", label: "其他活动订餐记事本" },
             { v: "messages", label: "事工服侍" },
           ].map((t) => {
             const active = kitchenSubTab === t.v;
