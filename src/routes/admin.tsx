@@ -257,6 +257,33 @@ export const Route = createFileRoute("/admin")({
   component: AdminPage,
 });
 
+function YearFilterPicker({ value, onChange }: { value: number; onChange: (y: number) => void }) {
+  const nowY = new Date().getFullYear();
+  const years: number[] = [];
+  for (let y = nowY - 5; y <= nowY + 2; y++) years.push(y);
+  if (!years.includes(value)) years.push(value);
+  years.sort((a, b) => a - b);
+  return (
+    <div className="flex items-center gap-1">
+      <Button size="sm" variant="outline" className="h-8 px-2" onClick={() => onChange(value - 1)} aria-label="上一年">‹</Button>
+      <select
+        value={value}
+        onChange={(e) => onChange(Number(e.target.value))}
+        className="h-8 text-xs bg-background border border-input rounded px-2 cursor-pointer"
+        aria-label="选择年份"
+      >
+        {years.map((y) => (
+          <option key={y} value={y}>{y}年</option>
+        ))}
+      </select>
+      <Button size="sm" variant="outline" className="h-8 px-2" onClick={() => onChange(value + 1)} aria-label="下一年">›</Button>
+      {value !== nowY && (
+        <Button size="sm" variant="ghost" className="h-8 px-2 text-xs" onClick={() => onChange(nowY)}>今年</Button>
+      )}
+    </div>
+  );
+}
+
 function AdminPage() {
   const navigate = useNavigate();
   const [checking, setChecking] = useState(true);
