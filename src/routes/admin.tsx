@@ -1593,7 +1593,7 @@ function AdminPage() {
               tone: sundayRate >= 50 ? "ok" : sundayRate >= 25 ? "warn" : "alert",
               jump: () => setStatsSubTab("sunday"),
             },
-            { icon: "💧", label: "年度受洗人数", value: "—", sub: "敬请期待", tone: "ok", jump: () => setStatsSubTab("baptism") },
+            { icon: "💧", label: "年度受洗人数", value: baptismYearCount, sub: `${now.getFullYear()}年 决志 ${decisionYearCount}`, tone: "ok", jump: () => setStatsSubTab("baptism") },
             { icon: "🙏", label: "年度服侍人数", value: ministryWorkerYearCount, sub: `${now.getFullYear()}年同工`, tone: "ok", jump: () => setStatsSubTab("service") },
             { icon: "🏕", label: "退修会报名人数", value: retreatCount, sub: "累计报名", tone: "ok" },
           ];
