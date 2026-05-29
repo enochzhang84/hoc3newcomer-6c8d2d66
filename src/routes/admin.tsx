@@ -1578,6 +1578,7 @@ function AdminPage() {
               value: longAbsentNames.size,
               sub: "团契超4周未签到",
               tone: longAbsentNames.size > 10 ? "alert" : longAbsentNames.size > 5 ? "warn" : "ok",
+              jump: () => setAbsenceDialogOpen(true),
             },
             {
               icon: "🤝",
