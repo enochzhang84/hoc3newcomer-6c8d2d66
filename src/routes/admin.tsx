@@ -1850,7 +1850,14 @@ function AdminPage() {
               const todayPeople = rows.filter((r) => toLocalDate(r.plan_date) === todayStr).reduce((s, r) => s + (r.attendees || 0), 0);
               const weekPeople = rows.filter((r) => inRange(r.plan_date, startOfWeek, endOfWeek)).reduce((s, r) => s + (r.attendees || 0), 0);
               const monthPeople = rows.filter((r) => inRange(r.plan_date, startOfMonth, startOfNextMonth)).reduce((s, r) => s + (r.attendees || 0), 0);
-              return { totalOrders, totalPeople, todayPeople, weekPeople, monthPeople };
+              // Per-day aggregation for avg / max / min
+              const perDay = new Map<string, number>();
+              rows.forEach((r) => perDay.set(r.plan_date, (perDay.get(r.plan_date) ?? 0) + (r.attendees || 0)));
+              const dayValues = Array.from(perDay.values());
+              const avgPeople = dayValues.length ? Math.round(dayValues.reduce((a, b) => a + b, 0) / dayValues.length) : 0;
+              const maxPeople = dayValues.length ? Math.max(...dayValues) : 0;
+              const minPeople = dayValues.length ? Math.min(...dayValues) : 0;
+              return { totalOrders, totalPeople, todayPeople, weekPeople, monthPeople, avgPeople, maxPeople, minPeople };
             };
             const sundayRows = mealPlans.filter((p) => (p.category ?? "sunday") === "sunday");
             const eventRows = mealPlans.filter((p) => p.category === "event");
@@ -1858,18 +1865,36 @@ function AdminPage() {
               { title: "主日订餐计划", stats: compute(sundayRows) },
               { title: "其他活动订餐计划", stats: compute(eventRows) },
             ];
+            const exportMeals = () => {
+              const ws = XLSX.utils.json_to_sheet(mealPlans.map((p) => ({
+                日期: p.plan_date,
+                类别: p.category === "event" ? "其他活动" : "主日",
+                餐别: p.meal_type ?? "",
+                人数: p.attendees ?? 0,
+                备注: p.notes ?? "",
+              })));
+              const wb = XLSX.utils.book_new();
+              XLSX.utils.book_append_sheet(wb, ws, "饭食统计");
+              XLSX.writeFile(wb, `饭食统计_${todayStr}.xlsx`);
+            };
             return (
               <div className="space-y-6">
+                <div className="flex justify-end">
+                  <Button size="sm" variant="outline" onClick={exportMeals}>📊 导出 Excel</Button>
+                </div>
                 {groups.map((g) => (
                   <div key={g.title} className="bg-card border border-border/50 rounded-2xl p-6">
                     <h3 className="font-serif text-lg mb-4">{g.title}</h3>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
                       {([
                         ["总订餐次数", g.stats.totalOrders],
                         ["总人数", g.stats.totalPeople],
                         ["今日人数", g.stats.todayPeople],
                         ["本周人数", g.stats.weekPeople],
                         ["本月人数", g.stats.monthPeople],
+                        ["平均订餐(每日)", g.stats.avgPeople],
+                        ["最高订餐(单日)", g.stats.maxPeople],
+                        ["最低订餐(单日)", g.stats.minPeople],
                       ] as Array<[string, number]>).map(([label, value]) => (
                         <div key={label} className="bg-background border border-border/50 rounded-xl p-4 shadow-sm">
                           <div className="text-xs text-muted-foreground mb-1">{label}</div>
