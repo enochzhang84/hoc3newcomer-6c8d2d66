@@ -257,6 +257,33 @@ export const Route = createFileRoute("/admin")({
   component: AdminPage,
 });
 
+function YearFilterPicker({ value, onChange }: { value: number; onChange: (y: number) => void }) {
+  const nowY = new Date().getFullYear();
+  const years: number[] = [];
+  for (let y = nowY - 5; y <= nowY + 2; y++) years.push(y);
+  if (!years.includes(value)) years.push(value);
+  years.sort((a, b) => a - b);
+  return (
+    <div className="flex items-center gap-1">
+      <Button size="sm" variant="outline" className="h-8 px-2" onClick={() => onChange(value - 1)} aria-label="上一年">‹</Button>
+      <select
+        value={value}
+        onChange={(e) => onChange(Number(e.target.value))}
+        className="h-8 text-xs bg-background border border-input rounded px-2 cursor-pointer"
+        aria-label="选择年份"
+      >
+        {years.map((y) => (
+          <option key={y} value={y}>{y}年</option>
+        ))}
+      </select>
+      <Button size="sm" variant="outline" className="h-8 px-2" onClick={() => onChange(value + 1)} aria-label="下一年">›</Button>
+      {value !== nowY && (
+        <Button size="sm" variant="ghost" className="h-8 px-2 text-xs" onClick={() => onChange(nowY)}>今年</Button>
+      )}
+    </div>
+  );
+}
+
 function AdminPage() {
   const navigate = useNavigate();
   const [checking, setChecking] = useState(true);
@@ -305,6 +332,11 @@ function AdminPage() {
   const ADULT_PAGE_SIZE = 15;
   const [adultDateFilter, setAdultDateFilter] = useState<Record<"summer" | "fall", Date | undefined>>({ summer: undefined, fall: undefined });
   const [adultDateOpen, setAdultDateOpen] = useState<Record<"summer" | "fall", boolean>>({ summer: false, fall: false });
+  // Year filters for checkin sections (按年查询)
+  const _currentYear = new Date().getFullYear();
+  const [courseYearFilter, setCourseYearFilter] = useState<number>(_currentYear);
+  const [fellowshipYearFilter, setFellowshipYearFilter] = useState<number>(_currentYear);
+  const [adultYearFilter, setAdultYearFilter] = useState<Record<"summer" | "fall", number>>({ summer: _currentYear, fall: _currentYear });
   // Kitchen meal plans
   const [mealTypes, setMealTypes] = useState<MealType[]>([]);
   const [mealPlans, setMealPlans] = useState<MealPlan[]>([]);
@@ -1457,101 +1489,6 @@ function AdminPage() {
               </div>
             );
           })()}
-        </section>
-        <section className="bg-card border border-border/50 rounded-2xl p-6">
-          <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-            <h2 className="font-serif text-xl">团契签到记录</h2>
-            <Button size="sm" variant="outline" onClick={() => loadFellowshipCheckins()}>
-              刷新
-            </Button>
-          </div>
-          {fellowships.filter((f) => f.is_active).length === 0 ? (
-            <p className="text-sm text-muted-foreground">暂无团契。请在「主日学」页右上角「团契 / 小组设置」中添加。</p>
-          ) : (
-            <Tabs
-              value={activeFellowshipTab || fellowships.find((f) => f.is_active)?.id || ""}
-              onValueChange={setActiveFellowshipTab}
-              className="w-full"
-            >
-              <TabsList className="h-auto flex flex-wrap gap-1 bg-muted/50 p-1">
-                {fellowships.filter((f) => f.is_active).map((f) => {
-                  const count = fellowshipCheckins.filter((k) => k.fellowship === f.name).length;
-                  return (
-                    <TabsTrigger key={f.id} value={f.id} className="text-xs">
-                      {f.name} ({count})
-                    </TabsTrigger>
-                  );
-                })}
-              </TabsList>
-              {fellowships.filter((f) => f.is_active).map((f) => {
-                const rows = fellowshipCheckins.filter((k) => k.fellowship === f.name);
-                const pg = fellowshipPages[f.id] ?? 1;
-                const totalPg = Math.max(1, Math.ceil(rows.length / TAB_PAGE_SIZE));
-                const slice = rows.slice((pg - 1) * TAB_PAGE_SIZE, pg * TAB_PAGE_SIZE);
-                return (
-                  <TabsContent key={f.id} value={f.id} className="mt-4">
-                    <div className="overflow-x-auto max-h-[480px] overflow-y-auto rounded-lg border border-border/50">
-                      <table className="w-full text-sm">
-                        <thead className="sticky top-0 z-10 bg-muted/80 backdrop-blur">
-                          <tr className="text-left border-b border-border/60 text-muted-foreground">
-                            <th className="py-2 px-2">日期</th>
-                            <th className="py-2 px-2">姓名</th>
-                            <th className="py-2 px-2">电话/微信</th>
-                            <th className="py-2 px-2">邮件</th>
-                            <th className="py-2 px-2">代祷备注</th>
-                            <th className="py-2 px-2 text-right">操作</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {slice.map((k) => (
-                            <tr key={k.id} className="border-b border-border/30 align-top">
-                              <td className="py-2 px-2 whitespace-nowrap">{k.checkin_date}</td>
-                              <td className="py-2 px-2 font-medium">{k.name}</td>
-                              <td className="py-2 px-2">{k.contact ?? ""}</td>
-                              <td className="py-2 px-2">{k.email ?? ""}</td>
-                              <td className="py-2 px-2 max-w-[260px] whitespace-pre-wrap break-words">{k.prayer_request ?? ""}</td>
-                              <td className="py-2 px-2 text-right">
-                                <button
-                                  onClick={async () => {
-                                    if (!confirm(`删除 ${k.name} 的签到?`)) return;
-                                    const { error } = await supabase
-                                      .from("fellowship_checkins")
-                                      .delete()
-                                      .eq("id", k.id);
-                                    if (error) return toast.error(error.message);
-                                    logAction(`删除团契签到: ${k.name}`);
-                                    toast.success("已删除");
-                                    loadFellowshipCheckins();
-                                  }}
-                                  className="text-xs text-destructive hover:underline"
-                                >
-                                  删除
-                                </button>
-                              </td>
-                            </tr>
-                          ))}
-                          {rows.length === 0 && (
-                            <tr>
-                              <td colSpan={6} className="py-8 text-center text-muted-foreground">
-                                暂无签到记录
-                              </td>
-                            </tr>
-                          )}
-                        </tbody>
-                      </table>
-                    </div>
-                    {totalPg > 1 && (
-                      <div className="flex items-center justify-center gap-2 mt-3 text-sm">
-                        <Button size="sm" variant="outline" disabled={pg === 1} onClick={() => setFellowshipPages({ ...fellowshipPages, [f.id]: pg - 1 })}>上一页</Button>
-                        <span>{pg} / {totalPg}</span>
-                        <Button size="sm" variant="outline" disabled={pg === totalPg} onClick={() => setFellowshipPages({ ...fellowshipPages, [f.id]: pg + 1 })}>下一页</Button>
-                      </div>
-                    )}
-                  </TabsContent>
-                );
-              })}
-            </Tabs>
-          )}
         </section>
         {isSuperAdmin && (
         <section className="bg-card border border-border/50 rounded-2xl p-6">
@@ -3170,9 +3107,12 @@ img{width:480px;height:480px;}@media print{@page{margin:1cm;}}</style></head>
         <section className="bg-card border border-border/50 rounded-2xl p-6">
           <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
             <h2 className="font-serif text-xl">课程签到记录</h2>
-            <Button size="sm" variant="outline" onClick={() => loadSundayCheckins()}>
-              刷新
-            </Button>
+            <div className="flex flex-wrap items-center gap-2">
+              <YearFilterPicker value={courseYearFilter} onChange={setCourseYearFilter} />
+              <Button size="sm" variant="outline" onClick={() => loadSundayCheckins()}>
+                刷新
+              </Button>
+            </div>
           </div>
           {courses.filter((c) => c.is_active).length === 0 ? (
             <p className="text-sm text-muted-foreground">暂无课程。添加课程后此处会自动生成标签页。</p>
@@ -3185,7 +3125,7 @@ img{width:480px;height:480px;}@media print{@page{margin:1cm;}}</style></head>
               {/* Chrome风格自定义Tab Bar */}
               <div className="flex flex-wrap relative" style={{ borderBottom: '1px solid rgba(0,0,0,0.08)' }}>
                 {courses.filter((c) => c.is_active).map((c) => {
-                  const count = sundayCheckins.filter((k) => k.course_id === c.id).length;
+                  const count = sundayCheckins.filter((k) => k.course_id === c.id && (k.checkin_date ?? "").slice(0, 4) === String(courseYearFilter)).length;
                   const currentTab = activeCourseTab || courses.find((c2) => c2.is_active)?.id || "";
                   const isActive = currentTab === c.id;
                   return (
@@ -3220,7 +3160,7 @@ img{width:480px;height:480px;}@media print{@page{margin:1cm;}}</style></head>
                 })}
               </div>
               {courses.filter((c) => c.is_active).map((c) => {
-                const rows = sundayCheckins.filter((k) => k.course_id === c.id);
+                const rows = sundayCheckins.filter((k) => k.course_id === c.id && (k.checkin_date ?? "").slice(0, 4) === String(courseYearFilter));
                 const pg = coursePages[c.id] ?? 1;
                 const totalPg = Math.max(1, Math.ceil(rows.length / TAB_PAGE_SIZE));
                 const slice = rows.slice((pg - 1) * TAB_PAGE_SIZE, pg * TAB_PAGE_SIZE);
@@ -3287,9 +3227,119 @@ img{width:480px;height:480px;}@media print{@page{margin:1cm;}}</style></head>
             </Tabs>
           )}
         </section>
+        {/* 团契签到记录 - moved under 主日学 → 成人 */}
+        <section className="bg-card border border-border/50 rounded-2xl p-6">
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+            <h2 className="font-serif text-xl">团契签到记录</h2>
+            <div className="flex flex-wrap items-center gap-2">
+              <YearFilterPicker value={fellowshipYearFilter} onChange={setFellowshipYearFilter} />
+              <Button size="sm" variant="outline" onClick={() => loadFellowshipCheckins()}>
+                刷新
+              </Button>
+            </div>
+          </div>
+          {fellowships.filter((f) => f.is_active).length === 0 ? (
+            <p className="text-sm text-muted-foreground">暂无团契。请在「主日学」页右上角「团契 / 小组设置」中添加。</p>
+          ) : (
+            <Tabs
+              value={activeFellowshipTab || fellowships.find((f) => f.is_active)?.id || ""}
+              onValueChange={setActiveFellowshipTab}
+              className="w-full"
+            >
+              <TabsList className="h-auto w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 bg-[#f5f0e8]/60 p-2 rounded-xl">
+                {fellowships.filter((f) => f.is_active).map((f) => {
+                  const count = fellowshipCheckins.filter(
+                    (k) => k.fellowship === f.name && (k.checkin_date ?? "").slice(0, 4) === String(fellowshipYearFilter),
+                  ).length;
+                  return (
+                    <TabsTrigger
+                      key={f.id}
+                      value={f.id}
+                      className="w-full justify-center text-xs sm:text-sm py-2 px-3 rounded-lg whitespace-normal text-center leading-tight bg-background/60 hover:bg-background data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md transition-all"
+                    >
+                      <span className="truncate">{f.name}</span>
+                      <span className="ml-1 opacity-70">({count})</span>
+                    </TabsTrigger>
+                  );
+                })}
+              </TabsList>
+              {fellowships.filter((f) => f.is_active).map((f) => {
+                const rows = fellowshipCheckins.filter(
+                  (k) => k.fellowship === f.name && (k.checkin_date ?? "").slice(0, 4) === String(fellowshipYearFilter),
+                );
+                const pg = fellowshipPages[f.id] ?? 1;
+                const totalPg = Math.max(1, Math.ceil(rows.length / TAB_PAGE_SIZE));
+                const slice = rows.slice((pg - 1) * TAB_PAGE_SIZE, pg * TAB_PAGE_SIZE);
+                return (
+                  <TabsContent key={f.id} value={f.id} className="mt-4">
+                    <div className="overflow-x-auto max-h-[480px] overflow-y-auto rounded-lg border border-border/50">
+                      <table className="w-full text-sm">
+                        <thead className="sticky top-0 z-10 bg-muted/80 backdrop-blur">
+                          <tr className="text-left border-b border-border/60 text-muted-foreground">
+                            <th className="py-2 px-2">日期</th>
+                            <th className="py-2 px-2">姓名</th>
+                            <th className="py-2 px-2">电话/微信</th>
+                            <th className="py-2 px-2">邮件</th>
+                            <th className="py-2 px-2">代祷备注</th>
+                            <th className="py-2 px-2 text-right">操作</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {slice.map((k) => (
+                            <tr key={k.id} className="border-b border-border/30 align-top">
+                              <td className="py-2 px-2 whitespace-nowrap">{k.checkin_date}</td>
+                              <td className="py-2 px-2 font-medium">{k.name}</td>
+                              <td className="py-2 px-2">{k.contact ?? ""}</td>
+                              <td className="py-2 px-2">{k.email ?? ""}</td>
+                              <td className="py-2 px-2 max-w-[260px] whitespace-pre-wrap break-words">{k.prayer_request ?? ""}</td>
+                              <td className="py-2 px-2 text-right">
+                                <button
+                                  onClick={async () => {
+                                    if (!confirm(`删除 ${k.name} 的签到?`)) return;
+                                    const { error } = await supabase
+                                      .from("fellowship_checkins")
+                                      .delete()
+                                      .eq("id", k.id);
+                                    if (error) return toast.error(error.message);
+                                    logAction(`删除团契签到: ${k.name}`);
+                                    toast.success("已删除");
+                                    loadFellowshipCheckins();
+                                  }}
+                                  className="text-xs text-destructive hover:underline"
+                                >
+                                  删除
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                          {rows.length === 0 && (
+                            <tr>
+                              <td colSpan={6} className="py-8 text-center text-muted-foreground">
+                                暂无签到记录
+                              </td>
+                            </tr>
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                    {totalPg > 1 && (
+                      <div className="flex items-center justify-center gap-2 mt-3 text-sm">
+                        <Button size="sm" variant="outline" disabled={pg === 1} onClick={() => setFellowshipPages({ ...fellowshipPages, [f.id]: pg - 1 })}>上一页</Button>
+                        <span>{pg} / {totalPg}</span>
+                        <Button size="sm" variant="outline" disabled={pg === totalPg} onClick={() => setFellowshipPages({ ...fellowshipPages, [f.id]: pg + 1 })}>下一页</Button>
+                      </div>
+                    )}
+                  </TabsContent>
+                );
+              })}
+            </Tabs>
+          )}
+        </section>
         {(["summer","fall"] as const).map((kind) => {
-          const title = kind === "summer" ? "暑期成人主日学签到表" : "秋季成人主日学签到表";
-          const all = adultCheckins.filter((c) => c.kind === kind);
+          const title = kind === "summer" ? "暑期成人主日学签到" : "秋季成人主日学签到";
+          const yearAll = adultCheckins.filter((c) => c.kind === kind);
+          const yr = adultYearFilter[kind];
+          const all = yearAll.filter((c) => new Date(c.checkin_at).getFullYear() === yr);
           const dateFilter = adultDateFilter[kind];
           const filtered = dateFilter
             ? all.filter((c) => {
@@ -3338,8 +3388,15 @@ img{width:480px;height:480px;}@media print{@page{margin:1cm;}}</style></head>
           return (
             <section key={kind} className="bg-card border border-border/50 rounded-2xl p-6">
               <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-                <h2 className="font-serif text-xl">{title} ({filtered.length}{dateFilter ? ` / 共 ${all.length}` : ""})</h2>
+                <h2 className="font-serif text-xl">{title}</h2>
                 <div className="flex flex-wrap items-center gap-2">
+                  <YearFilterPicker
+                    value={yr}
+                    onChange={(y) => {
+                      setAdultYearFilter((p) => ({ ...p, [kind]: y }));
+                      setAdultPages((p) => ({ ...p, [kind]: 1 }));
+                    }}
+                  />
                   <Popover open={adultDateOpen[kind]} onOpenChange={(v) => setAdultDateOpen((p) => ({ ...p, [kind]: v }))}>
                     <PopoverTrigger asChild>
                       <Button size="sm" variant="outline" className="gap-2">
