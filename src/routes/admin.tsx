@@ -3228,8 +3228,10 @@ img{width:480px;height:480px;}@media print{@page{margin:1cm;}}</style></head>
           )}
         </section>
         {(["summer","fall"] as const).map((kind) => {
-          const title = kind === "summer" ? "暑期成人主日学签到表" : "秋季成人主日学签到表";
-          const all = adultCheckins.filter((c) => c.kind === kind);
+          const title = kind === "summer" ? "暑期成人主日学签到" : "秋季成人主日学签到";
+          const yearAll = adultCheckins.filter((c) => c.kind === kind);
+          const yr = adultYearFilter[kind];
+          const all = yearAll.filter((c) => new Date(c.checkin_at).getFullYear() === yr);
           const dateFilter = adultDateFilter[kind];
           const filtered = dateFilter
             ? all.filter((c) => {
@@ -3278,8 +3280,15 @@ img{width:480px;height:480px;}@media print{@page{margin:1cm;}}</style></head>
           return (
             <section key={kind} className="bg-card border border-border/50 rounded-2xl p-6">
               <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-                <h2 className="font-serif text-xl">{title} ({filtered.length}{dateFilter ? ` / 共 ${all.length}` : ""})</h2>
+                <h2 className="font-serif text-xl">{title}</h2>
                 <div className="flex flex-wrap items-center gap-2">
+                  <YearFilterPicker
+                    value={yr}
+                    onChange={(y) => {
+                      setAdultYearFilter((p) => ({ ...p, [kind]: y }));
+                      setAdultPages((p) => ({ ...p, [kind]: 1 }));
+                    }}
+                  />
                   <Popover open={adultDateOpen[kind]} onOpenChange={(v) => setAdultDateOpen((p) => ({ ...p, [kind]: v }))}>
                     <PopoverTrigger asChild>
                       <Button size="sm" variant="outline" className="gap-2">
