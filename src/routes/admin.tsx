@@ -2721,7 +2721,7 @@ function AdminPage() {
         )}
 
         {kitchenSubTab === "event-meal" && (
-          <MealPlanCalendar category="event" title="其他活动订餐计划" />
+          <EventMealNotebook />
         )}
 
         {kitchenSubTab === "messages" && (
