@@ -166,6 +166,7 @@ function RootComponent() {
   const hideChat =
     pathname === "/" ||
     pathname === "/retreat" ||
+    pathname === "/retreat-info" ||
     pathname.startsWith("/retreat-register") ||
     pathname.startsWith("/retreat-edit") ||
     pathname.startsWith("/display") ||
