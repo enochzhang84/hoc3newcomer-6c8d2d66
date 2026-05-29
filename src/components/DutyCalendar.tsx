@@ -85,10 +85,10 @@ export function DutyCalendarSection() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6 md:space-y-8">
       {/* Toolbar */}
-      <div className="flex items-center justify-between flex-wrap gap-2 print:hidden">
-        <h2 className="font-serif text-xl">事工服侍 · 年度月历</h2>
+      <div className="flex items-center justify-between flex-wrap gap-3 print:hidden pb-2 md:pb-4 border-b border-border/40">
+        <h2 className="font-serif text-xl md:text-2xl">事工服侍 · 年度月历</h2>
         <div className="flex items-center gap-2 flex-wrap">
           <Button size="sm" variant="outline" onClick={() => setYear((y) => y - 1)}>
             <ChevronLeft className="size-4" /> 上一年
