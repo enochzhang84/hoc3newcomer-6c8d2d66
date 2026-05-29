@@ -185,30 +185,110 @@ function DisplayScreen() {
   }
   if (!screen) {
     return (
-      <div className="fixed inset-0 bg-[#FAF3E3] flex items-center justify-center text-2xl text-stone-700">
-        正在加载…
-      </div>
+      <div className="fixed inset-0 bg-[#FAF3E3]" />
     );
   }
 
   const isPortrait = screen.orientation === "portrait";
-  let contentType = screen.current_content_type;
-  let payload: Record<string, unknown> = screen.current_content_payload ?? {};
-  if (contentType === "playlist" && items.length > 0) {
-    const cur = items[pageIdx % items.length];
-    contentType = cur.content_type;
-    payload = cur.content_payload ?? {};
+
+  // Build the active slide(s). For non-playlist content, render a single slide.
+  if (screen.current_content_type !== "playlist" || items.length === 0) {
+    const contentType = screen.current_content_type;
+    const payload = screen.current_content_payload ?? {};
+    return (
+      <div
+        className={`fixed inset-0 ${
+          contentType === "emergency" ? "bg-red-700 text-white" : "bg-[#FAF3E3] text-stone-900"
+        }`}
+      >
+        <ContentRenderer type={contentType} payload={payload} screen={screen} portrait={isPortrait} />
+        <div className="absolute bottom-3 right-4 text-xs opacity-50">
+          {screen.name} · {screen.location ?? ""} · /{screen.slug}
+        </div>
+      </div>
+    );
   }
+
+  return (
+    <PlaylistCarousel
+      items={items}
+      pageIdx={pageIdx}
+      screen={screen}
+      portrait={isPortrait}
+    />
+  );
+}
+
+function PlaylistCarousel({
+  items,
+  pageIdx,
+  screen,
+  portrait,
+}: {
+  items: PlaylistItem[];
+  pageIdx: number;
+  screen: Screen;
+  portrait: boolean;
+}) {
+  // Track up to two layers for crossfade
+  const idx = ((pageIdx % items.length) + items.length) % items.length;
+  const nextIdx = (idx + 1) % items.length;
+
+  // Preload images for current + next item (and a couple ahead) silently
+  useEffect(() => {
+    const preloadIdxs = [idx, nextIdx, (idx + 2) % items.length];
+    preloadIdxs.forEach((i) => {
+      const it = items[i];
+      const p = (it?.content_payload ?? {}) as Record<string, unknown>;
+      const url = (p.image_url as string) || (p.url as string) || "";
+      if (!url) return;
+      // Heuristic: preload image URLs
+      if (/\.(png|jpe?g|gif|webp|svg|avif)(\?|$)/i.test(url)) {
+        const img = new Image();
+        img.src = url;
+      } else if (it.content_type === "embed") {
+        // Hidden iframe prefetch
+        const f = document.createElement("link");
+        f.rel = "prefetch";
+        f.href = url;
+        document.head.appendChild(f);
+        setTimeout(() => f.remove(), 30_000);
+      }
+    });
+  }, [idx, nextIdx, items]);
+
+  const cur = items[idx];
+  const curType = cur.content_type;
+  const curPayload = (cur.content_payload ?? {}) as Record<string, unknown>;
 
   return (
     <div
       className={`fixed inset-0 ${
-        contentType === "emergency" ? "bg-red-700 text-white" : "bg-[#FAF3E3] text-stone-900"
-      } flex flex-col`}
-      style={{ writingMode: isPortrait ? undefined : undefined }}
+        curType === "emergency" ? "bg-red-700 text-white" : "bg-[#FAF3E3] text-stone-900"
+      }`}
     >
-      <ContentRenderer type={contentType} payload={payload} screen={screen} portrait={isPortrait} />
-      <div className="absolute bottom-3 right-4 text-xs opacity-50">
+      {items.map((it, i) => {
+        const visible = i === idx;
+        // Only mount current + adjacent for memory
+        const mounted = visible || i === nextIdx || i === (idx - 1 + items.length) % items.length;
+        if (!mounted) return null;
+        const p = (it.content_payload ?? {}) as Record<string, unknown>;
+        return (
+          <div
+            key={it.id}
+            className="absolute inset-0 transition-opacity duration-500 ease-in-out"
+            style={{ opacity: visible ? 1 : 0, pointerEvents: visible ? "auto" : "none" }}
+          >
+            <ContentRenderer
+              type={it.content_type}
+              payload={p}
+              screen={screen}
+              portrait={portrait}
+            />
+          </div>
+        );
+      })}
+      <div className="absolute bottom-3 right-4 text-xs opacity-50 z-10">
         {screen.name} · {screen.location ?? ""} · /{screen.slug}
       </div>
     </div>
