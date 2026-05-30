@@ -2018,7 +2018,7 @@ function AdminPage() {
                 <tr className="text-left border-b border-border/60 text-muted-foreground">
                   <th className="py-2 px-2">邮箱</th>
                   <th className="py-2 px-2">同工姓名</th>
-                  <th className="py-2 px-2">服侍项目</th>
+                  <th className="py-2 px-2">所属事工</th>
                   <th className="py-2 px-2">角色</th>
                   <th className="py-2 px-2">注册时间</th>
                   <th className="py-2 px-2 text-right">操作</th>
