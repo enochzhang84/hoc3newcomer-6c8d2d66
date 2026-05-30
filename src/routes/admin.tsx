@@ -607,9 +607,10 @@ function AdminPage() {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const _setUserDisabledFn = useServerFn(setUserDisabled);
 
-  // worker 默认 tab：跳到其 service_area 对应模块
+  // 默认 tab：worker 必须跳到对应模块；admin 若设置了 service_area 也跳过去
   useEffect(() => {
-    if (userRole !== "worker") return;
+    if (userRole !== "worker" && userRole !== "admin") return;
+    if (!currentServiceArea) return;
     const map: Record<ServiceArea, string> = {
       welcome: "welcome",
       media: "media",
@@ -620,9 +621,9 @@ function AdminPage() {
       tv_display: "stats",
       chat: "stats",
     };
-    if (currentServiceArea && map[currentServiceArea]) {
-      setMainTab(map[currentServiceArea]);
-    }
+    const target = map[currentServiceArea];
+    // admin 无 service_area 时 target 不会触发；worker stats/newcomer 等无独立 tab，回落 stats
+    if (target) setMainTab(target);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userRole, currentServiceArea]);
   const [newUserOpen, setNewUserOpen] = useState(false);
