@@ -1520,20 +1520,33 @@ function AdminPage() {
                 { value: "events", label: "活动" },
               ] as { value: string; label: string }[])
                 .filter((tab) => {
-                  // super_admin / admin 看全部
-                  if (userRole === "super_admin" || userRole === "admin") return true;
-                  // viewer / null 不进后台，但兜底
-                  if (userRole !== "worker") return false;
-                  // worker 仅看与其 service_area 对应的模块
-                  const map: Record<string, ServiceArea> = {
-                    welcome: "welcome",
-                    media: "media",
-                    kitchen: "kitchen",
-                    sunday: "sunday_school",
-                  };
-                  const required = map[tab.value];
-                  if (!required) return false; // stats / events 仅管理员
-                  return currentServiceArea === required;
+                  // super_admin 不受 service_area 限制
+                  if (userRole === "super_admin") return true;
+                  // admin：未设置 service_area → 全部模块；已设置 → 仅对应模块
+                  if (userRole === "admin") {
+                    if (!currentServiceArea) return true;
+                    const map: Record<string, ServiceArea> = {
+                      welcome: "welcome",
+                      media: "media",
+                      kitchen: "kitchen",
+                      sunday: "sunday_school",
+                    };
+                    const required = map[tab.value];
+                    return required ? currentServiceArea === required : false;
+                  }
+                  // worker：必须设置 service_area，且仅看对应模块
+                  if (userRole === "worker") {
+                    if (!currentServiceArea) return false;
+                    const map: Record<string, ServiceArea> = {
+                      welcome: "welcome",
+                      media: "media",
+                      kitchen: "kitchen",
+                      sunday: "sunday_school",
+                    };
+                    const required = map[tab.value];
+                    return required ? currentServiceArea === required : false;
+                  }
+                  return false;
                 })
                 .map((tab) => {
                 const isActive = mainTab === tab.value;
