@@ -428,6 +428,7 @@ function AdminPage() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [userRole, setUserRoleState] = useState<Role | null>(null);
+  const [currentServiceArea, setCurrentServiceArea] = useState<ServiceArea | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [currentUserEmail, setCurrentUserEmail] = useState<string>("");
   const [regs, setRegs] = useState<Reg[]>([]);
@@ -602,13 +603,36 @@ function AdminPage() {
   const setUserRoleFn = useServerFn(setUserRole);
   const deleteUserFn = useServerFn(deleteUser);
   const createUserFn = useServerFn(createUserWithRole);
+  const setUserServiceAreaFn = useServerFn(setUserServiceArea);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const _setUserDisabledFn = useServerFn(setUserDisabled);
+
+  // worker 默认 tab：跳到其 service_area 对应模块
+  useEffect(() => {
+    if (userRole !== "worker") return;
+    const map: Record<ServiceArea, string> = {
+      welcome: "welcome",
+      media: "media",
+      kitchen: "kitchen",
+      sunday_school: "sunday",
+      newcomer: "stats",
+      retreat: "stats",
+      tv_display: "stats",
+      chat: "stats",
+    };
+    if (currentServiceArea && map[currentServiceArea]) {
+      setMainTab(map[currentServiceArea]);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userRole, currentServiceArea]);
   const [newUserOpen, setNewUserOpen] = useState(false);
   const [newUserForm, setNewUserForm] = useState<{
     email: string;
     password: string;
     role: "super_admin" | "admin" | "user" | "viewer";
     workerName: string;
-  }>({ email: "", password: "", role: "user", workerName: "" });
+    serviceArea: ServiceArea | "";
+  }>({ email: "", password: "", role: "user", workerName: "", serviceArea: "" });
   const [newUserSubmitting, setNewUserSubmitting] = useState(false);
   const updateWorkerNameFn = useServerFn(updateUserWorkerName);
   const [editingWorkerUserId, setEditingWorkerUserId] = useState<string | null>(null);
@@ -914,6 +938,18 @@ function AdminPage() {
           setIsSuperAdmin(superAdmin);
           setIsAdmin(admin || superAdmin);
           setUserRoleState(role);
+          // Load this user's service_area (for worker tab gating)
+          try {
+            const { data: prof } = await supabase
+              .from("user_profiles")
+              .select("service_area")
+              .eq("user_id", sess.user.id)
+              .maybeSingle();
+            const sa = (prof as { service_area?: string | null } | null)?.service_area ?? null;
+            setCurrentServiceArea(
+              sa && (SERVICE_AREAS as readonly string[]).includes(sa) ? (sa as ServiceArea) : null,
+            );
+          } catch { /* ignore */ }
           setChecking(false);
           if (!canAccessAdmin(role)) {
             toast.error("您没有访问后台的权限");
@@ -1475,14 +1511,31 @@ function AdminPage() {
           {/* Soft UI 主导航栏 — Apple Dashboard 风格 */}
           <div className="mb-8 p-1.5 bg-[#f5f0e8] rounded-2xl shadow-[0_2px_16px_rgba(0,0,0,0.04)]">
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-1">
-              {[
+              {([
                 { value: "stats", label: "数据统计" },
                 { value: "welcome", label: "迎宾接待" },
                 { value: "media", label: "影音播放" },
                 { value: "kitchen", label: "厨房事工" },
                 { value: "sunday", label: "主日学" },
                 { value: "events", label: "活动" },
-              ].map((tab) => {
+              ] as { value: string; label: string }[])
+                .filter((tab) => {
+                  // super_admin / admin 看全部
+                  if (userRole === "super_admin" || userRole === "admin") return true;
+                  // viewer / null 不进后台，但兜底
+                  if (userRole !== "worker") return false;
+                  // worker 仅看与其 service_area 对应的模块
+                  const map: Record<string, ServiceArea> = {
+                    welcome: "welcome",
+                    media: "media",
+                    kitchen: "kitchen",
+                    sunday: "sunday_school",
+                  };
+                  const required = map[tab.value];
+                  if (!required) return false; // stats / events 仅管理员
+                  return currentServiceArea === required;
+                })
+                .map((tab) => {
                 const isActive = mainTab === tab.value;
                 return (
                   <button
@@ -1942,7 +1995,7 @@ function AdminPage() {
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-serif text-xl">管理员权限</h2>
             <div className="flex items-center gap-2">
-              <Button size="sm" onClick={() => { setNewUserForm({ email: "", password: "", role: "user", workerName: "" }); setNewUserOpen(true); }}>
+              <Button size="sm" onClick={() => { setNewUserForm({ email: "", password: "", role: "user", workerName: "", serviceArea: "" }); setNewUserOpen(true); }}>
                 + 添加用户
               </Button>
               <Button size="sm" variant="outline" onClick={loadUsers} disabled={usersLoading}>
@@ -1965,7 +2018,7 @@ function AdminPage() {
                 <tr className="text-left border-b border-border/60 text-muted-foreground">
                   <th className="py-2 px-2">邮箱</th>
                   <th className="py-2 px-2">同工姓名</th>
-                  <th className="py-2 px-2">服侍项目</th>
+                  <th className="py-2 px-2">所属事工</th>
                   <th className="py-2 px-2">角色</th>
                   <th className="py-2 px-2">注册时间</th>
                   <th className="py-2 px-2 text-right">操作</th>
@@ -2010,8 +2063,30 @@ function AdminPage() {
                           </span>
                         )}
                       </td>
-                      <td className="py-2 px-2 text-muted-foreground">
-                        {u.service_project || <span className="text-muted-foreground/60">—</span>}
+                      <td className="py-2 px-2">
+                        <select
+                          value={u.service_area ?? ""}
+                          disabled={isProtected || (isSelf && currentRole === "super_admin")}
+                          onChange={async (e) => {
+                            const next = e.target.value as ServiceArea | "";
+                            try {
+                              await setUserServiceAreaFn({
+                                data: { userId: u.id, serviceArea: next === "" ? null : next },
+                              });
+                              logAction(`将 ${u.email} 所属事工设为 ${next ? SERVICE_AREA_LABELS[next] : "(未设置)"}`);
+                              toast.success("已更新所属事工");
+                              loadUsers();
+                            } catch (err) {
+                              toast.error((err as Error).message);
+                            }
+                          }}
+                          className="text-xs bg-background border border-border rounded px-2 py-1 min-w-[120px]"
+                        >
+                          <option value="">— 未设置 —</option>
+                          {SERVICE_AREAS.map((a) => (
+                            <option key={a} value={a}>{SERVICE_AREA_LABELS[a]}</option>
+                          ))}
+                        </select>
                       </td>
                       <td className="py-2 px-2">
                         <select
@@ -2197,6 +2272,19 @@ function AdminPage() {
                   <option value="viewer">访客</option>
                 </select>
               </div>
+              <div className="space-y-1">
+                <Label className="text-xs">所属事工 (worker 必填)</Label>
+                <select
+                  value={newUserForm.serviceArea}
+                  onChange={(e) => setNewUserForm({ ...newUserForm, serviceArea: e.target.value as ServiceArea | "" })}
+                  className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm"
+                >
+                  <option value="">— 未设置 —</option>
+                  {SERVICE_AREAS.map((a) => (
+                    <option key={a} value={a}>{SERVICE_AREA_LABELS[a]}</option>
+                  ))}
+                </select>
+              </div>
             </div>
             <DialogFooter>
               <Button variant="ghost" onClick={() => setNewUserOpen(false)}>取消</Button>
@@ -2208,7 +2296,13 @@ function AdminPage() {
                   if (newUserForm.password.length < 6) return toast.error("密码至少 6 位");
                   setNewUserSubmitting(true);
                   try {
-                    await createUserFn({ data: { email, password: newUserForm.password, role: newUserForm.role, workerName: newUserForm.workerName.trim() || undefined } });
+                    await createUserFn({ data: {
+                      email,
+                      password: newUserForm.password,
+                      role: newUserForm.role,
+                      workerName: newUserForm.workerName.trim() || undefined,
+                      serviceArea: newUserForm.serviceArea || null,
+                    } });
                     toast.success("用户已创建");
                     logAction(`创建用户 ${email} (角色: ${newUserForm.role})`);
                     setNewUserOpen(false);
