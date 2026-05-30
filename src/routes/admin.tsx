@@ -23,6 +23,7 @@ import { ScreenManager } from "@/components/admin/ScreenManager";
 import { AVMinistryWorkspace } from "@/components/admin/AVMinistryWorkspace";
 import { zhCN } from "date-fns/locale";
 import { listUsersWithRoles, setUserRole, deleteUser, createUserWithRole, updateUserWorkerName, setUserServiceArea, setUserDisabled } from "@/lib/users.functions";
+import { useI18n, type TKey } from "@/lib/i18n";
 import { SERVICE_AREAS, SERVICE_AREA_LABELS, ROLE_LABELS, type Role, type ServiceArea, canAccessAdmin } from "@/lib/permissions";
 import { updateRegistration } from "@/lib/registrations.functions";
 import { HospitalityCalendarSection } from "@/components/HospitalityCalendar";
@@ -424,6 +425,7 @@ function DateLevelPicker({
 
 function AdminPage() {
   const navigate = useNavigate();
+  const { lang, setLang, t } = useI18n();
   const [checking, setChecking] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
@@ -1452,14 +1454,42 @@ function AdminPage() {
     <div className="min-h-screen bg-background overflow-x-hidden">
       <header className="border-b border-border/60 bg-card/50">
         <div className="container mx-auto px-4 sm:px-6 py-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <Link to="/" className="font-serif text-lg sm:text-xl flex flex-col sm:flex-row sm:items-baseline gap-1 sm:gap-3 leading-relaxed">
-            <span className="whitespace-normal sm:whitespace-nowrap">基督之家第三家 控制面板</span>
+          <Link to="/" className="flex flex-col gap-0.5 leading-tight">
+            <span className="font-serif text-lg sm:text-xl whitespace-normal sm:whitespace-nowrap">
+              {t("appTitle")}
+            </span>
+            <span className="text-xs sm:text-sm text-muted-foreground tracking-wide">
+              {t("appSubtitle")}
+            </span>
             <NowLabel />
           </Link>
           <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center sm:justify-end">
+            {/* 语言切换 */}
+            <div className="col-span-2 sm:col-span-1 inline-flex items-center rounded-md border border-border/60 overflow-hidden text-xs">
+              <button
+                type="button"
+                onClick={() => setLang("zh")}
+                className={cn(
+                  "px-2.5 py-1 transition-colors",
+                  lang === "zh" ? "bg-primary text-primary-foreground" : "bg-background hover:bg-muted",
+                )}
+              >
+                中文
+              </button>
+              <button
+                type="button"
+                onClick={() => setLang("en")}
+                className={cn(
+                  "px-2.5 py-1 transition-colors border-l border-border/60",
+                  lang === "en" ? "bg-primary text-primary-foreground" : "bg-background hover:bg-muted",
+                )}
+              >
+                English
+              </button>
+            </div>
             {isAdmin && (
               <Button size="sm" variant="outline" onClick={() => setContactsOpen(true)}>
-                通讯录 ({contacts.length})
+                {t("contacts")} ({contacts.length})
               </Button>
             )}
             <Button
@@ -1467,16 +1497,16 @@ function AdminPage() {
               variant="outline"
               onClick={() => window.open("https://hoc3.org/wp2021/home/", "_blank", "noopener,noreferrer")}
             >
-              基督三家主页
+              {t("hoc3Home")}
             </Button>
             {isAdmin && (
               <Link to="/register" target="_blank">
-                <Button size="sm">手动录入</Button>
+                <Button size="sm">{t("manualEntry")}</Button>
               </Link>
             )}
             {!isAdmin && (
               <span className="text-xs px-2 py-1 rounded-md bg-muted text-muted-foreground">
-                只读模式（{userRole === "worker" ? "同工" : "访客"}）
+                {t("readOnly")}（{userRole === "worker" ? t("workerLabel") : t("viewerLabel")}）
               </span>
             )}
             <div className="hidden sm:flex items-center gap-1.5 text-sm text-muted-foreground px-2 py-1 rounded-md bg-muted/60 max-w-[200px] truncate" title={currentUserEmail}>
@@ -1501,7 +1531,7 @@ function AdminPage() {
                 navigate({ to: "/login" });
               }}
             >
-              退出
+              {t("logout")}
             </Button>
           </div>
         </div>
@@ -1512,14 +1542,14 @@ function AdminPage() {
           {/* Soft UI 主导航栏 — Apple Dashboard 风格 */}
           <div className="mb-8 p-1.5 bg-[#f5f0e8] rounded-2xl shadow-[0_2px_16px_rgba(0,0,0,0.04)]">
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-1">
-              {([
-                { value: "stats", label: "数据统计" },
-                { value: "welcome", label: "迎宾接待" },
-                { value: "media", label: "影音播放" },
-                { value: "kitchen", label: "厨房事工" },
-                { value: "sunday", label: "主日学" },
-                { value: "events", label: "活动" },
-              ] as { value: string; label: string }[])
+              {(([
+                { value: "stats", key: "modReports" as TKey },
+                { value: "welcome", key: "modWelcome" as TKey },
+                { value: "media", key: "modMedia" as TKey },
+                { value: "kitchen", key: "modKitchen" as TKey },
+                { value: "sunday", key: "modSundaySchool" as TKey },
+                { value: "events", key: "modEvents" as TKey },
+              ] as { value: string; key: TKey }[]).map((x) => ({ value: x.value, label: t(x.key) })))
                 .filter((tab) => {
                   // super_admin 不受 service_area 限制
                   if (userRole === "super_admin") return true;
