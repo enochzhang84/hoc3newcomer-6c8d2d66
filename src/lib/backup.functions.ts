@@ -1,7 +1,13 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { supabaseAdmin as _supabaseAdmin } from "@/integrations/supabase/client.server";
+// Cast to any: BACKUP_TABLES is a runtime list of arbitrary table names and
+// rows are arbitrary JSON shapes from a backup file — strict generic typing
+// is intentionally bypassed for this admin-only tool.
+const supabaseAdmin = _supabaseAdmin as unknown as {
+  from: (t: string) => any;
+};
 
 // Canonical table list to back up / restore. Keys are stable identifiers used
 // in the JSON file and in module groupings; values are the real table names.
@@ -50,7 +56,7 @@ export const exportBackup = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     await assertSuperAdmin(context.userId);
-    const tables: Record<string, unknown[]> = {};
+    const tables: Record<string, any[]> = {};
     const warnings: string[] = [];
     for (const t of BACKUP_TABLES) {
       const { data, error } = await supabaseAdmin.from(t).select("*");
@@ -65,9 +71,9 @@ export const exportBackup = createServerFn({ method: "POST" })
       backup_version: 1,
       created_at: new Date().toISOString(),
       project_name: "HOC3 Ministry Center",
-      tables,
+      tables: tables as any,
       warnings,
-    };
+    } as any;
   });
 
 // ---------- Restore ----------
@@ -97,7 +103,7 @@ function pickFilter(table: string) {
   return { col: "id", val: "00000000-0000-0000-0000-000000000000" };
 }
 
-async function restoreTable(table: string, rows: unknown[]): Promise<TableResult> {
+async function restoreTable(table: string, rows: any[]): Promise<TableResult> {
   const res: TableResult = { table, inserted: 0, failed: 0, warnings: [] };
   // Wipe existing rows.
   const f = pickFilter(table);
@@ -110,7 +116,7 @@ async function restoreTable(table: string, rows: unknown[]): Promise<TableResult
 
   // Try bulk insert first; on error, fall back to row-by-row and strip
   // columns that the destination schema rejects.
-  const bulk = await supabaseAdmin.from(table).insert(rows as never).select("*");
+  const bulk = await supabaseAdmin.from(table).insert(rows).select("*");
   if (!bulk.error) {
     res.inserted = bulk.data?.length ?? rows.length;
     return res;
@@ -119,13 +125,13 @@ async function restoreTable(table: string, rows: unknown[]): Promise<TableResult
   res.warnings.push(`bulk insert rejected (${bulk.error.message}); retrying row-by-row`);
 
   const droppedCols = new Set<string>();
-  for (const original of rows as Record<string, unknown>[]) {
-    let row = { ...original };
+  for (const original of rows as Record<string, any>[]) {
+    const row: Record<string, any> = { ...original };
     // Pre-strip known-bad columns from previous failures.
     for (const c of droppedCols) delete row[c];
     let attempt = 0;
     while (attempt < 5) {
-      const r = await supabaseAdmin.from(table).insert(row as never);
+      const r = await supabaseAdmin.from(table).insert(row);
       if (!r.error) {
         res.inserted++;
         break;
@@ -199,9 +205,9 @@ export const initSuperAdmin = createServerFn({ method: "POST" })
     }
     const { error: e2 } = await supabaseAdmin
       .from("user_roles")
-      .insert({ user_id: context.userId, role: "super_admin" } as never);
+      .insert({ user_id: context.userId, role: "super_admin" });
     if (e2) throw new Error(e2.message);
-    return { ok: true };
+    return { ok: true } as any;
   });
 
 export const hasSuperAdmin = createServerFn({ method: "GET" }).handler(async () => {
