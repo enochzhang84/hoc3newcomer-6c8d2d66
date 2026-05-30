@@ -195,7 +195,11 @@ export const createUserWithRole = createServerFn({ method: "POST" })
       .from("user_roles")
       .insert({ user_id: newId, role: finalRole });
     if (rErr) throw new Error(rErr.message);
-    const profilePatch: Record<string, unknown> = { user_id: newId };
+    const profilePatch: {
+      user_id: string;
+      worker_name?: string;
+      service_area?: string | null;
+    } = { user_id: newId };
     if (data.workerName && data.workerName.trim()) {
       profilePatch.worker_name = data.workerName.trim();
     }
