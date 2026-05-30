@@ -2399,6 +2399,12 @@ function AdminPage() {
               二维码库
             </Button>
             <Button
+              variant="outline"
+              onClick={() => setHomeSettingsOpen(true)}
+            >
+              主页设置
+            </Button>
+            <Button
               variant="destructive"
               onClick={() => setInitOpen(true)}
             >
@@ -2407,6 +2413,18 @@ function AdminPage() {
           </div>
         </section>
         )}
+        {/* 主页设置 Dialog */}
+        <Dialog open={homeSettingsOpen} onOpenChange={setHomeSettingsOpen}>
+          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>主页设置</DialogTitle>
+              <DialogDescription>
+                修改首页 Logo、欢迎区文字与图片、二维码图片与说明。仅管理员可修改。
+              </DialogDescription>
+            </DialogHeader>
+            {homeSettingsOpen && <HomePageSettingsPanel />}
+          </DialogContent>
+        </Dialog>
             </TabsContent>
 
             <TabsContent value="welcome" className="space-y-8 mt-0">
