@@ -744,6 +744,45 @@ export type Database = {
         }
         Relationships: []
       }
+      home_page_settings: {
+        Row: {
+          id: string
+          logo_url: string | null
+          qr_description: string | null
+          qr_image_url: string | null
+          qr_title: string | null
+          updated_at: string
+          welcome_description: string | null
+          welcome_image_url: string | null
+          welcome_subtitle: string | null
+          welcome_title: string | null
+        }
+        Insert: {
+          id?: string
+          logo_url?: string | null
+          qr_description?: string | null
+          qr_image_url?: string | null
+          qr_title?: string | null
+          updated_at?: string
+          welcome_description?: string | null
+          welcome_image_url?: string | null
+          welcome_subtitle?: string | null
+          welcome_title?: string | null
+        }
+        Update: {
+          id?: string
+          logo_url?: string | null
+          qr_description?: string | null
+          qr_image_url?: string | null
+          qr_title?: string | null
+          updated_at?: string
+          welcome_description?: string | null
+          welcome_image_url?: string | null
+          welcome_subtitle?: string | null
+          welcome_title?: string | null
+        }
+        Relationships: []
+      }
       hospitality_ministry_entries: {
         Row: {
           created_at: string
