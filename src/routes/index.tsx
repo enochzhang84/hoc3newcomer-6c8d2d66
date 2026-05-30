@@ -18,6 +18,16 @@ function Index() {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isIPad, setIsIPad] = useState(false);
   const [verse, setVerse] = useState<{ text: string; ref: string } | null>(null);
+  const [home, setHome] = useState<{
+    logo_url: string | null;
+    welcome_title: string | null;
+    welcome_subtitle: string | null;
+    welcome_description: string | null;
+    welcome_image_url: string | null;
+    qr_title: string | null;
+    qr_description: string | null;
+    qr_image_url: string | null;
+  } | null>(null);
 
   const VERSES = [
     { text: "凡劳苦担重担的人，可以到我这里来，我就使你们得安息。", ref: "马太福音 11:28" },
@@ -47,6 +57,17 @@ function Index() {
       .limit(1)
       .maybeSingle()
       .then(({ data }) => setEvent(data));
+  }, []);
+
+  // Load dynamic home page settings (falls back to defaults if absent / errors)
+  useEffect(() => {
+    (supabase as any)
+      .from("home_page_settings")
+      .select("logo_url, welcome_title, welcome_subtitle, welcome_description, welcome_image_url, qr_title, qr_description, qr_image_url")
+      .order("updated_at", { ascending: false })
+      .limit(1)
+      .maybeSingle()
+      .then(({ data }: { data: any }) => { if (data) setHome(data); });
   }, []);
 
   useEffect(() => {
@@ -113,7 +134,12 @@ function Index() {
       <header className="border-b border-border/60">
         <div className="container mx-auto flex items-center justify-between px-6 py-5">
           <a href="/admin" className="flex items-center gap-2">
-            <img src={logo} alt="基督之家第三家" className="h-10 w-10 object-contain" />
+            <img
+              src={home?.logo_url || logo}
+              onError={(e) => ((e.currentTarget as HTMLImageElement).src = logo)}
+              alt="基督之家第三家"
+              className="h-10 w-10 object-contain"
+            />
             <span className="font-serif text-xl tracking-wide text-foreground">基督之家第三家</span>
           </a>
           {!isFullscreen ? (
@@ -150,18 +176,45 @@ function Index() {
       <main className="container mx-auto px-6 py-16">
         <div className="grid gap-12 md:grid-cols-2 items-center max-w-5xl mx-auto">
           <div className="flex justify-end">
-            <div className="w-full max-w-sm font-kaiti font-bold text-foreground">
+            <div
+              className="w-full max-w-sm font-kaiti font-bold text-foreground relative rounded-xl"
+              style={
+                home?.welcome_image_url
+                  ? {
+                      backgroundImage: `linear-gradient(rgba(255,255,255,0.85), rgba(255,255,255,0.85)), url(${home.welcome_image_url})`,
+                      backgroundSize: "cover",
+                      backgroundPosition: "center",
+                      padding: "1.25rem",
+                    }
+                  : undefined
+              }
+            >
               <div className="flex items-center gap-3 mb-3">
-                <img src={logo} alt="基督之家第三家" className="h-14 w-14 object-contain" />
+                <img
+                  src={home?.logo_url || logo}
+                  onError={(e) => ((e.currentTarget as HTMLImageElement).src = logo)}
+                  alt="基督之家第三家"
+                  className="h-14 w-14 object-contain"
+                />
                 <div className="leading-tight">
-                  <div className="text-3xl font-bold tracking-wide">基督之家</div>
-                  <div className="text-xl tracking-widest">第三家</div>
+                  <div className="text-3xl font-bold tracking-wide">
+                    {home?.welcome_title || "基督之家"}
+                  </div>
+                  <div className="text-xl tracking-widest">
+                    {home?.welcome_subtitle || "第三家"}
+                  </div>
                 </div>
               </div>
-              <div className="text-sm text-foreground/80 mb-5 leading-relaxed">
-                <div>这家就是永生神的教会</div>
-                <div>真理的柱石和根基 (提前 3:15)</div>
-              </div>
+              {home?.welcome_description ? (
+                <div className="text-sm text-foreground/80 mb-5 leading-relaxed whitespace-pre-line">
+                  {home.welcome_description}
+                </div>
+              ) : (
+                <div className="text-sm text-foreground/80 mb-5 leading-relaxed">
+                  <div>这家就是永生神的教会</div>
+                  <div>真理的柱石和根基 (提前 3:15)</div>
+                </div>
+              )}
 
               <div className="text-sm mb-4">
                 <span className="font-bold">今年主题</span>
@@ -198,11 +251,23 @@ function Index() {
 
           <div className="flex flex-col items-center">
             <div className="bg-card p-8 rounded-2xl shadow-xl border border-border/40">
-              {url ? (
+              {home?.qr_image_url ? (
+                <>
+                  <img
+                    src={home.qr_image_url}
+                    onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+                    alt={home.qr_title || "二维码"}
+                    className="w-60 h-60 object-contain"
+                  />
+                  <p className="text-center mt-4 text-sm text-muted-foreground">
+                    {home.qr_description || (home.qr_title ? home.qr_title : (event ? `扫码登记 · ${event.name}` : ""))}
+                  </p>
+                </>
+              ) : url ? (
                 <>
                   <QRCodeSVG value={url} size={240} level="H" />
                   <p className="text-center mt-4 text-sm text-muted-foreground">
-                    扫码登记 · {event?.name}
+                    {home?.qr_description || `${home?.qr_title || "扫码登记"} · ${event?.name ?? ""}`}
                   </p>
                 </>
               ) : (

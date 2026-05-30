@@ -24,6 +24,7 @@ import { AVMinistryWorkspace } from "@/components/admin/AVMinistryWorkspace";
 import { zhCN } from "date-fns/locale";
 import { listUsersWithRoles, setUserRole, deleteUser, createUserWithRole, updateUserWorkerName, setUserServiceArea, setUserDisabled } from "@/lib/users.functions";
 import { useI18n, type TKey } from "@/lib/i18n";
+import { HomePageSettingsPanel } from "@/components/admin/HomePageSettingsPanel";
 import { SERVICE_AREAS, SERVICE_AREA_LABELS, ROLE_LABELS, type Role, type ServiceArea, canAccessAdmin } from "@/lib/permissions";
 import { updateRegistration } from "@/lib/registrations.functions";
 import { HospitalityCalendarSection } from "@/components/HospitalityCalendar";
@@ -646,6 +647,7 @@ function AdminPage() {
   const [logsOpen, setLogsOpen] = useState(false);
   const [initOpen, setInitOpen] = useState(false);
   const [qrLibOpen, setQrLibOpen] = useState(false);
+  const [homeSettingsOpen, setHomeSettingsOpen] = useState(false);
   const [initLoading, setInitLoading] = useState(false);
   const [logs, setLogs] = useState<{ time: string; actor: string; action: string }[]>([]);
   const [statusFilter, setStatusFilter] = useState<"all" | "未联系" | "已联系">("all");
@@ -2398,6 +2400,12 @@ function AdminPage() {
               二维码库
             </Button>
             <Button
+              variant="outline"
+              onClick={() => setHomeSettingsOpen(true)}
+            >
+              主页设置
+            </Button>
+            <Button
               variant="destructive"
               onClick={() => setInitOpen(true)}
             >
@@ -2406,6 +2414,18 @@ function AdminPage() {
           </div>
         </section>
         )}
+        {/* 主页设置 Dialog */}
+        <Dialog open={homeSettingsOpen} onOpenChange={setHomeSettingsOpen}>
+          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>主页设置</DialogTitle>
+              <DialogDescription>
+                修改首页 Logo、欢迎区文字与图片、二维码图片与说明。仅管理员可修改。
+              </DialogDescription>
+            </DialogHeader>
+            {homeSettingsOpen && <HomePageSettingsPanel />}
+          </DialogContent>
+        </Dialog>
             </TabsContent>
 
             <TabsContent value="welcome" className="space-y-8 mt-0">
