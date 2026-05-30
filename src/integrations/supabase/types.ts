@@ -1403,6 +1403,9 @@ export type Database = {
       user_profiles: {
         Row: {
           created_at: string
+          display_name: string | null
+          is_disabled: boolean
+          service_area: string | null
           service_project: string | null
           service_projects: string[]
           updated_at: string
@@ -1411,6 +1414,9 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          display_name?: string | null
+          is_disabled?: boolean
+          service_area?: string | null
           service_project?: string | null
           service_projects?: string[]
           updated_at?: string
@@ -1419,6 +1425,9 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          display_name?: string | null
+          is_disabled?: boolean
+          service_area?: string | null
           service_project?: string | null
           service_projects?: string[]
           updated_at?: string
@@ -1453,6 +1462,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_service_area: { Args: { _uid: string }; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -1460,10 +1470,12 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_admin_or_above: { Args: { _uid: string }; Returns: boolean }
+      is_super_admin: { Args: { _uid: string }; Returns: boolean }
       touch_display_screen: { Args: { _slug: string }; Returns: undefined }
     }
     Enums: {
-      app_role: "admin" | "user" | "viewer" | "super_admin"
+      app_role: "admin" | "user" | "viewer" | "super_admin" | "worker"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1591,7 +1603,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "user", "viewer", "super_admin"],
+      app_role: ["admin", "user", "viewer", "super_admin", "worker"],
     },
   },
 } as const

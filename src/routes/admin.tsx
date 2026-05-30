@@ -22,7 +22,8 @@ import { format } from "date-fns";
 import { ScreenManager } from "@/components/admin/ScreenManager";
 import { AVMinistryWorkspace } from "@/components/admin/AVMinistryWorkspace";
 import { zhCN } from "date-fns/locale";
-import { listUsersWithRoles, setUserRole, deleteUser, createUserWithRole, updateUserWorkerName } from "@/lib/users.functions";
+import { listUsersWithRoles, setUserRole, deleteUser, createUserWithRole, updateUserWorkerName, setUserServiceArea, setUserDisabled } from "@/lib/users.functions";
+import { SERVICE_AREAS, SERVICE_AREA_LABELS, ROLE_LABELS, type Role, type ServiceArea, canAccessAdmin } from "@/lib/permissions";
 import { updateRegistration } from "@/lib/registrations.functions";
 import { HospitalityCalendarSection } from "@/components/HospitalityCalendar";
 import { HospitalityRankingSection } from "@/components/HospitalityRanking";
@@ -85,7 +86,18 @@ function formatSourceChannel(r: Pick<Reg, "source_channel">): string {
   }
 }
 
-type AppUser = { id: string; email: string; created_at: string; roles: string[]; worker_name?: string | null; service_project?: string | null };
+type AppUser = {
+  id: string;
+  email: string;
+  created_at: string;
+  last_sign_in_at?: string | null;
+  roles: string[];
+  worker_name?: string | null;
+  service_project?: string | null;
+  service_area?: string | null;
+  display_name?: string | null;
+  is_disabled?: boolean;
+};
 
 type CachedAuthUser = { id: string; email?: string | null };
 
@@ -415,7 +427,7 @@ function AdminPage() {
   const [checking, setChecking] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
-  const [userRole, setUserRoleState] = useState<"super_admin" | "admin" | "user" | "viewer" | null>(null);
+  const [userRole, setUserRoleState] = useState<Role | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [currentUserEmail, setCurrentUserEmail] = useState<string>("");
   const [regs, setRegs] = useState<Reg[]>([]);
@@ -427,7 +439,7 @@ function AdminPage() {
   const [origin, setOrigin] = useState("");
   const [users, setUsers] = useState<AppUser[]>([]);
   const [usersLoading, setUsersLoading] = useState(false);
-  const [pendingRoleSelections, setPendingRoleSelections] = useState<Record<string, "super_admin" | "admin" | "user" | "viewer">>({});
+  const [pendingRoleSelections, setPendingRoleSelections] = useState<Record<string, Role>>({});
   const [messagesCount, setMessagesCount] = useState(0);
   const [serviceApps, setServiceApps] = useState<ServiceApp[]>([]);
   const [serviceListOpen, setServiceListOpen] = useState(false);
@@ -895,15 +907,20 @@ function AdminPage() {
           if (error) throw error;
           const superAdmin = roles?.some((r) => r.role === "super_admin") ?? false;
           const admin = roles?.some((r) => r.role === "admin") ?? false;
-          const isUser = roles?.some((r) => r.role === "user") ?? false;
+          const isWorker = roles?.some((r) => r.role === "worker" || r.role === "user") ?? false;
           const isViewer = roles?.some((r) => r.role === "viewer") ?? false;
-          const role: "super_admin" | "admin" | "user" | "viewer" | null =
-            superAdmin ? "super_admin" : admin ? "admin" : isUser ? "user" : isViewer ? "viewer" : null;
+          const role: Role | null =
+            superAdmin ? "super_admin" : admin ? "admin" : isWorker ? "worker" : isViewer ? "viewer" : null;
           setIsSuperAdmin(superAdmin);
           setIsAdmin(admin || superAdmin);
           setUserRoleState(role);
           setChecking(false);
-          if (role) loadAuthorizedData();
+          if (!canAccessAdmin(role)) {
+            toast.error("您没有访问后台的权限");
+            navigate({ to: "/" });
+            return;
+          }
+          loadAuthorizedData();
         } catch {
           if (!cancelled) {
             toast.error("后台权限加载失败，请刷新后重试");
@@ -1422,7 +1439,7 @@ function AdminPage() {
             )}
             {!isAdmin && (
               <span className="text-xs px-2 py-1 rounded-md bg-muted text-muted-foreground">
-                只读模式（{userRole === "user" ? "一般用户" : "访客"}）
+                只读模式（{userRole === "worker" ? "同工" : "访客"}）
               </span>
             )}
             <div className="hidden sm:flex items-center gap-1.5 text-sm text-muted-foreground px-2 py-1 rounded-md bg-muted/60 max-w-[200px] truncate" title={currentUserEmail}>
@@ -2005,7 +2022,7 @@ function AdminPage() {
                             if (isPending) {
                               setPendingRoleSelections((prev) => ({
                                 ...prev,
-                                [u.id]: (newRole || "viewer") as "super_admin" | "admin" | "user" | "viewer",
+                                [u.id]: (newRole || "viewer") as Role,
                               }));
                               return;
                             }
@@ -2049,7 +2066,7 @@ function AdminPage() {
                               const label =
                                 chosen === "super_admin" ? "超级管理员"
                                 : chosen === "admin" ? "管理员"
-                                : chosen === "user" ? "一般用户"
+                                : chosen === "worker" ? "同工"
                                 : "访客";
                               if (!confirm(`通过 ${u.email} 的申请,并设为「${label}」?`)) return;
                               try {
