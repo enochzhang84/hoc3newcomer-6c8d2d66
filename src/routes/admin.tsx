@@ -17,7 +17,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { CalendarIcon, User } from "lucide-react";
+import { CalendarIcon, User, ChevronDown, ChevronRight } from "lucide-react";
 import { format } from "date-fns";
 import { ScreenManager } from "@/components/admin/ScreenManager";
 import { AVMinistryWorkspace } from "@/components/admin/AVMinistryWorkspace";
@@ -443,6 +443,19 @@ function AdminPage() {
   const [origin, setOrigin] = useState("");
   const [users, setUsers] = useState<AppUser[]>([]);
   const [usersLoading, setUsersLoading] = useState(false);
+  const [usersExpanded, setUsersExpanded] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    try {
+      const saved = localStorage.getItem("admin.usersExpanded");
+      if (saved === "1") return true;
+      if (saved === "0") return false;
+    } catch {}
+    // Default: collapsed on mobile, collapsed everywhere for cleaner UI
+    return false;
+  });
+  useEffect(() => {
+    try { localStorage.setItem("admin.usersExpanded", usersExpanded ? "1" : "0"); } catch {}
+  }, [usersExpanded]);
   const [pendingRoleSelections, setPendingRoleSelections] = useState<Record<string, Role>>({});
   const [messagesCount, setMessagesCount] = useState(0);
   const [serviceApps, setServiceApps] = useState<ServiceApp[]>([]);
