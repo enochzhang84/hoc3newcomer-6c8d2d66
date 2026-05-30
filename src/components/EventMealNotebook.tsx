@@ -354,7 +354,14 @@ export default function EventMealNotebook() {
             {n.attachments?.length > 0 && (
               <div className="flex flex-wrap gap-1 mt-1">
                 {n.attachments.map(u => (
-                  <button key={u} onClick={() => setPreviewUrl(u)} className="block">
+                  <button
+                    key={u}
+                    onClick={() => {
+                      if (isImg(u)) setPreviewUrl(u);
+                      else window.open(u, "_blank", "noopener,noreferrer");
+                    }}
+                    className="block"
+                  >
                     {isImg(u)
                       ? <img src={u} className="w-14 h-14 object-cover rounded-md border" alt="" />
                       : <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md border text-xs bg-muted/40">
@@ -438,16 +445,16 @@ export default function EventMealNotebook() {
         </DialogContent>
       </Dialog>
 
-      {/* Attachment preview */}
-      <Dialog open={!!previewUrl} onOpenChange={o => !o && setPreviewUrl(null)}>
+      {/* Attachment preview — images preview inline, PDFs/other open in a new tab to avoid ERR_BLOCKED_BY_CLIENT */}
+      <Dialog open={!!previewUrl && !!previewUrl && isImg(previewUrl)} onOpenChange={o => !o && setPreviewUrl(null)}>
         <DialogContent className="max-w-4xl">
           <DialogHeader><DialogTitle>附件预览</DialogTitle></DialogHeader>
-          {previewUrl && (isImg(previewUrl)
-            ? <img src={previewUrl} className="max-h-[75vh] mx-auto" alt="" />
-            : <iframe src={previewUrl} className="w-full h-[75vh]" />)}
+          {previewUrl && isImg(previewUrl) && (
+            <img src={previewUrl} className="max-h-[75vh] mx-auto" alt="" />
+          )}
           {previewUrl && (
-            <a href={previewUrl} target="_blank" rel="noreferrer" className="text-sm text-blue-600 underline">
-              在新窗口打开
+            <a href={previewUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 underline">
+              打开原始文件
             </a>
           )}
         </DialogContent>
