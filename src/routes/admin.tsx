@@ -1608,20 +1608,20 @@ function AdminPage() {
         {/* Chrome-style sub-tabs for 数据统计 */}
         <div className="grid grid-cols-3 sm:grid-cols-7 items-end gap-1 border-b border-border/60 px-2 pt-1 -mb-2">
           {[
-            { v: "overview", label: "📊 概览" },
-            { v: "newcomer", label: "🆕 新人" },
-            { v: "sunday", label: "📖 主日学" },
-            { v: "meals", label: "🍱 饭食" },
-            { v: "service", label: "🙏 服侍" },
-            { v: "baptism", label: "💧 决志受洗" },
-            { v: "annual", label: "📈 年度报告" },
-          ].map((t) => {
-            const active = statsSubTab === t.v;
+            { v: "overview", label: `📊 ${t("rptOverview")}` },
+            { v: "newcomer", label: `🆕 ${t("rptNewcomer")}` },
+            { v: "sunday", label: `📖 ${t("rptSunday")}` },
+            { v: "meals", label: `🍱 ${t("rptMeals")}` },
+            { v: "service", label: `🙏 ${t("rptService")}` },
+            { v: "baptism", label: `💧 ${t("rptBaptism")}` },
+            { v: "annual", label: `📈 ${t("rptAnnual")}` },
+          ].map((tab) => {
+            const active = statsSubTab === tab.v;
             return (
               <button
-                key={t.v}
+                key={tab.v}
                 type="button"
-                onClick={() => setStatsSubTab(t.v as typeof statsSubTab)}
+                onClick={() => setStatsSubTab(tab.v as typeof statsSubTab)}
                 className={cn(
                   "px-3 py-2 text-sm rounded-t-lg border border-b-0 transition-colors text-center truncate",
                   active
@@ -1629,7 +1629,7 @@ function AdminPage() {
                     : "bg-transparent border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/40",
                 )}
               >
-                {t.label}
+                {tab.label}
               </button>
             );
           })}
