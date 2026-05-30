@@ -427,7 +427,7 @@ function AdminPage() {
   const [checking, setChecking] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
-  const [userRole, setUserRoleState] = useState<"super_admin" | "admin" | "user" | "viewer" | null>(null);
+  const [userRole, setUserRoleState] = useState<Role | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [currentUserEmail, setCurrentUserEmail] = useState<string>("");
   const [regs, setRegs] = useState<Reg[]>([]);
@@ -439,7 +439,7 @@ function AdminPage() {
   const [origin, setOrigin] = useState("");
   const [users, setUsers] = useState<AppUser[]>([]);
   const [usersLoading, setUsersLoading] = useState(false);
-  const [pendingRoleSelections, setPendingRoleSelections] = useState<Record<string, "super_admin" | "admin" | "user" | "viewer">>({});
+  const [pendingRoleSelections, setPendingRoleSelections] = useState<Record<string, Role>>({});
   const [messagesCount, setMessagesCount] = useState(0);
   const [serviceApps, setServiceApps] = useState<ServiceApp[]>([]);
   const [serviceListOpen, setServiceListOpen] = useState(false);
