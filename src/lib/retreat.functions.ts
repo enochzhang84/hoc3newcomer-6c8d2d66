@@ -1,6 +1,19 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+
+/** 只允许 admin 或 super_admin 调用 */
+async function assertAdminOrAbove(userId: string) {
+  const { data, error } = await supabaseAdmin
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", userId)
+    .in("role", ["super_admin", "admin"])
+    .limit(1);
+  if (error) throw new Error(error.message);
+  if (!data || data.length === 0) throw new Error("Forbidden: admin only");
+}
 
 const personSchema = z.object({
   chinese_name: z.string().trim().min(1).max(80),
@@ -295,8 +308,10 @@ export const lookupRetreatGroupByPhone = createServerFn({ method: "POST" })
 
 /** Admin-trusted: fetch full group given any member's id. */
 export const fetchRetreatGroupById = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    await assertAdminOrAbove(context.userId);
     const { rows } = await fetchGroupRows(data.id);
     return { members: rows };
   });
@@ -392,13 +407,15 @@ export const addRetreatGroupMember = createServerFn({ method: "POST" })
 
 /** Admin-trusted add member (no phone check). */
 export const adminAddRetreatGroupMember = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((d) =>
     z.object({
       groupRefId: z.string().uuid(),
       person: personSchema,
     }).parse(d),
   )
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    await assertAdminOrAbove(context.userId);
     const confNo = await insertGroupMember(data.groupRefId, data.person);
     return { success: true, confirmation_no: confNo };
   });
