@@ -1542,7 +1542,7 @@ function AdminPage() {
           {/* Soft UI 主导航栏 — Apple Dashboard 风格 */}
           <div className="mb-8 p-1.5 bg-[#f5f0e8] rounded-2xl shadow-[0_2px_16px_rgba(0,0,0,0.04)]">
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-1">
-              (([
+              {(([
                 { value: "stats", key: "modReports" as TKey },
                 { value: "welcome", key: "modWelcome" as TKey },
                 { value: "media", key: "modMedia" as TKey },
