@@ -1542,14 +1542,14 @@ function AdminPage() {
           {/* Soft UI 主导航栏 — Apple Dashboard 风格 */}
           <div className="mb-8 p-1.5 bg-[#f5f0e8] rounded-2xl shadow-[0_2px_16px_rgba(0,0,0,0.04)]">
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-1">
-              {([
-                { value: "stats", label: "数据统计" },
-                { value: "welcome", label: "迎宾接待" },
-                { value: "media", label: "影音播放" },
-                { value: "kitchen", label: "厨房事工" },
-                { value: "sunday", label: "主日学" },
-                { value: "events", label: "活动" },
-              ] as { value: string; label: string }[])
+              (([
+                { value: "stats", key: "modReports" as TKey },
+                { value: "welcome", key: "modWelcome" as TKey },
+                { value: "media", key: "modMedia" as TKey },
+                { value: "kitchen", key: "modKitchen" as TKey },
+                { value: "sunday", key: "modSundaySchool" as TKey },
+                { value: "events", key: "modEvents" as TKey },
+              ] as { value: string; key: TKey }[]).map((x) => ({ value: x.value, label: t(x.key) })))
                 .filter((tab) => {
                   // super_admin 不受 service_area 限制
                   if (userRole === "super_admin") return true;
