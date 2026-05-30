@@ -603,13 +603,17 @@ function AdminPage() {
   const setUserRoleFn = useServerFn(setUserRole);
   const deleteUserFn = useServerFn(deleteUser);
   const createUserFn = useServerFn(createUserWithRole);
+  const setUserServiceAreaFn = useServerFn(setUserServiceArea);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const _setUserDisabledFn = useServerFn(setUserDisabled);
   const [newUserOpen, setNewUserOpen] = useState(false);
   const [newUserForm, setNewUserForm] = useState<{
     email: string;
     password: string;
     role: "super_admin" | "admin" | "user" | "viewer";
     workerName: string;
-  }>({ email: "", password: "", role: "user", workerName: "" });
+    serviceArea: ServiceArea | "";
+  }>({ email: "", password: "", role: "user", workerName: "", serviceArea: "" });
   const [newUserSubmitting, setNewUserSubmitting] = useState(false);
   const updateWorkerNameFn = useServerFn(updateUserWorkerName);
   const [editingWorkerUserId, setEditingWorkerUserId] = useState<string | null>(null);
