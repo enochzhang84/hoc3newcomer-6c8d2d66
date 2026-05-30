@@ -2272,6 +2272,19 @@ function AdminPage() {
                   <option value="viewer">访客</option>
                 </select>
               </div>
+              <div className="space-y-1">
+                <Label className="text-xs">所属事工 (worker 必填)</Label>
+                <select
+                  value={newUserForm.serviceArea}
+                  onChange={(e) => setNewUserForm({ ...newUserForm, serviceArea: e.target.value as ServiceArea | "" })}
+                  className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm"
+                >
+                  <option value="">— 未设置 —</option>
+                  {SERVICE_AREAS.map((a) => (
+                    <option key={a} value={a}>{SERVICE_AREA_LABELS[a]}</option>
+                  ))}
+                </select>
+              </div>
             </div>
             <DialogFooter>
               <Button variant="ghost" onClick={() => setNewUserOpen(false)}>取消</Button>
