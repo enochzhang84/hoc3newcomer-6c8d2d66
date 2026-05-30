@@ -425,6 +425,7 @@ function DateLevelPicker({
 
 function AdminPage() {
   const navigate = useNavigate();
+  const { lang, setLang, t } = useI18n();
   const [checking, setChecking] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
