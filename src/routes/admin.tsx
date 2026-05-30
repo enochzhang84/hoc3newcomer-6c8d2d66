@@ -1608,20 +1608,20 @@ function AdminPage() {
         {/* Chrome-style sub-tabs for 数据统计 */}
         <div className="grid grid-cols-3 sm:grid-cols-7 items-end gap-1 border-b border-border/60 px-2 pt-1 -mb-2">
           {[
-            { v: "overview", label: "📊 概览" },
-            { v: "newcomer", label: "🆕 新人" },
-            { v: "sunday", label: "📖 主日学" },
-            { v: "meals", label: "🍱 饭食" },
-            { v: "service", label: "🙏 服侍" },
-            { v: "baptism", label: "💧 决志受洗" },
-            { v: "annual", label: "📈 年度报告" },
-          ].map((t) => {
-            const active = statsSubTab === t.v;
+            { v: "overview", label: `📊 ${t("rptOverview")}` },
+            { v: "newcomer", label: `🆕 ${t("rptNewcomer")}` },
+            { v: "sunday", label: `📖 ${t("rptSunday")}` },
+            { v: "meals", label: `🍱 ${t("rptMeals")}` },
+            { v: "service", label: `🙏 ${t("rptService")}` },
+            { v: "baptism", label: `💧 ${t("rptBaptism")}` },
+            { v: "annual", label: `📈 ${t("rptAnnual")}` },
+          ].map((tab) => {
+            const active = statsSubTab === tab.v;
             return (
               <button
-                key={t.v}
+                key={tab.v}
                 type="button"
-                onClick={() => setStatsSubTab(t.v as typeof statsSubTab)}
+                onClick={() => setStatsSubTab(tab.v as typeof statsSubTab)}
                 className={cn(
                   "px-3 py-2 text-sm rounded-t-lg border border-b-0 transition-colors text-center truncate",
                   active
@@ -1629,7 +1629,7 @@ function AdminPage() {
                     : "bg-transparent border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/40",
                 )}
               >
-                {t.label}
+                {tab.label}
               </button>
             );
           })}
@@ -1686,35 +1686,35 @@ function AdminPage() {
             tone?: "ok" | "warn" | "alert";
             jump?: () => void;
           }> = [
-            { icon: "👥", label: "主日出席人数", value: latestWorship, sub: "最近一次崇拜", tone: "ok" },
-            { icon: "🆕", label: "新人数量", value: newcomersYear, sub: `${now.getFullYear()}年累计`, tone: "ok", jump: () => setStatsSubTab("newcomer") },
+            { icon: "👥", label: t("cardSundayAttendance"), value: latestWorship, sub: t("subLatestWorship"), tone: "ok" },
+            { icon: "🆕", label: t("cardNewcomers"), value: newcomersYear, sub: `${now.getFullYear()}${t("subYearTotal")}`, tone: "ok", jump: () => setStatsSubTab("newcomer") },
             {
               icon: "⚠️",
-              label: "长期缺席人数",
+              label: t("cardLongAbsence"),
               value: longAbsentNames.size,
-              sub: "团契超4周未签到",
+              sub: t("subAbsence4w"),
               tone: longAbsentNames.size > 10 ? "alert" : longAbsentNames.size > 5 ? "warn" : "ok",
               jump: () => setAbsenceDialogOpen(true),
             },
             {
               icon: "🤝",
-              label: "团契参与率",
+              label: t("cardFellowshipRate"),
               value: `${fellowshipRate}%`,
-              sub: `近4周 ${fellowshipNames4w.size}/${fellowshipNamesAll.size} 人`,
+              sub: `${t("subLast4w")} ${fellowshipNames4w.size}/${fellowshipNamesAll.size} ${t("subPeople")}`,
               tone: fellowshipRate >= 70 ? "ok" : fellowshipRate >= 40 ? "warn" : "alert",
               jump: () => setStatsSubTab("sunday"),
             },
             {
               icon: "📖",
-              label: "主日学参与率",
+              label: t("cardSundayRate"),
               value: `${sundayRate}%`,
-              sub: `近4周 ${sundayNames4w.size}/${sundayNamesAll.size} 人`,
+              sub: `${t("subLast4w")} ${sundayNames4w.size}/${sundayNamesAll.size} ${t("subPeople")}`,
               tone: sundayRate >= 50 ? "ok" : sundayRate >= 25 ? "warn" : "alert",
               jump: () => setStatsSubTab("sunday"),
             },
-            { icon: "💧", label: "年度受洗人数", value: baptismYearCount, sub: `${now.getFullYear()}年 决志 ${decisionYearCount}`, tone: "ok", jump: () => setStatsSubTab("baptism") },
-            { icon: "🙏", label: "年度服侍人数", value: ministryWorkerYearCount, sub: `${now.getFullYear()}年同工`, tone: "ok", jump: () => setStatsSubTab("service") },
-            { icon: "🏕", label: "退修会报名人数", value: retreatCount, sub: "累计报名", tone: "ok" },
+            { icon: "💧", label: t("cardAnnualBaptism"), value: baptismYearCount, sub: `${now.getFullYear()}${t("subYearDecision")}${decisionYearCount}`, tone: "ok", jump: () => setStatsSubTab("baptism") },
+            { icon: "🙏", label: t("cardAnnualService"), value: ministryWorkerYearCount, sub: `${now.getFullYear()}${t("subYearWorkers")}`, tone: "ok", jump: () => setStatsSubTab("service") },
+            { icon: "🏕", label: t("cardRetreatRegs"), value: retreatCount, sub: t("subTotalRegs"), tone: "ok" },
           ];
 
           const toneBorder = (t?: "ok" | "warn" | "alert") =>

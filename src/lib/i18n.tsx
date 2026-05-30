@@ -35,6 +35,35 @@ export const translations = {
   // 语言切换
   langZh: { zh: "中文", en: "中文" },
   langEn: { zh: "English", en: "English" },
+
+  // Reports — sub tabs
+  rptOverview: { zh: "概览", en: "Overview" },
+  rptNewcomer: { zh: "新人", en: "Newcomers" },
+  rptSunday: { zh: "主日学", en: "Sunday School" },
+  rptMeals: { zh: "饭食", en: "Meals" },
+  rptService: { zh: "服侍", en: "Service" },
+  rptBaptism: { zh: "决志受洗", en: "Baptism & Decisions" },
+  rptAnnual: { zh: "年度报告", en: "Annual Report" },
+
+  // Reports — overview cards
+  cardSundayAttendance: { zh: "主日出席人数", en: "Sunday Attendance" },
+  cardNewcomers: { zh: "新人数量", en: "Newcomers" },
+  cardLongAbsence: { zh: "长期缺席人数", en: "Long-term Absences" },
+  cardFellowshipRate: { zh: "团契参与率", en: "Fellowship Participation" },
+  cardSundayRate: { zh: "主日学参与率", en: "Sunday School Participation" },
+  cardAnnualBaptism: { zh: "年度受洗人数", en: "Annual Baptisms" },
+  cardAnnualService: { zh: "年度服侍人数", en: "Annual Service Members" },
+  cardRetreatRegs: { zh: "退修会报名人数", en: "Retreat Registrations" },
+
+  // Reports — card sub-text
+  subLatestWorship: { zh: "最近一次崇拜", en: "Latest Worship Service" },
+  subYearTotal: { zh: "年累计", en: " Total" },
+  subAbsence4w: { zh: "团契超4周未签到", en: "No fellowship check-in for 4+ weeks" },
+  subLast4w: { zh: "近4周", en: "Last 4 weeks" },
+  subPeople: { zh: "人", en: "" },
+  subYearDecision: { zh: "年 决志", en: " Decisions: " },
+  subYearWorkers: { zh: "年同工", en: " Workers" },
+  subTotalRegs: { zh: "累计报名", en: "Total Registrations" },
 } as const satisfies Record<string, Record<Lang, string>>;
 
 export type TKey = keyof typeof translations;
