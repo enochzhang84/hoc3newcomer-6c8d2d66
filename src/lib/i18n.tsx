@@ -64,6 +64,26 @@ export const translations = {
   subYearDecision: { zh: "年 决志", en: " Decisions: " },
   subYearWorkers: { zh: "年同工", en: " Workers" },
   subTotalRegs: { zh: "累计报名", en: "Total Registrations" },
+
+  // Welcome 二级
+  subGreet: { zh: "迎宾", en: "Greeting" },
+  subReception: { zh: "接待", en: "Reception" },
+
+  // Media 二级
+  subLive: { zh: "聚会直播", en: "Live Service" },
+  subScreen: { zh: "屏幕管理", en: "Screen Management" },
+  subMinistry: { zh: "主日轮值", en: "Sunday Rotation" },
+  subEmergency: { zh: "紧急事件", en: "Emergencies" },
+
+  // Kitchen 二级
+  subDining: { zh: "就餐人数统计", en: "Dining Headcount" },
+  subSundayMeal: { zh: "主日订餐计划", en: "Sunday Meal Plan" },
+  subEventMeal: { zh: "其他活动订餐记事本", en: "Event Meal Notebook" },
+  subKitchenService: { zh: "事工服侍", en: "Ministry Service" },
+
+  // Sunday School 二级
+  subAdultSS: { zh: "成人主日学", en: "Adult Sunday School" },
+  subKidsSS: { zh: "儿童主日学", en: "Children's Sunday School" },
 } as const satisfies Record<string, Record<Lang, string>>;
 
 export type TKey = keyof typeof translations;
