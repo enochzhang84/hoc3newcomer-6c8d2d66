@@ -115,7 +115,11 @@ function Index() {
   };
 
   const PUBLISHED_ORIGIN = "https://hoc3newcomer.lovable.app";
-  const url = event ? `${PUBLISHED_ORIGIN}/register?event=${event.qr_token}` : "";
+  const url = event
+    ? `${PUBLISHED_ORIGIN}/register?event=${event.qr_token}`
+    : `${PUBLISHED_ORIGIN}/register`;
+  const [qrImgFailed, setQrImgFailed] = useState(false);
+  const showUploadedQr = !!home?.qr_image_url && !qrImgFailed;
 
   return (
     <div className={`min-h-screen bg-background ${isFullscreen ? "min-h-[120vh]" : ""}`}>
@@ -251,11 +255,11 @@ function Index() {
 
           <div className="flex flex-col items-center">
             <div className="bg-card p-8 rounded-2xl shadow-xl border border-border/40">
-              {home?.qr_image_url ? (
+              {showUploadedQr ? (
                 <>
                   <img
-                    src={home.qr_image_url}
-                    onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+                    src={home!.qr_image_url!}
+                    onError={() => setQrImgFailed(true)}
                     alt={home.qr_title || "二维码"}
                     className="w-60 h-60 object-contain"
                   />
@@ -263,15 +267,13 @@ function Index() {
                     {home.qr_description || (home.qr_title ? home.qr_title : (event ? `扫码登记 · ${event.name}` : ""))}
                   </p>
                 </>
-              ) : url ? (
+              ) : (
                 <>
                   <QRCodeSVG value={url} size={240} level="H" />
                   <p className="text-center mt-4 text-sm text-muted-foreground">
-                    {home?.qr_description || `${home?.qr_title || "扫码登记"} · ${event?.name ?? ""}`}
+                    {home?.qr_description || `${home?.qr_title || "扫码登记"}${event ? ` · ${event.name}` : ""}`}
                   </p>
                 </>
-              ) : (
-                <div className="w-60 h-60 animate-pulse bg-muted rounded" />
               )}
             </div>
             {event && (
