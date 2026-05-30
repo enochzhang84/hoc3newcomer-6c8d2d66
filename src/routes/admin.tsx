@@ -2446,6 +2446,12 @@ function AdminPage() {
               主页设置
             </Button>
             <Button
+              variant="outline"
+              onClick={() => setBackupOpen(true)}
+            >
+              💾 备份与恢复
+            </Button>
+            <Button
               variant="destructive"
               onClick={() => setInitOpen(true)}
             >
@@ -2464,6 +2470,18 @@ function AdminPage() {
               </DialogDescription>
             </DialogHeader>
             {homeSettingsOpen && <HomePageSettingsPanel />}
+          </DialogContent>
+        </Dialog>
+        {/* 备份与恢复 Dialog */}
+        <Dialog open={backupOpen} onOpenChange={setBackupOpen}>
+          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>备份与恢复</DialogTitle>
+              <DialogDescription>
+                导出 / 恢复 Supabase 核心数据。仅超级管理员可用。
+              </DialogDescription>
+            </DialogHeader>
+            {backupOpen && <BackupRestorePanel />}
           </DialogContent>
         </Dialog>
             </TabsContent>
