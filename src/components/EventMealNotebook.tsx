@@ -354,7 +354,14 @@ export default function EventMealNotebook() {
             {n.attachments?.length > 0 && (
               <div className="flex flex-wrap gap-1 mt-1">
                 {n.attachments.map(u => (
-                  <button key={u} onClick={() => setPreviewUrl(u)} className="block">
+                  <button
+                    key={u}
+                    onClick={() => {
+                      if (isImg(u)) setPreviewUrl(u);
+                      else window.open(u, "_blank", "noopener,noreferrer");
+                    }}
+                    className="block"
+                  >
                     {isImg(u)
                       ? <img src={u} className="w-14 h-14 object-cover rounded-md border" alt="" />
                       : <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md border text-xs bg-muted/40">
