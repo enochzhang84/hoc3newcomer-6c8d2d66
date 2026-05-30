@@ -1439,7 +1439,7 @@ function AdminPage() {
             )}
             {!isAdmin && (
               <span className="text-xs px-2 py-1 rounded-md bg-muted text-muted-foreground">
-                只读模式（{userRole === "user" ? "一般用户" : "访客"}）
+                只读模式（{userRole === "worker" ? "同工" : "访客"}）
               </span>
             )}
             <div className="hidden sm:flex items-center gap-1.5 text-sm text-muted-foreground px-2 py-1 rounded-md bg-muted/60 max-w-[200px] truncate" title={currentUserEmail}>
@@ -2022,7 +2022,7 @@ function AdminPage() {
                             if (isPending) {
                               setPendingRoleSelections((prev) => ({
                                 ...prev,
-                                [u.id]: (newRole || "viewer") as "super_admin" | "admin" | "user" | "viewer",
+                                [u.id]: (newRole || "viewer") as Role,
                               }));
                               return;
                             }
@@ -2066,7 +2066,7 @@ function AdminPage() {
                               const label =
                                 chosen === "super_admin" ? "超级管理员"
                                 : chosen === "admin" ? "管理员"
-                                : chosen === "user" ? "一般用户"
+                                : chosen === "worker" ? "同工"
                                 : "访客";
                               if (!confirm(`通过 ${u.email} 的申请,并设为「${label}」?`)) return;
                               try {
