@@ -18,6 +18,16 @@ function Index() {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isIPad, setIsIPad] = useState(false);
   const [verse, setVerse] = useState<{ text: string; ref: string } | null>(null);
+  const [home, setHome] = useState<{
+    logo_url: string | null;
+    welcome_title: string | null;
+    welcome_subtitle: string | null;
+    welcome_description: string | null;
+    welcome_image_url: string | null;
+    qr_title: string | null;
+    qr_description: string | null;
+    qr_image_url: string | null;
+  } | null>(null);
 
   const VERSES = [
     { text: "凡劳苦担重担的人，可以到我这里来，我就使你们得安息。", ref: "马太福音 11:28" },
@@ -47,6 +57,17 @@ function Index() {
       .limit(1)
       .maybeSingle()
       .then(({ data }) => setEvent(data));
+  }, []);
+
+  // Load dynamic home page settings (falls back to defaults if absent / errors)
+  useEffect(() => {
+    (supabase as any)
+      .from("home_page_settings")
+      .select("logo_url, welcome_title, welcome_subtitle, welcome_description, welcome_image_url, qr_title, qr_description, qr_image_url")
+      .order("updated_at", { ascending: false })
+      .limit(1)
+      .maybeSingle()
+      .then(({ data }: { data: any }) => { if (data) setHome(data); });
   }, []);
 
   useEffect(() => {
