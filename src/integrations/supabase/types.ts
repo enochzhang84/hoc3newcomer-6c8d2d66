@@ -1463,7 +1463,7 @@ export type Database = {
       touch_display_screen: { Args: { _slug: string }; Returns: undefined }
     }
     Enums: {
-      app_role: "admin" | "user" | "viewer" | "super_admin"
+      app_role: "admin" | "user" | "viewer" | "super_admin" | "worker"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1591,7 +1591,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "user", "viewer", "super_admin"],
+      app_role: ["admin", "user", "viewer", "super_admin", "worker"],
     },
   },
 } as const
