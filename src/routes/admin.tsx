@@ -1686,35 +1686,35 @@ function AdminPage() {
             tone?: "ok" | "warn" | "alert";
             jump?: () => void;
           }> = [
-            { icon: "👥", label: "主日出席人数", value: latestWorship, sub: "最近一次崇拜", tone: "ok" },
-            { icon: "🆕", label: "新人数量", value: newcomersYear, sub: `${now.getFullYear()}年累计`, tone: "ok", jump: () => setStatsSubTab("newcomer") },
+            { icon: "👥", label: t("cardSundayAttendance"), value: latestWorship, sub: t("subLatestWorship"), tone: "ok" },
+            { icon: "🆕", label: t("cardNewcomers"), value: newcomersYear, sub: `${now.getFullYear()}${t("subYearTotal")}`, tone: "ok", jump: () => setStatsSubTab("newcomer") },
             {
               icon: "⚠️",
-              label: "长期缺席人数",
+              label: t("cardLongAbsence"),
               value: longAbsentNames.size,
-              sub: "团契超4周未签到",
+              sub: t("subAbsence4w"),
               tone: longAbsentNames.size > 10 ? "alert" : longAbsentNames.size > 5 ? "warn" : "ok",
               jump: () => setAbsenceDialogOpen(true),
             },
             {
               icon: "🤝",
-              label: "团契参与率",
+              label: t("cardFellowshipRate"),
               value: `${fellowshipRate}%`,
-              sub: `近4周 ${fellowshipNames4w.size}/${fellowshipNamesAll.size} 人`,
+              sub: `${t("subLast4w")} ${fellowshipNames4w.size}/${fellowshipNamesAll.size} ${t("subPeople")}`,
               tone: fellowshipRate >= 70 ? "ok" : fellowshipRate >= 40 ? "warn" : "alert",
               jump: () => setStatsSubTab("sunday"),
             },
             {
               icon: "📖",
-              label: "主日学参与率",
+              label: t("cardSundayRate"),
               value: `${sundayRate}%`,
-              sub: `近4周 ${sundayNames4w.size}/${sundayNamesAll.size} 人`,
+              sub: `${t("subLast4w")} ${sundayNames4w.size}/${sundayNamesAll.size} ${t("subPeople")}`,
               tone: sundayRate >= 50 ? "ok" : sundayRate >= 25 ? "warn" : "alert",
               jump: () => setStatsSubTab("sunday"),
             },
-            { icon: "💧", label: "年度受洗人数", value: baptismYearCount, sub: `${now.getFullYear()}年 决志 ${decisionYearCount}`, tone: "ok", jump: () => setStatsSubTab("baptism") },
-            { icon: "🙏", label: "年度服侍人数", value: ministryWorkerYearCount, sub: `${now.getFullYear()}年同工`, tone: "ok", jump: () => setStatsSubTab("service") },
-            { icon: "🏕", label: "退修会报名人数", value: retreatCount, sub: "累计报名", tone: "ok" },
+            { icon: "💧", label: t("cardAnnualBaptism"), value: baptismYearCount, sub: `${now.getFullYear()}${t("subYearDecision")}${decisionYearCount}`, tone: "ok", jump: () => setStatsSubTab("baptism") },
+            { icon: "🙏", label: t("cardAnnualService"), value: ministryWorkerYearCount, sub: `${now.getFullYear()}${t("subYearWorkers")}`, tone: "ok", jump: () => setStatsSubTab("service") },
+            { icon: "🏕", label: t("cardRetreatRegs"), value: retreatCount, sub: t("subTotalRegs"), tone: "ok" },
           ];
 
           const toneBorder = (t?: "ok" | "warn" | "alert") =>
