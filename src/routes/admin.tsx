@@ -2051,8 +2051,24 @@ function AdminPage() {
 
         {isSuperAdmin && (
         <section className="bg-card border border-border/50 rounded-2xl p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="font-serif text-xl">管理员权限</h2>
+          <div className="flex items-center justify-between mb-4 gap-2 flex-wrap">
+            <button
+              type="button"
+              onClick={() => setUsersExpanded(v => !v)}
+              className="flex items-center gap-2 text-left group"
+              aria-expanded={usersExpanded}
+            >
+              {usersExpanded
+                ? <ChevronDown className="size-5 text-muted-foreground transition-transform duration-200" />
+                : <ChevronRight className="size-5 text-muted-foreground transition-transform duration-200" />}
+              <h2 className="font-serif text-xl">
+                👥 管理员权限 / 用户管理
+                <span className="ml-2 text-sm text-muted-foreground font-sans">（{users.length}人）</span>
+              </h2>
+              <span className="ml-2 text-xs text-muted-foreground hidden sm:inline">
+                {usersExpanded ? "点击收起" : "点击展开"}
+              </span>
+            </button>
             <div className="flex items-center gap-2">
               <Button size="sm" onClick={() => { setNewUserForm({ email: "", password: "", role: "user", workerName: "", serviceArea: "" }); setNewUserOpen(true); }}>
                 + 添加用户
@@ -2062,6 +2078,13 @@ function AdminPage() {
               </Button>
             </div>
           </div>
+          <div
+            className={cn(
+              "grid transition-all duration-300 ease-out overflow-hidden",
+              usersExpanded ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
+            )}
+          >
+            <div className="min-h-0 overflow-hidden">
           <p className="text-xs text-muted-foreground mb-4">
             新注册用户默认为「待审核」，须由超级管理员在此分配角色后才能登录。
             <br />
