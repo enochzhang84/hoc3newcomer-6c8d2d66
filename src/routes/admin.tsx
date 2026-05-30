@@ -907,15 +907,20 @@ function AdminPage() {
           if (error) throw error;
           const superAdmin = roles?.some((r) => r.role === "super_admin") ?? false;
           const admin = roles?.some((r) => r.role === "admin") ?? false;
-          const isUser = roles?.some((r) => r.role === "user") ?? false;
+          const isWorker = roles?.some((r) => r.role === "worker" || r.role === "user") ?? false;
           const isViewer = roles?.some((r) => r.role === "viewer") ?? false;
-          const role: "super_admin" | "admin" | "user" | "viewer" | null =
-            superAdmin ? "super_admin" : admin ? "admin" : isUser ? "user" : isViewer ? "viewer" : null;
+          const role: Role | null =
+            superAdmin ? "super_admin" : admin ? "admin" : isWorker ? "worker" : isViewer ? "viewer" : null;
           setIsSuperAdmin(superAdmin);
           setIsAdmin(admin || superAdmin);
           setUserRoleState(role);
           setChecking(false);
-          if (role) loadAuthorizedData();
+          if (!canAccessAdmin(role)) {
+            toast.error("您没有访问后台的权限");
+            navigate({ to: "/" });
+            return;
+          }
+          loadAuthorizedData();
         } catch {
           if (!cancelled) {
             toast.error("后台权限加载失败，请刷新后重试");
