@@ -438,16 +438,16 @@ export default function EventMealNotebook() {
         </DialogContent>
       </Dialog>
 
-      {/* Attachment preview */}
-      <Dialog open={!!previewUrl} onOpenChange={o => !o && setPreviewUrl(null)}>
+      {/* Attachment preview — images preview inline, PDFs/other open in a new tab to avoid ERR_BLOCKED_BY_CLIENT */}
+      <Dialog open={!!previewUrl && !!previewUrl && isImg(previewUrl)} onOpenChange={o => !o && setPreviewUrl(null)}>
         <DialogContent className="max-w-4xl">
           <DialogHeader><DialogTitle>附件预览</DialogTitle></DialogHeader>
-          {previewUrl && (isImg(previewUrl)
-            ? <img src={previewUrl} className="max-h-[75vh] mx-auto" alt="" />
-            : <iframe src={previewUrl} className="w-full h-[75vh]" />)}
+          {previewUrl && isImg(previewUrl) && (
+            <img src={previewUrl} className="max-h-[75vh] mx-auto" alt="" />
+          )}
           {previewUrl && (
-            <a href={previewUrl} target="_blank" rel="noreferrer" className="text-sm text-blue-600 underline">
-              在新窗口打开
+            <a href={previewUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 underline">
+              打开原始文件
             </a>
           )}
         </DialogContent>
