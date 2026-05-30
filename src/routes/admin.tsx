@@ -2432,14 +2432,14 @@ function AdminPage() {
         {/* Chrome-style sub-tabs — 2 equal columns */}
         <div className="grid grid-cols-2 items-end gap-1 border-b border-border/60 px-2 pt-1 -mb-2">
           {[
-            { v: "greet", label: "迎宾" },
-            { v: "reception", label: "接待" },
-          ].map((t) => {
-            const active = welcomeSubTab === t.v;
+            { v: "greet", label: t("subGreet") },
+            { v: "reception", label: t("subReception") },
+          ].map((tab) => {
+            const active = welcomeSubTab === tab.v;
             return (
               <button
-                key={t.v}
-                onClick={() => setWelcomeSubTab(t.v)}
+                key={tab.v}
+                onClick={() => setWelcomeSubTab(tab.v)}
                 className={cn(
                   "w-full text-center px-2 sm:px-4 py-2 text-xs sm:text-sm rounded-t-xl border border-b-0 transition-all truncate",
                   active
@@ -2447,7 +2447,7 @@ function AdminPage() {
                     : "bg-muted/40 text-muted-foreground border-transparent hover:bg-muted/70"
                 )}
               >
-                {t.label}
+                {tab.label}
               </button>
             );
           })}
@@ -2950,16 +2950,16 @@ function AdminPage() {
         {/* Chrome-style sub-tabs — 4 equal columns */}
         <div className="grid grid-cols-4 items-end gap-1 border-b border-border/60 px-2 pt-1 -mb-2">
           {[
-            { v: "live", label: "聚会直播" },
-            { v: "screen", label: "屏幕管理" },
-            { v: "ministry", label: "主日轮值" },
-            { v: "messages", label: "紧急事件" },
-          ].map((t) => {
-            const active = mediaSubTab === t.v;
+            { v: "live", label: t("subLive") },
+            { v: "screen", label: t("subScreen") },
+            { v: "ministry", label: t("subMinistry") },
+            { v: "messages", label: t("subEmergency") },
+          ].map((tab) => {
+            const active = mediaSubTab === tab.v;
             return (
               <button
-                key={t.v}
-                onClick={() => setMediaSubTab(t.v)}
+                key={tab.v}
+                onClick={() => setMediaSubTab(tab.v)}
                 className={cn(
                   "w-full text-center px-2 sm:px-4 py-2 text-xs sm:text-sm rounded-t-xl border border-b-0 transition-all truncate",
                   active
@@ -2967,7 +2967,7 @@ function AdminPage() {
                     : "bg-muted/40 text-muted-foreground border-transparent hover:bg-muted/70"
                 )}
               >
-                {t.label}
+                {tab.label}
               </button>
             );
           })}
@@ -3094,16 +3094,16 @@ function AdminPage() {
         {/* Chrome-style sub-tabs — 4 equal columns */}
         <div className="grid grid-cols-4 items-end gap-1 border-b border-border/60 px-2 pt-1 -mb-2">
           {[
-            { v: "dining", label: "就餐人数统计" },
-            { v: "sunday-meal", label: "主日订餐计划" },
-            { v: "event-meal", label: "其他活动订餐记事本" },
-            { v: "messages", label: "事工服侍" },
-          ].map((t) => {
-            const active = kitchenSubTab === t.v;
+            { v: "dining", label: t("subDining") },
+            { v: "sunday-meal", label: t("subSundayMeal") },
+            { v: "event-meal", label: t("subEventMeal") },
+            { v: "messages", label: t("subKitchenService") },
+          ].map((tab) => {
+            const active = kitchenSubTab === tab.v;
             return (
               <button
-                key={t.v}
-                onClick={() => setKitchenSubTab(t.v)}
+                key={tab.v}
+                onClick={() => setKitchenSubTab(tab.v)}
                 className={cn(
                   "w-full text-center px-2 sm:px-4 py-2 text-xs sm:text-sm rounded-t-xl border border-b-0 transition-all truncate",
                   active
@@ -3111,7 +3111,7 @@ function AdminPage() {
                     : "bg-muted/40 text-muted-foreground border-transparent hover:bg-muted/70"
                 )}
               >
-                {t.label}
+                {tab.label}
               </button>
             );
           })}
@@ -3251,14 +3251,14 @@ function AdminPage() {
         {/* Chrome-style sub-tabs — 2 equal columns */}
         <div className="grid grid-cols-2 items-end gap-1 border-b border-border/60 px-2 pt-1 -mb-2">
           {[
-            { v: "adult", label: "成人主日学" },
-            { v: "kids", label: "儿童主日学" },
-          ].map((t) => {
-            const active = sundaySubTab === t.v;
+            { v: "adult", label: t("subAdultSS") },
+            { v: "kids", label: t("subKidsSS") },
+          ].map((tab) => {
+            const active = sundaySubTab === tab.v;
             return (
               <button
-                key={t.v}
-                onClick={() => setSundaySubTab(t.v)}
+                key={tab.v}
+                onClick={() => setSundaySubTab(tab.v)}
                 className={cn(
                   "w-full text-center px-2 sm:px-4 py-2 text-xs sm:text-sm rounded-t-xl border border-b-0 transition-all truncate",
                   active
@@ -3266,7 +3266,7 @@ function AdminPage() {
                     : "bg-muted/40 text-muted-foreground border-transparent hover:bg-muted/70"
                 )}
               >
-                {t.label}
+                {tab.label}
               </button>
             );
           })}
