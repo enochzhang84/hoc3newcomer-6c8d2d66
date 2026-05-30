@@ -606,6 +606,25 @@ function AdminPage() {
   const setUserServiceAreaFn = useServerFn(setUserServiceArea);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const _setUserDisabledFn = useServerFn(setUserDisabled);
+
+  // worker 默认 tab：跳到其 service_area 对应模块
+  useEffect(() => {
+    if (userRole !== "worker") return;
+    const map: Record<ServiceArea, string> = {
+      welcome: "welcome",
+      media: "media",
+      kitchen: "kitchen",
+      sunday_school: "sunday",
+      newcomer: "stats",
+      retreat: "stats",
+      tv_display: "stats",
+      chat: "stats",
+    };
+    if (currentServiceArea && map[currentServiceArea]) {
+      setMainTab(map[currentServiceArea]);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userRole, currentServiceArea]);
   const [newUserOpen, setNewUserOpen] = useState(false);
   const [newUserForm, setNewUserForm] = useState<{
     email: string;
