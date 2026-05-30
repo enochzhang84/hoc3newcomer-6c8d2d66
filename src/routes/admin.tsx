@@ -428,6 +428,7 @@ function AdminPage() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [userRole, setUserRoleState] = useState<Role | null>(null);
+  const [currentServiceArea, setCurrentServiceArea] = useState<ServiceArea | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [currentUserEmail, setCurrentUserEmail] = useState<string>("");
   const [regs, setRegs] = useState<Reg[]>([]);
