@@ -25,6 +25,7 @@ import { zhCN } from "date-fns/locale";
 import { listUsersWithRoles, setUserRole, deleteUser, createUserWithRole, updateUserWorkerName, setUserServiceArea, setUserDisabled } from "@/lib/users.functions";
 import { useI18n, type TKey } from "@/lib/i18n";
 import { HomePageSettingsPanel } from "@/components/admin/HomePageSettingsPanel";
+import { BackupRestorePanel } from "@/components/admin/BackupRestorePanel";
 import { SERVICE_AREAS, SERVICE_AREA_LABELS, ROLE_LABELS, type Role, type ServiceArea, canAccessAdmin } from "@/lib/permissions";
 import { updateRegistration } from "@/lib/registrations.functions";
 import { HospitalityCalendarSection } from "@/components/HospitalityCalendar";
@@ -661,6 +662,7 @@ function AdminPage() {
   const [initOpen, setInitOpen] = useState(false);
   const [qrLibOpen, setQrLibOpen] = useState(false);
   const [homeSettingsOpen, setHomeSettingsOpen] = useState(false);
+  const [backupOpen, setBackupOpen] = useState(false);
   const [initLoading, setInitLoading] = useState(false);
   const [logs, setLogs] = useState<{ time: string; actor: string; action: string }[]>([]);
   const [statusFilter, setStatusFilter] = useState<"all" | "未联系" | "已联系">("all");
@@ -2444,6 +2446,12 @@ function AdminPage() {
               主页设置
             </Button>
             <Button
+              variant="outline"
+              onClick={() => setBackupOpen(true)}
+            >
+              💾 备份与恢复
+            </Button>
+            <Button
               variant="destructive"
               onClick={() => setInitOpen(true)}
             >
@@ -2462,6 +2470,18 @@ function AdminPage() {
               </DialogDescription>
             </DialogHeader>
             {homeSettingsOpen && <HomePageSettingsPanel />}
+          </DialogContent>
+        </Dialog>
+        {/* 备份与恢复 Dialog */}
+        <Dialog open={backupOpen} onOpenChange={setBackupOpen}>
+          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>备份与恢复</DialogTitle>
+              <DialogDescription>
+                导出 / 恢复 Supabase 核心数据。仅超级管理员可用。
+              </DialogDescription>
+            </DialogHeader>
+            {backupOpen && <BackupRestorePanel />}
           </DialogContent>
         </Dialog>
             </TabsContent>
