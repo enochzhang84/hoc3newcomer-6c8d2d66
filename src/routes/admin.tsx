@@ -647,6 +647,7 @@ function AdminPage() {
   const [logsOpen, setLogsOpen] = useState(false);
   const [initOpen, setInitOpen] = useState(false);
   const [qrLibOpen, setQrLibOpen] = useState(false);
+  const [homeSettingsOpen, setHomeSettingsOpen] = useState(false);
   const [initLoading, setInitLoading] = useState(false);
   const [logs, setLogs] = useState<{ time: string; actor: string; action: string }[]>([]);
   const [statusFilter, setStatusFilter] = useState<"all" | "未联系" | "已联系">("all");
