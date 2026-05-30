@@ -919,6 +919,18 @@ function AdminPage() {
           setIsSuperAdmin(superAdmin);
           setIsAdmin(admin || superAdmin);
           setUserRoleState(role);
+          // Load this user's service_area (for worker tab gating)
+          try {
+            const { data: prof } = await supabase
+              .from("user_profiles")
+              .select("service_area")
+              .eq("user_id", sess.user.id)
+              .maybeSingle();
+            const sa = (prof as { service_area?: string | null } | null)?.service_area ?? null;
+            setCurrentServiceArea(
+              sa && (SERVICE_AREAS as readonly string[]).includes(sa) ? (sa as ServiceArea) : null,
+            );
+          } catch { /* ignore */ }
           setChecking(false);
           if (!canAccessAdmin(role)) {
             toast.error("您没有访问后台的权限");
