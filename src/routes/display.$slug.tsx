@@ -314,6 +314,25 @@ function ContentRenderer({
   const subSize = portrait ? "text-3xl" : "text-4xl";
 
   switch (type) {
+    case "broadcast": {
+      const level = (payload.level as string) || "normal";
+      const body = (payload.body as string) || message;
+      const bg =
+        level === "urgent"
+          ? "bg-red-700 text-white"
+          : level === "important"
+            ? "bg-amber-500 text-stone-900"
+            : "bg-sky-600 text-white";
+      const tag =
+        level === "urgent" ? "🚨 紧急通知" : level === "important" ? "⚠ 重要通知" : "📢 通知";
+      return (
+        <div className={`absolute inset-0 ${bg} flex flex-col items-center justify-center text-center px-12 gap-6`}>
+          <div className={`${subSize} opacity-90 font-medium`}>{tag}</div>
+          <div className={`${headingSize} font-serif font-extrabold`}>{title || "教会广播"}</div>
+          {body && <div className={`${subSize} whitespace-pre-line max-w-5xl opacity-95`}>{body}</div>}
+        </div>
+      );
+    }
     case "embed": {
       const src = url || "/";
       return (
