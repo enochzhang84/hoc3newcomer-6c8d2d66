@@ -27,9 +27,7 @@ type Broadcast = {
   body: string;
   level: string;
   targets: string[];
-  duration_seconds: number | null;
   is_active: boolean;
-  expires_at: string | null;
   created_at: string;
   stopped_at: string | null;
 };
@@ -49,12 +47,6 @@ const LEVELS = [
   { v: "normal", label: "普通通知", color: "bg-sky-100 text-sky-900 border-sky-300" },
   { v: "important", label: "重要通知", color: "bg-amber-100 text-amber-900 border-amber-300" },
   { v: "urgent", label: "紧急通知", color: "bg-red-100 text-red-900 border-red-300" },
-];
-const DURATIONS = [
-  { v: "10", label: "10秒" },
-  { v: "30", label: "30秒" },
-  { v: "60", label: "1分钟" },
-  { v: "0", label: "永久显示" },
 ];
 const DEFAULT_CATEGORIES = ["影音", "投影", "直播", "TV屏幕", "宣传栏", "其他"];
 
@@ -77,7 +69,6 @@ function EmergencyBroadcastSection() {
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [level, setLevel] = useState("normal");
-  const [duration, setDuration] = useState("30");
   const [targets, setTargets] = useState<string[]>(["all"]);
   const [history, setHistory] = useState<Broadcast[]>([]);
   const [saving, setSaving] = useState(false);
@@ -113,14 +104,31 @@ function EmergencyBroadcastSection() {
   async function pushToScreens(payload: any, targetSlugs: string[]) {
     const slugs = targetSlugs.includes("all") ? screens.map((s) => s.slug) : targetSlugs;
     if (!slugs.length) return;
-    await sb
+    // Snapshot previous content per screen so we can restore on stop.
+    const { data: prev } = await sb
       .from("display_screens")
-      .update({
-        current_content_type: "broadcast",
-        current_content_payload: payload,
-        updated_at: new Date().toISOString(),
-      })
+      .select("slug,current_content_type,current_content_payload,playlist_id")
       .in("slug", slugs);
+    const updates = (prev ?? []).map((s: any) => {
+      const restore =
+        s.current_content_type === "broadcast"
+          ? // already broadcasting — keep whatever restore info was saved earlier
+            (s.current_content_payload?.restore ?? { type: "welcome", payload: {}, playlist_id: null })
+          : {
+              type: s.current_content_type,
+              payload: s.current_content_payload ?? {},
+              playlist_id: s.playlist_id ?? null,
+            };
+      return sb
+        .from("display_screens")
+        .update({
+          current_content_type: "broadcast",
+          current_content_payload: { ...payload, restore },
+          updated_at: new Date().toISOString(),
+        })
+        .eq("slug", s.slug);
+    });
+    await Promise.all(updates);
   }
 
   async function broadcastNow() {
@@ -134,21 +142,17 @@ function EmergencyBroadcastSection() {
     }
     setSaving(true);
     try {
-      const dur = parseInt(duration, 10);
-      const expires = dur > 0 ? new Date(Date.now() + dur * 1000).toISOString() : null;
-      const payload = { title: title.trim(), body: body.trim(), level, expires_at: expires };
+      const payload = { title: title.trim(), body: body.trim(), level };
       const { error } = await sb.from("av_broadcasts").insert({
         title: title.trim(),
         body: body.trim(),
         level,
         targets,
-        duration_seconds: dur > 0 ? dur : null,
-        expires_at: expires,
         is_active: true,
       });
       if (error) throw error;
       await pushToScreens(payload, targets);
-      toast.success("已发送广播");
+      toast.success("已发布广播");
       setTitle("");
       setBody("");
       loadHistory();
@@ -164,11 +168,29 @@ function EmergencyBroadcastSection() {
       .from("av_broadcasts")
       .update({ is_active: false, stopped_at: new Date().toISOString() })
       .eq("is_active", true);
-    await sb
+    // Restore each broadcasting screen back to its previous content / playlist.
+    const { data: live } = await sb
       .from("display_screens")
-      .update({ current_content_type: "welcome", current_content_payload: {} })
+      .select("slug,current_content_payload")
       .eq("current_content_type", "broadcast");
-    toast.success("已停止广播");
+    const restores = (live ?? []).map((s: any) => {
+      const r = s.current_content_payload?.restore ?? {
+        type: "welcome",
+        payload: {},
+        playlist_id: null,
+      };
+      return sb
+        .from("display_screens")
+        .update({
+          current_content_type: r.type ?? "welcome",
+          current_content_payload: r.payload ?? {},
+          playlist_id: r.playlist_id ?? null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("slug", s.slug);
+    });
+    await Promise.all(restores);
+    toast.success("已关闭广播，恢复正常播放列表");
     loadHistory();
   }
 
@@ -195,25 +217,14 @@ function EmergencyBroadcastSection() {
           <Label>广播标题</Label>
           <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="例如：欢迎主日聚会" />
         </div>
-        <div className="grid grid-cols-2 gap-3">
-          <div className="space-y-1.5">
-            <Label>广播级别</Label>
-            <Select value={level} onValueChange={setLevel}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {LEVELS.map((l) => <SelectItem key={l.v} value={l.v}>{l.label}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-1.5">
-            <Label>显示时间</Label>
-            <Select value={duration} onValueChange={setDuration}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {DURATIONS.map((d) => <SelectItem key={d.v} value={d.v}>{d.label}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          </div>
+        <div className="space-y-1.5">
+          <Label>广播级别（优先级）</Label>
+          <Select value={level} onValueChange={setLevel}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {LEVELS.map((l) => <SelectItem key={l.v} value={l.v}>{l.label}</SelectItem>)}
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
@@ -246,8 +257,8 @@ function EmergencyBroadcastSection() {
       </div>
 
       <div className="flex flex-wrap gap-2">
-        <Button onClick={broadcastNow} disabled={saving}>📢 立即广播</Button>
-        <Button variant="outline" onClick={stopBroadcast}>⏹ 停止广播</Button>
+        <Button onClick={broadcastNow} disabled={saving}>📢 发布广播</Button>
+        <Button variant="outline" onClick={stopBroadcast}>⏹ 关闭广播</Button>
         <Button variant="ghost" onClick={clearHistory}>🗑 清除历史</Button>
       </div>
 

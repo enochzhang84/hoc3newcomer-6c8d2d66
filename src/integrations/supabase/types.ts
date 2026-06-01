@@ -1501,6 +1501,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      expire_display_screen: { Args: { _slug: string }; Returns: undefined }
       get_service_area: { Args: { _uid: string }; Returns: string }
       has_role: {
         Args: {
