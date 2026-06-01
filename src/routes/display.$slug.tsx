@@ -167,60 +167,6 @@ function DisplayScreen() {
     return () => clearInterval(t);
   }, [screen?.slug]);
 
-  // Expiry check for timed broadcasts/emergency content.
-  // We don't rely on the sender's setTimeout — every viewer polls its own row
-  // and triggers the SECURITY DEFINER restore RPC once the deadline passes.
-  useEffect(() => {
-    if (!screen?.slug) return;
-    const payload = (screen.current_content_payload ?? {}) as Record<string, unknown>;
-    const expiresAt = payload.expires_at as string | undefined;
-    if (!expiresAt) return;
-    const check = async () => {
-      if (new Date(expiresAt).getTime() <= Date.now()) {
-        await supabase.rpc("expire_display_screen" as never, { _slug: screen.slug } as never);
-        // Re-fetch in case realtime hasn't fired yet
-        const { data } = await supabase
-          .from("display_screens" as never)
-          .select("*")
-          .eq("slug", screen.slug)
-          .maybeSingle();
-        if (data) setScreen(data as Screen);
-      }
-    };
-    check();
-    const t = setInterval(check, 1000);
-    return () => clearInterval(t);
-  }, [screen?.slug, screen?.current_content_payload]);
-
-  // Realtime fallback: poll the screen row every 3s in case the subscription drops.
-  useEffect(() => {
-    if (!screen?.slug) return;
-    const slug = screen.slug;
-    const t = setInterval(async () => {
-      const { data } = await supabase
-        .from("display_screens" as never)
-        .select("*")
-        .eq("slug", slug)
-        .maybeSingle();
-      if (data) {
-        const next = data as Screen;
-        setScreen((prev) => {
-          if (!prev) return next;
-          if (
-            prev.current_content_type !== next.current_content_type ||
-            prev.playlist_id !== next.playlist_id ||
-            JSON.stringify(prev.current_content_payload) !==
-              JSON.stringify(next.current_content_payload)
-          ) {
-            return next;
-          }
-          return prev;
-        });
-      }
-    }, 3000);
-    return () => clearInterval(t);
-  }, [screen?.slug]);
-
   // Hide page chrome / scrollbars
   useEffect(() => {
     const prev = document.body.style.overflow;
@@ -249,13 +195,10 @@ function DisplayScreen() {
   if (screen.current_content_type !== "playlist" || items.length === 0) {
     const contentType = screen.current_content_type;
     const payload = screen.current_content_payload ?? {};
-    const isRedBg =
-      contentType === "emergency" ||
-      (contentType === "broadcast" && (payload as Record<string, unknown>).level === "urgent");
     return (
       <div
         className={`fixed inset-0 ${
-          isRedBg ? "bg-red-700 text-white" : "bg-[#FAF3E3] text-stone-900"
+          contentType === "emergency" ? "bg-red-700 text-white" : "bg-[#FAF3E3] text-stone-900"
         }`}
       >
         <ContentRenderer type={contentType} payload={payload} screen={screen} portrait={isPortrait} />
@@ -446,22 +389,6 @@ function ContentRenderer({
           <div className={`${subSize} opacity-80 whitespace-pre-line max-w-5xl`}>{message}</div>
         </div>
       );
-    case "broadcast": {
-      const level = (payload.level as string) || "normal";
-      const body = (payload.body as string) || "";
-      const isUrgent = level === "urgent";
-      const content = (
-        <div className="flex-1 flex flex-col items-center justify-center text-center px-12 gap-6">
-          <div className={`${headingSize} font-serif font-bold`}>
-            {isUrgent ? "⚠ " : ""}{title || "通知"}
-          </div>
-          <div className={`${subSize} ${isUrgent ? "" : "opacity-80"} whitespace-pre-line max-w-5xl`}>
-            {body}
-          </div>
-        </div>
-      );
-      return isUrgent ? <EmergencyBlink>{content}</EmergencyBlink> : content;
-    }
     case "emergency":
       return (
         <EmergencyBlink>
