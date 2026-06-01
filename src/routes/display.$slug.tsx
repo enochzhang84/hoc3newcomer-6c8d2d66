@@ -249,10 +249,13 @@ function DisplayScreen() {
   if (screen.current_content_type !== "playlist" || items.length === 0) {
     const contentType = screen.current_content_type;
     const payload = screen.current_content_payload ?? {};
+    const isRedBg =
+      contentType === "emergency" ||
+      (contentType === "broadcast" && (payload as Record<string, unknown>).level === "urgent");
     return (
       <div
         className={`fixed inset-0 ${
-          contentType === "emergency" ? "bg-red-700 text-white" : "bg-[#FAF3E3] text-stone-900"
+          isRedBg ? "bg-red-700 text-white" : "bg-[#FAF3E3] text-stone-900"
         }`}
       >
         <ContentRenderer type={contentType} payload={payload} screen={screen} portrait={isPortrait} />
