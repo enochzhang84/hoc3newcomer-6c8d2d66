@@ -113,14 +113,31 @@ function EmergencyBroadcastSection() {
   async function pushToScreens(payload: any, targetSlugs: string[]) {
     const slugs = targetSlugs.includes("all") ? screens.map((s) => s.slug) : targetSlugs;
     if (!slugs.length) return;
-    await sb
+    // Fetch current state of each target so we can restore it later
+    const { data: rows } = await sb
       .from("display_screens")
-      .update({
-        current_content_type: "broadcast",
-        current_content_payload: payload,
-        updated_at: new Date().toISOString(),
-      })
+      .select("slug,current_content_type,current_content_payload,playlist_id")
       .in("slug", slugs);
+    for (const r of rows ?? []) {
+      const curPayload = r.current_content_payload ?? {};
+      // If already in a broadcast, keep the original restore info
+      const restore =
+        r.current_content_type === "broadcast" && curPayload.restore
+          ? curPayload.restore
+          : {
+              type: r.current_content_type,
+              payload: curPayload,
+              playlist_id: r.playlist_id,
+            };
+      await sb
+        .from("display_screens")
+        .update({
+          current_content_type: "broadcast",
+          current_content_payload: { ...payload, restore },
+          updated_at: new Date().toISOString(),
+        })
+        .eq("slug", r.slug);
+    }
   }
 
   async function broadcastNow() {
@@ -164,10 +181,27 @@ function EmergencyBroadcastSection() {
       .from("av_broadcasts")
       .update({ is_active: false, stopped_at: new Date().toISOString() })
       .eq("is_active", true);
-    await sb
+    // Restore each broadcasting screen back to its saved previous content
+    const { data: rows } = await sb
       .from("display_screens")
-      .update({ current_content_type: "welcome", current_content_payload: {} })
+      .select("slug,current_content_payload")
       .eq("current_content_type", "broadcast");
+    for (const r of rows ?? []) {
+      const restore = r.current_content_payload?.restore ?? {
+        type: "welcome",
+        payload: {},
+        playlist_id: null,
+      };
+      await sb
+        .from("display_screens")
+        .update({
+          current_content_type: restore.type ?? "welcome",
+          current_content_payload: restore.payload ?? {},
+          playlist_id: restore.playlist_id ?? null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("slug", r.slug);
+    }
     toast.success("已停止广播");
     loadHistory();
   }
