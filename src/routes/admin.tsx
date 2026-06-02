@@ -5747,6 +5747,93 @@ ${rows.length===0?'<tr><td colspan="5" style="text-align:center;color:#888;paddi
           </DialogContent>
         </Dialog>
 
+        {/* Kids Promotion Edit Dialog */}
+        <Dialog open={kidsPromotionEdit !== null} onOpenChange={(o) => { if (!o) setKidsPromotionEdit(null); }}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>{kidsPromotionEdit?.id ? "编辑升班记录" : "添加升班记录"}</DialogTitle>
+            </DialogHeader>
+            {kidsPromotionEdit && (
+              <div className="space-y-4 py-2">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label className="text-xs">年度</Label>
+                    <Input
+                      type="number"
+                      value={String(kidsPromotionEdit.year ?? kidsYear)}
+                      onChange={(e) => setKidsPromotionEdit({ ...kidsPromotionEdit, year: parseInt(e.target.value || "0", 10) || kidsYear })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs">学期</Label>
+                    <select
+                      className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+                      value={kidsPromotionEdit.season ?? "spring"}
+                      onChange={(e) => setKidsPromotionEdit({ ...kidsPromotionEdit, season: e.target.value as "spring" | "fall" })}
+                    >
+                      <option value="spring">春季</option>
+                      <option value="fall">秋季</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label className="text-xs">原班级</Label>
+                    <Input value={kidsPromotionEdit.from_class ?? ""} placeholder="例如 K/1" onChange={(e) => setKidsPromotionEdit({ ...kidsPromotionEdit, from_class: e.target.value })} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs">新班级</Label>
+                    <Input value={kidsPromotionEdit.to_class ?? ""} placeholder="例如 2/3" onChange={(e) => setKidsPromotionEdit({ ...kidsPromotionEdit, to_class: e.target.value })} />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs">学生姓名</Label>
+                  <Input value={kidsPromotionEdit.student_name ?? ""} placeholder="例如 张三" onChange={(e) => setKidsPromotionEdit({ ...kidsPromotionEdit, student_name: e.target.value })} />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs">升班日期</Label>
+                  <Input type="date" value={kidsPromotionEdit.promotion_date ?? ""} onChange={(e) => setKidsPromotionEdit({ ...kidsPromotionEdit, promotion_date: e.target.value || null })} />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs">备注</Label>
+                  <Input value={kidsPromotionEdit.notes ?? ""} onChange={(e) => setKidsPromotionEdit({ ...kidsPromotionEdit, notes: e.target.value })} />
+                </div>
+              </div>
+            )}
+            <DialogFooter>
+              <Button variant="outline" size="sm" onClick={() => setKidsPromotionEdit(null)}>取消</Button>
+              <Button
+                size="sm"
+                onClick={async () => {
+                  if (!kidsPromotionEdit) return;
+                  const r = kidsPromotionEdit;
+                  const name = (r.student_name ?? "").trim();
+                  if (!name) return toast.error("请填写学生姓名");
+                  const payload = {
+                    year: r.year ?? kidsYear,
+                    season: r.season ?? "spring",
+                    from_class: (r.from_class ?? "").trim() || null,
+                    to_class: (r.to_class ?? "").trim() || null,
+                    student_name: name,
+                    promotion_date: r.promotion_date || null,
+                    notes: (r.notes ?? "").trim() || null,
+                  };
+                  let error;
+                  if (r.id) {
+                    ({ error } = await (supabase as any).from("kids_promotion_records").update(payload).eq("id", r.id));
+                  } else {
+                    ({ error } = await (supabase as any).from("kids_promotion_records").insert(payload));
+                  }
+                  if (error) return toast.error(error.message);
+                  toast.success("已保存");
+                  setKidsPromotionEdit(null);
+                  loadKidsPromotions();
+                }}
+              >保存</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
         {/* Edit Dialog */}
         <Dialog open={editOpen} onOpenChange={setEditOpen}>
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
