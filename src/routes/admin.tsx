@@ -2934,8 +2934,7 @@ function AdminPage() {
         )}
         {welcomeSubTab === "faith" && (
           <div className="space-y-8 mt-8">
-            <FaithFollowupSection regs={regs} />
-            {/* setRegs passed for inline edits */}
+            <FaithFollowupSection regs={regs} setRegs={setRegs} />
           </div>
         )}
         {welcomeSubTab === "reception" && (
