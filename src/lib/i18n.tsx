@@ -80,6 +80,7 @@ export const translations = {
   subSundayMeal: { zh: "主日订餐计划", en: "Sunday Meal Plan" },
   subEventMeal: { zh: "其他活动订餐记事本", en: "Event Meal Notebook" },
   subKitchenService: { zh: "事工服侍", en: "Ministry Service" },
+  subMealsStats: { zh: "餐食统计", en: "Meals Statistics" },
 
   // Sunday School 二级
   subAdultSS: { zh: "成人主日学", en: "Adult Sunday School" },
