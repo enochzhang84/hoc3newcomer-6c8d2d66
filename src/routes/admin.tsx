@@ -537,7 +537,7 @@ function AdminPage() {
   const [newMealAttendees, setNewMealAttendees] = useState<string>("");
   const [newMealType, setNewMealType] = useState<string>("");
   const [newMealNotes, setNewMealNotes] = useState<string>("");
-  const [kitchenSubTab, setKitchenSubTab] = useState<string>("dining");
+  const [kitchenSubTab, setKitchenSubTab] = useState<string>("meals-stats");
   const [kitchenDetailRow, setKitchenDetailRow] = useState<AttendanceRecord | null>(null);
   const [sundaySubTab, setSundaySubTab] = useState<string>("adult");
   const [welcomeSubTab, setWelcomeSubTab] = useState<string>("greet");
