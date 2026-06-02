@@ -31,6 +31,7 @@ import { useCurrentPermissions } from "@/hooks/useCurrentPermissions";
 import { updateRegistration } from "@/lib/registrations.functions";
 import { HospitalityCalendarSection } from "@/components/HospitalityCalendar";
 import { HospitalityRankingSection } from "@/components/HospitalityRanking";
+import { FaithFollowupSection } from "@/components/admin/FaithFollowupSection";
 import { DutyCalendarSection } from "@/components/DutyCalendar";
 import MealPlanCalendar from "@/components/MealPlanCalendar";
 import EventMealNotebook from "@/components/EventMealNotebook";
