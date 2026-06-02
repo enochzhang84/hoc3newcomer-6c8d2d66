@@ -902,9 +902,19 @@ function AdminPage() {
     const { data } = await (supabase as any)
       .from("sunday_class_schedule")
       .select("*")
-      .in("track", [KIDS_TRACKS.spring.key, KIDS_TRACKS.fall.key])
+      .or("track.like.kids_spring_%,track.like.kids_fall_%")
       .order("sort_order", { ascending: true });
     setKidsRows((data ?? []) as KidsRow[]);
+  }, []);
+
+  const loadKidsPromotions = useCallback(async () => {
+    const { data } = await (supabase as any)
+      .from("kids_promotion_records")
+      .select("*")
+      .order("year", { ascending: false })
+      .order("season", { ascending: true })
+      .order("sort_order", { ascending: true });
+    setKidsPromotions((data ?? []) as KidsPromotionRecord[]);
   }, []);
 
   const loadKidsSnapshots = useCallback(async () => {
