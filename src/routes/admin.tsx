@@ -2181,29 +2181,19 @@ function AdminPage() {
                         )}
                       </td>
                       <td className="py-2 px-2">
-                        <select
-                          value={u.service_area ?? ""}
-                          disabled={isProtected || (isSelf && currentRole === "super_admin")}
-                          onChange={async (e) => {
-                            const next = e.target.value as ServiceArea | "";
-                            try {
-                              await setUserServiceAreaFn({
-                                data: { userId: u.id, serviceArea: next === "" ? null : next },
-                              });
-                              logAction(`将 ${u.email} 所属事工设为 ${next ? SERVICE_AREA_LABELS[next] : "(未设置)"}`);
-                              toast.success("已更新所属事工");
-                              loadUsers();
-                            } catch (err) {
-                              toast.error((err as Error).message);
-                            }
-                          }}
-                          className="text-xs bg-background border border-border rounded px-2 py-1 min-w-[120px]"
-                        >
-                          <option value="">— 未设置 —</option>
-                          {SERVICE_AREAS.map((a) => (
-                            <option key={a} value={a}>{SERVICE_AREA_LABELS[a]}</option>
-                          ))}
-                        </select>
+                        <div className="flex items-center gap-2">
+                          <span className={u.service_area ? "text-foreground" : "text-muted-foreground/70"}>
+                            {u.service_area ? SERVICE_AREA_LABELS[u.service_area as ServiceArea] : "未设置"}
+                          </span>
+                          {!isProtected && !(isSelf && currentRole === "super_admin") && (
+                            <button
+                              onClick={() => setPermsDialogUser(u)}
+                              className="text-xs text-primary hover:underline"
+                            >
+                              设置
+                            </button>
+                          )}
+                        </div>
                       </td>
                       <td className="py-2 px-2">
                         <select
