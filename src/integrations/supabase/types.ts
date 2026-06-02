@@ -1019,6 +1019,7 @@ export type Database = {
           id: string
           invited_by: string | null
           is_first_visit: boolean | null
+          last_followup_at: string | null
           marital_status: string | null
           name: string
           name_en: string | null
@@ -1053,6 +1054,7 @@ export type Database = {
           id?: string
           invited_by?: string | null
           is_first_visit?: boolean | null
+          last_followup_at?: string | null
           marital_status?: string | null
           name: string
           name_en?: string | null
@@ -1087,6 +1089,7 @@ export type Database = {
           id?: string
           invited_by?: string | null
           is_first_visit?: boolean | null
+          last_followup_at?: string | null
           marital_status?: string | null
           name?: string
           name_en?: string | null
