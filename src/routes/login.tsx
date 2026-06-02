@@ -26,7 +26,17 @@ function LoginPage() {
     setLoading(true);
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
-      toast.error(error.message);
+      const msg = error.message || "";
+      let friendly = msg;
+      if (/invalid login credentials/i.test(msg)) {
+        friendly = "邮箱或密码错误。请确认账号是否已注册，或使用「忘记密码」重置。";
+      } else if (/email not confirmed/i.test(msg)) {
+        friendly = "邮箱尚未验证，请先到邮箱完成验证后再登录。";
+      } else if (/network|fetch/i.test(msg)) {
+        friendly = "无法连接到后台服务，请检查 Supabase 配置或网络。";
+      }
+      console.error("[login] signIn failed:", msg);
+      toast.error(friendly);
       setLoading(false);
       return;
     }
