@@ -991,6 +991,7 @@ function AdminPage() {
       void loadAppSettings();
       void loadKidsRows();
       void loadKidsSnapshots();
+      void loadKidsPromotions();
     };
 
     const handleSession = (sess: { user: CachedAuthUser } | null) => {
@@ -1127,6 +1128,7 @@ function AdminPage() {
     loadAppSettings,
     loadKidsRows,
     loadKidsSnapshots,
+    loadKidsPromotions,
   ]);
 
   // Realtime update of message count badge
