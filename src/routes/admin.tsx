@@ -1543,7 +1543,7 @@ function AdminPage() {
         <div className="container mx-auto px-4 sm:px-6 py-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <Link to="/" className="flex flex-col gap-0.5 leading-tight">
             <span className="font-serif text-lg sm:text-xl whitespace-normal sm:whitespace-nowrap">
-              {t("appTitle")}
+              {t("appTitle")} <span className="text-xs sm:text-sm font-sans text-muted-foreground align-middle">{APP_VERSION}</span>
             </span>
             <span className="text-xs sm:text-sm text-muted-foreground tracking-wide">
               {t("appSubtitle")}
@@ -1600,6 +1600,11 @@ function AdminPage() {
               <User className="w-3.5 h-3.5 shrink-0" />
               <span className="truncate">{currentUserEmail}</span>
             </div>
+            <NotificationBell
+              userId={currentUserId}
+              isSuperAdmin={userRole === "super_admin"}
+              userEmail={currentUserEmail}
+            />
             <div className="flex sm:hidden items-center gap-1 text-xs text-muted-foreground px-1.5 py-1 rounded-md bg-muted/60" title={currentUserEmail}>
               <User className="w-3 h-3 shrink-0" />
               <span className="max-w-[80px] truncate">{currentUserEmail.split("@")[0]}</span>
