@@ -92,6 +92,17 @@ export const listUsersWithRoles = createServerFn({ method: "GET" })
       });
     }
 
+    const { data: analyticsRows } = await supabaseAdmin
+      .from("user_module_analytics")
+      .select("user_id, service_area, enabled");
+    const analyticsByUser = new Map<string, string[]>();
+    for (const a of (analyticsRows ?? []) as { user_id: string; service_area: string; enabled: boolean }[]) {
+      if (!a.enabled) continue;
+      const arr = analyticsByUser.get(a.user_id) ?? [];
+      arr.push(a.service_area);
+      analyticsByUser.set(a.user_id, arr);
+    }
+
     return usersData.users.map((u) => ({
       id: u.id,
       email: u.email ?? "",
@@ -103,6 +114,7 @@ export const listUsersWithRoles = createServerFn({ method: "GET" })
       service_area: profileByUser.get(u.id)?.service_area ?? null,
       display_name: profileByUser.get(u.id)?.display_name ?? null,
       is_disabled: profileByUser.get(u.id)?.is_disabled ?? false,
+      analytics_areas: analyticsByUser.get(u.id) ?? [],
     }));
   });
 
