@@ -56,3 +56,20 @@ export function canAccessModule(
 export function canManageUsers(role: Role | null): boolean {
   return role === "super_admin";
 }
+
+/** 是否可以查看「某模块」的统计分析。
+ * - super_admin / admin → 永远 true
+ * - worker → 必须属于该模块，且该模块的 analytics flag = true
+ */
+export function canAccessModuleAnalytics(
+  role: Role | null,
+  area: ServiceArea | null,
+  target: ServiceArea,
+  analyticsMap: Partial<Record<ServiceArea, boolean>>,
+): boolean {
+  if (role === "super_admin" || role === "admin") return true;
+  if (role === "worker") {
+    return area === target && analyticsMap[target] === true;
+  }
+  return false;
+}
