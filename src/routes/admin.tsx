@@ -5602,6 +5602,105 @@ ${rows.length===0?'<tr><td colspan="5" style="text-align:center;color:#888;paddi
           </DialogContent>
         </Dialog>
 
+        {/* Kids Class Edit Dialog */}
+        <Dialog open={kidsEditRow !== null} onOpenChange={(o) => { if (!o) setKidsEditRow(null); }}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>编辑班级</DialogTitle>
+            </DialogHeader>
+            {kidsEditRow && (
+              <div className="space-y-4 py-2">
+                <div className="space-y-2">
+                  <Label className="text-xs">班级名称</Label>
+                  <Input
+                    value={kidsEditRow.class_name ?? ""}
+                    onChange={(e) => setKidsEditRow({ ...kidsEditRow, class_name: e.target.value })}
+                    placeholder="例如 K/1年级"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs">老师</Label>
+                  <Input
+                    value={kidsEditRow.teacher_name ?? ""}
+                    onChange={(e) => setKidsEditRow({ ...kidsEditRow, teacher_name: e.target.value })}
+                    list="kids-edit-teachers"
+                    placeholder="老师姓名"
+                  />
+                  <datalist id="kids-edit-teachers">
+                    {sundayTeachers.filter((t) => t.is_active).map((t) => (
+                      <option key={t.id} value={t.name} />
+                    ))}
+                  </datalist>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs">地点</Label>
+                  <Input
+                    value={kidsEditRow.class_location ?? ""}
+                    onChange={(e) => setKidsEditRow({ ...kidsEditRow, class_location: e.target.value })}
+                    placeholder="例如 101"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs">学生人数</Label>
+                  <Input
+                    type="number"
+                    min={0}
+                    value={String(kidsEditRow.student_count ?? 0)}
+                    onChange={(e) => setKidsEditRow({
+                      ...kidsEditRow,
+                      student_count: Math.max(0, parseInt(e.target.value || "0", 10) || 0),
+                    })}
+                  />
+                </div>
+              </div>
+            )}
+            <DialogFooter>
+              <Button variant="outline" size="sm" onClick={() => setKidsEditRow(null)}>取消</Button>
+              <Button
+                size="sm"
+                onClick={async () => {
+                  if (!kidsEditRow) return;
+                  const r = kidsEditRow;
+                  const { error } = await (supabase as any)
+                    .from("sunday_class_schedule")
+                    .update({
+                      class_name: r.class_name?.trim() || null,
+                      teacher_name: r.teacher_name?.trim() || null,
+                      class_location: r.class_location?.trim() || null,
+                      student_count: Math.max(0, r.student_count ?? 0),
+                    })
+                    .eq("id", r.id);
+                  if (error) return toast.error(error.message);
+                  // 同步今日学生人数快照
+                  const today = new Date();
+                  const y = today.getFullYear();
+                  const m = String(today.getMonth() + 1).padStart(2, "0");
+                  const d = String(today.getDate()).padStart(2, "0");
+                  const snapshot_date = `${y}-${m}-${d}`;
+                  await (supabase as any)
+                    .from("kids_class_enrollment_snapshots")
+                    .upsert(
+                      {
+                        class_id: r.id,
+                        track: r.track,
+                        class_name: r.class_name?.trim() || null,
+                        student_count: Math.max(0, r.student_count ?? 0),
+                        snapshot_date,
+                      },
+                      { onConflict: "class_id,snapshot_date" },
+                    );
+                  toast.success("已保存");
+                  setKidsEditRow(null);
+                  loadKidsRows();
+                  loadKidsSnapshots();
+                }}
+              >
+                保存
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
         {/* Edit Dialog */}
         <Dialog open={editOpen} onOpenChange={setEditOpen}>
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
