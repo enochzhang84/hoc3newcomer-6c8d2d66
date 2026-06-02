@@ -79,6 +79,20 @@ function PosterDisplay() {
   const bg = poster.background || "#FAF3E3";
 
   if (poster.kind === "external" && poster.link_url) {
+    // PDFs can't reliably be embedded in an iframe (ERR_BLOCKED_BY_CLIENT,
+    // X-Frame-Options, Chrome PDF viewer restrictions). Hand off to the
+    // browser's native PDF viewer in this tab instead.
+    if (/\.pdf(\?|$)/i.test(poster.link_url)) {
+      if (typeof window !== "undefined") {
+        window.location.replace(poster.link_url);
+      }
+      return (
+        <div className="fixed inset-0 bg-[#FAF3E3] flex items-center justify-center text-2xl text-stone-700">
+          正在打开 PDF…
+          <a href={poster.link_url} className="ml-4 underline" target="_blank" rel="noopener noreferrer">手动打开</a>
+        </div>
+      );
+    }
     return (
       <iframe
         src={poster.link_url}
@@ -90,6 +104,17 @@ function PosterDisplay() {
   }
 
   if (poster.kind === "page" && poster.link_url) {
+    if (/\.pdf(\?|$)/i.test(poster.link_url)) {
+      if (typeof window !== "undefined") {
+        window.location.replace(poster.link_url);
+      }
+      return (
+        <div className="fixed inset-0 bg-[#FAF3E3] flex items-center justify-center text-2xl text-stone-700">
+          正在打开 PDF…
+          <a href={poster.link_url} className="ml-4 underline" target="_blank" rel="noopener noreferrer">手动打开</a>
+        </div>
+      );
+    }
     return (
       <iframe
         src={poster.link_url}
