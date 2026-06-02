@@ -3311,12 +3311,11 @@ function AdminPage() {
             </TabsContent>
 
             <TabsContent value="kitchen" className="space-y-8 mt-0">
-        <ModuleSplitLayout area="kitchen" analytics={<KitchenAnalytics />}>
         {/* Chrome-style sub-tabs — 4 equal columns */}
         <div className="grid grid-cols-4 items-end gap-1 border-b border-border/60 px-2 pt-1 -mb-2">
           {[
+            { v: "meals-stats", label: t("subMealsStats") },
             { v: "dining", label: t("subDining") },
-            { v: "sunday-meal", label: t("subSundayMeal") },
             { v: "event-meal", label: t("subEventMeal") },
             { v: "messages", label: t("subKitchenService") },
           ].map((tab) => {
@@ -3338,6 +3337,69 @@ function AdminPage() {
           })}
         </div>
 
+        <div className="mt-8">
+        {kitchenSubTab === "meals-stats" && (() => {
+          const todayStr = format(new Date(), "yyyy-MM-dd");
+          const now = new Date();
+          const startOfWeek = new Date(now);
+          startOfWeek.setHours(0, 0, 0, 0);
+          startOfWeek.setDate(now.getDate() - now.getDay());
+          const endOfWeek = new Date(startOfWeek);
+          endOfWeek.setDate(startOfWeek.getDate() + 7);
+          const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+          const startOfNextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+          const inRange = (s: string, a: Date, b: Date) => {
+            const d = new Date(s + "T00:00:00");
+            return d >= a && d < b;
+          };
+          const compute = (rows: MealPlan[]) => {
+            const totalOrders = rows.length;
+            const totalPeople = rows.reduce((s, r) => s + (r.attendees || 0), 0);
+            const todayPeople = rows.filter((r) => r.plan_date === todayStr).reduce((s, r) => s + (r.attendees || 0), 0);
+            const weekPeople = rows.filter((r) => inRange(r.plan_date, startOfWeek, endOfWeek)).reduce((s, r) => s + (r.attendees || 0), 0);
+            const monthPeople = rows.filter((r) => inRange(r.plan_date, startOfMonth, startOfNextMonth)).reduce((s, r) => s + (r.attendees || 0), 0);
+            const perDay = new Map<string, number>();
+            rows.forEach((r) => perDay.set(r.plan_date, (perDay.get(r.plan_date) ?? 0) + (r.attendees || 0)));
+            const dayValues = Array.from(perDay.values());
+            const avgPeople = dayValues.length ? Math.round(dayValues.reduce((a, b) => a + b, 0) / dayValues.length) : 0;
+            const maxPeople = dayValues.length ? Math.max(...dayValues) : 0;
+            const minPeople = dayValues.length ? Math.min(...dayValues) : 0;
+            return { totalOrders, totalPeople, todayPeople, weekPeople, monthPeople, avgPeople, maxPeople, minPeople };
+          };
+          const sundayRows = mealPlans.filter((p) => (p.category ?? "sunday") === "sunday");
+          const eventRows = mealPlans.filter((p) => p.category === "event");
+          const groups: Array<{ title: string; stats: ReturnType<typeof compute> }> = [
+            { title: "", stats: compute(sundayRows) },
+            { title: "其他活动订餐计划", stats: compute(eventRows) },
+          ];
+          return (
+            <div className="space-y-6">
+              {groups.map((g) => (
+                <div key={g.title || "sunday"} className="bg-card border border-border/50 rounded-2xl p-6">
+                  {g.title && <h3 className="font-serif text-lg mb-4">{g.title}</h3>}
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                    {([
+                      ["总订餐次数", g.stats.totalOrders],
+                      ["总人数", g.stats.totalPeople],
+                      ["今日人数", g.stats.todayPeople],
+                      ["本周人数", g.stats.weekPeople],
+                      ["本月人数", g.stats.monthPeople],
+                      ["平均订餐(每日)", g.stats.avgPeople],
+                      ["最高订餐(单日)", g.stats.maxPeople],
+                      ["最低订餐(单日)", g.stats.minPeople],
+                    ] as Array<[string, number]>).map(([label, value]) => (
+                      <div key={label} className="bg-background border border-border/50 rounded-xl p-4 shadow-sm">
+                        <div className="text-xs text-muted-foreground mb-1">{label}</div>
+                        <div className="text-2xl font-semibold">{value}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          );
+        })()}
+
         {kitchenSubTab === "dining" && (() => {
           const toLocalDate = (iso: string) => {
             const d = new Date(iso);
@@ -3349,6 +3411,7 @@ function AdminPage() {
             newcomersByDate[k] = (newcomersByDate[k] || 0) + 1;
           }
           return (
+            <div className="space-y-6">
             <section className="bg-card border border-border/50 rounded-2xl p-6">
               <h2 className="font-serif text-xl mb-4">就餐人数统计</h2>
               <div className="overflow-x-auto rounded-lg border border-border/50">
@@ -3406,12 +3469,19 @@ function AdminPage() {
                 </table>
               </div>
             </section>
+
+            <Collapsible className="bg-card border border-border/50 rounded-2xl">
+              <CollapsibleTrigger className="w-full flex items-center justify-between px-6 py-4 text-left">
+                <h2 className="font-serif text-xl">{t("subSundayMeal")}</h2>
+                <span className="text-sm text-muted-foreground">点击展开 / 收起</span>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="px-6 pb-6">
+                <MealPlanCalendar category="sunday" title="主日订餐计划" />
+              </CollapsibleContent>
+            </Collapsible>
+            </div>
           );
         })()}
-
-        {kitchenSubTab === "sunday-meal" && (
-          <MealPlanCalendar category="sunday" title="主日订餐计划" />
-        )}
 
         {kitchenSubTab === "event-meal" && (
           <EventMealNotebook />
@@ -3420,6 +3490,7 @@ function AdminPage() {
         {kitchenSubTab === "messages" && (
           <div className="pt-2"><MinistryServiceCalendar /></div>
         )}
+        </div>
 
         {/* 就餐人数统计 - 详情弹窗 */}
         <Dialog open={!!kitchenDetailRow} onOpenChange={(o) => !o && setKitchenDetailRow(null)}>
