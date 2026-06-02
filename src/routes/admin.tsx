@@ -1981,13 +1981,13 @@ function AdminPage() {
               </CollapsibleTrigger>
               {!kidsEnrollOpen && (
                 <span className="text-xs text-muted-foreground">
-                  👦 {kidsRows.reduce((s, r: any) => s + (r.student_count ?? 0), 0)} 人 ·
-                  📚 {kidsRows.length} 班
+                  👦 {kidsRows.filter((r) => r.track === KIDS_TRACKS.spring.key || r.track === KIDS_TRACKS.fall.key).reduce((s, r: any) => s + (r.student_count ?? 0), 0)} 人 ·
+                  📚 {kidsRows.filter((r) => r.track === KIDS_TRACKS.spring.key || r.track === KIDS_TRACKS.fall.key).length} 班
                 </span>
               )}
             </div>
             <CollapsibleContent>
-              <KidsEnrollmentStats classes={kidsRows} snapshots={kidsSnapshots} />
+              <KidsEnrollmentStats classes={kidsRows.filter((r) => r.track === KIDS_TRACKS.spring.key || r.track === KIDS_TRACKS.fall.key)} snapshots={kidsSnapshots} />
             </CollapsibleContent>
           </Collapsible>
         </section>
@@ -3730,13 +3730,13 @@ function AdminPage() {
                 </CollapsibleTrigger>
                 {!kidsEnrollOpen && (
                   <span className="text-xs text-muted-foreground">
-                    👦 {kidsRows.reduce((s, r: any) => s + (r.student_count ?? 0), 0)} 人 ·
-                    📚 {kidsRows.length} 班
+                    👦 {kidsRows.filter((r) => r.track === KIDS_TRACKS.spring.key || r.track === KIDS_TRACKS.fall.key).reduce((s, r: any) => s + (r.student_count ?? 0), 0)} 人 ·
+                    📚 {kidsRows.filter((r) => r.track === KIDS_TRACKS.spring.key || r.track === KIDS_TRACKS.fall.key).length} 班
                   </span>
                 )}
               </div>
               <CollapsibleContent>
-                <KidsEnrollmentStats classes={kidsRows} snapshots={kidsSnapshots} />
+                <KidsEnrollmentStats classes={kidsRows.filter((r) => r.track === KIDS_TRACKS.spring.key || r.track === KIDS_TRACKS.fall.key)} snapshots={kidsSnapshots} />
               </CollapsibleContent>
             </Collapsible>
           </section>
