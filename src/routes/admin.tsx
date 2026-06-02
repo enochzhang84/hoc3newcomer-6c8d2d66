@@ -26,7 +26,8 @@ import { listUsersWithRoles, setUserRole, deleteUser, createUserWithRole, update
 import { useI18n, type TKey } from "@/lib/i18n";
 import { HomePageSettingsPanel } from "@/components/admin/HomePageSettingsPanel";
 import { BackupRestorePanel } from "@/components/admin/BackupRestorePanel";
-import { SERVICE_AREAS, SERVICE_AREA_LABELS, ROLE_LABELS, type Role, type ServiceArea, canAccessAdmin } from "@/lib/permissions";
+import { SERVICE_AREAS, SERVICE_AREA_LABELS, ROLE_LABELS, type Role, type ServiceArea, canAccessAdmin, canAccessModuleAnalytics } from "@/lib/permissions";
+import { useCurrentPermissions } from "@/hooks/useCurrentPermissions";
 import { updateRegistration } from "@/lib/registrations.functions";
 import { HospitalityCalendarSection } from "@/components/HospitalityCalendar";
 import { HospitalityRankingSection } from "@/components/HospitalityRanking";
@@ -533,6 +534,8 @@ function AdminPage() {
   const [kitchenDetailRow, setKitchenDetailRow] = useState<AttendanceRecord | null>(null);
   const [sundaySubTab, setSundaySubTab] = useState<string>("adult");
   const [welcomeSubTab, setWelcomeSubTab] = useState<string>("greet");
+  const _perms = useCurrentPermissions();
+  const _canWelcomeStats = !_perms.loading && canAccessModuleAnalytics(_perms.role, _perms.serviceArea, "welcome", _perms.analytics);
   const [mediaSubTab, setMediaSubTab] = useState<string>("live");
   const [youtubeUrl, setYoutubeUrl] = useState<string>(() => {
     if (typeof window === "undefined") return "";
@@ -2604,10 +2607,15 @@ function AdminPage() {
             </TabsContent>
 
             <TabsContent value="welcome" className="space-y-8 mt-0">
-        <ModuleSplitLayout area="welcome" analytics={<WelcomeAnalytics />}>
-        {/* Chrome-style sub-tabs — 2 equal columns */}
-        <div className="grid grid-cols-2 items-end gap-1 border-b border-border/60 px-2 pt-1 -mb-2">
+        {/* Chrome-style sub-tabs — 自适应列数 */}
+        <div
+          className={cn(
+            "grid items-end gap-1 border-b border-border/60 px-2 pt-1 -mb-2",
+            _canWelcomeStats ? "grid-cols-3" : "grid-cols-2",
+          )}
+        >
           {[
+            ...(_canWelcomeStats ? [{ v: "stats", label: "迎宾数据统计" }] : []),
             { v: "greet", label: t("subGreet") },
             { v: "reception", label: t("subReception") },
           ].map((tab) => {
@@ -2628,6 +2636,13 @@ function AdminPage() {
             );
           })}
         </div>
+
+        {welcomeSubTab === "stats" && _canWelcomeStats && (
+          <section className="bg-card border border-border/50 rounded-2xl p-6">
+            <h2 className="font-serif text-xl mb-4">迎宾数据统计</h2>
+            <WelcomeAnalytics />
+          </section>
+        )}
 
         {welcomeSubTab === "greet" && (
           <div className="space-y-8">
@@ -3120,7 +3135,6 @@ function AdminPage() {
             <HospitalityRankingSection />
           </div>
         )}
-        </ModuleSplitLayout>
             </TabsContent>
 
             <TabsContent value="media" className="space-y-8 mt-0">
