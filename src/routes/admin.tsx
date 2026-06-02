@@ -31,6 +31,7 @@ import { useCurrentPermissions } from "@/hooks/useCurrentPermissions";
 import { updateRegistration } from "@/lib/registrations.functions";
 import { HospitalityCalendarSection } from "@/components/HospitalityCalendar";
 import { HospitalityRankingSection } from "@/components/HospitalityRanking";
+import { FaithFollowupSection } from "@/components/admin/FaithFollowupSection";
 import { DutyCalendarSection } from "@/components/DutyCalendar";
 import MealPlanCalendar from "@/components/MealPlanCalendar";
 import EventMealNotebook from "@/components/EventMealNotebook";
@@ -2612,13 +2613,14 @@ function AdminPage() {
         <div
           className={cn(
             "grid items-end gap-1 border-b border-border/60 px-2 pt-1 -mb-2",
-            _canWelcomeStats ? "grid-cols-3" : "grid-cols-2",
+            _canWelcomeStats ? "grid-cols-4" : "grid-cols-3",
           )}
         >
           {[
             ...(_canWelcomeStats ? [{ v: "stats", label: "新人统计" }] : []),
-            { v: "greet", label: t("subGreet") },
-            { v: "reception", label: t("subReception") },
+            { v: "faith", label: "信仰成长跟进" },
+            { v: "greet", label: "迎宾事工" },
+            { v: "reception", label: "接待事工" },
           ].map((tab) => {
             const active = welcomeSubTab === tab.v;
             return (
@@ -2925,6 +2927,15 @@ function AdminPage() {
             </div>
           )}
         </section>
+          </div>
+        )}
+        {welcomeSubTab === "faith" && (
+          <div className="space-y-8 mt-8">
+            <FaithFollowupSection regs={regs} />
+          </div>
+        )}
+        {welcomeSubTab === "reception" && (
+          <div className="space-y-8 mt-8">
         <section className="bg-card border border-border/50 rounded-2xl p-6">
           <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
             <h2 className="font-serif text-xl">人数统计</h2>
@@ -3131,10 +3142,6 @@ function AdminPage() {
             </div>
           )}
         </section>
-          </div>
-        )}
-        {welcomeSubTab === "reception" && (
-          <div className="space-y-8 mt-8">
             <HospitalityCalendarSection />
           </div>
         )}
