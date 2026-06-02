@@ -3141,14 +3141,18 @@ function AdminPage() {
             </TabsContent>
 
             <TabsContent value="media" className="space-y-8 mt-0">
-        <ModuleSplitLayout area="media" analytics={<MediaAnalytics />}>
-        {/* Chrome-style sub-tabs — 4 equal columns */}
-        <div className="grid grid-cols-4 items-end gap-1 border-b border-border/60 px-2 pt-1 -mb-2">
+        {/* Chrome-style sub-tabs */}
+        <div
+          className={cn(
+            "grid items-end gap-1 border-b border-border/60 px-2 pt-1 -mb-2",
+            _canMediaStats ? "grid-cols-4" : "grid-cols-3",
+          )}
+        >
           {[
+            ...(_canMediaStats ? [{ v: "stats", label: "影音部统计" }] : []),
             { v: "live", label: t("subLive") },
             { v: "screen", label: t("subScreen") },
             { v: "ministry", label: t("subMinistry") },
-            { v: "messages", label: t("subEmergency") },
           ].map((tab) => {
             const active = mediaSubTab === tab.v;
             return (
@@ -3168,7 +3172,15 @@ function AdminPage() {
           })}
         </div>
 
+        {mediaSubTab === "stats" && _canMediaStats && (
+          <section className="bg-card border border-border/50 rounded-2xl p-6">
+            <h2 className="font-serif text-xl mb-4">影音部统计</h2>
+            <MediaAnalytics />
+          </section>
+        )}
+
         {mediaSubTab === "live" && (
+          <div className="space-y-8">
           <section className="bg-card border border-border/50 rounded-2xl p-6 space-y-5">
             <h2 className="font-serif text-xl">聚会直播 · YouTube 直播监视器</h2>
             <div className="flex flex-col sm:flex-row gap-2">
@@ -3250,6 +3262,10 @@ function AdminPage() {
               当前保存的直播地址：{youtubeUrl || "（未设置）"}
             </p>
           </section>
+          <div className="pt-2">
+            <AVMinistryWorkspace />
+          </div>
+          </div>
         )}
 
         {mediaSubTab === "screen" && (
@@ -3277,13 +3293,6 @@ function AdminPage() {
           </div>
         )}
 
-
-        {mediaSubTab === "messages" && (
-          <div className="pt-6 md:pt-8">
-            <AVMinistryWorkspace />
-          </div>
-        )}
-        </ModuleSplitLayout>
             </TabsContent>
 
             <TabsContent value="kitchen" className="space-y-8 mt-0">
