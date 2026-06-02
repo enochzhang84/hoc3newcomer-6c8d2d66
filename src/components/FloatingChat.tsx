@@ -567,6 +567,7 @@ export function FloatingChat() {
     const d = dragRef.current;
     dragRef.current = null;
     try { e.currentTarget.releasePointerCapture(e.pointerId); } catch {}
+    if (!d) return; // ignore non-left clicks / no pointerdown captured
     if (d?.moved && pos) {
       try { window.localStorage.setItem(POS_KEY, JSON.stringify(pos)); } catch {}
     } else {
