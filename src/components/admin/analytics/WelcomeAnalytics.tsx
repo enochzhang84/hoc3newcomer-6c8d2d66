@@ -99,26 +99,44 @@ export function WelcomeAnalytics() {
   );
 
   return (
-    <div className="space-y-3">
-      <StatGrid cols={2}>
-        <StatCard compact icon="📅" label="本月接待" value={monthItems.length} hint={`本周 ${weekItems.length} · 今日 ${todayItems.length}`} />
-        <StatCard compact icon="👥" label="本月同工" value={workersMonth.size} hint={`累计 ${workersAll.size} 位`} />
-        <StatCard compact icon="🙋" label="新人接待" value={newcomerCount} />
-        <StatCard compact icon="🚪" label="前门 / 后门" value={`${frontCount} / ${backCount}`} />
+    <div className="space-y-6">
+      {/* 第一行：3 个大卡片 */}
+      <StatGrid cols={3}>
+        <StatCard icon="📅" label="本月接待" value={monthItems.length} hint={`累计 ${items.length} 次`} />
+        <StatCard icon="📆" label="本周接待" value={weekItems.length} />
+        <StatCard icon="🗓️" label="今日接待" value={todayItems.length} />
       </StatGrid>
 
-      <Section title="近 8 周接待趋势"><MiniBars items={trend} /></Section>
+      {/* 第二行：3 个分类卡片 */}
+      <StatGrid cols={3}>
+        <StatCard icon="🙋" label="新人接待" value={newcomerCount} />
+        <StatCard icon="🚪" label="前门接待" value={frontCount} />
+        <StatCard icon="🚪" label="后门接待" value={backCount} />
+      </StatGrid>
 
-      <Section title="🏆 迎宾服侍排行榜">
-        <div className="space-y-3">
-          <Section title="本月 Top 10">
+      {/* 第三行：同工 + 趋势 */}
+      <StatGrid cols={3}>
+        <StatCard icon="👥" label="迎宾同工" value={workersAll.size} hint="累计参与人数" />
+        <StatCard icon="🧑‍🤝‍🧑" label="本月同工参与" value={workersMonth.size} />
+        <StatCard icon="📊" label="近 8 周总计" value={trend.reduce((s, x) => s + x.count, 0)} />
+      </StatGrid>
+
+      {/* 趋势 + 排行榜 */}
+      <div className="grid gap-4 md:grid-cols-3">
+        <div className="md:col-span-1">
+          <Section title="近 8 周接待趋势"><MiniBars items={trend} /></Section>
+        </div>
+        <div>
+          <Section title="🏆 本月 Top 10">
             <div className="bg-card border border-border/60 rounded-2xl p-4 shadow-sm"><RankList items={monthRank} unit="次" /></div>
           </Section>
-          <Section title={`${y} 年累计 Top 10`}>
+        </div>
+        <div>
+          <Section title={`🏆 ${y} 年累计 Top 10`}>
             <div className="bg-card border border-border/60 rounded-2xl p-4 shadow-sm"><RankList items={yearRank} unit="次" /></div>
           </Section>
         </div>
-      </Section>
+      </div>
     </div>
   );
 }
