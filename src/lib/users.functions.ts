@@ -356,3 +356,36 @@ export const setUserPassword = createServerFn({ method: "POST" })
     if (error) throw new Error(`Supabase Auth 更新失败: ${error.message}`);
     return { ok: true };
   });
+
+const analyticsAreaSchema = z.enum(SERVICE_AREAS);
+
+export const setUserAnalyticsArea = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z.object({
+      userId: z.string().uuid(),
+      serviceArea: analyticsAreaSchema,
+      enabled: z.boolean(),
+    }).parse(input),
+  )
+  .handler(async ({ context, data }) => {
+    await assertSuperAdmin(context.userId);
+    await assertTargetNotSuperAdmin(data.userId, context.userId);
+    if (data.enabled) {
+      const { error } = await supabaseAdmin
+        .from("user_module_analytics")
+        .upsert(
+          { user_id: data.userId, service_area: data.serviceArea, enabled: true },
+          { onConflict: "user_id,service_area" },
+        );
+      if (error) throw new Error(error.message);
+    } else {
+      const { error } = await supabaseAdmin
+        .from("user_module_analytics")
+        .delete()
+        .eq("user_id", data.userId)
+        .eq("service_area", data.serviceArea);
+      if (error) throw new Error(error.message);
+    }
+    return { ok: true };
+  });
