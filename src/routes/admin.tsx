@@ -2639,7 +2639,7 @@ function AdminPage() {
         </div>
 
         {welcomeSubTab === "stats" && _canWelcomeStats && (
-          <div className="space-y-8">
+          <div className="space-y-8 mt-8">
             <section className="bg-card border border-border/50 rounded-2xl p-6">
               <h2 className="font-serif text-xl mb-4">新人统计</h2>
               <WelcomeAnalytics />
@@ -2649,7 +2649,7 @@ function AdminPage() {
         )}
 
         {welcomeSubTab === "greet" && (
-          <div className="space-y-8">
+          <div className="space-y-8 mt-8">
         <section className="bg-card border border-border/50 rounded-2xl p-6">
           <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
             <h2 className="font-serif text-xl">登记名单</h2>
@@ -3134,7 +3134,7 @@ function AdminPage() {
           </div>
         )}
         {welcomeSubTab === "reception" && (
-          <div className="space-y-8">
+          <div className="space-y-8 mt-8">
             <HospitalityCalendarSection />
           </div>
         )}
@@ -3173,14 +3173,14 @@ function AdminPage() {
         </div>
 
         {mediaSubTab === "stats" && _canMediaStats && (
-          <section className="bg-card border border-border/50 rounded-2xl p-6">
+          <section className="bg-card border border-border/50 rounded-2xl p-6 mt-8">
             <h2 className="font-serif text-xl mb-4">影音部统计</h2>
             <MediaAnalytics />
           </section>
         )}
 
         {mediaSubTab === "live" && (
-          <div className="space-y-8">
+          <div className="space-y-8 mt-8">
           <section className="bg-card border border-border/50 rounded-2xl p-6 space-y-5">
             <h2 className="font-serif text-xl">聚会直播 · YouTube 直播监视器</h2>
             <div className="flex flex-col sm:flex-row gap-2">
@@ -3269,7 +3269,7 @@ function AdminPage() {
         )}
 
         {mediaSubTab === "screen" && (
-        <section className="bg-card border border-border/50 rounded-2xl p-6">
+        <section className="bg-card border border-border/50 rounded-2xl p-6 mt-8">
           <h2 className="font-serif text-xl mb-4">影音投影</h2>
           <div className="grid sm:grid-cols-2 gap-4">
             <div className="border border-border/50 rounded-xl p-4 flex flex-col items-start gap-3">
