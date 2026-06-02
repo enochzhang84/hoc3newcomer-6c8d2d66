@@ -27,6 +27,9 @@ const HEARTBEAT_MS = 15 * 1000;
 const PRESENCE_REFRESH_MS = 20 * 1000;
 const PRESENCE_WINDOW_MS = 60 * 1000;
 const UNREAD_KEY = "floating_chat_last_read_at";
+const HIDDEN_KEY = "floating_chat_hidden";
+const POS_KEY = "floating_chat_pos";
+const SHOW_EVENT = "floating-chat:show";
 
 export function FloatingChat() {
   const [userId, setUserId] = useState<string | null>(null);
@@ -38,6 +41,21 @@ export function FloatingChat() {
   const [pendingDelete, setPendingDelete] = useState<ChatMessage | null>(null);
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [open, setOpen] = useState(false);
+  const [hidden, setHidden] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return window.localStorage.getItem(HIDDEN_KEY) === "1";
+  });
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [pos, setPos] = useState<{ x: number; y: number } | null>(() => {
+    if (typeof window === "undefined") return null;
+    try {
+      const raw = window.localStorage.getItem(POS_KEY);
+      return raw ? (JSON.parse(raw) as { x: number; y: number }) : null;
+    } catch {
+      return null;
+    }
+  });
+  const dragRef = useRef<{ x: number; y: number; moved: boolean } | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [workers, setWorkers] = useState<WorkerOption[]>([]);
   const [input, setInput] = useState("");
@@ -58,6 +76,23 @@ export function FloatingChat() {
 
   useEffect(() => { openRef.current = open; }, [open]);
   useEffect(() => { userIdRef.current = userId; }, [userId]);
+
+  // Listen for global "show" event (toolbar button) to re-display hidden icon
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const onShow = () => {
+      window.localStorage.removeItem(HIDDEN_KEY);
+      setHidden(false);
+    };
+    window.addEventListener(SHOW_EVENT, onShow);
+    return () => window.removeEventListener(SHOW_EVENT, onShow);
+  }, []);
+
+  const hideIcon = () => {
+    if (typeof window !== "undefined") window.localStorage.setItem(HIDDEN_KEY, "1");
+    setHidden(true);
+    setMenuOpen(false);
+  };
 
   const getLastRead = () => {
     const v = typeof window !== "undefined" ? window.localStorage.getItem(UNREAD_KEY) : null;
