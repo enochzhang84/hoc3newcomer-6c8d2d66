@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { StatCard, Section, MiniBars, groupBy } from "./AnalyticsPrimitives";
+import { StatCard, Section, MiniBars, StatGrid, groupBy } from "./AnalyticsPrimitives";
 
 type MealPlan = { plan_date: string; attendees: number; meal_type: string | null; category: string };
 type Attendance = { record_date: string; worship_count: number; children_students: number; children_teachers: number };
@@ -112,28 +112,27 @@ export function KitchenAnalytics() {
 
   return (
     <div className="space-y-3">
-      <div className="grid grid-cols-2 gap-2">
-        <StatCard label="累计就餐" value={total} hint={`${plans.length} 条记录`} />
-        <StatCard label="主日就餐" value={sundayTotal} />
-        <StatCard label="近4次均值" value={avg4} />
-        <StatCard label="儿童均值" value={kidsAvg} hint={`老师均 ${teachersAvg}`} />
-      </div>
+      <StatGrid cols={2}>
+        <StatCard compact icon="🍱" label="累计就餐" value={total} hint={`${plans.length} 条记录`} />
+        <StatCard compact icon="⛪" label="主日就餐" value={sundayTotal} />
+        <StatCard compact icon="📈" label="近4次均值" value={avg4} />
+        <StatCard compact icon="👶" label="儿童均值" value={kidsAvg} hint={`老师均 ${teachersAvg}`} />
+      </StatGrid>
       <Section title="按餐别分布"><MiniBars items={byMealType} /></Section>
       <Section title="近期主日大堂人数"><MiniBars items={trend} /></Section>
 
-      <div className="rounded-xl border border-border/50 bg-background p-3 space-y-3">
-        <div className="text-xs font-semibold text-foreground/90 flex items-center gap-1.5">
-          <span aria-hidden>🏆</span>服侍排行榜
+      <Section title="🏆 服侍排行榜">
+        <div className="space-y-3">
+          <StatGrid cols={3}>
+            <StatCard compact label="总同工" value={totalWorkers} />
+            <StatCard compact label="本月参与" value={monthWorkers} />
+            <StatCard compact label="参与率" value={`${participation}%`} tone={participation >= 50 ? "ok" : participation >= 25 ? "warn" : "alert"} />
+          </StatGrid>
+          <Section title="本月服侍 Top 10"><div className="bg-card border border-border/60 rounded-2xl p-4 shadow-sm"><RankList items={monthRank} unit="次" /></div></Section>
+          <Section title={`${y} 年累计 Top 10`}><div className="bg-card border border-border/60 rounded-2xl p-4 shadow-sm"><RankList items={yearRank} unit="次" /></div></Section>
+          <Section title="连续服侍周数 Top 10"><div className="bg-card border border-border/60 rounded-2xl p-4 shadow-sm"><RankList items={streaks} unit="周" /></div></Section>
         </div>
-        <div className="grid grid-cols-3 gap-2">
-          <StatCard label="总同工" value={totalWorkers} />
-          <StatCard label="本月参与" value={monthWorkers} />
-          <StatCard label="参与率" value={`${participation}%`} />
-        </div>
-        <Section title="本月服侍 Top 10"><RankList items={monthRank} unit="次" /></Section>
-        <Section title={`${y} 年累计 Top 10`}><RankList items={yearRank} unit="次" /></Section>
-        <Section title="连续服侍周数 Top 10"><RankList items={streaks} unit="周" /></Section>
-      </div>
+      </Section>
     </div>
   );
 }
