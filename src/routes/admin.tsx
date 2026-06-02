@@ -5553,7 +5553,7 @@ ${rows.length===0?'<tr><td colspan="5" style="text-align:center;color:#888;paddi
           <DialogContent className="max-w-md">
             <DialogHeader>
               <DialogTitle>
-                {kidsSettingsSeason ? `设置 · ${appSettings[`${KIDS_TRACKS[kidsSettingsSeason].key}_title`] || KIDS_TRACKS[kidsSettingsSeason].title}` : "设置"}
+                {kidsSettingsSeason ? `设置 · ${appSettings[`${kidsTracksForYear(kidsYear)[kidsSettingsSeason].key}_title`] || kidsTracksForYear(kidsYear)[kidsSettingsSeason].title}` : "设置"}
               </DialogTitle>
             </DialogHeader>
             {kidsSettingsSeason && (
@@ -5562,13 +5562,14 @@ ${rows.length===0?'<tr><td colspan="5" style="text-align:center;color:#888;paddi
                   <Label className="text-xs">板块名称</Label>
                   <div className="flex gap-2">
                     <Input
-                      key={`${kidsSettingsSeason}-${appSettings[`${KIDS_TRACKS[kidsSettingsSeason].key}_title`] ?? ""}`}
-                      defaultValue={appSettings[`${KIDS_TRACKS[kidsSettingsSeason].key}_title`] || KIDS_TRACKS[kidsSettingsSeason].title}
+                      key={`${kidsYear}-${kidsSettingsSeason}-${appSettings[`${kidsTracksForYear(kidsYear)[kidsSettingsSeason].key}_title`] ?? ""}`}
+                      defaultValue={appSettings[`${kidsTracksForYear(kidsYear)[kidsSettingsSeason].key}_title`] || kidsTracksForYear(kidsYear)[kidsSettingsSeason].title}
                       onBlur={async (e) => {
-                        const key = `${KIDS_TRACKS[kidsSettingsSeason].key}_title`;
+                        const cfg = kidsTracksForYear(kidsYear)[kidsSettingsSeason];
+                        const key = `${cfg.key}_title`;
                         const v = e.target.value.trim();
                         if (!v) return;
-                        if (v === (appSettings[key] || KIDS_TRACKS[kidsSettingsSeason].title)) return;
+                        if (v === (appSettings[key] || cfg.title)) return;
                         const { error } = await (supabase as any)
                           .from("app_settings")
                           .upsert({ key, value: v, updated_at: new Date().toISOString() });
