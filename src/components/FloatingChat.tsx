@@ -29,6 +29,10 @@ const PRESENCE_WINDOW_MS = 60 * 1000;
 const UNREAD_KEY = "floating_chat_last_read_at";
 const HIDDEN_KEY = "floating_chat_hidden";
 const POS_KEY = "floating_chat_pos";
+const PANEL_POS_KEY = "floating_chat_panel_pos";
+const PANEL_W = 400;
+const PANEL_H = 620;
+const MARGIN = 8;
 const SHOW_EVENT = "floating-chat:show";
 
 export function FloatingChat() {
@@ -56,6 +60,18 @@ export function FloatingChat() {
     }
   });
   const dragRef = useRef<{ x: number; y: number; moved: boolean } | null>(null);
+  const [panelPos, setPanelPos] = useState<{ x: number; y: number } | null>(() => {
+    if (typeof window === "undefined") return null;
+    try {
+      const raw = window.localStorage.getItem(PANEL_POS_KEY);
+      return raw ? (JSON.parse(raw) as { x: number; y: number }) : null;
+    } catch {
+      return null;
+    }
+  });
+  const [panelSize, setPanelSize] = useState<{ w: number; h: number }>({ w: PANEL_W, h: PANEL_H });
+  const panelDragRef = useRef<{ dx: number; dy: number; moved: boolean } | null>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [workers, setWorkers] = useState<WorkerOption[]>([]);
   const [input, setInput] = useState("");
@@ -76,6 +92,88 @@ export function FloatingChat() {
 
   useEffect(() => { openRef.current = open; }, [open]);
   useEffect(() => { userIdRef.current = userId; }, [userId]);
+
+  // Clamp panel into viewport whenever it opens, resizes, or window resizes
+  const clampPanel = useCallback((p: { x: number; y: number }, size?: { w: number; h: number }) => {
+    if (typeof window === "undefined") return p;
+    const w = size?.w ?? panelSize.w;
+    const h = size?.h ?? panelSize.h;
+    const maxX = Math.max(MARGIN, window.innerWidth - w - MARGIN);
+    const maxY = Math.max(MARGIN, window.innerHeight - h - MARGIN);
+    return {
+      x: Math.min(Math.max(MARGIN, p.x), maxX),
+      y: Math.min(Math.max(MARGIN, p.y), maxY),
+    };
+  }, [panelSize.w, panelSize.h]);
+
+  // Measure actual panel size after open / messages change
+  useEffect(() => {
+    if (!open) return;
+    const el = panelRef.current;
+    if (!el) return;
+    const measure = () => {
+      const r = el.getBoundingClientRect();
+      setPanelSize({ w: r.width, h: r.height });
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [open]);
+
+  // On open: if no saved pos, place bottom-right safely; otherwise clamp saved pos
+  useEffect(() => {
+    if (!open || typeof window === "undefined") return;
+    const w = panelSize.w;
+    const h = panelSize.h;
+    if (panelPos) {
+      const c = clampPanel(panelPos, { w, h });
+      if (c.x !== panelPos.x || c.y !== panelPos.y) setPanelPos(c);
+    } else {
+      setPanelPos({
+        x: Math.max(MARGIN, window.innerWidth - w - 16),
+        y: Math.max(MARGIN, window.innerHeight - h - 16),
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, panelSize.w, panelSize.h]);
+
+  // Re-clamp on window resize
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const onResize = () => {
+      setPanelPos((p) => (p ? clampPanel(p) : p));
+    };
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, [clampPanel]);
+
+  const onPanelHeaderPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.button !== 0) return;
+    // Ignore drag if grabbing on a button (close/clear)
+    const target = e.target as HTMLElement;
+    if (target.closest("button")) return;
+    const panel = panelRef.current;
+    if (!panel) return;
+    const rect = panel.getBoundingClientRect();
+    panelDragRef.current = { dx: e.clientX - rect.left, dy: e.clientY - rect.top, moved: false };
+    e.currentTarget.setPointerCapture(e.pointerId);
+  };
+  const onPanelHeaderPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    const d = panelDragRef.current;
+    if (!d) return;
+    d.moved = true;
+    const next = clampPanel({ x: e.clientX - d.dx, y: e.clientY - d.dy });
+    setPanelPos(next);
+  };
+  const onPanelHeaderPointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    const d = panelDragRef.current;
+    panelDragRef.current = null;
+    try { e.currentTarget.releasePointerCapture(e.pointerId); } catch {}
+    if (d?.moved && panelPos) {
+      try { window.localStorage.setItem(PANEL_POS_KEY, JSON.stringify(panelPos)); } catch {}
+    }
+  };
 
   // Listen for global "show" event (toolbar button) to re-display hidden icon
   useEffect(() => {
@@ -532,12 +630,18 @@ export function FloatingChat() {
   };
 
   // Floating icon position style: use saved drag pos when available, else default bottom-right
-  const containerStyle: React.CSSProperties = pos
-    ? { position: "fixed", left: pos.x, top: pos.y, right: "auto", bottom: "auto" }
-    : {};
-  const containerClass = pos
+  const containerStyle: React.CSSProperties = open
+    ? panelPos
+      ? { position: "fixed", left: panelPos.x, top: panelPos.y, right: "auto", bottom: "auto" }
+      : { position: "fixed", left: -9999, top: -9999 }
+    : pos
+      ? { position: "fixed", left: pos.x, top: pos.y, right: "auto", bottom: "auto" }
+      : {};
+  const containerClass = open
     ? "z-[60] print:hidden"
-    : "fixed z-[60] bottom-4 right-4 sm:bottom-6 sm:right-6 print:hidden";
+    : pos
+      ? "z-[60] print:hidden"
+      : "fixed z-[60] bottom-4 right-4 sm:bottom-6 sm:right-6 print:hidden";
 
   const onIconPointerDown = (e: React.PointerEvent<HTMLButtonElement>) => {
     if (e.button !== 0) return; // left button only
