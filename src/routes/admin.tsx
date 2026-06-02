@@ -106,6 +106,7 @@ type AppUser = {
   service_area?: string | null;
   display_name?: string | null;
   is_disabled?: boolean;
+  analytics_areas?: string[];
 };
 
 type CachedAuthUser = { id: string; email?: string | null };
