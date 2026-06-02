@@ -27,6 +27,9 @@ const HEARTBEAT_MS = 15 * 1000;
 const PRESENCE_REFRESH_MS = 20 * 1000;
 const PRESENCE_WINDOW_MS = 60 * 1000;
 const UNREAD_KEY = "floating_chat_last_read_at";
+const HIDDEN_KEY = "floating_chat_hidden";
+const POS_KEY = "floating_chat_pos";
+const SHOW_EVENT = "floating-chat:show";
 
 export function FloatingChat() {
   const [userId, setUserId] = useState<string | null>(null);
@@ -38,6 +41,21 @@ export function FloatingChat() {
   const [pendingDelete, setPendingDelete] = useState<ChatMessage | null>(null);
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [open, setOpen] = useState(false);
+  const [hidden, setHidden] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return window.localStorage.getItem(HIDDEN_KEY) === "1";
+  });
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [pos, setPos] = useState<{ x: number; y: number } | null>(() => {
+    if (typeof window === "undefined") return null;
+    try {
+      const raw = window.localStorage.getItem(POS_KEY);
+      return raw ? (JSON.parse(raw) as { x: number; y: number }) : null;
+    } catch {
+      return null;
+    }
+  });
+  const dragRef = useRef<{ x: number; y: number; moved: boolean } | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [workers, setWorkers] = useState<WorkerOption[]>([]);
   const [input, setInput] = useState("");
@@ -58,6 +76,23 @@ export function FloatingChat() {
 
   useEffect(() => { openRef.current = open; }, [open]);
   useEffect(() => { userIdRef.current = userId; }, [userId]);
+
+  // Listen for global "show" event (toolbar button) to re-display hidden icon
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const onShow = () => {
+      window.localStorage.removeItem(HIDDEN_KEY);
+      setHidden(false);
+    };
+    window.addEventListener(SHOW_EVENT, onShow);
+    return () => window.removeEventListener(SHOW_EVENT, onShow);
+  }, []);
+
+  const hideIcon = () => {
+    if (typeof window !== "undefined") window.localStorage.setItem(HIDDEN_KEY, "1");
+    setHidden(true);
+    setMenuOpen(false);
+  };
 
   const getLastRead = () => {
     const v = typeof window !== "undefined" ? window.localStorage.getItem(UNREAD_KEY) : null;
@@ -379,6 +414,7 @@ export function FloatingChat() {
   };
 
   if (!userId) return null;
+  if (hidden && !open) return null;
 
   const filteredWorkers = (mentionQuery !== null
     ? workers.filter(
@@ -495,21 +531,86 @@ export function FloatingChat() {
     );
   };
 
+  // Floating icon position style: use saved drag pos when available, else default bottom-right
+  const containerStyle: React.CSSProperties = pos
+    ? { position: "fixed", left: pos.x, top: pos.y, right: "auto", bottom: "auto" }
+    : {};
+  const containerClass = pos
+    ? "z-[60] print:hidden"
+    : "fixed z-[60] bottom-4 right-4 sm:bottom-6 sm:right-6 print:hidden";
+
+  const onIconPointerDown = (e: React.PointerEvent<HTMLButtonElement>) => {
+    if (e.button !== 0) return; // left button only
+    const btn = e.currentTarget;
+    const rect = btn.getBoundingClientRect();
+    dragRef.current = { x: e.clientX - rect.left, y: e.clientY - rect.top, moved: false };
+    btn.setPointerCapture(e.pointerId);
+  };
+  const onIconPointerMove = (e: React.PointerEvent<HTMLButtonElement>) => {
+    const d = dragRef.current;
+    if (!d) return;
+    const nx = e.clientX - d.x;
+    const ny = e.clientY - d.y;
+    if (!d.moved) {
+      const dx = Math.abs(e.clientX - (d.x + (pos?.x ?? 0)));
+      const dy = Math.abs(e.clientY - (d.y + (pos?.y ?? 0)));
+      if (dx > 4 || dy > 4) d.moved = true;
+    }
+    if (d.moved) {
+      const maxX = window.innerWidth - 56;
+      const maxY = window.innerHeight - 56;
+      const clamped = { x: Math.max(0, Math.min(maxX, nx)), y: Math.max(0, Math.min(maxY, ny)) };
+      setPos(clamped);
+    }
+  };
+  const onIconPointerUp = (e: React.PointerEvent<HTMLButtonElement>) => {
+    const d = dragRef.current;
+    dragRef.current = null;
+    try { e.currentTarget.releasePointerCapture(e.pointerId); } catch {}
+    if (!d) return; // ignore non-left clicks / no pointerdown captured
+    if (d?.moved && pos) {
+      try { window.localStorage.setItem(POS_KEY, JSON.stringify(pos)); } catch {}
+    } else {
+      // Treat as click
+      setOpen(true);
+      markAllRead();
+    }
+  };
+
   return (
-    <div className="fixed z-[60] bottom-4 right-4 sm:bottom-6 sm:right-6 print:hidden">
+    <div className={containerClass} style={containerStyle}>
       {!open && (
-        <button
-          onClick={() => { setOpen(true); markAllRead(); }}
-          aria-label="打开聊天"
-          className="relative h-14 w-14 rounded-full bg-primary text-primary-foreground shadow-lg hover:shadow-xl transition-shadow flex items-center justify-center"
-        >
-          <MessageCircle className="h-6 w-6" />
-          {unread > 0 && (
-            <span className="absolute -top-1 -right-1 min-w-[20px] h-5 px-1 rounded-full bg-red-500 text-white text-[10px] font-semibold flex items-center justify-center">
-              {unread > 99 ? "99+" : unread}
-            </span>
+        <div className="relative">
+          <button
+            onPointerDown={onIconPointerDown}
+            onPointerMove={onIconPointerMove}
+            onPointerUp={onIconPointerUp}
+            onContextMenu={(e) => { e.preventDefault(); setMenuOpen((v) => !v); }}
+            aria-label="打开聊天（右键可隐藏）"
+            title="左键点击打开 / 拖动移动 / 右键隐藏"
+            className="relative h-14 w-14 rounded-full bg-primary text-primary-foreground shadow-lg hover:shadow-xl transition-shadow flex items-center justify-center touch-none cursor-grab active:cursor-grabbing"
+          >
+            <MessageCircle className="h-6 w-6 pointer-events-none" />
+            {unread > 0 && (
+              <span className="absolute -top-1 -right-1 min-w-[20px] h-5 px-1 rounded-full bg-red-500 text-white text-[10px] font-semibold flex items-center justify-center pointer-events-none">
+                {unread > 99 ? "99+" : unread}
+              </span>
+            )}
+          </button>
+          {menuOpen && (
+            <>
+              <div className="fixed inset-0 z-[65]" onClick={() => setMenuOpen(false)} />
+              <div className="absolute bottom-full right-0 mb-2 bg-popover border border-border rounded-lg shadow-lg py-1 min-w-[140px] z-[66]">
+                <button
+                  onClick={hideIcon}
+                  className="w-full text-left px-3 py-1.5 text-sm hover:bg-muted"
+                >
+                  隐藏聊天图标
+                </button>
+              </div>
+            </>
           )}
-        </button>
+        </div>
       )}
 
       {open && (

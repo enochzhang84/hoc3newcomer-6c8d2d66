@@ -44,6 +44,11 @@ import { SundayAnalytics } from "@/components/admin/analytics/SundayAnalytics";
 import { NewcomerAnalytics } from "@/components/admin/analytics/NewcomerAnalytics";
 import { WelcomeAnalytics } from "@/components/admin/analytics/WelcomeAnalytics";
 import { MediaAnalytics } from "@/components/admin/analytics/MediaAnalytics";
+import {
+  ServiceRankingBoard,
+  isMediaServiceEntry,
+  isKitchenServiceEntry,
+} from "@/components/admin/analytics/ServiceRankingBoard";
 
 type Reg = {
   id: string;
@@ -447,6 +452,7 @@ function AdminPage() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [userRole, setUserRoleState] = useState<Role | null>(null);
+  const [permsDialogUser, setPermsDialogUser] = useState<AppUser | null>(null);
   const [currentServiceArea, setCurrentServiceArea] = useState<ServiceArea | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [currentUserEmail, setCurrentUserEmail] = useState<string>("");
@@ -2175,29 +2181,19 @@ function AdminPage() {
                         )}
                       </td>
                       <td className="py-2 px-2">
-                        <select
-                          value={u.service_area ?? ""}
-                          disabled={isProtected || (isSelf && currentRole === "super_admin")}
-                          onChange={async (e) => {
-                            const next = e.target.value as ServiceArea | "";
-                            try {
-                              await setUserServiceAreaFn({
-                                data: { userId: u.id, serviceArea: next === "" ? null : next },
-                              });
-                              logAction(`将 ${u.email} 所属事工设为 ${next ? SERVICE_AREA_LABELS[next] : "(未设置)"}`);
-                              toast.success("已更新所属事工");
-                              loadUsers();
-                            } catch (err) {
-                              toast.error((err as Error).message);
-                            }
-                          }}
-                          className="text-xs bg-background border border-border rounded px-2 py-1 min-w-[120px]"
-                        >
-                          <option value="">— 未设置 —</option>
-                          {SERVICE_AREAS.map((a) => (
-                            <option key={a} value={a}>{SERVICE_AREA_LABELS[a]}</option>
-                          ))}
-                        </select>
+                        <div className="flex items-center gap-2">
+                          <span className={u.service_area ? "text-foreground" : "text-muted-foreground/70"}>
+                            {u.service_area ? SERVICE_AREA_LABELS[u.service_area as ServiceArea] : "未设置"}
+                          </span>
+                          {!isProtected && !(isSelf && currentRole === "super_admin") && (
+                            <button
+                              onClick={() => setPermsDialogUser(u)}
+                              className="text-xs text-primary hover:underline"
+                            >
+                              设置
+                            </button>
+                          )}
+                        </div>
                       </td>
                       <td className="py-2 px-2">
                         <select
@@ -2332,39 +2328,6 @@ function AdminPage() {
                         </button>
                       </td>
                     </tr>
-                    {isSuperAdmin && !isProtected && (currentRole === "user" || currentRole === "admin") && (
-                      <tr className="border-b border-border/30 bg-muted/10">
-                        <td colSpan={6} className="py-2 px-2">
-                          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
-                            <span className="text-muted-foreground">可查看统计分析：</span>
-                            {SERVICE_AREAS.map((a) => {
-                              const checked = (u.analytics_areas ?? []).includes(a);
-                              return (
-                                <label key={a} className="inline-flex items-center gap-1 cursor-pointer select-none">
-                                  <input
-                                    type="checkbox"
-                                    checked={checked}
-                                    onChange={async (e) => {
-                                      const enabled = e.target.checked;
-                                      try {
-                                        await setUserAnalyticsAreaFn({ data: { userId: u.id, serviceArea: a, enabled } });
-                                        logAction(`${enabled ? "开启" : "关闭"} ${u.email} 的「${SERVICE_AREA_LABELS[a]}」统计分析权限`);
-                                        toast.success("已更新统计权限");
-                                        loadUsers();
-                                      } catch (err) {
-                                        toast.error((err as Error).message);
-                                      }
-                                    }}
-                                    className="h-3.5 w-3.5"
-                                  />
-                                  <span>{SERVICE_AREA_LABELS[a]}</span>
-                                </label>
-                              );
-                            })}
-                          </div>
-                        </td>
-                      </tr>
-                    )}
                     </Fragment>
                   );
                 })}
@@ -2536,6 +2499,120 @@ function AdminPage() {
           </DialogContent>
         </Dialog>
         )}
+        {/* 统一权限设置弹窗：所属事工 + 统计分析权限 */}
+        <Dialog open={permsDialogUser !== null} onOpenChange={(o) => { if (!o) setPermsDialogUser(null); }}>
+          <DialogContent className="sm:max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>权限设置</DialogTitle>
+              <DialogDescription>
+                设置用户的「所属事工」与「可查看统计分析」权限。改动即时保存。
+              </DialogDescription>
+            </DialogHeader>
+            {permsDialogUser && (() => {
+              const u = permsDialogUser;
+              const currentRole = u.roles.includes("super_admin") ? "super_admin"
+                : u.roles.includes("admin") ? "admin"
+                : u.roles.includes("user") ? "user"
+                : u.roles.includes("viewer") ? "viewer" : "";
+              const canEditAnalytics = isSuperAdmin && (currentRole === "user" || currentRole === "admin");
+              return (
+                <div className="space-y-6">
+                  <section>
+                    <div className="text-sm font-medium mb-3">所属事工</div>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                      <button
+                        onClick={async () => {
+                          try {
+                            await setUserServiceAreaFn({ data: { userId: u.id, serviceArea: null } });
+                            logAction(`将 ${u.email} 所属事工设为 (未设置)`);
+                            toast.success("已更新所属事工");
+                            await loadUsers();
+                            setPermsDialogUser((prev) => prev && prev.id === u.id ? { ...prev, service_area: null } : prev);
+                          } catch (err) { toast.error((err as Error).message); }
+                        }}
+                        className={cn(
+                          "text-xs rounded-md border px-2 py-2 text-center transition-all",
+                          !u.service_area ? "bg-primary text-primary-foreground border-primary" : "border-border hover:bg-muted",
+                        )}
+                      >
+                        未设置
+                      </button>
+                      {SERVICE_AREAS.map((a) => {
+                        const active = u.service_area === a;
+                        return (
+                          <button
+                            key={a}
+                            onClick={async () => {
+                              try {
+                                await setUserServiceAreaFn({ data: { userId: u.id, serviceArea: a } });
+                                logAction(`将 ${u.email} 所属事工设为 ${SERVICE_AREA_LABELS[a]}`);
+                                toast.success("已更新所属事工");
+                                await loadUsers();
+                                setPermsDialogUser((prev) => prev && prev.id === u.id ? { ...prev, service_area: a } : prev);
+                              } catch (err) { toast.error((err as Error).message); }
+                            }}
+                            className={cn(
+                              "text-xs rounded-md border px-2 py-2 text-center transition-all",
+                              active ? "bg-primary text-primary-foreground border-primary" : "border-border hover:bg-muted",
+                            )}
+                          >
+                            {SERVICE_AREA_LABELS[a]}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </section>
+                  <section>
+                    <div className="text-sm font-medium mb-3">
+                      可查看统计分析
+                      {!canEditAnalytics && (
+                        <span className="ml-2 text-xs text-muted-foreground font-normal">
+                          （仅超级管理员可为「一般用户 / 管理员」分配此权限）
+                        </span>
+                      )}
+                    </div>
+                    <div className={cn("grid grid-cols-2 sm:grid-cols-4 gap-2", !canEditAnalytics && "opacity-50 pointer-events-none")}>
+                      {SERVICE_AREAS.map((a) => {
+                        const checked = (u.analytics_areas ?? []).includes(a);
+                        return (
+                          <label key={a} className={cn(
+                            "text-xs rounded-md border px-2 py-2 flex items-center gap-2 cursor-pointer select-none transition-all",
+                            checked ? "bg-emerald-50 border-emerald-300 text-emerald-900" : "border-border hover:bg-muted",
+                          )}>
+                            <input
+                              type="checkbox"
+                              checked={checked}
+                              onChange={async (e) => {
+                                const enabled = e.target.checked;
+                                try {
+                                  await setUserAnalyticsAreaFn({ data: { userId: u.id, serviceArea: a, enabled } });
+                                  logAction(`${enabled ? "开启" : "关闭"} ${u.email} 的「${SERVICE_AREA_LABELS[a]}」统计分析权限`);
+                                  toast.success("已更新统计权限");
+                                  await loadUsers();
+                                  setPermsDialogUser((prev) => {
+                                    if (!prev || prev.id !== u.id) return prev;
+                                    const cur = new Set(prev.analytics_areas ?? []);
+                                    if (enabled) cur.add(a); else cur.delete(a);
+                                    return { ...prev, analytics_areas: [...cur] };
+                                  });
+                                } catch (err) { toast.error((err as Error).message); }
+                              }}
+                              className="h-3.5 w-3.5"
+                            />
+                            <span className="truncate">{SERVICE_AREA_LABELS[a]}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </section>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setPermsDialogUser(null)}>关闭</Button>
+                  </DialogFooter>
+                </div>
+              );
+            })()}
+          </DialogContent>
+        </Dialog>
         {isSuperAdmin && (
         <section className="bg-card border border-border/50 rounded-2xl p-6">
           <div className="flex items-center justify-between mb-4">
@@ -2553,7 +2630,11 @@ function AdminPage() {
             </Button>
             <Button
               variant="outline"
-              onClick={() => navigate({ to: "/chat" })}
+              onClick={() => {
+                try { window.localStorage.removeItem("floating_chat_hidden"); } catch {}
+                window.dispatchEvent(new CustomEvent("floating-chat:show"));
+                toast.success("已显示浮动聊天图标");
+              }}
             >
               聊天
             </Button>
@@ -3194,6 +3275,15 @@ function AdminPage() {
           </section>
         )}
 
+        {mediaSubTab === "stats" && _canMediaStats && (
+          <div className="mt-6">
+            <ServiceRankingBoard
+              title="🏆 服侍统计榜（影音投影）"
+              filterFn={isMediaServiceEntry}
+            />
+          </div>
+        )}
+
         {mediaSubTab === "live" && (
           <div className="space-y-8 mt-8">
           <section className="bg-card border border-border/50 rounded-2xl p-6 space-y-5">
@@ -3484,7 +3574,13 @@ function AdminPage() {
         })()}
 
         {kitchenSubTab === "event-meal" && (
-          <EventMealNotebook />
+          <div className="space-y-6">
+            <EventMealNotebook />
+            <ServiceRankingBoard
+              title="🏆 服侍统计榜（厨房事工）"
+              filterFn={isKitchenServiceEntry}
+            />
+          </div>
         )}
 
         {kitchenSubTab === "messages" && (
