@@ -630,6 +630,7 @@ function AdminPage() {
   const setUserServiceAreaFn = useServerFn(setUserServiceArea);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const _setUserDisabledFn = useServerFn(setUserDisabled);
+  const setUserAnalyticsAreaFn = useServerFn(setUserAnalyticsArea);
 
   // 默认 tab：worker 必须跳到对应模块；admin 若设置了 service_area 也跳过去
   useEffect(() => {
