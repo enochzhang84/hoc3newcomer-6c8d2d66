@@ -22,7 +22,7 @@ import { format } from "date-fns";
 import { ScreenManager } from "@/components/admin/ScreenManager";
 import { AVMinistryWorkspace } from "@/components/admin/AVMinistryWorkspace";
 import { zhCN } from "date-fns/locale";
-import { listUsersWithRoles, setUserRole, deleteUser, createUserWithRole, updateUserWorkerName, setUserServiceArea, setUserDisabled, setUserPassword } from "@/lib/users.functions";
+import { listUsersWithRoles, setUserRole, deleteUser, createUserWithRole, updateUserWorkerName, setUserServiceArea, setUserDisabled, setUserPassword, setUserAnalyticsArea } from "@/lib/users.functions";
 import { useI18n, type TKey } from "@/lib/i18n";
 import { HomePageSettingsPanel } from "@/components/admin/HomePageSettingsPanel";
 import { BackupRestorePanel } from "@/components/admin/BackupRestorePanel";
@@ -36,6 +36,12 @@ import EventMealNotebook from "@/components/EventMealNotebook";
 import MinistryServiceCalendar from "@/components/MinistryServiceCalendar";
 import { DecisionBaptismPanel } from "@/components/admin/DecisionBaptismPanel";
 import { LongAbsenceDialog } from "@/components/admin/LongAbsenceDialog";
+import { ModuleSplitLayout } from "@/components/admin/ModuleSplitLayout";
+import { KitchenAnalytics } from "@/components/admin/analytics/KitchenAnalytics";
+import { SundayAnalytics } from "@/components/admin/analytics/SundayAnalytics";
+import { NewcomerAnalytics } from "@/components/admin/analytics/NewcomerAnalytics";
+import { WelcomeAnalytics } from "@/components/admin/analytics/WelcomeAnalytics";
+import { MediaAnalytics } from "@/components/admin/analytics/MediaAnalytics";
 
 type Reg = {
   id: string;
