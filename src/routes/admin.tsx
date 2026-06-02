@@ -77,6 +77,7 @@ type Reg = {
   faith_growth_note: string | null;
   faith_stage: string | null;
   last_followup_at: string | null;
+  next_followup_at: string | null;
 };
 
 
