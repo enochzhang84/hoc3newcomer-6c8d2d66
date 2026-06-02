@@ -2352,6 +2352,7 @@ function AdminPage() {
                         </td>
                       </tr>
                     )}
+                    </>
                   );
                 })}
                 {users.length === 0 && !usersLoading && (
