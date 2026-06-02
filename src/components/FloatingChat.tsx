@@ -121,20 +121,33 @@ export function FloatingChat() {
     return () => ro.disconnect();
   }, [open]);
 
-  // On open: if no saved pos, place bottom-right safely; otherwise clamp saved pos
+  // On open: compute panel position based on icon's screen quadrant so the
+  // panel always expands toward the viewport center (away from edges).
+  const prevOpenRef = useRef(false);
   useEffect(() => {
-    if (!open || typeof window === "undefined") return;
+    if (typeof window === "undefined") return;
     const w = panelSize.w;
     const h = panelSize.h;
-    if (panelPos) {
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    const gap = 12;
+    const iconSize = 56;
+    // Icon top-left in viewport
+    const iconX = pos ? pos.x : vw - iconSize - 16;
+    const iconY = pos ? pos.y : vh - iconSize - 16;
+    const iconCx = iconX + iconSize / 2;
+    const iconCy = iconY + iconSize / 2;
+
+    if (open && !prevOpenRef.current) {
+      // Horizontal: if icon is on right half, expand to the left of icon
+      const px = iconCx > vw / 2 ? iconX - w - gap : iconX + iconSize + gap;
+      const py = iconCy > vh / 2 ? iconY - h - gap : iconY + iconSize + gap;
+      setPanelPos(clampPanel({ x: px, y: py }, { w, h }));
+    } else if (open && panelPos) {
       const c = clampPanel(panelPos, { w, h });
       if (c.x !== panelPos.x || c.y !== panelPos.y) setPanelPos(c);
-    } else {
-      setPanelPos({
-        x: Math.max(MARGIN, window.innerWidth - w - 16),
-        y: Math.max(MARGIN, window.innerHeight - h - 16),
-      });
     }
+    prevOpenRef.current = open;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, panelSize.w, panelSize.h]);
 
