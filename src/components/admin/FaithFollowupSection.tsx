@@ -78,13 +78,10 @@ export function FaithFollowupSection({
 
   async function updateStage(id: string, value: string) {
     const prev = regs.find((r) => r.id === id)?.faith_stage ?? "慕道友";
-    const now = new Date().toISOString();
-    setRegs((list) =>
-      list.map((x) => (x.id === id ? { ...x, faith_stage: value, last_followup_at: now } : x)),
-    );
+    setRegs((list) => list.map((x) => (x.id === id ? { ...x, faith_stage: value } : x)));
     const { error } = await supabase
       .from("registrations")
-      .update({ faith_stage: value, last_followup_at: now } as never)
+      .update({ faith_stage: value } as never)
       .eq("id", id);
     if (error) {
       setRegs((list) => list.map((x) => (x.id === id ? { ...x, faith_stage: prev } : x)));
@@ -97,19 +94,16 @@ export function FaithFollowupSection({
   async function saveNote(id: string) {
     setSavingId(id);
     const value = noteDraft.trim() || null;
-    const now = new Date().toISOString();
     const { error } = await supabase
       .from("registrations")
-      .update({ faith_growth_note: value, last_followup_at: now } as never)
+      .update({ faith_growth_note: value } as never)
       .eq("id", id);
     setSavingId(null);
     if (error) {
       toast.error("保存失败：" + error.message);
       return;
     }
-    setRegs((list) =>
-      list.map((x) => (x.id === id ? { ...x, faith_growth_note: value, last_followup_at: now } : x)),
-    );
+    setRegs((list) => list.map((x) => (x.id === id ? { ...x, faith_growth_note: value } : x)));
     setEditingNoteId(null);
     toast.success("备注已保存");
   }
@@ -117,21 +111,34 @@ export function FaithFollowupSection({
   async function savePerson(id: string) {
     setSavingId(id);
     const value = personDraft.trim() || null;
-    const now = new Date().toISOString();
     const { error } = await supabase
       .from("registrations")
-      .update({ follow_up_person: value, last_followup_at: now } as never)
+      .update({ follow_up_person: value } as never)
       .eq("id", id);
     setSavingId(null);
     if (error) {
       toast.error("保存失败：" + error.message);
       return;
     }
-    setRegs((list) =>
-      list.map((x) => (x.id === id ? { ...x, follow_up_person: value, last_followup_at: now } : x)),
-    );
+    setRegs((list) => list.map((x) => (x.id === id ? { ...x, follow_up_person: value } : x)));
     setEditingPersonId(null);
     toast.success("跟进人已保存");
+  }
+
+  async function updateLastFollowup(id: string, value: string | null) {
+    const prev = regs.find((r) => r.id === id)?.last_followup_at ?? null;
+    const iso = value ? new Date(`${value}T00:00:00`).toISOString() : null;
+    setRegs((list) => list.map((x) => (x.id === id ? { ...x, last_followup_at: iso } : x)));
+    const { error } = await supabase
+      .from("registrations")
+      .update({ last_followup_at: iso } as never)
+      .eq("id", id);
+    if (error) {
+      setRegs((list) => list.map((x) => (x.id === id ? { ...x, last_followup_at: prev } : x)));
+      toast.error("保存失败：" + error.message);
+    } else {
+      toast.success("最后跟进日期已保存");
+    }
   }
 
   async function updateNextFollowup(id: string, value: string | null) {
@@ -249,8 +256,41 @@ export function FaithFollowupSection({
                         </div>
                       )}
                     </td>
-                    <td className="py-2 px-2 tabular-nums text-muted-foreground">
-                      {r.last_followup_at ? fmtDate(r.last_followup_at) : "—"}
+                    <td className="py-2 px-2 tabular-nums">
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <button
+                            type="button"
+                            className={
+                              "inline-flex items-center gap-1 h-8 px-2 rounded-md border border-border bg-background text-xs hover:bg-accent " +
+                              (r.last_followup_at ? "text-foreground" : "text-muted-foreground")
+                            }
+                          >
+                            <CalendarIcon className="h-3.5 w-3.5" />
+                            {r.last_followup_at ? fmtDate(r.last_followup_at) : "未设置"}
+                          </button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={r.last_followup_at ? new Date(r.last_followup_at) : undefined}
+                            onSelect={(d) => updateLastFollowup(r.id, d ? toDateOnly(d) : null)}
+                            initialFocus
+                            className="p-3 pointer-events-auto"
+                          />
+                          {r.last_followup_at && (
+                            <div className="p-2 border-t border-border">
+                              <button
+                                type="button"
+                                onClick={() => updateLastFollowup(r.id, null)}
+                                className="w-full px-2 py-1 rounded-md border border-border text-xs hover:bg-accent"
+                              >
+                                清除
+                              </button>
+                            </div>
+                          )}
+                        </PopoverContent>
+                      </Popover>
                     </td>
                     <td className="py-2 px-2 tabular-nums">
                       <Popover>
