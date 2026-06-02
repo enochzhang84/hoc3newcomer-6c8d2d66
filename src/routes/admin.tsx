@@ -2569,6 +2569,7 @@ function AdminPage() {
             </TabsContent>
 
             <TabsContent value="welcome" className="space-y-8 mt-0">
+        <ModuleSplitLayout area="welcome" analytics={<WelcomeAnalytics />}>
         {/* Chrome-style sub-tabs — 2 equal columns */}
         <div className="grid grid-cols-2 items-end gap-1 border-b border-border/60 px-2 pt-1 -mb-2">
           {[
@@ -3087,6 +3088,7 @@ function AdminPage() {
             </TabsContent>
 
             <TabsContent value="media" className="space-y-8 mt-0">
+        <ModuleSplitLayout area="media" analytics={<MediaAnalytics />}>
         {/* Chrome-style sub-tabs — 4 equal columns */}
         <div className="grid grid-cols-4 items-end gap-1 border-b border-border/60 px-2 pt-1 -mb-2">
           {[
@@ -3231,6 +3233,7 @@ function AdminPage() {
             </TabsContent>
 
             <TabsContent value="kitchen" className="space-y-8 mt-0">
+        <ModuleSplitLayout area="kitchen" analytics={<KitchenAnalytics />}>
         {/* Chrome-style sub-tabs — 4 equal columns */}
         <div className="grid grid-cols-4 items-end gap-1 border-b border-border/60 px-2 pt-1 -mb-2">
           {[
@@ -3388,6 +3391,7 @@ function AdminPage() {
             </TabsContent>
 
             <TabsContent value="sunday" className="space-y-8 mt-0">
+        <ModuleSplitLayout area="sunday_school" analytics={<SundayAnalytics />}>
         {/* Chrome-style sub-tabs — 2 equal columns */}
         <div className="grid grid-cols-2 items-end gap-1 border-b border-border/60 px-2 pt-1 -mb-2">
           {[
@@ -4210,6 +4214,7 @@ ${rows.length===0?'<tr><td colspan="5" style="text-align:center;color:#888;paddi
             </TabsContent>
 
             <TabsContent value="events" className="space-y-8 mt-0">
+        <ModuleSplitLayout area="newcomer" analytics={<NewcomerAnalytics />}>
         <section className="bg-card border border-border/50 rounded-2xl p-6">
           <div className="flex items-center gap-4 mb-4 flex-wrap">
             <h2 className="font-serif text-xl">教会活动</h2>
