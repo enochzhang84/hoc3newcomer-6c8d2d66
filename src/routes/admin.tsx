@@ -2297,6 +2297,17 @@ function AdminPage() {
                         >
                           删除
                         </button>
+                        <button
+                          disabled={isProtected || (isSelf && currentRole === "super_admin")}
+                          onClick={() => {
+                            setPwdNew("");
+                            setPwdConfirm("");
+                            setPwdDialogUser({ id: u.id, email: u.email });
+                          }}
+                          className="text-xs text-primary hover:underline disabled:opacity-30 disabled:cursor-not-allowed"
+                        >
+                          更改密码
+                        </button>
                       </td>
                     </tr>
                   );
