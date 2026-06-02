@@ -534,6 +534,8 @@ function AdminPage() {
   const [kitchenDetailRow, setKitchenDetailRow] = useState<AttendanceRecord | null>(null);
   const [sundaySubTab, setSundaySubTab] = useState<string>("adult");
   const [welcomeSubTab, setWelcomeSubTab] = useState<string>("greet");
+  const _perms = useCurrentPermissions();
+  const _canWelcomeStats = !_perms.loading && canAccessModuleAnalytics(_perms.role, _perms.serviceArea, "welcome", _perms.analytics);
   const [mediaSubTab, setMediaSubTab] = useState<string>("live");
   const [youtubeUrl, setYoutubeUrl] = useState<string>(() => {
     if (typeof window === "undefined") return "";
