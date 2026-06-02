@@ -1023,6 +1023,7 @@ export type Database = {
           marital_status: string | null
           name: string
           name_en: string | null
+          next_followup_at: string | null
           notes: string | null
           phone: string | null
           referrer_other: string | null
@@ -1058,6 +1059,7 @@ export type Database = {
           marital_status?: string | null
           name: string
           name_en?: string | null
+          next_followup_at?: string | null
           notes?: string | null
           phone?: string | null
           referrer_other?: string | null
@@ -1093,6 +1095,7 @@ export type Database = {
           marital_status?: string | null
           name?: string
           name_en?: string | null
+          next_followup_at?: string | null
           notes?: string | null
           phone?: string | null
           referrer_other?: string | null
