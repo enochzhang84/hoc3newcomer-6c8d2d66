@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, Fragment } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
@@ -2138,8 +2138,8 @@ function AdminPage() {
                   const isPending = currentRole === "";
                   const pendingRole = pendingRoleSelections[u.id] ?? "viewer";
                   return (
-                    <>
-                    <tr key={u.id} className="border-b border-border/30 hover:bg-muted/30">
+                    <Fragment key={u.id}>
+                    <tr className="border-b border-border/30 hover:bg-muted/30">
                       <td className="py-2 px-2 font-medium">
                         {u.email} {isSelf && <span className="text-xs text-muted-foreground">(我)</span>}
                         {isPending && <span className="ml-2 text-xs text-amber-600">待审核</span>}
@@ -2320,7 +2320,7 @@ function AdminPage() {
                       </td>
                     </tr>
                     {isSuperAdmin && !isProtected && (currentRole === "user" || currentRole === "admin") && (
-                      <tr key={u.id + "-analytics"} className="border-b border-border/30 bg-muted/10">
+                      <tr className="border-b border-border/30 bg-muted/10">
                         <td colSpan={6} className="py-2 px-2">
                           <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
                             <span className="text-muted-foreground">可查看统计分析：</span>
@@ -2352,7 +2352,7 @@ function AdminPage() {
                         </td>
                       </tr>
                     )}
-                    </>
+                    </Fragment>
                   );
                 })}
                 {users.length === 0 && !usersLoading && (
