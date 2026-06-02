@@ -621,6 +621,9 @@ function AdminPage() {
   const [kidsSettingsSeason, setKidsSettingsSeason] = useState<"spring" | "fall" | null>(null);
   const [kidsNewTeacher, setKidsNewTeacher] = useState("");
   const [kidsEditRow, setKidsEditRow] = useState<KidsRow | null>(null);
+  const [kidsYear, setKidsYear] = useState<number>(new Date().getFullYear());
+  const [kidsPromotions, setKidsPromotions] = useState<KidsPromotionRecord[]>([]);
+  const [kidsPromotionEdit, setKidsPromotionEdit] = useState<Partial<KidsPromotionRecord> | null>(null);
   // App settings (editable titles)
   const [appSettings, setAppSettings] = useState<Record<string, string>>({});
   // Kids Sunday School
