@@ -75,6 +75,7 @@ type Reg = {
   follow_up_person: string | null;
   follow_up_status: string | null;
   faith_growth_note: string | null;
+  faith_stage: string | null;
 };
 
 
@@ -751,13 +752,15 @@ function AdminPage() {
           .select("worker")
           .gte("entry_date", yearStartDate),
         (supabase as any)
-          .from("baptisms")
+          .from("registrations")
           .select("id", { count: "exact", head: true })
-          .gte("baptism_date", yearStartDate),
+          .eq("faith_stage", "已受洗")
+          .gte("created_at", yearStart),
         (supabase as any)
-          .from("decisions")
+          .from("registrations")
           .select("id", { count: "exact", head: true })
-          .gte("decision_date", yearStartDate),
+          .eq("faith_stage", "决志")
+          .gte("created_at", yearStart),
       ]);
       setRetreatCount(retreatRes.count ?? 0);
       const workers = new Set<string>();
