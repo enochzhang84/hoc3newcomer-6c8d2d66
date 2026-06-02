@@ -1,6 +1,9 @@
 import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { CalendarIcon } from "lucide-react";
 
 type Reg = {
   id: string;
@@ -12,12 +15,24 @@ type Reg = {
   faith_growth_note: string | null;
   faith_stage: string | null;
   last_followup_at: string | null;
+  next_followup_at: string | null;
 };
 
 function fmtDate(iso: string): string {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return "—";
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+function toDateOnly(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+function parseDateOnly(s: string | null): Date | undefined {
+  if (!s) return undefined;
+  const [y, m, d] = s.split("-").map((n) => parseInt(n, 10));
+  if (!y || !m || !d) return undefined;
+  return new Date(y, m - 1, d);
 }
 
 const STAGE_OPTIONS = ["慕道友", "已跟进", "受洗班", "决志", "已受洗"] as const;
@@ -119,6 +134,21 @@ export function FaithFollowupSection({
     toast.success("跟进人已保存");
   }
 
+  async function updateNextFollowup(id: string, value: string | null) {
+    const prev = regs.find((r) => r.id === id)?.next_followup_at ?? null;
+    setRegs((list) => list.map((x) => (x.id === id ? { ...x, next_followup_at: value } : x)));
+    const { error } = await supabase
+      .from("registrations")
+      .update({ next_followup_at: value } as never)
+      .eq("id", id);
+    if (error) {
+      setRegs((list) => list.map((x) => (x.id === id ? { ...x, next_followup_at: prev } : x)));
+      toast.error("保存失败：" + error.message);
+    } else {
+      toast.success("下次跟进日期已保存");
+    }
+  }
+
   return (
     <section className="bg-card border border-border/50 rounded-2xl p-6">
       <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
@@ -149,6 +179,7 @@ export function FaithFollowupSection({
                 <th className="py-2 px-2">当前阶段</th>
                 <th className="py-2 px-2">跟进人</th>
                 <th className="py-2 px-2">最后跟进日期</th>
+                <th className="py-2 px-2">下次跟进日期</th>
                 <th className="py-2 px-2">备注</th>
               </tr>
             </thead>
@@ -220,6 +251,42 @@ export function FaithFollowupSection({
                     </td>
                     <td className="py-2 px-2 tabular-nums text-muted-foreground">
                       {r.last_followup_at ? fmtDate(r.last_followup_at) : "—"}
+                    </td>
+                    <td className="py-2 px-2 tabular-nums">
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <button
+                            type="button"
+                            className={
+                              "inline-flex items-center gap-1 h-8 px-2 rounded-md border border-border bg-background text-xs hover:bg-accent " +
+                              (r.next_followup_at ? "text-foreground" : "text-muted-foreground")
+                            }
+                          >
+                            <CalendarIcon className="h-3.5 w-3.5" />
+                            {r.next_followup_at ? r.next_followup_at : "未设置"}
+                          </button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={parseDateOnly(r.next_followup_at)}
+                            onSelect={(d) => updateNextFollowup(r.id, d ? toDateOnly(d) : null)}
+                            initialFocus
+                            className="p-3 pointer-events-auto"
+                          />
+                          {r.next_followup_at && (
+                            <div className="p-2 border-t border-border">
+                              <button
+                                type="button"
+                                onClick={() => updateNextFollowup(r.id, null)}
+                                className="w-full px-2 py-1 rounded-md border border-border text-xs hover:bg-accent"
+                              >
+                                清除
+                              </button>
+                            </div>
+                          )}
+                        </PopoverContent>
+                      </Popover>
                     </td>
                     <td className="py-2 px-2 max-w-[320px]">
                       {isEditing ? (
