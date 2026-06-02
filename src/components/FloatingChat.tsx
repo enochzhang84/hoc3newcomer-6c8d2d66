@@ -719,13 +719,22 @@ export function FloatingChat() {
 
       {open && (
         <div
+          ref={panelRef}
           className="bg-card border border-border/60 rounded-2xl shadow-2xl flex flex-col overflow-hidden"
           style={{
-            width: "min(400px, calc(100vw - 2rem))",
-            height: "min(620px, calc(100vh - 6rem))",
+            width: `min(${PANEL_W}px, calc(100vw - 16px))`,
+            height: `min(${PANEL_H}px, calc(100vh - 16px))`,
+            maxWidth: "calc(100vw - 16px)",
+            maxHeight: "calc(100vh - 16px)",
           }}
         >
-          <div className="flex items-center justify-between px-3 py-2 border-b border-border/50 bg-muted/30">
+          <div
+            className="flex items-center justify-between px-3 py-2 border-b border-border/50 bg-muted/30 cursor-grab active:cursor-grabbing select-none touch-none"
+            onPointerDown={onPanelHeaderPointerDown}
+            onPointerMove={onPanelHeaderPointerMove}
+            onPointerUp={onPanelHeaderPointerUp}
+            title="按住拖动聊天窗口"
+          >
             <div className="min-w-0 flex items-center gap-2">
               <div className="font-serif text-sm sm:text-base truncate">同工聊天</div>
               <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
