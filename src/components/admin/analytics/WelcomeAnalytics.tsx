@@ -1,20 +1,24 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { StatCard, Section, MiniBars, StatGrid, groupBy } from "./AnalyticsPrimitives";
 
+/**
+ * 迎宾接待 · 数据统计
+ * 完整复用 /data-preview「数据统计 → 新人」整页布局：
+ * - 顶部 4 张大卡片
+ * - 中间 2/3/6 列 StatBreakdown 卡片
+ * - 含趋势 / 条形图 / 排行榜 / 男女比 同款样式
+ */
 type Entry = {
+  id: string;
   service_date: string | null;
   worker: string | null;
   panel_key: string;
   service_item: string | null;
   location: string | null;
+  holy_communion: boolean | null;
+  created_at: string;
 };
 
-function rankIcon(i: number): string {
-  return i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `${i + 1}.`;
-}
-
-/** 复用首页统计卡片风格的「迎宾接待」左侧统计区。 */
 export function WelcomeAnalytics() {
   const [items, setItems] = useState<Entry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -23,7 +27,7 @@ export function WelcomeAnalytics() {
     (async () => {
       const { data } = await supabase
         .from("hospitality_ministry_entries")
-        .select("service_date,worker,panel_key,service_item,location")
+        .select("id,service_date,worker,panel_key,service_item,location,holy_communion,created_at")
         .order("service_date", { ascending: false })
         .limit(2000);
       setItems((data ?? []) as Entry[]);
@@ -31,112 +35,204 @@ export function WelcomeAnalytics() {
     })();
   }, []);
 
-  if (loading) return <div className="text-xs text-muted-foreground">加载中…</div>;
-
-  const now = new Date();
-  const y = now.getFullYear();
-  const m = now.getMonth();
-  const today = now.toISOString().slice(0, 10);
-  const startOfWeek = new Date(now);
-  const dow = (startOfWeek.getDay() + 6) % 7; // 周一起
-  startOfWeek.setDate(startOfWeek.getDate() - dow);
-  startOfWeek.setHours(0, 0, 0, 0);
+  if (loading) return <p className="text-center text-muted-foreground py-12">加载中...</p>;
 
   const dated = items.filter((x) => !!x.service_date);
-  const monthItems = dated.filter((x) => {
-    const d = new Date(x.service_date!);
-    return d.getFullYear() === y && d.getMonth() === m;
-  });
-  const weekItems = dated.filter((x) => new Date(x.service_date!) >= startOfWeek);
-  const todayItems = dated.filter((x) => x.service_date === today);
+  const sow = startOfWeek();
+  const psow = prevStartOfWeek();
+  const som = startOfMonth();
+  const psom = prevStartOfMonth();
 
+  const thisWeek = countBetween(dated, sow, addDays(sow, 7));
+  const lastWeek = countBetween(dated, psow, sow);
+  const thisMonth = countSince(dated, som);
+  const lastMonth = countBetween(dated, psom, som);
+
+  const totalWorkers = new Set(items.filter((x) => x.worker?.trim()).map((x) => x.worker!.trim())).size;
+  const monthItems = dated.filter((x) => new Date(x.service_date!) >= som);
   const matchHay = (e: Entry, re: RegExp) =>
     re.test(`${e.panel_key} ${e.service_item ?? ""} ${e.location ?? ""}`);
   const newcomerCount = items.filter((e) => matchHay(e, /新人|newcomer|迎新/i)).length;
-  const frontCount = items.filter((e) => matchHay(e, /前门|前廳|front/i)).length;
-  const backCount = items.filter((e) => matchHay(e, /后门|後門|back/i)).length;
-
-  const workersAll = new Set(items.filter((x) => x.worker?.trim()).map((x) => x.worker!.trim()));
-  const workersMonth = new Set(monthItems.filter((x) => x.worker?.trim()).map((x) => x.worker!.trim()));
-
-  // 近 8 周接待趋势
-  const trendMap = new Map<string, number>();
-  for (let i = 7; i >= 0; i--) {
-    const start = new Date(startOfWeek);
-    start.setDate(start.getDate() - i * 7);
-    const end = new Date(start);
-    end.setDate(end.getDate() + 7);
-    const key = `${start.getMonth() + 1}/${start.getDate()}`;
-    const c = dated.filter((x) => {
-      const d = new Date(x.service_date!);
-      return d >= start && d < end;
-    }).length;
-    trendMap.set(key, c);
-  }
-  const trend = [...trendMap.entries()].map(([key, count]) => ({ key, count }));
-
-  const tally = (list: Entry[]) =>
-    groupBy(list.filter((x) => x.worker?.trim()), (x) => x.worker!.trim())
-      .map((g) => ({ worker: g.key, count: g.count }));
-
-  const monthRank = tally(monthItems).slice(0, 10);
-  const yearRank = tally(dated.filter((x) => new Date(x.service_date!).getFullYear() === y)).slice(0, 10);
-
-  const RankList = ({ items, unit }: { items: { worker: string; count: number }[]; unit: string }) => (
-    items.length === 0 ? <div className="text-xs text-muted-foreground">暂无数据</div> : (
-      <ol className="space-y-1">
-        {items.map((it, i) => (
-          <li key={it.worker} className="flex items-center justify-between text-xs gap-2">
-            <span className="flex items-center gap-1.5 min-w-0">
-              <span className="w-5 text-center shrink-0">{rankIcon(i)}</span>
-              <span className="truncate">{it.worker}</span>
-            </span>
-            <span className="tabular-nums text-foreground shrink-0">{it.count} {unit}</span>
-          </li>
-        ))}
-      </ol>
-    )
-  );
+  const holyCount = items.filter((e) => e.holy_communion).length;
 
   return (
-    <div className="space-y-6">
-      {/* 第一行：3 个大卡片 */}
-      <StatGrid cols={3}>
-        <StatCard icon="📅" label="本月接待" value={monthItems.length} hint={`累计 ${items.length} 次`} />
-        <StatCard icon="📆" label="本周接待" value={weekItems.length} />
-        <StatCard icon="🗓️" label="今日接待" value={todayItems.length} />
-      </StatGrid>
+    <div className="space-y-4">
+      {/* 顶部 4 个大卡片 */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <Stat label="总接待记录" value={items.length} />
+        <Stat label="新人接待" value={newcomerCount} />
+        <Stat label="圣餐服侍" value={holyCount} />
+        <Stat label="迎宾同工" value={totalWorkers} />
+      </div>
 
-      {/* 第二行：3 个分类卡片 */}
-      <StatGrid cols={3}>
-        <StatCard icon="🙋" label="新人接待" value={newcomerCount} />
-        <StatCard icon="🚪" label="前门接待" value={frontCount} />
-        <StatCard icon="🚪" label="后门接待" value={backCount} />
-      </StatGrid>
-
-      {/* 第三行：同工 + 趋势 */}
-      <StatGrid cols={3}>
-        <StatCard icon="👥" label="迎宾同工" value={workersAll.size} hint="累计参与人数" />
-        <StatCard icon="🧑‍🤝‍🧑" label="本月同工参与" value={workersMonth.size} />
-        <StatCard icon="📊" label="近 8 周总计" value={trend.reduce((s, x) => s + x.count, 0)} />
-      </StatGrid>
-
-      {/* 趋势 + 排行榜 */}
-      <div className="grid gap-4 md:grid-cols-3">
-        <div className="md:col-span-1">
-          <Section title="近 8 周接待趋势"><MiniBars items={trend} /></Section>
-        </div>
-        <div>
-          <Section title="🏆 本月 Top 10">
-            <div className="bg-card border border-border/60 rounded-2xl p-4 shadow-sm"><RankList items={monthRank} unit="次" /></div>
-          </Section>
-        </div>
-        <div>
-          <Section title={`🏆 ${y} 年累计 Top 10`}>
-            <div className="bg-card border border-border/60 rounded-2xl p-4 shadow-sm"><RankList items={yearRank} unit="次" /></div>
-          </Section>
-        </div>
+      {/* 第二组：6+ 列拆解 */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        <StatBreakdown
+          label="本周接待"
+          total={thisWeek + lastWeek}
+          items={[{ key: "本周", count: thisWeek }, { key: "上周", count: lastWeek }]}
+          trend={thisWeek - lastWeek}
+          chart
+        />
+        <StatBreakdown
+          label="本月接待"
+          total={thisMonth + lastMonth}
+          items={[{ key: "本月", count: thisMonth }, { key: "上月", count: lastMonth }]}
+          trend={thisMonth - lastMonth}
+          chart
+        />
+        <StatBreakdown
+          label="按项目分布"
+          total={items.length}
+          items={groupCounts(items, (e) => e.panel_key || "其他")}
+          chart
+        />
+        <StatBreakdown
+          label="按地点"
+          total={items.filter((e) => e.location?.trim()).length}
+          items={groupCounts(items.filter((e) => e.location?.trim()), (e) => e.location!.trim())}
+          chart
+        />
+        <StatBreakdown
+          label="按服侍项目"
+          total={items.filter((e) => e.service_item?.trim()).length}
+          items={groupCounts(items.filter((e) => e.service_item?.trim()), (e) => e.service_item!.trim())}
+          chart
+        />
+        <StatBreakdown
+          label="圣餐 / 普通"
+          total={items.length}
+          items={[
+            { key: "圣餐", count: holyCount },
+            { key: "普通", count: items.length - holyCount },
+          ]}
+          chart
+        />
+        <StatBreakdown
+          label="同工排行（累计）"
+          total={items.filter((e) => e.worker?.trim()).length}
+          items={groupCounts(items.filter((e) => e.worker?.trim()), (e) => e.worker!.trim())}
+          rank
+        />
+        <StatBreakdown
+          label="本月同工排行"
+          total={monthItems.filter((e) => e.worker?.trim()).length}
+          items={groupCounts(monthItems.filter((e) => e.worker?.trim()), (e) => e.worker!.trim())}
+          rank
+        />
       </div>
     </div>
   );
+}
+
+/* ============ 与 /data-preview 完全一致的子组件 ============ */
+
+function Stat({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="bg-card border border-border/50 rounded-2xl p-5 flex flex-col justify-center">
+      <div className="text-3xl font-serif text-foreground">{value}</div>
+      <div className="text-sm text-muted-foreground mt-1">{label}</div>
+    </div>
+  );
+}
+
+function StatBreakdown({
+  label, total, items, trend, chart, rank,
+}: {
+  label: string;
+  total: number;
+  items?: { key: string; count: number }[];
+  trend?: number;
+  chart?: boolean;
+  rank?: boolean;
+}) {
+  const max = items && items.length > 0 ? Math.max(...items.map((i) => i.count), 1) : 1;
+  const medals = ["🥇", "🥈", "🥉"];
+  return (
+    <div className="bg-card border border-border/50 rounded-2xl p-5 flex flex-col break-inside-avoid">
+      <div className="text-sm text-muted-foreground">{label}</div>
+      <div className="flex items-baseline gap-2 mt-1">
+        <div className="text-2xl font-serif text-foreground">{total}</div>
+        {typeof trend === "number" && (
+          <span className={`text-xs tabular-nums ${trend > 0 ? "text-emerald-600" : trend < 0 ? "text-red-600" : "text-muted-foreground"}`}>
+            {trend > 0 ? "↑" : trend < 0 ? "↓" : "→"} {trend > 0 ? "+" : ""}{trend}
+          </span>
+        )}
+      </div>
+      {items && items.length > 0 && (
+        <div className="mt-3">
+          {rank ? (
+            <div className="space-y-1">
+              {items.slice(0, 5).map((it, idx) => (
+                <div key={it.key} className="flex items-center gap-2 text-sm">
+                  <span className="text-base">{medals[idx] || `${idx + 1}.`}</span>
+                  <span className="truncate text-foreground">{it.key}</span>
+                  <span className="ml-auto text-xs text-muted-foreground tabular-nums">{it.count}次</span>
+                </div>
+              ))}
+            </div>
+          ) : chart ? (
+            <div className="space-y-1.5">
+              {items.map((it) => (
+                <div key={it.key} className="text-xs">
+                  <div className="flex justify-between text-muted-foreground mb-0.5">
+                    <span className="truncate pr-2">{it.key}</span>
+                    <span className="text-foreground tabular-nums">
+                      {it.count}
+                      {total > 0 && (
+                        <span className="text-muted-foreground ml-1">({Math.round((it.count / total) * 100)}%)</span>
+                      )}
+                    </span>
+                  </div>
+                  <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                    <div className="h-full bg-primary rounded-full" style={{ width: `${(it.count / max) * 100}%` }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : null}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function startOfWeek() {
+  const d = new Date();
+  const diff = (d.getDay() + 6) % 7;
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate() - diff, 0, 0, 0, 0);
+}
+function startOfMonth() {
+  const d = new Date();
+  return new Date(d.getFullYear(), d.getMonth(), 1, 0, 0, 0, 0);
+}
+function prevStartOfWeek() {
+  const s = startOfWeek();
+  return new Date(s.getFullYear(), s.getMonth(), s.getDate() - 7, 0, 0, 0, 0);
+}
+function prevStartOfMonth() {
+  const d = new Date();
+  return new Date(d.getFullYear(), d.getMonth() - 1, 1, 0, 0, 0, 0);
+}
+function addDays(d: Date, n: number) {
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate() + n, 0, 0, 0, 0);
+}
+function countSince(list: Entry[], since: Date) {
+  return list.filter((r) => new Date(r.service_date!) >= since).length;
+}
+function countBetween(list: Entry[], from: Date, to: Date) {
+  return list.filter((r) => {
+    const t = new Date(r.service_date!);
+    return t >= from && t < to;
+  }).length;
+}
+function groupCounts(list: Entry[], keyFn: (r: Entry) => string) {
+  const map = new Map<string, number>();
+  for (const r of list) {
+    const k = keyFn(r);
+    map.set(k, (map.get(k) ?? 0) + 1);
+  }
+  return Array.from(map.entries())
+    .map(([key, count]) => ({ key, count }))
+    .sort((a, b) => b.count - a.count);
 }
