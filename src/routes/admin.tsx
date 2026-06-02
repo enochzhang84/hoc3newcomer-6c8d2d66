@@ -3085,6 +3085,7 @@ function AdminPage() {
             <HospitalityRankingSection />
           </div>
         )}
+        </ModuleSplitLayout>
             </TabsContent>
 
             <TabsContent value="media" className="space-y-8 mt-0">
@@ -3230,6 +3231,7 @@ function AdminPage() {
             <AVMinistryWorkspace />
           </div>
         )}
+        </ModuleSplitLayout>
             </TabsContent>
 
             <TabsContent value="kitchen" className="space-y-8 mt-0">
@@ -3388,6 +3390,7 @@ function AdminPage() {
             })()}
           </DialogContent>
         </Dialog>
+        </ModuleSplitLayout>
             </TabsContent>
 
             <TabsContent value="sunday" className="space-y-8 mt-0">
@@ -4211,6 +4214,7 @@ ${rows.length===0?'<tr><td colspan="5" style="text-align:center;color:#888;paddi
           </div>
         </section>
         </>)}
+        </ModuleSplitLayout>
             </TabsContent>
 
             <TabsContent value="events" className="space-y-8 mt-0">
@@ -4374,6 +4378,7 @@ ${rows.length===0?'<tr><td colspan="5" style="text-align:center;color:#888;paddi
           </div>
         </section>
 
+        </ModuleSplitLayout>
             </TabsContent>
 
           </fieldset>
