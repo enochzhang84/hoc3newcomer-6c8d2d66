@@ -1627,6 +1627,29 @@ export type Database = {
       }
       expire_display_screen: { Args: { _slug: string }; Returns: undefined }
       get_service_area: { Args: { _uid: string }; Returns: string }
+      get_table_columns_info: {
+        Args: { _tables: string[] }
+        Returns: {
+          column_default: string
+          column_name: string
+          data_type: string
+          is_nullable: string
+          is_primary_key: boolean
+          ordinal_position: number
+          table_name: string
+        }[]
+      }
+      get_table_policies_info: {
+        Args: { _tables: string[] }
+        Returns: {
+          cmd: string
+          policy_name: string
+          qual: string
+          roles: string
+          table_name: string
+          with_check: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
