@@ -3537,7 +3537,6 @@ function AdminPage() {
             })()}
           </DialogContent>
         </Dialog>
-        </ModuleSplitLayout>
             </TabsContent>
 
             <TabsContent value="sunday" className="space-y-8 mt-0">
