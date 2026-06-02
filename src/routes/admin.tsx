@@ -2607,10 +2607,15 @@ function AdminPage() {
             </TabsContent>
 
             <TabsContent value="welcome" className="space-y-8 mt-0">
-        <ModuleSplitLayout area="welcome" analytics={<WelcomeAnalytics />}>
-        {/* Chrome-style sub-tabs — 2 equal columns */}
-        <div className="grid grid-cols-2 items-end gap-1 border-b border-border/60 px-2 pt-1 -mb-2">
+        {/* Chrome-style sub-tabs — 自适应列数 */}
+        <div
+          className={cn(
+            "grid items-end gap-1 border-b border-border/60 px-2 pt-1 -mb-2",
+            _canWelcomeStats ? "grid-cols-3" : "grid-cols-2",
+          )}
+        >
           {[
+            ...(_canWelcomeStats ? [{ v: "stats", label: "迎宾数据统计" }] : []),
             { v: "greet", label: t("subGreet") },
             { v: "reception", label: t("subReception") },
           ].map((tab) => {
@@ -2631,6 +2636,13 @@ function AdminPage() {
             );
           })}
         </div>
+
+        {welcomeSubTab === "stats" && _canWelcomeStats && (
+          <section className="bg-card border border-border/50 rounded-2xl p-6">
+            <h2 className="font-serif text-xl mb-4">迎宾数据统计</h2>
+            <WelcomeAnalytics />
+          </section>
+        )}
 
         {welcomeSubTab === "greet" && (
           <div className="space-y-8">
