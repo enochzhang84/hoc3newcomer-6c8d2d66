@@ -73,7 +73,10 @@ type Reg = {
   created_at: string;
   event_id: string | null;
   follow_up_person: string | null;
+  follow_up_status: string | null;
+  faith_growth_note: string | null;
 };
+
 
 type Event = { id: string; name: string; qr_token: string; is_active: boolean };
 
@@ -2931,7 +2934,7 @@ function AdminPage() {
         )}
         {welcomeSubTab === "faith" && (
           <div className="space-y-8 mt-8">
-            <FaithFollowupSection regs={regs} />
+            <FaithFollowupSection regs={regs} setRegs={setRegs} />
           </div>
         )}
         {welcomeSubTab === "reception" && (
