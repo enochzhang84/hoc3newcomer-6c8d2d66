@@ -2318,6 +2318,39 @@ function AdminPage() {
                         </button>
                       </td>
                     </tr>
+                    {isSuperAdmin && !isProtected && currentRole === "worker" && (
+                      <tr key={u.id + "-analytics"} className="border-b border-border/30 bg-muted/10">
+                        <td colSpan={6} className="py-2 px-2">
+                          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
+                            <span className="text-muted-foreground">可查看统计分析：</span>
+                            {SERVICE_AREAS.map((a) => {
+                              const checked = (u.analytics_areas ?? []).includes(a);
+                              return (
+                                <label key={a} className="inline-flex items-center gap-1 cursor-pointer select-none">
+                                  <input
+                                    type="checkbox"
+                                    checked={checked}
+                                    onChange={async (e) => {
+                                      const enabled = e.target.checked;
+                                      try {
+                                        await setUserAnalyticsAreaFn({ data: { userId: u.id, serviceArea: a, enabled } });
+                                        logAction(`${enabled ? "开启" : "关闭"} ${u.email} 的「${SERVICE_AREA_LABELS[a]}」统计分析权限`);
+                                        toast.success("已更新统计权限");
+                                        loadUsers();
+                                      } catch (err) {
+                                        toast.error((err as Error).message);
+                                      }
+                                    }}
+                                    className="h-3.5 w-3.5"
+                                  />
+                                  <span>{SERVICE_AREA_LABELS[a]}</span>
+                                </label>
+                              );
+                            })}
+                          </div>
+                        </td>
+                      </tr>
+                    )}
                   );
                 })}
                 {users.length === 0 && !usersLoading && (
