@@ -2423,6 +2423,64 @@ function AdminPage() {
         </Dialog>
         )}
         {isSuperAdmin && (
+        <Dialog open={pwdDialogUser !== null} onOpenChange={(o) => { if (!o) setPwdDialogUser(null); }}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>更改密码</DialogTitle>
+              <DialogDescription>仅超级管理员可直接重置密码。用户也可使用「忘记密码」邮件自助重置。</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-3">
+              <div className="text-sm">
+                <span className="text-muted-foreground">用户邮箱：</span>
+                <span className="font-medium">{pwdDialogUser?.email}</span>
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs text-muted-foreground">新密码（至少 6 位）</label>
+                <Input
+                  type="password"
+                  value={pwdNew}
+                  onChange={(e) => setPwdNew(e.target.value)}
+                  autoComplete="new-password"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs text-muted-foreground">再次确认新密码</label>
+                <Input
+                  type="password"
+                  value={pwdConfirm}
+                  onChange={(e) => setPwdConfirm(e.target.value)}
+                  autoComplete="new-password"
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setPwdDialogUser(null)} disabled={pwdSubmitting}>取消</Button>
+              <Button
+                disabled={pwdSubmitting}
+                onClick={async () => {
+                  if (!pwdDialogUser) return;
+                  if (!pwdNew || pwdNew.length < 6) { toast.error("密码至少 6 位"); return; }
+                  if (pwdNew !== pwdConfirm) { toast.error("两次输入的密码不一致"); return; }
+                  setPwdSubmitting(true);
+                  try {
+                    await setUserPasswordFn({ data: { userId: pwdDialogUser.id, password: pwdNew } });
+                    logAction(`重置了 ${pwdDialogUser.email} 的密码`);
+                    toast.success("密码已更新");
+                    setPwdDialogUser(null);
+                  } catch (e) {
+                    toast.error((e as Error).message || "更新失败");
+                  } finally {
+                    setPwdSubmitting(false);
+                  }
+                }}
+              >
+                {pwdSubmitting ? "保存中..." : "保存"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+        )}
+        {isSuperAdmin && (
         <section className="bg-card border border-border/50 rounded-2xl p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-serif text-xl">系统工具栏</h2>
