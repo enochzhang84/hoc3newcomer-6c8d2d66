@@ -601,6 +601,7 @@ function AdminPage() {
   // Kids Sunday School settings dialog
   const [kidsSettingsSeason, setKidsSettingsSeason] = useState<"spring" | "fall" | null>(null);
   const [kidsNewTeacher, setKidsNewTeacher] = useState("");
+  const [kidsEditRow, setKidsEditRow] = useState<KidsRow | null>(null);
   // App settings (editable titles)
   const [appSettings, setAppSettings] = useState<Record<string, string>>({});
   // Kids Sunday School
