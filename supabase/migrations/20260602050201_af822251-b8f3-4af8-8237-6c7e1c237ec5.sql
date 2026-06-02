@@ -1,0 +1,1 @@
+ALTER TABLE public.registrations ADD COLUMN IF NOT EXISTS faith_stage text NOT NULL DEFAULT '慕道友';

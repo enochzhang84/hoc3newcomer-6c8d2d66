@@ -1011,6 +1011,7 @@ export type Database = {
           faith: string | null
           faith_growth_note: string | null
           faith_other: string | null
+          faith_stage: string
           faith_years: number | null
           follow_up_person: string | null
           follow_up_status: string
@@ -1044,6 +1045,7 @@ export type Database = {
           faith?: string | null
           faith_growth_note?: string | null
           faith_other?: string | null
+          faith_stage?: string
           faith_years?: number | null
           follow_up_person?: string | null
           follow_up_status?: string
@@ -1077,6 +1079,7 @@ export type Database = {
           faith?: string | null
           faith_growth_note?: string | null
           faith_other?: string | null
+          faith_stage?: string
           faith_years?: number | null
           follow_up_person?: string | null
           follow_up_status?: string
