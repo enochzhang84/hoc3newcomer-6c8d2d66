@@ -73,6 +73,8 @@ type Reg = {
   created_at: string;
   event_id: string | null;
   follow_up_person: string | null;
+  follow_up_status: string | null;
+  faith_growth_note: string | null;
 };
 
 
