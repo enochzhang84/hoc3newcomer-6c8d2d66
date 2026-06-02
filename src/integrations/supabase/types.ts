@@ -852,6 +852,48 @@ export type Database = {
         }
         Relationships: []
       }
+      kids_promotion_records: {
+        Row: {
+          created_at: string
+          from_class: string | null
+          id: string
+          notes: string | null
+          promotion_date: string | null
+          season: string
+          sort_order: number
+          student_name: string
+          to_class: string | null
+          updated_at: string
+          year: number
+        }
+        Insert: {
+          created_at?: string
+          from_class?: string | null
+          id?: string
+          notes?: string | null
+          promotion_date?: string | null
+          season: string
+          sort_order?: number
+          student_name: string
+          to_class?: string | null
+          updated_at?: string
+          year: number
+        }
+        Update: {
+          created_at?: string
+          from_class?: string | null
+          id?: string
+          notes?: string | null
+          promotion_date?: string | null
+          season?: string
+          sort_order?: number
+          student_name?: string
+          to_class?: string | null
+          updated_at?: string
+          year?: number
+        }
+        Relationships: []
+      }
       meal_plans: {
         Row: {
           attendees: number

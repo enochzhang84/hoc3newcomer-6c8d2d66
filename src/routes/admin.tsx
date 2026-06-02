@@ -295,6 +295,25 @@ const KIDS_TRACKS = {
   fall: { key: "kids_fall_2026", title: "2026 秋季儿童主日学" },
 } as const;
 
+function kidsTracksForYear(year: number) {
+  return {
+    spring: { key: `kids_spring_${year}`, title: `${year}年春季儿童主日学` },
+    fall: { key: `kids_fall_${year}`, title: `${year}年秋季儿童主日学` },
+  } as const;
+}
+
+type KidsPromotionRecord = {
+  id: string;
+  year: number;
+  season: "spring" | "fall";
+  from_class: string | null;
+  to_class: string | null;
+  student_name: string;
+  promotion_date: string | null;
+  notes: string | null;
+  sort_order: number;
+};
+
 export const Route = createFileRoute("/admin")({
   component: AdminPage,
 });
@@ -602,6 +621,9 @@ function AdminPage() {
   const [kidsSettingsSeason, setKidsSettingsSeason] = useState<"spring" | "fall" | null>(null);
   const [kidsNewTeacher, setKidsNewTeacher] = useState("");
   const [kidsEditRow, setKidsEditRow] = useState<KidsRow | null>(null);
+  const [kidsYear, setKidsYear] = useState<number>(new Date().getFullYear());
+  const [kidsPromotions, setKidsPromotions] = useState<KidsPromotionRecord[]>([]);
+  const [kidsPromotionEdit, setKidsPromotionEdit] = useState<Partial<KidsPromotionRecord> | null>(null);
   // App settings (editable titles)
   const [appSettings, setAppSettings] = useState<Record<string, string>>({});
   // Kids Sunday School
@@ -880,9 +902,19 @@ function AdminPage() {
     const { data } = await (supabase as any)
       .from("sunday_class_schedule")
       .select("*")
-      .in("track", [KIDS_TRACKS.spring.key, KIDS_TRACKS.fall.key])
+      .or("track.like.kids_spring_%,track.like.kids_fall_%")
       .order("sort_order", { ascending: true });
     setKidsRows((data ?? []) as KidsRow[]);
+  }, []);
+
+  const loadKidsPromotions = useCallback(async () => {
+    const { data } = await (supabase as any)
+      .from("kids_promotion_records")
+      .select("*")
+      .order("year", { ascending: false })
+      .order("season", { ascending: true })
+      .order("sort_order", { ascending: true });
+    setKidsPromotions((data ?? []) as KidsPromotionRecord[]);
   }, []);
 
   const loadKidsSnapshots = useCallback(async () => {
@@ -959,6 +991,7 @@ function AdminPage() {
       void loadAppSettings();
       void loadKidsRows();
       void loadKidsSnapshots();
+      void loadKidsPromotions();
     };
 
     const handleSession = (sess: { user: CachedAuthUser } | null) => {
@@ -1095,6 +1128,7 @@ function AdminPage() {
     loadAppSettings,
     loadKidsRows,
     loadKidsSnapshots,
+    loadKidsPromotions,
   ]);
 
   // Realtime update of message count badge
@@ -1947,13 +1981,13 @@ function AdminPage() {
               </CollapsibleTrigger>
               {!kidsEnrollOpen && (
                 <span className="text-xs text-muted-foreground">
-                  👦 {kidsRows.reduce((s, r: any) => s + (r.student_count ?? 0), 0)} 人 ·
-                  📚 {kidsRows.length} 班
+                  👦 {kidsRows.filter((r) => r.track === KIDS_TRACKS.spring.key || r.track === KIDS_TRACKS.fall.key).reduce((s, r: any) => s + (r.student_count ?? 0), 0)} 人 ·
+                  📚 {kidsRows.filter((r) => r.track === KIDS_TRACKS.spring.key || r.track === KIDS_TRACKS.fall.key).length} 班
                 </span>
               )}
             </div>
             <CollapsibleContent>
-              <KidsEnrollmentStats classes={kidsRows} snapshots={kidsSnapshots} />
+              <KidsEnrollmentStats classes={kidsRows.filter((r) => r.track === KIDS_TRACKS.spring.key || r.track === KIDS_TRACKS.fall.key)} snapshots={kidsSnapshots} />
             </CollapsibleContent>
           </Collapsible>
         </section>
@@ -3696,13 +3730,13 @@ function AdminPage() {
                 </CollapsibleTrigger>
                 {!kidsEnrollOpen && (
                   <span className="text-xs text-muted-foreground">
-                    👦 {kidsRows.reduce((s, r: any) => s + (r.student_count ?? 0), 0)} 人 ·
-                    📚 {kidsRows.length} 班
+                    👦 {kidsRows.filter((r) => r.track === KIDS_TRACKS.spring.key || r.track === KIDS_TRACKS.fall.key).reduce((s, r: any) => s + (r.student_count ?? 0), 0)} 人 ·
+                    📚 {kidsRows.filter((r) => r.track === KIDS_TRACKS.spring.key || r.track === KIDS_TRACKS.fall.key).length} 班
                   </span>
                 )}
               </div>
               <CollapsibleContent>
-                <KidsEnrollmentStats classes={kidsRows} snapshots={kidsSnapshots} />
+                <KidsEnrollmentStats classes={kidsRows.filter((r) => r.track === KIDS_TRACKS.spring.key || r.track === KIDS_TRACKS.fall.key)} snapshots={kidsSnapshots} />
               </CollapsibleContent>
             </Collapsible>
           </section>
@@ -4290,10 +4324,29 @@ img{width:480px;height:480px;}@media print{@page{margin:1cm;}}</style></head>
         {sundaySubTab === "kids" && (<>
         {/* 儿童主日学 */}
         <section className="bg-card border border-border/50 rounded-2xl p-6">
-          <h2 className="font-serif text-2xl mb-4">儿童主日学</h2>
+          <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
+            <h2 className="font-serif text-2xl">儿童主日学</h2>
+            <div className="flex items-center gap-2">
+              <Button size="sm" variant="outline" className="h-8 px-2" onClick={() => setKidsYear(kidsYear - 1)} aria-label="上一年">‹</Button>
+              <select
+                className="h-8 rounded-md border border-input bg-background px-2 text-sm"
+                value={kidsYear}
+                onChange={(e) => setKidsYear(parseInt(e.target.value, 10))}
+              >
+                {(() => {
+                  const ny = new Date().getFullYear();
+                  const years: number[] = [];
+                  for (let y = ny - 3; y <= ny + 3; y++) years.push(y);
+                  if (!years.includes(kidsYear)) { years.push(kidsYear); years.sort((a,b)=>a-b); }
+                  return years.map((y) => <option key={y} value={y}>{y}年</option>);
+                })()}
+              </select>
+              <Button size="sm" variant="outline" className="h-8 px-2" onClick={() => setKidsYear(kidsYear + 1)} aria-label="下一年">›</Button>
+            </div>
+          </div>
           <div className="grid grid-cols-1 gap-6">
             {(["spring","fall"] as const).map((season) => {
-              const cfg = KIDS_TRACKS[season];
+              const cfg = kidsTracksForYear(kidsYear)[season];
               const titleKey = `${cfg.key}_title`;
               const title = appSettings[titleKey] || cfg.title;
               const rows = kidsRows.filter((r) => r.track === cfg.key);
@@ -4312,44 +4365,6 @@ img{width:480px;height:480px;}@media print{@page{margin:1cm;}}</style></head>
                 XLSX.utils.book_append_sheet(wb, ws, "儿童主日学");
                 XLSX.writeFile(wb, `${title}_${new Date().toISOString().slice(0,10)}.xlsx`);
                 toast.success(`已导出 ${data.length} 条`);
-              };
-              const importKids = async (file: File) => {
-                try {
-                  const buf = await file.arrayBuffer();
-                  const wb = XLSX.read(buf, { type: "array" });
-                  const ws = wb.Sheets[wb.SheetNames[0]];
-                  const json = XLSX.utils.sheet_to_json<Record<string, unknown>>(ws, { defval: "" });
-                  if (json.length === 0) return toast.error("文件为空");
-                  const baseOrder = rows[rows.length - 1]?.sort_order ?? 0;
-                  const inserts = json.map((r, idx) => {
-                    const get = (keys: string[]) => {
-                      for (const k of keys) {
-                        if (r[k] !== undefined && String(r[k]).trim() !== "") return String(r[k]).trim();
-                      }
-                      return null;
-                    };
-                    return {
-                      track: cfg.key,
-                      slot_time: "",
-                      class_name: get(["班级", "class", "class_name"]),
-                      teacher_name: get(["老师", "teacher", "teacher_name"]),
-                      class_location: get(["地点", "location", "class_location"]),
-                      student_count: (() => {
-                        const raw = get(["人数", "count", "student_count"]);
-                        const n = raw ? parseInt(raw, 10) : 0;
-                        return isNaN(n) ? 0 : Math.max(0, n);
-                      })(),
-                      sort_order: baseOrder + idx + 1,
-                    };
-                  }).filter((r) => r.class_name || r.teacher_name || r.class_location);
-                  if (inserts.length === 0) return toast.error("未识别到有效数据");
-                  const { error } = await (supabase as any).from("sunday_class_schedule").insert(inserts);
-                  if (error) return toast.error(error.message);
-                  toast.success(`已导入 ${inserts.length} 条`);
-                  loadKidsRows();
-                } catch (err) {
-                  toast.error("导入失败: " + (err as Error).message);
-                }
               };
               const printKids = () => {
                 const html = `<!doctype html><html><head><meta charset="utf-8"><title>${title}</title>
@@ -4469,14 +4484,6 @@ ${rows.length===0?'<tr><td colspan="5" style="text-align:center;color:#888;paddi
                       + 添加课程
                     </Button>
                     <Button size="sm" variant="outline" onClick={exportKids}>导出 Excel</Button>
-                    <label className="inline-flex">
-                      <input type="file" accept=".xlsx,.xls" hidden onChange={(e) => {
-                        const f = e.target.files?.[0]; if (f) importKids(f); e.target.value = "";
-                      }} />
-                      <Button asChild size="sm" variant="outline">
-                        <span className="cursor-pointer">导入 Excel</span>
-                      </Button>
-                    </label>
                     <Button size="sm" variant="outline" onClick={printKids}>打印</Button>
                   </div>
                 </div>
@@ -4484,6 +4491,44 @@ ${rows.length===0?'<tr><td colspan="5" style="text-align:center;color:#888;paddi
             })}
           </div>
         </section>
+
+        {/* 📚 儿童主日学入学记录 */}
+        <KidsEnrollmentRecordsSection
+          kidsYear={kidsYear}
+          kidsRows={kidsRows}
+          allYears={(() => {
+            const ys = new Set<number>();
+            for (const r of kidsRows) {
+              const m = /^kids_(?:spring|fall)_(\d{4})$/.exec(r.track);
+              if (m) ys.add(parseInt(m[1], 10));
+            }
+            ys.add(kidsYear);
+            return Array.from(ys).sort((a, b) => b - a);
+          })()}
+        />
+
+        {/* 🎓 儿童升班记录 */}
+        <KidsPromotionRecordsSection
+          kidsYear={kidsYear}
+          promotions={kidsPromotions}
+          onEdit={(rec) => setKidsPromotionEdit(rec)}
+          onAdd={(season) => setKidsPromotionEdit({
+            year: kidsYear,
+            season,
+            from_class: "",
+            to_class: "",
+            student_name: "",
+            promotion_date: null,
+            notes: "",
+          })}
+          onDelete={async (id) => {
+            if (!confirm("删除该升班记录?")) return;
+            const { error } = await (supabase as any).from("kids_promotion_records").delete().eq("id", id);
+            if (error) return toast.error(error.message);
+            toast.success("已删除");
+            loadKidsPromotions();
+          }}
+        />
         </>)}
         </div>
             </TabsContent>
@@ -5508,7 +5553,7 @@ ${rows.length===0?'<tr><td colspan="5" style="text-align:center;color:#888;paddi
           <DialogContent className="max-w-md">
             <DialogHeader>
               <DialogTitle>
-                {kidsSettingsSeason ? `设置 · ${appSettings[`${KIDS_TRACKS[kidsSettingsSeason].key}_title`] || KIDS_TRACKS[kidsSettingsSeason].title}` : "设置"}
+                {kidsSettingsSeason ? `设置 · ${appSettings[`${kidsTracksForYear(kidsYear)[kidsSettingsSeason].key}_title`] || kidsTracksForYear(kidsYear)[kidsSettingsSeason].title}` : "设置"}
               </DialogTitle>
             </DialogHeader>
             {kidsSettingsSeason && (
@@ -5517,13 +5562,14 @@ ${rows.length===0?'<tr><td colspan="5" style="text-align:center;color:#888;paddi
                   <Label className="text-xs">板块名称</Label>
                   <div className="flex gap-2">
                     <Input
-                      key={`${kidsSettingsSeason}-${appSettings[`${KIDS_TRACKS[kidsSettingsSeason].key}_title`] ?? ""}`}
-                      defaultValue={appSettings[`${KIDS_TRACKS[kidsSettingsSeason].key}_title`] || KIDS_TRACKS[kidsSettingsSeason].title}
+                      key={`${kidsYear}-${kidsSettingsSeason}-${appSettings[`${kidsTracksForYear(kidsYear)[kidsSettingsSeason].key}_title`] ?? ""}`}
+                      defaultValue={appSettings[`${kidsTracksForYear(kidsYear)[kidsSettingsSeason].key}_title`] || kidsTracksForYear(kidsYear)[kidsSettingsSeason].title}
                       onBlur={async (e) => {
-                        const key = `${KIDS_TRACKS[kidsSettingsSeason].key}_title`;
+                        const cfg = kidsTracksForYear(kidsYear)[kidsSettingsSeason];
+                        const key = `${cfg.key}_title`;
                         const v = e.target.value.trim();
                         if (!v) return;
-                        if (v === (appSettings[key] || KIDS_TRACKS[kidsSettingsSeason].title)) return;
+                        if (v === (appSettings[key] || cfg.title)) return;
                         const { error } = await (supabase as any)
                           .from("app_settings")
                           .upsert({ key, value: v, updated_at: new Date().toISOString() });
@@ -5697,6 +5743,93 @@ ${rows.length===0?'<tr><td colspan="5" style="text-align:center;color:#888;paddi
               >
                 保存
               </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Kids Promotion Edit Dialog */}
+        <Dialog open={kidsPromotionEdit !== null} onOpenChange={(o) => { if (!o) setKidsPromotionEdit(null); }}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>{kidsPromotionEdit?.id ? "编辑升班记录" : "添加升班记录"}</DialogTitle>
+            </DialogHeader>
+            {kidsPromotionEdit && (
+              <div className="space-y-4 py-2">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label className="text-xs">年度</Label>
+                    <Input
+                      type="number"
+                      value={String(kidsPromotionEdit.year ?? kidsYear)}
+                      onChange={(e) => setKidsPromotionEdit({ ...kidsPromotionEdit, year: parseInt(e.target.value || "0", 10) || kidsYear })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs">学期</Label>
+                    <select
+                      className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+                      value={kidsPromotionEdit.season ?? "spring"}
+                      onChange={(e) => setKidsPromotionEdit({ ...kidsPromotionEdit, season: e.target.value as "spring" | "fall" })}
+                    >
+                      <option value="spring">春季</option>
+                      <option value="fall">秋季</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label className="text-xs">原班级</Label>
+                    <Input value={kidsPromotionEdit.from_class ?? ""} placeholder="例如 K/1" onChange={(e) => setKidsPromotionEdit({ ...kidsPromotionEdit, from_class: e.target.value })} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs">新班级</Label>
+                    <Input value={kidsPromotionEdit.to_class ?? ""} placeholder="例如 2/3" onChange={(e) => setKidsPromotionEdit({ ...kidsPromotionEdit, to_class: e.target.value })} />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs">学生姓名</Label>
+                  <Input value={kidsPromotionEdit.student_name ?? ""} placeholder="例如 张三" onChange={(e) => setKidsPromotionEdit({ ...kidsPromotionEdit, student_name: e.target.value })} />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs">升班日期</Label>
+                  <Input type="date" value={kidsPromotionEdit.promotion_date ?? ""} onChange={(e) => setKidsPromotionEdit({ ...kidsPromotionEdit, promotion_date: e.target.value || null })} />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs">备注</Label>
+                  <Input value={kidsPromotionEdit.notes ?? ""} onChange={(e) => setKidsPromotionEdit({ ...kidsPromotionEdit, notes: e.target.value })} />
+                </div>
+              </div>
+            )}
+            <DialogFooter>
+              <Button variant="outline" size="sm" onClick={() => setKidsPromotionEdit(null)}>取消</Button>
+              <Button
+                size="sm"
+                onClick={async () => {
+                  if (!kidsPromotionEdit) return;
+                  const r = kidsPromotionEdit;
+                  const name = (r.student_name ?? "").trim();
+                  if (!name) return toast.error("请填写学生姓名");
+                  const payload = {
+                    year: r.year ?? kidsYear,
+                    season: r.season ?? "spring",
+                    from_class: (r.from_class ?? "").trim() || null,
+                    to_class: (r.to_class ?? "").trim() || null,
+                    student_name: name,
+                    promotion_date: r.promotion_date || null,
+                    notes: (r.notes ?? "").trim() || null,
+                  };
+                  let error;
+                  if (r.id) {
+                    ({ error } = await (supabase as any).from("kids_promotion_records").update(payload).eq("id", r.id));
+                  } else {
+                    ({ error } = await (supabase as any).from("kids_promotion_records").insert(payload));
+                  }
+                  if (error) return toast.error(error.message);
+                  toast.success("已保存");
+                  setKidsPromotionEdit(null);
+                  loadKidsPromotions();
+                }}
+              >保存</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
@@ -6826,5 +6959,205 @@ function NowLabel() {
     <span className="text-sm font-sans text-muted-foreground font-normal">
       {dateStr} {timeStr}
     </span>
+  );
+}
+
+// ============= 儿童主日学 — 入学记录 =============
+function KidsEnrollmentRecordsSection({
+  kidsYear,
+  kidsRows,
+  allYears,
+}: {
+  kidsYear: number;
+  kidsRows: KidsRow[];
+  allYears: number[];
+}) {
+  const [viewYear, setViewYear] = useState<number>(kidsYear);
+  useEffect(() => { setViewYear(kidsYear); }, [kidsYear]);
+
+  const yearList = (() => {
+    const ys = new Set<number>(allYears);
+    ys.add(viewYear);
+    ys.add(kidsYear);
+    return Array.from(ys).sort((a, b) => b - a);
+  })();
+
+  const statsFor = (year: number, season: "spring" | "fall") => {
+    const key = `kids_${season}_${year}`;
+    const rows = kidsRows.filter((r) => r.track === key);
+    const totalStudents = rows.reduce((s, r) => s + (r.student_count ?? 0), 0);
+    const teachers = new Set(
+      rows
+        .map((r) => (r.teacher_name ?? "").trim())
+        .filter((n) => n.length > 0)
+        .flatMap((n) => n.split(/[、,，\/\s]+/).filter(Boolean)),
+    );
+    return { classCount: rows.length, teacherCount: teachers.size, totalStudents };
+  };
+
+  // previous-semester comparison: 春 vs 上一年秋；秋 vs 同年春
+  const prevOf = (year: number, season: "spring" | "fall") =>
+    season === "spring"
+      ? { year: year - 1, season: "fall" as const }
+      : { year, season: "spring" as const };
+
+  const seasonLabel = (s: "spring" | "fall") => (s === "spring" ? "春季" : "秋季");
+
+  const current = (
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {(["spring", "fall"] as const).map((season) => {
+        const s = statsFor(viewYear, season);
+        const p = prevOf(viewYear, season);
+        const ps = statsFor(p.year, p.season);
+        const delta = s.totalStudents - ps.totalStudents;
+        const deltaText = ps.totalStudents === 0 && s.totalStudents === 0
+          ? "—"
+          : `${delta >= 0 ? "▲ +" : "▼ "}${delta} 人 (vs ${p.year}${seasonLabel(p.season)})`;
+        const deltaColor = delta > 0 ? "text-emerald-600" : delta < 0 ? "text-rose-600" : "text-muted-foreground";
+        return (
+          <div key={season} className="rounded-xl border border-border/60 bg-card/60 p-4">
+            <div className="font-serif text-base mb-3">{viewYear}年{seasonLabel(season)}儿童主日学</div>
+            <div className="grid grid-cols-2 gap-2">
+              <div className="rounded-lg border border-border/50 bg-muted/30 px-3 py-2">
+                <div className="text-xs text-muted-foreground">📚 班级数</div>
+                <div className="text-lg font-semibold mt-0.5">{s.classCount}</div>
+              </div>
+              <div className="rounded-lg border border-border/50 bg-muted/30 px-3 py-2">
+                <div className="text-xs text-muted-foreground">👩‍🏫 教师数</div>
+                <div className="text-lg font-semibold mt-0.5">{s.teacherCount}</div>
+              </div>
+              <div className="rounded-lg border border-border/50 bg-muted/30 px-3 py-2">
+                <div className="text-xs text-muted-foreground">👦 学生人数</div>
+                <div className="text-lg font-semibold mt-0.5">{s.totalStudents}</div>
+              </div>
+              <div className="rounded-lg border border-border/50 bg-muted/30 px-3 py-2">
+                <div className="text-xs text-muted-foreground">📈 较上学期</div>
+                <div className={`text-sm font-medium mt-0.5 ${deltaColor}`}>{deltaText}</div>
+              </div>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+
+  return (
+    <section className="bg-card border border-border/50 rounded-2xl p-6">
+      <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
+        <h2 className="font-serif text-xl">📚 儿童主日学入学记录</h2>
+        <div className="flex items-center gap-2">
+          <Button size="sm" variant="outline" className="h-8 px-2" onClick={() => setViewYear(viewYear - 1)}>‹</Button>
+          <select
+            className="h-8 rounded-md border border-input bg-background px-2 text-sm"
+            value={viewYear}
+            onChange={(e) => setViewYear(parseInt(e.target.value, 10))}
+          >
+            {yearList.map((y) => <option key={y} value={y}>{y}年</option>)}
+          </select>
+          <Button size="sm" variant="outline" className="h-8 px-2" onClick={() => setViewYear(viewYear + 1)}>›</Button>
+        </div>
+      </div>
+      <p className="text-xs text-muted-foreground mb-4">数据自动来源于上方春季/秋季儿童主日学，无需重复维护。</p>
+      {current}
+    </section>
+  );
+}
+
+// ============= 儿童主日学 — 升班记录 =============
+function KidsPromotionRecordsSection({
+  kidsYear,
+  promotions,
+  onAdd,
+  onEdit,
+  onDelete,
+}: {
+  kidsYear: number;
+  promotions: KidsPromotionRecord[];
+  onAdd: (season: "spring" | "fall") => void;
+  onEdit: (rec: KidsPromotionRecord) => void;
+  onDelete: (id: string) => void;
+}) {
+  const [viewYear, setViewYear] = useState<number>(kidsYear);
+  useEffect(() => { setViewYear(kidsYear); }, [kidsYear]);
+
+  const yearList = (() => {
+    const ys = new Set<number>();
+    promotions.forEach((p) => ys.add(p.year));
+    ys.add(viewYear);
+    ys.add(kidsYear);
+    const arr = Array.from(ys);
+    const ny = new Date().getFullYear();
+    for (let y = ny - 2; y <= ny + 2; y++) arr.push(y);
+    return Array.from(new Set(arr)).sort((a, b) => b - a);
+  })();
+
+  const filtered = promotions.filter((p) => p.year === viewYear);
+  const seasonLabel = (s: "spring" | "fall") => (s === "spring" ? "春季" : "秋季");
+
+  // Group: season -> "from→to" -> list of students
+  const groups: Record<"spring" | "fall", Record<string, KidsPromotionRecord[]>> = {
+    spring: {},
+    fall: {},
+  };
+  for (const r of filtered) {
+    const path = `${r.from_class || "—"} → ${r.to_class || "—"}`;
+    if (!groups[r.season][path]) groups[r.season][path] = [];
+    groups[r.season][path].push(r);
+  }
+
+  return (
+    <section className="bg-card border border-border/50 rounded-2xl p-6">
+      <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
+        <h2 className="font-serif text-xl">🎓 儿童升班记录</h2>
+        <div className="flex items-center gap-2">
+          <Button size="sm" variant="outline" className="h-8 px-2" onClick={() => setViewYear(viewYear - 1)}>‹</Button>
+          <select
+            className="h-8 rounded-md border border-input bg-background px-2 text-sm"
+            value={viewYear}
+            onChange={(e) => setViewYear(parseInt(e.target.value, 10))}
+          >
+            {yearList.map((y) => <option key={y} value={y}>{y}年</option>)}
+          </select>
+          <Button size="sm" variant="outline" className="h-8 px-2" onClick={() => setViewYear(viewYear + 1)}>›</Button>
+        </div>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {(["spring", "fall"] as const).map((season) => {
+          const paths = Object.entries(groups[season]);
+          return (
+            <div key={season} className="rounded-xl border border-border/60 bg-card/60 p-4">
+              <div className="flex items-center justify-between mb-3 gap-2">
+                <div className="font-serif text-base">{viewYear}年{seasonLabel(season)}</div>
+                <Button size="sm" variant="outline" className="h-7" onClick={() => onAdd(season)}>+ 添加</Button>
+              </div>
+              {paths.length === 0 ? (
+                <div className="text-sm text-muted-foreground text-center py-6 border border-dashed border-border/60 rounded-lg">
+                  暂无升班记录
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {paths.map(([path, list]) => (
+                    <div key={path} className="rounded-lg border border-border/40 p-3">
+                      <div className="text-sm font-medium mb-2">{path}<span className="text-xs text-muted-foreground ml-2">{list.length} 人</span></div>
+                      <div className="flex flex-wrap gap-2">
+                        {list.map((r) => (
+                          <span key={r.id} className="inline-flex items-center gap-1 text-xs bg-muted rounded-full pl-2.5 pr-1 py-1">
+                            <button className="hover:underline" onClick={() => onEdit(r)} title={r.notes || (r.promotion_date ?? "")}>
+                              {r.student_name}
+                            </button>
+                            <button className="text-muted-foreground hover:text-destructive w-4 h-4 leading-none" onClick={() => onDelete(r.id)}>×</button>
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+      <p className="text-xs text-muted-foreground mt-4">数据由管理员/主日学同工维护：原班级、新班级、升班日期、备注。</p>
+    </section>
   );
 }
