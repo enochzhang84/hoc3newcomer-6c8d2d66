@@ -3269,7 +3269,7 @@ function AdminPage() {
         )}
 
         {mediaSubTab === "screen" && (
-        <section className="bg-card border border-border/50 rounded-2xl p-6">
+        <section className="bg-card border border-border/50 rounded-2xl p-6 mt-8">
           <h2 className="font-serif text-xl mb-4">影音投影</h2>
           <div className="grid sm:grid-cols-2 gap-4">
             <div className="border border-border/50 rounded-xl p-4 flex flex-col items-start gap-3">
