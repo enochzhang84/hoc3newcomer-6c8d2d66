@@ -601,6 +601,7 @@ function AdminPage() {
   // Kids Sunday School settings dialog
   const [kidsSettingsSeason, setKidsSettingsSeason] = useState<"spring" | "fall" | null>(null);
   const [kidsNewTeacher, setKidsNewTeacher] = useState("");
+  const [kidsEditRow, setKidsEditRow] = useState<KidsRow | null>(null);
   // App settings (editable titles)
   const [appSettings, setAppSettings] = useState<Record<string, string>>({});
   // Kids Sunday School
@@ -4290,7 +4291,7 @@ img{width:480px;height:480px;}@media print{@page{margin:1cm;}}</style></head>
         {/* 儿童主日学 */}
         <section className="bg-card border border-border/50 rounded-2xl p-6">
           <h2 className="font-serif text-2xl mb-4">儿童主日学</h2>
-          <div className="grid lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 gap-6">
             {(["spring","fall"] as const).map((season) => {
               const cfg = KIDS_TRACKS[season];
               const titleKey = `${cfg.key}_title`;
@@ -4380,116 +4381,78 @@ ${rows.length===0?'<tr><td colspan="5" style="text-align:center;color:#888;paddi
                       ⚙ 设置
                     </Button>
                   </div>
-                  <div className="overflow-x-auto rounded-lg border border-border/50 mb-3">
-                    <table className="w-full text-sm">
-                      <thead className="bg-muted/80">
-                        <tr className="text-left border-b border-border/60 text-muted-foreground">
-                          <th className="py-2 px-2 w-1/3">班级</th>
-                          <th className="py-2 px-2 w-1/3">老师</th>
-                          <th className="py-2 px-2">地点</th>
-                          <th className="py-2 px-2 w-20">人数</th>
-                          <th className="py-2 px-2 text-right w-16">操作</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {rows.map((r) => (
-                          <tr key={r.id} className="border-b border-border/30">
-                            <td className="py-2 px-2">
-                              <Input
-                                defaultValue={r.class_name ?? ""}
-                                className="h-8"
-                                onBlur={async (e) => {
-                                  const v = e.target.value;
-                                  if (v === (r.class_name ?? "")) return;
-                                  await (supabase as any).from("sunday_class_schedule").update({ class_name: v || null }).eq("id", r.id);
-                                  loadKidsRows();
-                                }}
-                              />
-                            </td>
-                            <td className="py-2 px-2">
-                              <Input
-                                defaultValue={r.teacher_name ?? ""}
-                                className="h-8"
-                                list={`kids-teachers-${season}`}
-                                onBlur={async (e) => {
-                                  const v = e.target.value;
-                                  if (v === (r.teacher_name ?? "")) return;
-                                  await (supabase as any).from("sunday_class_schedule").update({ teacher_name: v || null }).eq("id", r.id);
-                                  loadKidsRows();
-                                }}
-                              />
-                            </td>
-                            <td className="py-2 px-2">
-                              <Input
-                                defaultValue={r.class_location ?? ""}
-                                className="h-8"
-                                onBlur={async (e) => {
-                                  const v = e.target.value;
-                                  if (v === (r.class_location ?? "")) return;
-                                  await (supabase as any).from("sunday_class_schedule").update({ class_location: v || null }).eq("id", r.id);
-                                  loadKidsRows();
-                                }}
-                              />
-                            </td>
-                            <td className="py-2 px-2">
-                              <Input
-                                type="number"
-                                min={0}
-                                defaultValue={String(r.student_count ?? 0)}
-                                className="h-8 w-20"
-                                onBlur={async (e) => {
-                                  const n = Math.max(0, parseInt(e.target.value || "0", 10) || 0);
-                                  if (n === (r.student_count ?? 0)) return;
-                                  const { error: upErr } = await (supabase as any)
-                                    .from("sunday_class_schedule")
-                                    .update({ student_count: n })
-                                    .eq("id", r.id);
-                                  if (upErr) { toast.error(upErr.message); return; }
-                                  // 同时写入今日快照（按 class_id + snapshot_date 唯一）
-                                  const today = new Date();
-                                  const y = today.getFullYear();
-                                  const m = String(today.getMonth() + 1).padStart(2, "0");
-                                  const d = String(today.getDate()).padStart(2, "0");
-                                  const snapshot_date = `${y}-${m}-${d}`;
-                                  await (supabase as any)
-                                    .from("kids_class_enrollment_snapshots")
-                                    .upsert(
-                                      {
-                                        class_id: r.id,
-                                        track: r.track,
-                                        class_name: r.class_name,
-                                        student_count: n,
-                                        snapshot_date,
-                                      },
-                                      { onConflict: "class_id,snapshot_date" },
-                                    );
-                                  loadKidsRows();
-                                  loadKidsSnapshots();
-                                }}
-                              />
-                            </td>
-                            <td className="py-2 px-2 text-right">
-                              <button
-                                className="text-xs text-destructive hover:underline"
-                                onClick={async () => {
-                                  if (!confirm("删除该行?")) return;
-                                  await (supabase as any).from("sunday_class_schedule").delete().eq("id", r.id);
-                                  loadKidsRows();
-                                }}
-                              >删除</button>
-                            </td>
-                          </tr>
-                        ))}
-                        {rows.length === 0 && (
-                          <tr><td colSpan={5} className="py-6 text-center text-muted-foreground">暂无记录</td></tr>
-                        )}
-                      </tbody>
-                    </table>
-                    <datalist id={`kids-teachers-${season}`}>
-                      {sundayTeachers.filter((t) => t.is_active).map((t) => (
-                        <option key={t.id} value={t.name} />
-                      ))}
-                    </datalist>
+                  {/* 学期统计 */}
+                  {(() => {
+                    const totalStudents = rows.reduce((s, r) => s + (r.student_count ?? 0), 0);
+                    const teacherSet = new Set(
+                      rows
+                        .map((r) => (r.teacher_name ?? "").trim())
+                        .filter((n) => n.length > 0)
+                        .flatMap((n) => n.split(/[、,，\/\s]+/).filter(Boolean)),
+                    );
+                    const avg = rows.length > 0 ? Math.round((totalStudents / rows.length) * 10) / 10 : 0;
+                    const stat = (icon: string, label: string, value: string | number) => (
+                      <div className="flex-1 min-w-[120px] rounded-lg border border-border/50 bg-muted/30 px-3 py-2">
+                        <div className="text-xs text-muted-foreground">{icon} {label}</div>
+                        <div className="text-lg font-semibold mt-0.5">{value}</div>
+                      </div>
+                    );
+                    return (
+                      <div className="flex flex-wrap gap-2 mb-4">
+                        {stat("📚", "班级数", rows.length)}
+                        {stat("👩‍🏫", "教师数", teacherSet.size)}
+                        {stat("👦", "学生总数", totalStudents)}
+                        {stat("📊", "平均每班", avg)}
+                      </div>
+                    );
+                  })()}
+
+                  {/* 班级卡片 */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 mb-3">
+                    {rows.map((r) => (
+                      <div key={r.id} className="rounded-xl border border-border/60 bg-card/60 p-4 flex flex-col gap-2 hover:border-primary/50 transition-colors">
+                        <div className="flex items-start justify-between gap-2">
+                          <h4 className="font-serif text-base font-medium leading-tight">
+                            {r.class_name?.trim() || <span className="text-muted-foreground">未命名班级</span>}
+                          </h4>
+                          <button
+                            className="text-xs text-muted-foreground hover:text-destructive shrink-0"
+                            onClick={async () => {
+                              if (!confirm(`删除班级「${r.class_name || "未命名"}」?`)) return;
+                              await (supabase as any).from("sunday_class_schedule").delete().eq("id", r.id);
+                              loadKidsRows();
+                            }}
+                          >删除</button>
+                        </div>
+                        <div className="text-sm text-muted-foreground space-y-1">
+                          <div>👩‍🏫 老师：<span className="text-foreground">{r.teacher_name?.trim() || "—"}</span></div>
+                          <div>📍 地点：<span className="text-foreground">{r.class_location?.trim() || "—"}</span></div>
+                          <div>👦 学生人数：<span className="text-foreground font-medium">{r.student_count ?? 0}</span> 人</div>
+                        </div>
+                        <div className="flex gap-2 pt-2 mt-auto">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="flex-1"
+                            onClick={() => toast.message(`${r.class_name || "班级"}：当前学生人数 ${r.student_count ?? 0}`)}
+                          >
+                            查看学生
+                          </Button>
+                          <Button
+                            size="sm"
+                            className="flex-1"
+                            onClick={() => setKidsEditRow(r)}
+                          >
+                            编辑班级
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                    {rows.length === 0 && (
+                      <div className="col-span-full text-center text-sm text-muted-foreground py-10 border border-dashed border-border/60 rounded-xl">
+                        暂无班级，点击下方「+ 添加课程」开始
+                      </div>
+                    )}
                   </div>
                   <div className="flex flex-wrap gap-2">
                     <Button
@@ -5635,6 +5598,105 @@ ${rows.length===0?'<tr><td colspan="5" style="text-align:center;color:#888;paddi
             )}
             <DialogFooter>
               <Button variant="outline" size="sm" onClick={() => setKidsSettingsSeason(null)}>完成</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Kids Class Edit Dialog */}
+        <Dialog open={kidsEditRow !== null} onOpenChange={(o) => { if (!o) setKidsEditRow(null); }}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>编辑班级</DialogTitle>
+            </DialogHeader>
+            {kidsEditRow && (
+              <div className="space-y-4 py-2">
+                <div className="space-y-2">
+                  <Label className="text-xs">班级名称</Label>
+                  <Input
+                    value={kidsEditRow.class_name ?? ""}
+                    onChange={(e) => setKidsEditRow({ ...kidsEditRow, class_name: e.target.value })}
+                    placeholder="例如 K/1年级"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs">老师</Label>
+                  <Input
+                    value={kidsEditRow.teacher_name ?? ""}
+                    onChange={(e) => setKidsEditRow({ ...kidsEditRow, teacher_name: e.target.value })}
+                    list="kids-edit-teachers"
+                    placeholder="老师姓名"
+                  />
+                  <datalist id="kids-edit-teachers">
+                    {sundayTeachers.filter((t) => t.is_active).map((t) => (
+                      <option key={t.id} value={t.name} />
+                    ))}
+                  </datalist>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs">地点</Label>
+                  <Input
+                    value={kidsEditRow.class_location ?? ""}
+                    onChange={(e) => setKidsEditRow({ ...kidsEditRow, class_location: e.target.value })}
+                    placeholder="例如 101"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs">学生人数</Label>
+                  <Input
+                    type="number"
+                    min={0}
+                    value={String(kidsEditRow.student_count ?? 0)}
+                    onChange={(e) => setKidsEditRow({
+                      ...kidsEditRow,
+                      student_count: Math.max(0, parseInt(e.target.value || "0", 10) || 0),
+                    })}
+                  />
+                </div>
+              </div>
+            )}
+            <DialogFooter>
+              <Button variant="outline" size="sm" onClick={() => setKidsEditRow(null)}>取消</Button>
+              <Button
+                size="sm"
+                onClick={async () => {
+                  if (!kidsEditRow) return;
+                  const r = kidsEditRow;
+                  const { error } = await (supabase as any)
+                    .from("sunday_class_schedule")
+                    .update({
+                      class_name: r.class_name?.trim() || null,
+                      teacher_name: r.teacher_name?.trim() || null,
+                      class_location: r.class_location?.trim() || null,
+                      student_count: Math.max(0, r.student_count ?? 0),
+                    })
+                    .eq("id", r.id);
+                  if (error) return toast.error(error.message);
+                  // 同步今日学生人数快照
+                  const today = new Date();
+                  const y = today.getFullYear();
+                  const m = String(today.getMonth() + 1).padStart(2, "0");
+                  const d = String(today.getDate()).padStart(2, "0");
+                  const snapshot_date = `${y}-${m}-${d}`;
+                  await (supabase as any)
+                    .from("kids_class_enrollment_snapshots")
+                    .upsert(
+                      {
+                        class_id: r.id,
+                        track: r.track,
+                        class_name: r.class_name?.trim() || null,
+                        student_count: Math.max(0, r.student_count ?? 0),
+                        snapshot_date,
+                      },
+                      { onConflict: "class_id,snapshot_date" },
+                    );
+                  toast.success("已保存");
+                  setKidsEditRow(null);
+                  loadKidsRows();
+                  loadKidsSnapshots();
+                }}
+              >
+                保存
+              </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
