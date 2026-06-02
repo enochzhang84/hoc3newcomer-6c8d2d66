@@ -13,6 +13,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
+import { NotificationBell } from "@/components/admin/NotificationBell";
+
+const APP_VERSION = "v1.0";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -1540,7 +1543,7 @@ function AdminPage() {
         <div className="container mx-auto px-4 sm:px-6 py-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <Link to="/" className="flex flex-col gap-0.5 leading-tight">
             <span className="font-serif text-lg sm:text-xl whitespace-normal sm:whitespace-nowrap">
-              {t("appTitle")}
+              {t("appTitle")} <span className="text-xs sm:text-sm font-sans text-muted-foreground align-middle">{APP_VERSION}</span>
             </span>
             <span className="text-xs sm:text-sm text-muted-foreground tracking-wide">
               {t("appSubtitle")}
@@ -1593,6 +1596,11 @@ function AdminPage() {
                 {t("readOnly")}（{userRole === "worker" ? t("workerLabel") : t("viewerLabel")}）
               </span>
             )}
+            <NotificationBell
+              userId={currentUserId}
+              isSuperAdmin={userRole === "super_admin"}
+              userEmail={currentUserEmail}
+            />
             <div className="hidden sm:flex items-center gap-1.5 text-sm text-muted-foreground px-2 py-1 rounded-md bg-muted/60 max-w-[200px] truncate" title={currentUserEmail}>
               <User className="w-3.5 h-3.5 shrink-0" />
               <span className="truncate">{currentUserEmail}</span>
