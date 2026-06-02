@@ -32,13 +32,11 @@ export function ModuleSplitLayout({ area, analytics, children, forceHideAnalytic
     <div className={cn("grid gap-4 min-w-0", "grid-cols-1 lg:grid-cols-[minmax(260px,360px)_1fr]")}>
       <aside className="min-w-0 space-y-3">
         <div className="sticky top-2">
-          <div className="rounded-2xl border border-border/60 bg-card/70 backdrop-blur p-4 shadow-sm">
-            <h3 className="text-sm font-semibold text-foreground/90 mb-3 flex items-center gap-2">
-              <span aria-hidden>📊</span>
-              {analyticsTitle ?? `${SERVICE_AREA_LABELS[area]} · 统计分析`}
-            </h3>
-            <div className="space-y-3">{analytics}</div>
-          </div>
+          <h3 className="text-sm font-semibold text-foreground/90 mb-3 flex items-center gap-2 pl-1">
+            <span aria-hidden>📊</span>
+            {analyticsTitle ?? `${SERVICE_AREA_LABELS[area]} · 统计分析`}
+          </h3>
+          <div className="space-y-3">{analytics}</div>
         </div>
       </aside>
       <div className="min-w-0">{children}</div>
