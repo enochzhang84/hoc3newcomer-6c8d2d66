@@ -75,6 +75,7 @@ type Reg = {
   follow_up_person: string | null;
 };
 
+
 type Event = { id: string; name: string; qr_token: string; is_active: boolean };
 
 function formatReferrer(r: Pick<Reg, "referrer_type" | "invited_by" | "referrer_other">): string {
