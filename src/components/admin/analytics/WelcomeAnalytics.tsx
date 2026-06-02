@@ -1,123 +1,134 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
-/**
- * 迎宾接待 · 数据统计
- * 完整复用 /data-preview「数据统计 → 新人」整页布局：
- * - 顶部 4 张大卡片
- * - 中间 2/3/6 列 StatBreakdown 卡片
- * - 含趋势 / 条形图 / 排行榜 / 男女比 同款样式
- */
-type Entry = {
+type Reg = {
   id: string;
-  service_date: string | null;
-  worker: string | null;
-  panel_key: string;
-  service_item: string | null;
-  location: string | null;
-  holy_communion: boolean | null;
+  name: string;
+  gender: string | null;
+  age_group: string | null;
+  faith: string | null;
+  referrer_type: string | null;
+  invited_by: string | null;
+  wants_visit: boolean | null;
+  wants_info: boolean | null;
+  follow_up_person: string | null;
   created_at: string;
 };
 
 export function WelcomeAnalytics() {
-  const [items, setItems] = useState<Entry[]>([]);
+  const [regs, setRegs] = useState<Reg[]>([]);
+  const [eventsCount, setEventsCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     (async () => {
-      const { data } = await supabase
-        .from("hospitality_ministry_entries")
-        .select("id,service_date,worker,panel_key,service_item,location,holy_communion,created_at")
-        .order("service_date", { ascending: false })
-        .limit(2000);
-      setItems((data ?? []) as Entry[]);
-      setLoading(false);
+      try {
+        const [regsRes, evRes] = await Promise.all([
+          supabase
+            .from("registrations")
+            .select(
+              "id,name,gender,age_group,faith,referrer_type,invited_by,wants_visit,wants_info,follow_up_person,created_at"
+            )
+            .order("created_at", { ascending: false }),
+          supabase.from("events").select("id", { count: "exact", head: true }),
+        ]);
+        setRegs((regsRes.data ?? []) as Reg[]);
+        setEventsCount(evRes.count ?? 0);
+      } finally {
+        setLoading(false);
+      }
     })();
   }, []);
 
-  if (loading) return <p className="text-center text-muted-foreground py-12">加载中...</p>;
+  if (loading) {
+    return <p className="text-center text-muted-foreground py-12">加载中...</p>;
+  }
 
-  const dated = items.filter((x) => !!x.service_date);
-  const sow = startOfWeek();
-  const psow = prevStartOfWeek();
-  const som = startOfMonth();
-  const psom = prevStartOfMonth();
-
-  const thisWeek = countBetween(dated, sow, addDays(sow, 7));
-  const lastWeek = countBetween(dated, psow, sow);
-  const thisMonth = countSince(dated, som);
-  const lastMonth = countBetween(dated, psom, som);
-
-  const totalWorkers = new Set(items.filter((x) => x.worker?.trim()).map((x) => x.worker!.trim())).size;
-  const monthItems = dated.filter((x) => new Date(x.service_date!) >= som);
-  const matchHay = (e: Entry, re: RegExp) =>
-    re.test(`${e.panel_key} ${e.service_item ?? ""} ${e.location ?? ""}`);
-  const newcomerCount = items.filter((e) => matchHay(e, /新人|newcomer|迎新/i)).length;
-  const holyCount = items.filter((e) => e.holy_communion).length;
+  const thisWeek = countSince(regs, startOfWeek());
+  const lastWeek = countBetween(regs, prevStartOfWeek(), startOfWeek());
+  const thisMonth = countSince(regs, startOfMonth());
+  const lastMonth = countBetween(regs, prevStartOfMonth(), startOfMonth());
+  const weekRegs = regs.filter((r) => new Date(r.created_at) >= startOfWeek());
+  const monthRegs = regs.filter((r) => new Date(r.created_at) >= startOfMonth());
 
   return (
     <div className="space-y-4">
-      {/* 顶部 4 个大卡片 */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Stat label="总接待记录" value={items.length} />
-        <Stat label="新人接待" value={newcomerCount} />
-        <Stat label="圣餐服侍" value={holyCount} />
-        <Stat label="迎宾同工" value={totalWorkers} />
+        <Stat label="总登记数" value={regs.length} />
+        <Stat label="希望探访" value={regs.filter((r) => r.wants_visit).length} />
+        <Stat label="需要资料" value={regs.filter((r) => r.wants_info).length} />
+        <Stat label="活动数" value={eventsCount} />
       </div>
-
-      {/* 第二组：6+ 列拆解 */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
         <StatBreakdown
-          label="本周接待"
+          label="本周登记"
           total={thisWeek + lastWeek}
           items={[{ key: "本周", count: thisWeek }, { key: "上周", count: lastWeek }]}
           trend={thisWeek - lastWeek}
           chart
+          genderSubset={weekRegs}
         />
         <StatBreakdown
-          label="本月接待"
+          label="本月登记"
           total={thisMonth + lastMonth}
           items={[{ key: "本月", count: thisMonth }, { key: "上月", count: lastMonth }]}
           trend={thisMonth - lastMonth}
           chart
+          genderSubset={monthRegs}
         />
         <StatBreakdown
-          label="按项目分布"
-          total={items.length}
-          items={groupCounts(items, (e) => e.panel_key || "其他")}
+          label="性别"
+          total={regs.length}
+          items={groupCounts(regs, (r) =>
+            r.gender === "男" || r.gender === "male" ? "男" :
+            r.gender === "女" || r.gender === "female" ? "女" : "未填"
+          )}
           chart
+          genderSubset={regs}
         />
         <StatBreakdown
-          label="按地点"
-          total={items.filter((e) => e.location?.trim()).length}
-          items={groupCounts(items.filter((e) => e.location?.trim()), (e) => e.location!.trim())}
+          label="年龄"
+          total={regs.length}
+          items={groupCounts(regs, (r) => r.age_group ?? "未填")}
           chart
+          genderSubset={regs}
         />
         <StatBreakdown
-          label="按服侍项目"
-          total={items.filter((e) => e.service_item?.trim()).length}
-          items={groupCounts(items.filter((e) => e.service_item?.trim()), (e) => e.service_item!.trim())}
+          label="信仰"
+          total={regs.length}
+          items={groupCounts(regs, (r) =>
+            r.faith === "christian" ? "基督徒" :
+            r.faith === "seeker" ? "慕道友" :
+            r.faith === "other" ? "其他" : "未填"
+          )}
           chart
+          genderSubset={regs}
         />
         <StatBreakdown
-          label="圣餐 / 普通"
-          total={items.length}
+          label="邀请人"
+          total={regs.filter((r) => r.referrer_type === "friend" && r.invited_by?.trim()).length}
+          items={groupCounts(
+            regs.filter((r) => r.referrer_type === "friend" && r.invited_by?.trim()),
+            (r) => r.invited_by!.trim()
+          )}
+          rank
+        />
+        <StatBreakdown
+          label="跟进状态"
+          total={regs.length}
           items={[
-            { key: "圣餐", count: holyCount },
-            { key: "普通", count: items.length - holyCount },
+            { key: "已跟进", count: regs.filter((r) => r.follow_up_person?.trim()).length },
+            { key: "未跟进", count: regs.filter((r) => !r.follow_up_person?.trim()).length },
           ]}
           chart
         />
         <StatBreakdown
-          label="同工排行（累计）"
-          total={items.filter((e) => e.worker?.trim()).length}
-          items={groupCounts(items.filter((e) => e.worker?.trim()), (e) => e.worker!.trim())}
-          rank
-        />
-        <StatBreakdown
-          label="本月同工排行"
-          total={monthItems.filter((e) => e.worker?.trim()).length}
-          items={groupCounts(monthItems.filter((e) => e.worker?.trim()), (e) => e.worker!.trim())}
+          label="跟进人排行"
+          total={regs.filter((r) => r.follow_up_person?.trim()).length}
+          items={groupCounts(
+            regs.filter((r) => r.follow_up_person?.trim()),
+            (r) => r.follow_up_person!.trim()
+          )}
           rank
         />
       </div>
@@ -125,7 +136,7 @@ export function WelcomeAnalytics() {
   );
 }
 
-/* ============ 与 /data-preview 完全一致的子组件 ============ */
+export default WelcomeAnalytics;
 
 function Stat({ label, value }: { label: string; value: number }) {
   return (
@@ -137,7 +148,7 @@ function Stat({ label, value }: { label: string; value: number }) {
 }
 
 function StatBreakdown({
-  label, total, items, trend, chart, rank,
+  label, total, items, trend, chart, rank, genderSubset,
 }: {
   label: string;
   total: number;
@@ -145,9 +156,15 @@ function StatBreakdown({
   trend?: number;
   chart?: boolean;
   rank?: boolean;
+  genderSubset?: Reg[];
 }) {
   const max = items && items.length > 0 ? Math.max(...items.map((i) => i.count), 1) : 1;
   const medals = ["🥇", "🥈", "🥉"];
+  const male = genderSubset ? genderSubset.filter((r) => r.gender === "男" || r.gender === "male").length : 0;
+  const female = genderSubset ? genderSubset.filter((r) => r.gender === "女" || r.gender === "female").length : 0;
+  const gTotal = male + female;
+  const malePct = gTotal > 0 ? Math.round((male / gTotal) * 100) : 0;
+  const femalePct = gTotal > 0 ? 100 - malePct : 0;
   return (
     <div className="bg-card border border-border/50 rounded-2xl p-5 flex flex-col break-inside-avoid">
       <div className="text-sm text-muted-foreground">{label}</div>
@@ -167,7 +184,7 @@ function StatBreakdown({
                 <div key={it.key} className="flex items-center gap-2 text-sm">
                   <span className="text-base">{medals[idx] || `${idx + 1}.`}</span>
                   <span className="truncate text-foreground">{it.key}</span>
-                  <span className="ml-auto text-xs text-muted-foreground tabular-nums">{it.count}次</span>
+                  <span className="ml-auto text-xs text-muted-foreground tabular-nums">{it.count}人</span>
                 </div>
               ))}
             </div>
@@ -193,6 +210,24 @@ function StatBreakdown({
           ) : null}
         </div>
       )}
+      {genderSubset && (
+        <div className="mt-3 pt-3 border-t border-border/40 text-xs space-y-1">
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">男 / 女</span>
+            <span className="text-foreground tabular-nums">{male} / {female}</span>
+          </div>
+          {gTotal > 0 && (
+            <div className="flex h-1.5 rounded-full overflow-hidden bg-muted">
+              <div className="bg-sky-500" style={{ width: `${malePct}%` }} />
+              <div className="bg-pink-500" style={{ width: `${femalePct}%` }} />
+            </div>
+          )}
+          <div className="flex justify-between text-muted-foreground tabular-nums">
+            <span>{malePct}%</span>
+            <span>{femalePct}%</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -214,19 +249,16 @@ function prevStartOfMonth() {
   const d = new Date();
   return new Date(d.getFullYear(), d.getMonth() - 1, 1, 0, 0, 0, 0);
 }
-function addDays(d: Date, n: number) {
-  return new Date(d.getFullYear(), d.getMonth(), d.getDate() + n, 0, 0, 0, 0);
+function countSince(list: Reg[], since: Date) {
+  return list.filter((r) => new Date(r.created_at) >= since).length;
 }
-function countSince(list: Entry[], since: Date) {
-  return list.filter((r) => new Date(r.service_date!) >= since).length;
-}
-function countBetween(list: Entry[], from: Date, to: Date) {
+function countBetween(list: Reg[], from: Date, to: Date) {
   return list.filter((r) => {
-    const t = new Date(r.service_date!);
+    const t = new Date(r.created_at);
     return t >= from && t < to;
   }).length;
 }
-function groupCounts(list: Entry[], keyFn: (r: Entry) => string) {
+function groupCounts(list: Reg[], keyFn: (r: Reg) => string) {
   const map = new Map<string, number>();
   for (const r of list) {
     const k = keyFn(r);
