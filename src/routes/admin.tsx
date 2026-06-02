@@ -295,6 +295,25 @@ const KIDS_TRACKS = {
   fall: { key: "kids_fall_2026", title: "2026 秋季儿童主日学" },
 } as const;
 
+function kidsTracksForYear(year: number) {
+  return {
+    spring: { key: `kids_spring_${year}`, title: `${year}年春季儿童主日学` },
+    fall: { key: `kids_fall_${year}`, title: `${year}年秋季儿童主日学` },
+  } as const;
+}
+
+type KidsPromotionRecord = {
+  id: string;
+  year: number;
+  season: "spring" | "fall";
+  from_class: string | null;
+  to_class: string | null;
+  student_name: string;
+  promotion_date: string | null;
+  notes: string | null;
+  sort_order: number;
+};
+
 export const Route = createFileRoute("/admin")({
   component: AdminPage,
 });
