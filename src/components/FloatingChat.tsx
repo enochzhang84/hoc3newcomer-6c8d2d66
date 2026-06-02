@@ -414,6 +414,7 @@ export function FloatingChat() {
   };
 
   if (!userId) return null;
+  if (hidden && !open) return null;
 
   const filteredWorkers = (mentionQuery !== null
     ? workers.filter(
