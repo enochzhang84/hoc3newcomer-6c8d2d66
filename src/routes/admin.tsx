@@ -3486,6 +3486,10 @@ function AdminPage() {
                   </div>
                 </div>
               ))}
+              <ServiceRankingBoard
+                title="🏆 服侍统计榜（厨房事工）"
+                filterFn={isKitchenServiceEntry}
+              />
             </div>
           );
         })()}
@@ -3576,10 +3580,6 @@ function AdminPage() {
         {kitchenSubTab === "event-meal" && (
           <div className="space-y-6">
             <EventMealNotebook />
-            <ServiceRankingBoard
-              title="🏆 服侍统计榜（厨房事工）"
-              filterFn={isKitchenServiceEntry}
-            />
           </div>
         )}
 
