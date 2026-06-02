@@ -2138,6 +2138,7 @@ function AdminPage() {
                   const isPending = currentRole === "";
                   const pendingRole = pendingRoleSelections[u.id] ?? "viewer";
                   return (
+                    <>
                     <tr key={u.id} className="border-b border-border/30 hover:bg-muted/30">
                       <td className="py-2 px-2 font-medium">
                         {u.email} {isSelf && <span className="text-xs text-muted-foreground">(我)</span>}
