@@ -435,36 +435,19 @@ export const exportSchemaDoc = createServerFn({ method: "POST" })
     const rows: Array<{
       table: string;
       module: string;
-      column: string;
-      data_type: string;
-      nullable: string;
-      default: string;
+      record_count: number;
+      note: string;
     }> = [];
     for (const t of BACKUP_TABLES) {
-      const { data, error } = await supabaseAdmin.rpc("pg_columns_for_table", { _table: t });
-      // RPC may not exist; fall back to information_schema via SQL is unavailable.
-      // We'll just record table name when columns can't be fetched.
-      if (error || !data) {
-        rows.push({
-          table: t,
-          module: moduleMap[t] || "—",
-          column: "(列信息不可用)",
-          data_type: "",
-          nullable: "",
-          default: "",
-        });
-        continue;
-      }
-      for (const col of data as any[]) {
-        rows.push({
-          table: t,
-          module: moduleMap[t] || "—",
-          column: col.column_name,
-          data_type: col.data_type,
-          nullable: col.is_nullable,
-          default: col.column_default ?? "",
-        });
-      }
+      const { count } = await supabaseAdmin
+        .from(t)
+        .select("*", { count: "exact", head: true });
+      rows.push({
+        table: t,
+        module: moduleMap[t] || "—",
+        record_count: count ?? 0,
+        note: TABLE_NOTES[t] || "",
+      });
     }
     return { rows };
   });
