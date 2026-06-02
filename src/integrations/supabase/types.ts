@@ -1009,9 +1009,11 @@ export type Database = {
           email: string | null
           event_id: string | null
           faith: string | null
+          faith_growth_note: string | null
           faith_other: string | null
           faith_years: number | null
           follow_up_person: string | null
+          follow_up_status: string
           gender: string | null
           id: string
           invited_by: string | null
@@ -1040,9 +1042,11 @@ export type Database = {
           email?: string | null
           event_id?: string | null
           faith?: string | null
+          faith_growth_note?: string | null
           faith_other?: string | null
           faith_years?: number | null
           follow_up_person?: string | null
+          follow_up_status?: string
           gender?: string | null
           id?: string
           invited_by?: string | null
@@ -1071,9 +1075,11 @@ export type Database = {
           email?: string | null
           event_id?: string | null
           faith?: string | null
+          faith_growth_note?: string | null
           faith_other?: string | null
           faith_years?: number | null
           follow_up_person?: string | null
+          follow_up_status?: string
           gender?: string | null
           id?: string
           invited_by?: string | null
