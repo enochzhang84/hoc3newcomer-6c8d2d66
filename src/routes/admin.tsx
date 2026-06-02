@@ -4291,7 +4291,7 @@ img{width:480px;height:480px;}@media print{@page{margin:1cm;}}</style></head>
         {/* 儿童主日学 */}
         <section className="bg-card border border-border/50 rounded-2xl p-6">
           <h2 className="font-serif text-2xl mb-4">儿童主日学</h2>
-          <div className="grid lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 gap-6">
             {(["spring","fall"] as const).map((season) => {
               const cfg = KIDS_TRACKS[season];
               const titleKey = `${cfg.key}_title`;
