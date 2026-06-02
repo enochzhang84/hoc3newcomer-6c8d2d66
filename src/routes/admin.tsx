@@ -75,6 +75,7 @@ type Reg = {
   follow_up_person: string | null;
   follow_up_status: string | null;
   faith_growth_note: string | null;
+  faith_stage: string | null;
 };
 
 
