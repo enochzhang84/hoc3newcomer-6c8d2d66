@@ -46,6 +46,13 @@ function DataPreviewPage() {
           navigate({ to: "/login" });
           return;
         }
+        const { data: roles } = await supabase
+          .from("user_roles").select("role").eq("user_id", session.session.user.id);
+        const isAdmin = (roles ?? []).some((r) => r.role === "admin" || r.role === "super_admin");
+        if (!isAdmin) {
+          navigate({ to: "/" });
+          return;
+        }
         const [regsRes, evRes] = await Promise.all([
           supabase
             .from("registrations")
