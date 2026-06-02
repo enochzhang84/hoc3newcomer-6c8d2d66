@@ -22,7 +22,7 @@ import { format } from "date-fns";
 import { ScreenManager } from "@/components/admin/ScreenManager";
 import { AVMinistryWorkspace } from "@/components/admin/AVMinistryWorkspace";
 import { zhCN } from "date-fns/locale";
-import { listUsersWithRoles, setUserRole, deleteUser, createUserWithRole, updateUserWorkerName, setUserServiceArea, setUserDisabled, setUserPassword } from "@/lib/users.functions";
+import { listUsersWithRoles, setUserRole, deleteUser, createUserWithRole, updateUserWorkerName, setUserServiceArea, setUserDisabled, setUserPassword, setUserAnalyticsArea } from "@/lib/users.functions";
 import { useI18n, type TKey } from "@/lib/i18n";
 import { HomePageSettingsPanel } from "@/components/admin/HomePageSettingsPanel";
 import { BackupRestorePanel } from "@/components/admin/BackupRestorePanel";
@@ -36,6 +36,12 @@ import EventMealNotebook from "@/components/EventMealNotebook";
 import MinistryServiceCalendar from "@/components/MinistryServiceCalendar";
 import { DecisionBaptismPanel } from "@/components/admin/DecisionBaptismPanel";
 import { LongAbsenceDialog } from "@/components/admin/LongAbsenceDialog";
+import { ModuleSplitLayout } from "@/components/admin/ModuleSplitLayout";
+import { KitchenAnalytics } from "@/components/admin/analytics/KitchenAnalytics";
+import { SundayAnalytics } from "@/components/admin/analytics/SundayAnalytics";
+import { NewcomerAnalytics } from "@/components/admin/analytics/NewcomerAnalytics";
+import { WelcomeAnalytics } from "@/components/admin/analytics/WelcomeAnalytics";
+import { MediaAnalytics } from "@/components/admin/analytics/MediaAnalytics";
 
 type Reg = {
   id: string;
@@ -100,6 +106,7 @@ type AppUser = {
   service_area?: string | null;
   display_name?: string | null;
   is_disabled?: boolean;
+  analytics_areas?: string[];
 };
 
 type CachedAuthUser = { id: string; email?: string | null };
@@ -623,6 +630,7 @@ function AdminPage() {
   const setUserServiceAreaFn = useServerFn(setUserServiceArea);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const _setUserDisabledFn = useServerFn(setUserDisabled);
+  const setUserAnalyticsAreaFn = useServerFn(setUserAnalyticsArea);
 
   // 默认 tab：worker 必须跳到对应模块；admin 若设置了 service_area 也跳过去
   useEffect(() => {
@@ -2130,6 +2138,7 @@ function AdminPage() {
                   const isPending = currentRole === "";
                   const pendingRole = pendingRoleSelections[u.id] ?? "viewer";
                   return (
+                    <>
                     <tr key={u.id} className="border-b border-border/30 hover:bg-muted/30">
                       <td className="py-2 px-2 font-medium">
                         {u.email} {isSelf && <span className="text-xs text-muted-foreground">(我)</span>}
@@ -2310,6 +2319,40 @@ function AdminPage() {
                         </button>
                       </td>
                     </tr>
+                    {isSuperAdmin && !isProtected && (currentRole === "user" || currentRole === "admin") && (
+                      <tr key={u.id + "-analytics"} className="border-b border-border/30 bg-muted/10">
+                        <td colSpan={6} className="py-2 px-2">
+                          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
+                            <span className="text-muted-foreground">可查看统计分析：</span>
+                            {SERVICE_AREAS.map((a) => {
+                              const checked = (u.analytics_areas ?? []).includes(a);
+                              return (
+                                <label key={a} className="inline-flex items-center gap-1 cursor-pointer select-none">
+                                  <input
+                                    type="checkbox"
+                                    checked={checked}
+                                    onChange={async (e) => {
+                                      const enabled = e.target.checked;
+                                      try {
+                                        await setUserAnalyticsAreaFn({ data: { userId: u.id, serviceArea: a, enabled } });
+                                        logAction(`${enabled ? "开启" : "关闭"} ${u.email} 的「${SERVICE_AREA_LABELS[a]}」统计分析权限`);
+                                        toast.success("已更新统计权限");
+                                        loadUsers();
+                                      } catch (err) {
+                                        toast.error((err as Error).message);
+                                      }
+                                    }}
+                                    className="h-3.5 w-3.5"
+                                  />
+                                  <span>{SERVICE_AREA_LABELS[a]}</span>
+                                </label>
+                              );
+                            })}
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                    </>
                   );
                 })}
                 {users.length === 0 && !usersLoading && (
@@ -2561,6 +2604,7 @@ function AdminPage() {
             </TabsContent>
 
             <TabsContent value="welcome" className="space-y-8 mt-0">
+        <ModuleSplitLayout area="welcome" analytics={<WelcomeAnalytics />}>
         {/* Chrome-style sub-tabs — 2 equal columns */}
         <div className="grid grid-cols-2 items-end gap-1 border-b border-border/60 px-2 pt-1 -mb-2">
           {[
@@ -3076,9 +3120,11 @@ function AdminPage() {
             <HospitalityRankingSection />
           </div>
         )}
+        </ModuleSplitLayout>
             </TabsContent>
 
             <TabsContent value="media" className="space-y-8 mt-0">
+        <ModuleSplitLayout area="media" analytics={<MediaAnalytics />}>
         {/* Chrome-style sub-tabs — 4 equal columns */}
         <div className="grid grid-cols-4 items-end gap-1 border-b border-border/60 px-2 pt-1 -mb-2">
           {[
@@ -3220,9 +3266,11 @@ function AdminPage() {
             <AVMinistryWorkspace />
           </div>
         )}
+        </ModuleSplitLayout>
             </TabsContent>
 
             <TabsContent value="kitchen" className="space-y-8 mt-0">
+        <ModuleSplitLayout area="kitchen" analytics={<KitchenAnalytics />}>
         {/* Chrome-style sub-tabs — 4 equal columns */}
         <div className="grid grid-cols-4 items-end gap-1 border-b border-border/60 px-2 pt-1 -mb-2">
           {[
@@ -3377,9 +3425,11 @@ function AdminPage() {
             })()}
           </DialogContent>
         </Dialog>
+        </ModuleSplitLayout>
             </TabsContent>
 
             <TabsContent value="sunday" className="space-y-8 mt-0">
+        <ModuleSplitLayout area="sunday_school" analytics={<SundayAnalytics />}>
         {/* Chrome-style sub-tabs — 2 equal columns */}
         <div className="grid grid-cols-2 items-end gap-1 border-b border-border/60 px-2 pt-1 -mb-2">
           {[
@@ -4199,9 +4249,11 @@ ${rows.length===0?'<tr><td colspan="5" style="text-align:center;color:#888;paddi
           </div>
         </section>
         </>)}
+        </ModuleSplitLayout>
             </TabsContent>
 
             <TabsContent value="events" className="space-y-8 mt-0">
+        <ModuleSplitLayout area="newcomer" analytics={<NewcomerAnalytics />}>
         <section className="bg-card border border-border/50 rounded-2xl p-6">
           <div className="flex items-center gap-4 mb-4 flex-wrap">
             <h2 className="font-serif text-xl">教会活动</h2>
@@ -4361,6 +4413,7 @@ ${rows.length===0?'<tr><td colspan="5" style="text-align:center;color:#888;paddi
           </div>
         </section>
 
+        </ModuleSplitLayout>
             </TabsContent>
 
           </fieldset>

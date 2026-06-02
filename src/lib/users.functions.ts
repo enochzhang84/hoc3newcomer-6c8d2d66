@@ -92,6 +92,17 @@ export const listUsersWithRoles = createServerFn({ method: "GET" })
       });
     }
 
+    const { data: analyticsRows } = await supabaseAdmin
+      .from("user_module_analytics")
+      .select("user_id, service_area, enabled");
+    const analyticsByUser = new Map<string, string[]>();
+    for (const a of (analyticsRows ?? []) as { user_id: string; service_area: string; enabled: boolean }[]) {
+      if (!a.enabled) continue;
+      const arr = analyticsByUser.get(a.user_id) ?? [];
+      arr.push(a.service_area);
+      analyticsByUser.set(a.user_id, arr);
+    }
+
     return usersData.users.map((u) => ({
       id: u.id,
       email: u.email ?? "",
@@ -103,6 +114,7 @@ export const listUsersWithRoles = createServerFn({ method: "GET" })
       service_area: profileByUser.get(u.id)?.service_area ?? null,
       display_name: profileByUser.get(u.id)?.display_name ?? null,
       is_disabled: profileByUser.get(u.id)?.is_disabled ?? false,
+      analytics_areas: analyticsByUser.get(u.id) ?? [],
     }));
   });
 
@@ -342,5 +354,38 @@ export const setUserPassword = createServerFn({ method: "POST" })
       { password: data.password },
     );
     if (error) throw new Error(`Supabase Auth 更新失败: ${error.message}`);
+    return { ok: true };
+  });
+
+const analyticsAreaSchema = z.enum(SERVICE_AREAS);
+
+export const setUserAnalyticsArea = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z.object({
+      userId: z.string().uuid(),
+      serviceArea: analyticsAreaSchema,
+      enabled: z.boolean(),
+    }).parse(input),
+  )
+  .handler(async ({ context, data }) => {
+    await assertSuperAdmin(context.userId);
+    await assertTargetNotSuperAdmin(data.userId, context.userId);
+    if (data.enabled) {
+      const { error } = await supabaseAdmin
+        .from("user_module_analytics")
+        .upsert(
+          { user_id: data.userId, service_area: data.serviceArea, enabled: true },
+          { onConflict: "user_id,service_area" },
+        );
+      if (error) throw new Error(error.message);
+    } else {
+      const { error } = await supabaseAdmin
+        .from("user_module_analytics")
+        .delete()
+        .eq("user_id", data.userId)
+        .eq("service_area", data.serviceArea);
+      if (error) throw new Error(error.message);
+    }
     return { ok: true };
   });
