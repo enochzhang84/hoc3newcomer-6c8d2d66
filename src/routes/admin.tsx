@@ -4324,10 +4324,29 @@ img{width:480px;height:480px;}@media print{@page{margin:1cm;}}</style></head>
         {sundaySubTab === "kids" && (<>
         {/* 儿童主日学 */}
         <section className="bg-card border border-border/50 rounded-2xl p-6">
-          <h2 className="font-serif text-2xl mb-4">儿童主日学</h2>
+          <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
+            <h2 className="font-serif text-2xl">儿童主日学</h2>
+            <div className="flex items-center gap-2">
+              <Button size="sm" variant="outline" className="h-8 px-2" onClick={() => setKidsYear(kidsYear - 1)} aria-label="上一年">‹</Button>
+              <select
+                className="h-8 rounded-md border border-input bg-background px-2 text-sm"
+                value={kidsYear}
+                onChange={(e) => setKidsYear(parseInt(e.target.value, 10))}
+              >
+                {(() => {
+                  const ny = new Date().getFullYear();
+                  const years: number[] = [];
+                  for (let y = ny - 3; y <= ny + 3; y++) years.push(y);
+                  if (!years.includes(kidsYear)) { years.push(kidsYear); years.sort((a,b)=>a-b); }
+                  return years.map((y) => <option key={y} value={y}>{y}年</option>);
+                })()}
+              </select>
+              <Button size="sm" variant="outline" className="h-8 px-2" onClick={() => setKidsYear(kidsYear + 1)} aria-label="下一年">›</Button>
+            </div>
+          </div>
           <div className="grid grid-cols-1 gap-6">
             {(["spring","fall"] as const).map((season) => {
-              const cfg = KIDS_TRACKS[season];
+              const cfg = kidsTracksForYear(kidsYear)[season];
               const titleKey = `${cfg.key}_title`;
               const title = appSettings[titleKey] || cfg.title;
               const rows = kidsRows.filter((r) => r.track === cfg.key);
@@ -4346,44 +4365,6 @@ img{width:480px;height:480px;}@media print{@page{margin:1cm;}}</style></head>
                 XLSX.utils.book_append_sheet(wb, ws, "儿童主日学");
                 XLSX.writeFile(wb, `${title}_${new Date().toISOString().slice(0,10)}.xlsx`);
                 toast.success(`已导出 ${data.length} 条`);
-              };
-              const importKids = async (file: File) => {
-                try {
-                  const buf = await file.arrayBuffer();
-                  const wb = XLSX.read(buf, { type: "array" });
-                  const ws = wb.Sheets[wb.SheetNames[0]];
-                  const json = XLSX.utils.sheet_to_json<Record<string, unknown>>(ws, { defval: "" });
-                  if (json.length === 0) return toast.error("文件为空");
-                  const baseOrder = rows[rows.length - 1]?.sort_order ?? 0;
-                  const inserts = json.map((r, idx) => {
-                    const get = (keys: string[]) => {
-                      for (const k of keys) {
-                        if (r[k] !== undefined && String(r[k]).trim() !== "") return String(r[k]).trim();
-                      }
-                      return null;
-                    };
-                    return {
-                      track: cfg.key,
-                      slot_time: "",
-                      class_name: get(["班级", "class", "class_name"]),
-                      teacher_name: get(["老师", "teacher", "teacher_name"]),
-                      class_location: get(["地点", "location", "class_location"]),
-                      student_count: (() => {
-                        const raw = get(["人数", "count", "student_count"]);
-                        const n = raw ? parseInt(raw, 10) : 0;
-                        return isNaN(n) ? 0 : Math.max(0, n);
-                      })(),
-                      sort_order: baseOrder + idx + 1,
-                    };
-                  }).filter((r) => r.class_name || r.teacher_name || r.class_location);
-                  if (inserts.length === 0) return toast.error("未识别到有效数据");
-                  const { error } = await (supabase as any).from("sunday_class_schedule").insert(inserts);
-                  if (error) return toast.error(error.message);
-                  toast.success(`已导入 ${inserts.length} 条`);
-                  loadKidsRows();
-                } catch (err) {
-                  toast.error("导入失败: " + (err as Error).message);
-                }
               };
               const printKids = () => {
                 const html = `<!doctype html><html><head><meta charset="utf-8"><title>${title}</title>
@@ -4503,14 +4484,6 @@ ${rows.length===0?'<tr><td colspan="5" style="text-align:center;color:#888;paddi
                       + 添加课程
                     </Button>
                     <Button size="sm" variant="outline" onClick={exportKids}>导出 Excel</Button>
-                    <label className="inline-flex">
-                      <input type="file" accept=".xlsx,.xls" hidden onChange={(e) => {
-                        const f = e.target.files?.[0]; if (f) importKids(f); e.target.value = "";
-                      }} />
-                      <Button asChild size="sm" variant="outline">
-                        <span className="cursor-pointer">导入 Excel</span>
-                      </Button>
-                    </label>
                     <Button size="sm" variant="outline" onClick={printKids}>打印</Button>
                   </div>
                 </div>
@@ -4518,6 +4491,44 @@ ${rows.length===0?'<tr><td colspan="5" style="text-align:center;color:#888;paddi
             })}
           </div>
         </section>
+
+        {/* 📚 儿童主日学入学记录 */}
+        <KidsEnrollmentRecordsSection
+          kidsYear={kidsYear}
+          kidsRows={kidsRows}
+          allYears={(() => {
+            const ys = new Set<number>();
+            for (const r of kidsRows) {
+              const m = /^kids_(?:spring|fall)_(\d{4})$/.exec(r.track);
+              if (m) ys.add(parseInt(m[1], 10));
+            }
+            ys.add(kidsYear);
+            return Array.from(ys).sort((a, b) => b - a);
+          })()}
+        />
+
+        {/* 🎓 儿童升班记录 */}
+        <KidsPromotionRecordsSection
+          kidsYear={kidsYear}
+          promotions={kidsPromotions}
+          onEdit={(rec) => setKidsPromotionEdit(rec)}
+          onAdd={(season) => setKidsPromotionEdit({
+            year: kidsYear,
+            season,
+            from_class: "",
+            to_class: "",
+            student_name: "",
+            promotion_date: null,
+            notes: "",
+          })}
+          onDelete={async (id) => {
+            if (!confirm("删除该升班记录?")) return;
+            const { error } = await (supabase as any).from("kids_promotion_records").delete().eq("id", id);
+            if (error) return toast.error(error.message);
+            toast.success("已删除");
+            loadKidsPromotions();
+          }}
+        />
         </>)}
         </div>
             </TabsContent>
