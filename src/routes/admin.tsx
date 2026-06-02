@@ -2615,7 +2615,7 @@ function AdminPage() {
           )}
         >
           {[
-            ...(_canWelcomeStats ? [{ v: "stats", label: "迎宾数据统计" }] : []),
+            ...(_canWelcomeStats ? [{ v: "stats", label: "新人统计" }] : []),
             { v: "greet", label: t("subGreet") },
             { v: "reception", label: t("subReception") },
           ].map((tab) => {
@@ -2638,10 +2638,13 @@ function AdminPage() {
         </div>
 
         {welcomeSubTab === "stats" && _canWelcomeStats && (
-          <section className="bg-card border border-border/50 rounded-2xl p-6">
-            <h2 className="font-serif text-xl mb-4">迎宾数据统计</h2>
-            <WelcomeAnalytics />
-          </section>
+          <div className="space-y-8">
+            <section className="bg-card border border-border/50 rounded-2xl p-6">
+              <h2 className="font-serif text-xl mb-4">新人统计</h2>
+              <WelcomeAnalytics />
+            </section>
+            <HospitalityRankingSection />
+          </div>
         )}
 
         {welcomeSubTab === "greet" && (
@@ -3132,7 +3135,6 @@ function AdminPage() {
         {welcomeSubTab === "reception" && (
           <div className="space-y-8">
             <HospitalityCalendarSection />
-            <HospitalityRankingSection />
           </div>
         )}
             </TabsContent>
