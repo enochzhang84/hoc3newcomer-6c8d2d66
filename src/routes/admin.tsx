@@ -4279,7 +4279,6 @@ ${rows.length===0?'<tr><td colspan="5" style="text-align:center;color:#888;paddi
             </TabsContent>
 
             <TabsContent value="events" className="space-y-8 mt-0">
-        <ModuleSplitLayout area="newcomer" analytics={<NewcomerAnalytics />}>
         <section className="bg-card border border-border/50 rounded-2xl p-6">
           <div className="flex items-center gap-4 mb-4 flex-wrap">
             <h2 className="font-serif text-xl">教会活动</h2>
@@ -4439,7 +4438,6 @@ ${rows.length===0?'<tr><td colspan="5" style="text-align:center;color:#888;paddi
           </div>
         </section>
 
-        </ModuleSplitLayout>
             </TabsContent>
 
           </fieldset>
