@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { StatCard, Section, MiniBars, groupBy } from "./AnalyticsPrimitives";
+import { StatCard, Section, MiniBars, StatGrid, groupBy } from "./AnalyticsPrimitives";
 
 type Reg = {
   created_at: string; city: string | null; age_group: string | null;
@@ -33,12 +33,12 @@ export function NewcomerAnalytics() {
 
   return (
     <div className="space-y-3">
-      <div className="grid grid-cols-2 gap-2">
-        <StatCard label="累计登记" value={regs.length} />
-        <StatCard label="本月新增" value={thisMonth} />
-        <StatCard label="已跟进" value={followed} />
-        <StatCard label="未跟进" value={regs.length - followed} />
-      </div>
+      <StatGrid cols={2}>
+        <StatCard compact icon="🆕" label="累计登记" value={regs.length} />
+        <StatCard compact icon="📅" label="本月新增" value={thisMonth} tone="ok" />
+        <StatCard compact icon="✅" label="已跟进" value={followed} tone="ok" />
+        <StatCard compact icon="⏳" label="未跟进" value={regs.length - followed} tone={regs.length - followed > followed ? "warn" : "neutral"} />
+      </StatGrid>
       <Section title="信仰背景"><MiniBars items={byFaith} /></Section>
       <Section title="年龄分布"><MiniBars items={byAge} /></Section>
       <Section title="城市 Top"><MiniBars items={byCity} /></Section>

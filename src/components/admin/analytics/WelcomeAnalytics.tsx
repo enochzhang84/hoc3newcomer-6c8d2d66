@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { StatCard, Section, MiniBars, groupBy } from "./AnalyticsPrimitives";
+import { StatCard, Section, MiniBars, StatGrid, groupBy } from "./AnalyticsPrimitives";
 
 type Entry = { service_date: string | null; worker: string | null; panel_key: string };
 
@@ -20,10 +20,10 @@ export function WelcomeAnalytics() {
   const byWorker = groupBy(items.filter((x) => x.worker?.trim()), (x) => x.worker!.trim());
   return (
     <div className="space-y-3">
-      <div className="grid grid-cols-2 gap-2">
-        <StatCard label="服侍记录" value={items.length} />
-        <StatCard label="参与同工" value={byWorker.length} />
-      </div>
+      <StatGrid cols={2}>
+        <StatCard compact icon="🤝" label="服侍记录" value={items.length} />
+        <StatCard compact icon="👥" label="参与同工" value={byWorker.length} />
+      </StatGrid>
       <Section title="按项目分布"><MiniBars items={byPanel} /></Section>
       <Section title="同工服侍 Top"><MiniBars items={byWorker} /></Section>
     </div>

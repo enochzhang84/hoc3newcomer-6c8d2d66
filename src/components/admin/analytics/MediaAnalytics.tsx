@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { StatCard, Section, MiniBars, groupBy } from "./AnalyticsPrimitives";
+import { StatCard, Section, MiniBars, StatGrid, groupBy } from "./AnalyticsPrimitives";
 
 type Note = { category: string; is_pinned: boolean };
 type Screen = { is_active: boolean; current_content_type: string };
@@ -25,10 +25,10 @@ export function MediaAnalytics() {
   const byType = groupBy(screens, (x) => x.current_content_type || "—");
   return (
     <div className="space-y-3">
-      <div className="grid grid-cols-2 gap-2">
-        <StatCard label="影音笔记" value={notes.length} hint={`${notes.filter(n=>n.is_pinned).length} 置顶`} />
-        <StatCard label="活跃屏幕" value={screens.filter(s=>s.is_active).length} hint={`共 ${screens.length} 块`} />
-      </div>
+      <StatGrid cols={2}>
+        <StatCard compact icon="📝" label="影音笔记" value={notes.length} hint={`${notes.filter(n=>n.is_pinned).length} 置顶`} />
+        <StatCard compact icon="📺" label="活跃屏幕" value={screens.filter(s=>s.is_active).length} hint={`共 ${screens.length} 块`} />
+      </StatGrid>
       <Section title="笔记分类"><MiniBars items={byCat} /></Section>
       <Section title="屏幕内容类型"><MiniBars items={byType} /></Section>
     </div>

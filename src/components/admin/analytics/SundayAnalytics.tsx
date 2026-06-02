@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { StatCard, Section, MiniBars, groupBy } from "./AnalyticsPrimitives";
+import { StatCard, Section, MiniBars, StatGrid, groupBy } from "./AnalyticsPrimitives";
 
 type Checkin = { checkin_date: string; course_name: string | null };
 type Course = { id: string; name: string; is_active: boolean };
@@ -40,12 +40,12 @@ export function SundayAnalytics() {
 
   return (
     <div className="space-y-3">
-      <div className="grid grid-cols-2 gap-2">
-        <StatCard label="学生总数" value={totalStudents} hint={`${classes.length} 个班级`} />
-        <StatCard label="开课中" value={activeCourses} />
-        <StatCard label="在职老师" value={activeTeachers} />
-        <StatCard label="累计签到" value={checkins.length} />
-      </div>
+      <StatGrid cols={2}>
+        <StatCard compact icon="👧" label="学生总数" value={totalStudents} hint={`${classes.length} 个班级`} />
+        <StatCard compact icon="📚" label="开课中" value={activeCourses} />
+        <StatCard compact icon="👩‍🏫" label="在职老师" value={activeTeachers} />
+        <StatCard compact icon="✅" label="累计签到" value={checkins.length} />
+      </StatGrid>
       <Section title="出勤分布（课程）"><MiniBars items={byCourse} /></Section>
       <Section title="近期出勤趋势"><MiniBars items={byDate} /></Section>
     </div>
