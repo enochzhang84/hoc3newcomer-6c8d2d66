@@ -1596,15 +1596,15 @@ function AdminPage() {
                 {t("readOnly")}（{userRole === "worker" ? t("workerLabel") : t("viewerLabel")}）
               </span>
             )}
-            <div className="hidden sm:flex items-center gap-1.5 text-sm text-muted-foreground px-2 py-1 rounded-md bg-muted/60 max-w-[200px] truncate" title={currentUserEmail}>
-              <User className="w-3.5 h-3.5 shrink-0" />
-              <span className="truncate">{currentUserEmail}</span>
-            </div>
             <NotificationBell
               userId={currentUserId}
               isSuperAdmin={userRole === "super_admin"}
               userEmail={currentUserEmail}
             />
+            <div className="hidden sm:flex items-center gap-1.5 text-sm text-muted-foreground px-2 py-1 rounded-md bg-muted/60 max-w-[200px] truncate" title={currentUserEmail}>
+              <User className="w-3.5 h-3.5 shrink-0" />
+              <span className="truncate">{currentUserEmail}</span>
+            </div>
             <div className="flex sm:hidden items-center gap-1 text-xs text-muted-foreground px-1.5 py-1 rounded-md bg-muted/60" title={currentUserEmail}>
               <User className="w-3 h-3 shrink-0" />
               <span className="max-w-[80px] truncate">{currentUserEmail.split("@")[0]}</span>
