@@ -2319,7 +2319,7 @@ function AdminPage() {
                         </button>
                       </td>
                     </tr>
-                    {isSuperAdmin && !isProtected && currentRole === "worker" && (
+                    {isSuperAdmin && !isProtected && (currentRole === "user" || currentRole === "admin") && (
                       <tr key={u.id + "-analytics"} className="border-b border-border/30 bg-muted/10">
                         <td colSpan={6} className="py-2 px-2">
                           <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
