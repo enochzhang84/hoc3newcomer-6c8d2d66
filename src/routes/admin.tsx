@@ -3199,6 +3199,15 @@ function AdminPage() {
           </section>
         )}
 
+        {mediaSubTab === "stats" && _canMediaStats && (
+          <div className="mt-6">
+            <ServiceRankingBoard
+              title="🏆 服侍统计榜（影音投影）"
+              filterFn={isMediaServiceEntry}
+            />
+          </div>
+        )}
+
         {mediaSubTab === "live" && (
           <div className="space-y-8 mt-8">
           <section className="bg-card border border-border/50 rounded-2xl p-6 space-y-5">
