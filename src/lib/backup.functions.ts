@@ -493,7 +493,54 @@ export const exportSchemaDoc = createServerFn({ method: "POST" })
         note: TABLE_NOTES[t] || "",
       });
     }
-    return { rows };
+    // Fetch column-level metadata via SECURITY DEFINER helper
+    const tablesArg = [...BACKUP_TABLES];
+    let columns: Array<{
+      table_name: string;
+      column_name: string;
+      data_type: string;
+      is_nullable: string;
+      column_default: string | null;
+      is_primary_key: boolean;
+      ordinal_position: number;
+    }> = [];
+    let policies: Array<{
+      table_name: string;
+      policy_name: string;
+      cmd: string;
+      roles: string;
+      qual: string;
+      with_check: string;
+    }> = [];
+    try {
+      const { data: colData } = await (supabaseAdmin as any).rpc(
+        "get_table_columns_info",
+        { _tables: tablesArg },
+      );
+      columns = colData || [];
+    } catch {
+      columns = [];
+    }
+    try {
+      const { data: polData } = await (supabaseAdmin as any).rpc(
+        "get_table_policies_info",
+        { _tables: tablesArg },
+      );
+      policies = polData || [];
+    } catch {
+      policies = [];
+    }
+    return {
+      rows,
+      columns,
+      policies,
+      modules: Object.entries(RESTORE_GROUPS).map(([key, tables]) => ({
+        key,
+        label: GROUP_LABELS[key] || key,
+        tables,
+      })),
+      moduleMap,
+    };
   });
 
 // ---------- Bootstrap super_admin ----------
