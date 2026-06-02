@@ -322,3 +322,25 @@ export const setUserRole = createServerFn({ method: "POST" })
     }
     return { ok: true };
   });
+
+export const setUserPassword = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z.object({
+      userId: z.string().uuid(),
+      password: z.string().min(6).max(200),
+    }).parse(input),
+  )
+  .handler(async ({ context, data }) => {
+    await assertSuperAdmin(context.userId);
+    await assertTargetNotSuperAdmin(data.userId, context.userId);
+    const { data: got, error: getErr } =
+      await supabaseAdmin.auth.admin.getUserById(data.userId);
+    if (getErr || !got?.user) throw new Error("用户不存在");
+    const { error } = await supabaseAdmin.auth.admin.updateUserById(
+      data.userId,
+      { password: data.password },
+    );
+    if (error) throw new Error(`Supabase Auth 更新失败: ${error.message}`);
+    return { ok: true };
+  });

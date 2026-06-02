@@ -22,7 +22,7 @@ import { format } from "date-fns";
 import { ScreenManager } from "@/components/admin/ScreenManager";
 import { AVMinistryWorkspace } from "@/components/admin/AVMinistryWorkspace";
 import { zhCN } from "date-fns/locale";
-import { listUsersWithRoles, setUserRole, deleteUser, createUserWithRole, updateUserWorkerName, setUserServiceArea, setUserDisabled } from "@/lib/users.functions";
+import { listUsersWithRoles, setUserRole, deleteUser, createUserWithRole, updateUserWorkerName, setUserServiceArea, setUserDisabled, setUserPassword } from "@/lib/users.functions";
 import { useI18n, type TKey } from "@/lib/i18n";
 import { HomePageSettingsPanel } from "@/components/admin/HomePageSettingsPanel";
 import { BackupRestorePanel } from "@/components/admin/BackupRestorePanel";
@@ -655,6 +655,11 @@ function AdminPage() {
   const updateWorkerNameFn = useServerFn(updateUserWorkerName);
   const [editingWorkerUserId, setEditingWorkerUserId] = useState<string | null>(null);
   const [editingWorkerDraft, setEditingWorkerDraft] = useState<string>("");
+  const setUserPasswordFn = useServerFn(setUserPassword);
+  const [pwdDialogUser, setPwdDialogUser] = useState<{ id: string; email: string } | null>(null);
+  const [pwdNew, setPwdNew] = useState("");
+  const [pwdConfirm, setPwdConfirm] = useState("");
+  const [pwdSubmitting, setPwdSubmitting] = useState(false);
   const updateRegFn = useServerFn(updateRegistration);
   const [editOpen, setEditOpen] = useState(false);
   const [editForm, setEditForm] = useState<Reg | null>(null);
@@ -2292,6 +2297,17 @@ function AdminPage() {
                         >
                           删除
                         </button>
+                        <button
+                          disabled={isProtected || (isSelf && currentRole === "super_admin")}
+                          onClick={() => {
+                            setPwdNew("");
+                            setPwdConfirm("");
+                            setPwdDialogUser({ id: u.id, email: u.email });
+                          }}
+                          className="text-xs text-primary hover:underline disabled:opacity-30 disabled:cursor-not-allowed"
+                        >
+                          更改密码
+                        </button>
                       </td>
                     </tr>
                   );
@@ -2401,6 +2417,64 @@ function AdminPage() {
                 }}
               >
                 {newUserSubmitting ? "创建中..." : "创建"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+        )}
+        {isSuperAdmin && (
+        <Dialog open={pwdDialogUser !== null} onOpenChange={(o) => { if (!o) setPwdDialogUser(null); }}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>更改密码</DialogTitle>
+              <DialogDescription>仅超级管理员可直接重置密码。用户也可使用「忘记密码」邮件自助重置。</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-3">
+              <div className="text-sm">
+                <span className="text-muted-foreground">用户邮箱：</span>
+                <span className="font-medium">{pwdDialogUser?.email}</span>
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs text-muted-foreground">新密码（至少 6 位）</label>
+                <Input
+                  type="password"
+                  value={pwdNew}
+                  onChange={(e) => setPwdNew(e.target.value)}
+                  autoComplete="new-password"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs text-muted-foreground">再次确认新密码</label>
+                <Input
+                  type="password"
+                  value={pwdConfirm}
+                  onChange={(e) => setPwdConfirm(e.target.value)}
+                  autoComplete="new-password"
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setPwdDialogUser(null)} disabled={pwdSubmitting}>取消</Button>
+              <Button
+                disabled={pwdSubmitting}
+                onClick={async () => {
+                  if (!pwdDialogUser) return;
+                  if (!pwdNew || pwdNew.length < 6) { toast.error("密码至少 6 位"); return; }
+                  if (pwdNew !== pwdConfirm) { toast.error("两次输入的密码不一致"); return; }
+                  setPwdSubmitting(true);
+                  try {
+                    await setUserPasswordFn({ data: { userId: pwdDialogUser.id, password: pwdNew } });
+                    logAction(`重置了 ${pwdDialogUser.email} 的密码`);
+                    toast.success("密码已更新");
+                    setPwdDialogUser(null);
+                  } catch (e) {
+                    toast.error((e as Error).message || "更新失败");
+                  } finally {
+                    setPwdSubmitting(false);
+                  }
+                }}
+              >
+                {pwdSubmitting ? "保存中..." : "保存"}
               </Button>
             </DialogFooter>
           </DialogContent>
