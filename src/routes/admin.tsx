@@ -6961,3 +6961,203 @@ function NowLabel() {
     </span>
   );
 }
+
+// ============= 儿童主日学 — 入学记录 =============
+function KidsEnrollmentRecordsSection({
+  kidsYear,
+  kidsRows,
+  allYears,
+}: {
+  kidsYear: number;
+  kidsRows: KidsRow[];
+  allYears: number[];
+}) {
+  const [viewYear, setViewYear] = useState<number>(kidsYear);
+  useEffect(() => { setViewYear(kidsYear); }, [kidsYear]);
+
+  const yearList = (() => {
+    const ys = new Set<number>(allYears);
+    ys.add(viewYear);
+    ys.add(kidsYear);
+    return Array.from(ys).sort((a, b) => b - a);
+  })();
+
+  const statsFor = (year: number, season: "spring" | "fall") => {
+    const key = `kids_${season}_${year}`;
+    const rows = kidsRows.filter((r) => r.track === key);
+    const totalStudents = rows.reduce((s, r) => s + (r.student_count ?? 0), 0);
+    const teachers = new Set(
+      rows
+        .map((r) => (r.teacher_name ?? "").trim())
+        .filter((n) => n.length > 0)
+        .flatMap((n) => n.split(/[、,，\/\s]+/).filter(Boolean)),
+    );
+    return { classCount: rows.length, teacherCount: teachers.size, totalStudents };
+  };
+
+  // previous-semester comparison: 春 vs 上一年秋；秋 vs 同年春
+  const prevOf = (year: number, season: "spring" | "fall") =>
+    season === "spring"
+      ? { year: year - 1, season: "fall" as const }
+      : { year, season: "spring" as const };
+
+  const seasonLabel = (s: "spring" | "fall") => (s === "spring" ? "春季" : "秋季");
+
+  const current = (
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {(["spring", "fall"] as const).map((season) => {
+        const s = statsFor(viewYear, season);
+        const p = prevOf(viewYear, season);
+        const ps = statsFor(p.year, p.season);
+        const delta = s.totalStudents - ps.totalStudents;
+        const deltaText = ps.totalStudents === 0 && s.totalStudents === 0
+          ? "—"
+          : `${delta >= 0 ? "▲ +" : "▼ "}${delta} 人 (vs ${p.year}${seasonLabel(p.season)})`;
+        const deltaColor = delta > 0 ? "text-emerald-600" : delta < 0 ? "text-rose-600" : "text-muted-foreground";
+        return (
+          <div key={season} className="rounded-xl border border-border/60 bg-card/60 p-4">
+            <div className="font-serif text-base mb-3">{viewYear}年{seasonLabel(season)}儿童主日学</div>
+            <div className="grid grid-cols-2 gap-2">
+              <div className="rounded-lg border border-border/50 bg-muted/30 px-3 py-2">
+                <div className="text-xs text-muted-foreground">📚 班级数</div>
+                <div className="text-lg font-semibold mt-0.5">{s.classCount}</div>
+              </div>
+              <div className="rounded-lg border border-border/50 bg-muted/30 px-3 py-2">
+                <div className="text-xs text-muted-foreground">👩‍🏫 教师数</div>
+                <div className="text-lg font-semibold mt-0.5">{s.teacherCount}</div>
+              </div>
+              <div className="rounded-lg border border-border/50 bg-muted/30 px-3 py-2">
+                <div className="text-xs text-muted-foreground">👦 学生人数</div>
+                <div className="text-lg font-semibold mt-0.5">{s.totalStudents}</div>
+              </div>
+              <div className="rounded-lg border border-border/50 bg-muted/30 px-3 py-2">
+                <div className="text-xs text-muted-foreground">📈 较上学期</div>
+                <div className={`text-sm font-medium mt-0.5 ${deltaColor}`}>{deltaText}</div>
+              </div>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+
+  return (
+    <section className="bg-card border border-border/50 rounded-2xl p-6">
+      <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
+        <h2 className="font-serif text-xl">📚 儿童主日学入学记录</h2>
+        <div className="flex items-center gap-2">
+          <Button size="sm" variant="outline" className="h-8 px-2" onClick={() => setViewYear(viewYear - 1)}>‹</Button>
+          <select
+            className="h-8 rounded-md border border-input bg-background px-2 text-sm"
+            value={viewYear}
+            onChange={(e) => setViewYear(parseInt(e.target.value, 10))}
+          >
+            {yearList.map((y) => <option key={y} value={y}>{y}年</option>)}
+          </select>
+          <Button size="sm" variant="outline" className="h-8 px-2" onClick={() => setViewYear(viewYear + 1)}>›</Button>
+        </div>
+      </div>
+      <p className="text-xs text-muted-foreground mb-4">数据自动来源于上方春季/秋季儿童主日学，无需重复维护。</p>
+      {current}
+    </section>
+  );
+}
+
+// ============= 儿童主日学 — 升班记录 =============
+function KidsPromotionRecordsSection({
+  kidsYear,
+  promotions,
+  onAdd,
+  onEdit,
+  onDelete,
+}: {
+  kidsYear: number;
+  promotions: KidsPromotionRecord[];
+  onAdd: (season: "spring" | "fall") => void;
+  onEdit: (rec: KidsPromotionRecord) => void;
+  onDelete: (id: string) => void;
+}) {
+  const [viewYear, setViewYear] = useState<number>(kidsYear);
+  useEffect(() => { setViewYear(kidsYear); }, [kidsYear]);
+
+  const yearList = (() => {
+    const ys = new Set<number>();
+    promotions.forEach((p) => ys.add(p.year));
+    ys.add(viewYear);
+    ys.add(kidsYear);
+    const arr = Array.from(ys);
+    const ny = new Date().getFullYear();
+    for (let y = ny - 2; y <= ny + 2; y++) arr.push(y);
+    return Array.from(new Set(arr)).sort((a, b) => b - a);
+  })();
+
+  const filtered = promotions.filter((p) => p.year === viewYear);
+  const seasonLabel = (s: "spring" | "fall") => (s === "spring" ? "春季" : "秋季");
+
+  // Group: season -> "from→to" -> list of students
+  const groups: Record<"spring" | "fall", Record<string, KidsPromotionRecord[]>> = {
+    spring: {},
+    fall: {},
+  };
+  for (const r of filtered) {
+    const path = `${r.from_class || "—"} → ${r.to_class || "—"}`;
+    if (!groups[r.season][path]) groups[r.season][path] = [];
+    groups[r.season][path].push(r);
+  }
+
+  return (
+    <section className="bg-card border border-border/50 rounded-2xl p-6">
+      <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
+        <h2 className="font-serif text-xl">🎓 儿童升班记录</h2>
+        <div className="flex items-center gap-2">
+          <Button size="sm" variant="outline" className="h-8 px-2" onClick={() => setViewYear(viewYear - 1)}>‹</Button>
+          <select
+            className="h-8 rounded-md border border-input bg-background px-2 text-sm"
+            value={viewYear}
+            onChange={(e) => setViewYear(parseInt(e.target.value, 10))}
+          >
+            {yearList.map((y) => <option key={y} value={y}>{y}年</option>)}
+          </select>
+          <Button size="sm" variant="outline" className="h-8 px-2" onClick={() => setViewYear(viewYear + 1)}>›</Button>
+        </div>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {(["spring", "fall"] as const).map((season) => {
+          const paths = Object.entries(groups[season]);
+          return (
+            <div key={season} className="rounded-xl border border-border/60 bg-card/60 p-4">
+              <div className="flex items-center justify-between mb-3 gap-2">
+                <div className="font-serif text-base">{viewYear}年{seasonLabel(season)}</div>
+                <Button size="sm" variant="outline" className="h-7" onClick={() => onAdd(season)}>+ 添加</Button>
+              </div>
+              {paths.length === 0 ? (
+                <div className="text-sm text-muted-foreground text-center py-6 border border-dashed border-border/60 rounded-lg">
+                  暂无升班记录
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {paths.map(([path, list]) => (
+                    <div key={path} className="rounded-lg border border-border/40 p-3">
+                      <div className="text-sm font-medium mb-2">{path}<span className="text-xs text-muted-foreground ml-2">{list.length} 人</span></div>
+                      <div className="flex flex-wrap gap-2">
+                        {list.map((r) => (
+                          <span key={r.id} className="inline-flex items-center gap-1 text-xs bg-muted rounded-full pl-2.5 pr-1 py-1">
+                            <button className="hover:underline" onClick={() => onEdit(r)} title={r.notes || (r.promotion_date ?? "")}>
+                              {r.student_name}
+                            </button>
+                            <button className="text-muted-foreground hover:text-destructive w-4 h-4 leading-none" onClick={() => onDelete(r.id)}>×</button>
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+      <p className="text-xs text-muted-foreground mt-4">数据由管理员/主日学同工维护：原班级、新班级、升班日期、备注。</p>
+    </section>
+  );
+}
