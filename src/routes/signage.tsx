@@ -154,7 +154,15 @@ function SignagePage() {
                   </td>
                   <td className="p-3 text-right whitespace-nowrap">
                     <Button size="sm" variant="ghost" onClick={() => { setIsNew(false); setEditing(p); }}>✏ 编辑</Button>
-                    <Button size="sm" variant="ghost" onClick={() => window.open(`/display/poster/${p.slug || p.id}`, "_blank")}>👁 预览</Button>
+                    <Button size="sm" variant="ghost" onClick={() => {
+                      // If linking to a PDF (e.g. WordPress 周刊), open the file directly
+                      // in a new tab so the browser's native PDF viewer handles it —
+                      // iframe embedding often triggers ERR_BLOCKED_BY_CLIENT or
+                      // X-Frame-Options blocks.
+                      const isPdfLink = !!p.link_url && /\.pdf(\?|$)/i.test(p.link_url);
+                      const target = isPdfLink ? p.link_url! : `/display/poster/${p.slug || p.id}`;
+                      window.open(target, "_blank", "noopener,noreferrer");
+                    }}>👁 预览</Button>
                     <Button size="sm" variant="ghost" onClick={() => copyLink(p)}>🔗 链接</Button>
                     <Button size="sm" variant="ghost" onClick={() => remove(p)}>🗑</Button>
                   </td>
