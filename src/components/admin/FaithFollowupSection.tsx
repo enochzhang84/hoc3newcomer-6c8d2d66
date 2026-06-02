@@ -19,6 +19,7 @@ type Reg = {
   created_at: string;
   follow_up_status: string | null;
   faith_growth_note: string | null;
+  faith_stage: string | null;
 };
 
 function refer(r: Reg): string {
@@ -35,6 +36,14 @@ function fmtDate(iso: string): string {
 }
 
 const STATUS_OPTIONS = ["未跟进", "已跟进"] as const;
+const STAGE_OPTIONS = ["慕道友", "已跟进", "受洗班", "决志", "已受洗"] as const;
+const STAGE_TONE: Record<string, string> = {
+  "慕道友": "border-border text-muted-foreground",
+  "已跟进": "border-sky-500/40 text-sky-600",
+  "受洗班": "border-amber-500/40 text-amber-600",
+  "决志": "border-violet-500/40 text-violet-600",
+  "已受洗": "border-emerald-500/40 text-emerald-600",
+};
 
 export function FaithFollowupSection({
   regs,
@@ -47,7 +56,15 @@ export function FaithFollowupSection({
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
   const [noteDraft, setNoteDraft] = useState("");
   const [savingId, setSavingId] = useState<string | null>(null);
-  const seekers = useMemo(() => regs.filter((r) => r.faith === "seeker"), [regs]);
+  const seekers = useMemo(
+    () =>
+      regs.filter(
+        (r) =>
+          r.faith === "seeker" ||
+          (r.faith_stage && r.faith_stage !== "慕道友"),
+      ),
+    [regs],
+  );
   const filtered = useMemo(() => {
     const kw = q.trim().toLowerCase();
     if (!kw) return seekers;
@@ -73,6 +90,21 @@ export function FaithFollowupSection({
     }
   }
 
+  async function updateStage(id: string, value: string) {
+    const prev = regs.find((r) => r.id === id)?.faith_stage ?? "慕道友";
+    setRegs((list) => list.map((x) => (x.id === id ? { ...x, faith_stage: value } : x)));
+    const { error } = await supabase
+      .from("registrations")
+      .update({ faith_stage: value } as never)
+      .eq("id", id);
+    if (error) {
+      setRegs((list) => list.map((x) => (x.id === id ? { ...x, faith_stage: prev } : x)));
+      toast.error("保存失败：" + error.message);
+    } else {
+      toast.success("当前阶段已更新");
+    }
+  }
+
   async function saveNote(id: string) {
     setSavingId(id);
     const value = noteDraft.trim() || null;
@@ -94,9 +126,9 @@ export function FaithFollowupSection({
     <section className="bg-card border border-border/50 rounded-2xl p-6">
       <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
         <div>
-          <h2 className="font-serif text-xl">慕道友名单</h2>
+          <h2 className="font-serif text-xl">信仰成长档案</h2>
           <p className="text-xs text-muted-foreground mt-1">
-            来源：新人登记名单 · 筛选条件：信仰属性 = 慕道友 · 共 {seekers.length} 人
+            来源：新人登记名单 · 默认显示信仰属性为「慕道友」的人，并保留已进入其他阶段的成员 · 共 {seekers.length} 人
           </p>
         </div>
         <input
@@ -122,6 +154,7 @@ export function FaithFollowupSection({
                 <th className="py-2 px-2">城市</th>
                 <th className="py-2 px-2">来源 / 邀请人</th>
                 <th className="py-2 px-2">登记日期</th>
+                <th className="py-2 px-2">当前阶段</th>
                 <th className="py-2 px-2">跟进状态</th>
                 <th className="py-2 px-2">备注</th>
               </tr>
@@ -131,6 +164,7 @@ export function FaithFollowupSection({
                 const status = r.follow_up_status || "未跟进";
                 const followed = status === "已跟进";
                 const isEditing = editingNoteId === r.id;
+                const stage = r.faith_stage || "慕道友";
                 return (
                   <tr key={r.id} className="border-b border-border/40 align-top">
                     <td className="py-2 px-2 font-medium text-foreground">{r.name || "—"}</td>
@@ -141,6 +175,20 @@ export function FaithFollowupSection({
                     <td className="py-2 px-2">{r.city || "—"}</td>
                     <td className="py-2 px-2">{refer(r)}</td>
                     <td className="py-2 px-2 tabular-nums">{fmtDate(r.created_at)}</td>
+                    <td className="py-2 px-2">
+                      <select
+                        value={stage}
+                        onChange={(e) => updateStage(r.id, e.target.value)}
+                        className={
+                          "h-8 px-2 rounded-md border text-xs bg-background " +
+                          (STAGE_TONE[stage] ?? "border-border text-muted-foreground")
+                        }
+                      >
+                        {STAGE_OPTIONS.map((s) => (
+                          <option key={s} value={s}>{s}</option>
+                        ))}
+                      </select>
+                    </td>
                     <td className="py-2 px-2">
                       <select
                         value={status}
