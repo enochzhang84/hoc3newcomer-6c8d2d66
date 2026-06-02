@@ -6,28 +6,13 @@ type Reg = {
   id: string;
   name: string;
   name_en: string | null;
-  gender: string | null;
   phone: string | null;
-  email: string | null;
-  city: string | null;
-  referrer_type: string | null;
-  invited_by: string | null;
-  referrer_other: string | null;
   faith: string | null;
   follow_up_person: string | null;
-  notes: string | null;
-  created_at: string;
-  follow_up_status: string | null;
   faith_growth_note: string | null;
   faith_stage: string | null;
+  last_followup_at: string | null;
 };
-
-function refer(r: Reg): string {
-  if (r.referrer_type === "self") return "自己";
-  if (r.referrer_type === "friend") return `亲友：${r.invited_by ?? ""}`.trim();
-  if (r.referrer_type === "other") return `其他：${r.referrer_other ?? ""}`.trim();
-  return "—";
-}
 
 function fmtDate(iso: string): string {
   const d = new Date(iso);
@@ -35,7 +20,6 @@ function fmtDate(iso: string): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
-const STATUS_OPTIONS = ["未跟进", "已跟进"] as const;
 const STAGE_OPTIONS = ["慕道友", "已跟进", "受洗班", "决志", "已受洗"] as const;
 const STAGE_TONE: Record<string, string> = {
   "慕道友": "border-border text-muted-foreground",
@@ -55,6 +39,8 @@ export function FaithFollowupSection({
   const [q, setQ] = useState("");
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
   const [noteDraft, setNoteDraft] = useState("");
+  const [editingPersonId, setEditingPersonId] = useState<string | null>(null);
+  const [personDraft, setPersonDraft] = useState("");
   const [savingId, setSavingId] = useState<string | null>(null);
   const seekers = useMemo(
     () =>
@@ -69,33 +55,21 @@ export function FaithFollowupSection({
     const kw = q.trim().toLowerCase();
     if (!kw) return seekers;
     return seekers.filter((r) =>
-      [r.name, r.name_en, r.phone, r.email, r.city, r.invited_by]
+      [r.name, r.name_en, r.phone, r.follow_up_person]
         .filter(Boolean)
         .some((v) => String(v).toLowerCase().includes(kw)),
     );
   }, [seekers, q]);
 
-  async function updateStatus(id: string, value: string) {
-    const prev = regs.find((r) => r.id === id)?.follow_up_status ?? "未跟进";
-    setRegs((list) => list.map((x) => (x.id === id ? { ...x, follow_up_status: value } : x)));
-    const { error } = await supabase
-      .from("registrations")
-      .update({ follow_up_status: value } as never)
-      .eq("id", id);
-    if (error) {
-      setRegs((list) => list.map((x) => (x.id === id ? { ...x, follow_up_status: prev } : x)));
-      toast.error("保存失败：" + error.message);
-    } else {
-      toast.success("跟进状态已更新");
-    }
-  }
-
   async function updateStage(id: string, value: string) {
     const prev = regs.find((r) => r.id === id)?.faith_stage ?? "慕道友";
-    setRegs((list) => list.map((x) => (x.id === id ? { ...x, faith_stage: value } : x)));
+    const now = new Date().toISOString();
+    setRegs((list) =>
+      list.map((x) => (x.id === id ? { ...x, faith_stage: value, last_followup_at: now } : x)),
+    );
     const { error } = await supabase
       .from("registrations")
-      .update({ faith_stage: value } as never)
+      .update({ faith_stage: value, last_followup_at: now } as never)
       .eq("id", id);
     if (error) {
       setRegs((list) => list.map((x) => (x.id === id ? { ...x, faith_stage: prev } : x)));
@@ -108,18 +82,41 @@ export function FaithFollowupSection({
   async function saveNote(id: string) {
     setSavingId(id);
     const value = noteDraft.trim() || null;
+    const now = new Date().toISOString();
     const { error } = await supabase
       .from("registrations")
-      .update({ faith_growth_note: value } as never)
+      .update({ faith_growth_note: value, last_followup_at: now } as never)
       .eq("id", id);
     setSavingId(null);
     if (error) {
       toast.error("保存失败：" + error.message);
       return;
     }
-    setRegs((list) => list.map((x) => (x.id === id ? { ...x, faith_growth_note: value } : x)));
+    setRegs((list) =>
+      list.map((x) => (x.id === id ? { ...x, faith_growth_note: value, last_followup_at: now } : x)),
+    );
     setEditingNoteId(null);
     toast.success("备注已保存");
+  }
+
+  async function savePerson(id: string) {
+    setSavingId(id);
+    const value = personDraft.trim() || null;
+    const now = new Date().toISOString();
+    const { error } = await supabase
+      .from("registrations")
+      .update({ follow_up_person: value, last_followup_at: now } as never)
+      .eq("id", id);
+    setSavingId(null);
+    if (error) {
+      toast.error("保存失败：" + error.message);
+      return;
+    }
+    setRegs((list) =>
+      list.map((x) => (x.id === id ? { ...x, follow_up_person: value, last_followup_at: now } : x)),
+    );
+    setEditingPersonId(null);
+    toast.success("跟进人已保存");
   }
 
   return (
@@ -134,7 +131,7 @@ export function FaithFollowupSection({
         <input
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          placeholder="搜索 姓名 / 电话 / 邮箱 / 城市 / 邀请人"
+          placeholder="搜索 姓名 / 电话 / 跟进人"
           className="h-9 px-3 rounded-md border border-border bg-background text-sm w-full sm:w-72"
         />
       </div>
@@ -148,33 +145,23 @@ export function FaithFollowupSection({
               <tr className="text-left border-b border-border/60 text-muted-foreground">
                 <th className="py-2 px-2">中文名</th>
                 <th className="py-2 px-2">英文名</th>
-                <th className="py-2 px-2">性别</th>
                 <th className="py-2 px-2">电话</th>
-                <th className="py-2 px-2">邮箱</th>
-                <th className="py-2 px-2">城市</th>
-                <th className="py-2 px-2">来源 / 邀请人</th>
-                <th className="py-2 px-2">登记日期</th>
                 <th className="py-2 px-2">当前阶段</th>
-                <th className="py-2 px-2">跟进状态</th>
+                <th className="py-2 px-2">跟进人</th>
+                <th className="py-2 px-2">最后跟进日期</th>
                 <th className="py-2 px-2">备注</th>
               </tr>
             </thead>
             <tbody>
               {filtered.map((r) => {
-                const status = r.follow_up_status || "未跟进";
-                const followed = status === "已跟进";
                 const isEditing = editingNoteId === r.id;
+                const isEditingPerson = editingPersonId === r.id;
                 const stage = r.faith_stage || "慕道友";
                 return (
                   <tr key={r.id} className="border-b border-border/40 align-top">
                     <td className="py-2 px-2 font-medium text-foreground">{r.name || "—"}</td>
                     <td className="py-2 px-2">{r.name_en || "—"}</td>
-                    <td className="py-2 px-2">{r.gender || "—"}</td>
                     <td className="py-2 px-2 tabular-nums">{r.phone || "—"}</td>
-                    <td className="py-2 px-2">{r.email || "—"}</td>
-                    <td className="py-2 px-2">{r.city || "—"}</td>
-                    <td className="py-2 px-2">{refer(r)}</td>
-                    <td className="py-2 px-2 tabular-nums">{fmtDate(r.created_at)}</td>
                     <td className="py-2 px-2">
                       <select
                         value={stage}
@@ -189,21 +176,50 @@ export function FaithFollowupSection({
                         ))}
                       </select>
                     </td>
-                    <td className="py-2 px-2">
-                      <select
-                        value={status}
-                        onChange={(e) => updateStatus(r.id, e.target.value)}
-                        className={
-                          "h-8 px-2 rounded-md border text-xs bg-background " +
-                          (followed
-                            ? "border-emerald-500/40 text-emerald-600"
-                            : "border-border text-muted-foreground")
-                        }
-                      >
-                        {STATUS_OPTIONS.map((s) => (
-                          <option key={s} value={s}>{s}</option>
-                        ))}
-                      </select>
+                    <td className="py-2 px-2 min-w-[160px]">
+                      {isEditingPerson ? (
+                        <div className="flex items-center gap-1">
+                          <input
+                            value={personDraft}
+                            onChange={(e) => setPersonDraft(e.target.value)}
+                            className="flex-1 h-8 px-2 rounded-md border border-border bg-background text-xs"
+                          />
+                          <button
+                            type="button"
+                            disabled={savingId === r.id}
+                            onClick={() => savePerson(r.id)}
+                            className="px-2 h-8 rounded-md bg-primary text-primary-foreground text-xs disabled:opacity-50"
+                          >
+                            保存
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setEditingPersonId(null)}
+                            className="px-2 h-8 rounded-md border border-border text-xs"
+                          >
+                            取消
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <span className="flex-1">
+                            {r.follow_up_person || <span className="text-muted-foreground">—</span>}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEditingPersonId(r.id);
+                              setPersonDraft(r.follow_up_person ?? "");
+                            }}
+                            className="px-2 py-1 rounded-md border border-border text-xs hover:bg-accent"
+                          >
+                            编辑
+                          </button>
+                        </div>
+                      )}
+                    </td>
+                    <td className="py-2 px-2 tabular-nums text-muted-foreground">
+                      {r.last_followup_at ? fmtDate(r.last_followup_at) : "—"}
                     </td>
                     <td className="py-2 px-2 max-w-[320px]">
                       {isEditing ? (
