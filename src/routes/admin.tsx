@@ -2558,7 +2558,11 @@ function AdminPage() {
             </Button>
             <Button
               variant="outline"
-              onClick={() => navigate({ to: "/chat" })}
+              onClick={() => {
+                try { window.localStorage.removeItem("floating_chat_hidden"); } catch {}
+                window.dispatchEvent(new CustomEvent("floating-chat:show"));
+                toast.success("已显示浮动聊天图标");
+              }}
             >
               聊天
             </Button>
