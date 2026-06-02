@@ -536,6 +536,7 @@ function AdminPage() {
   const [welcomeSubTab, setWelcomeSubTab] = useState<string>("greet");
   const _perms = useCurrentPermissions();
   const _canWelcomeStats = !_perms.loading && canAccessModuleAnalytics(_perms.role, _perms.serviceArea, "welcome", _perms.analytics);
+  const _canMediaStats = !_perms.loading && canAccessModuleAnalytics(_perms.role, _perms.serviceArea, "media", _perms.analytics);
   const [mediaSubTab, setMediaSubTab] = useState<string>("live");
   const [youtubeUrl, setYoutubeUrl] = useState<string>(() => {
     if (typeof window === "undefined") return "";
