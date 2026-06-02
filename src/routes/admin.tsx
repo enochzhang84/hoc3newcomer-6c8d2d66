@@ -655,6 +655,11 @@ function AdminPage() {
   const updateWorkerNameFn = useServerFn(updateUserWorkerName);
   const [editingWorkerUserId, setEditingWorkerUserId] = useState<string | null>(null);
   const [editingWorkerDraft, setEditingWorkerDraft] = useState<string>("");
+  const setUserPasswordFn = useServerFn(setUserPassword);
+  const [pwdDialogUser, setPwdDialogUser] = useState<{ id: string; email: string } | null>(null);
+  const [pwdNew, setPwdNew] = useState("");
+  const [pwdConfirm, setPwdConfirm] = useState("");
+  const [pwdSubmitting, setPwdSubmitting] = useState(false);
   const updateRegFn = useServerFn(updateRegistration);
   const [editOpen, setEditOpen] = useState(false);
   const [editForm, setEditForm] = useState<Reg | null>(null);
