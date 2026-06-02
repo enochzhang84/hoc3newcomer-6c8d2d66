@@ -26,7 +26,8 @@ import { listUsersWithRoles, setUserRole, deleteUser, createUserWithRole, update
 import { useI18n, type TKey } from "@/lib/i18n";
 import { HomePageSettingsPanel } from "@/components/admin/HomePageSettingsPanel";
 import { BackupRestorePanel } from "@/components/admin/BackupRestorePanel";
-import { SERVICE_AREAS, SERVICE_AREA_LABELS, ROLE_LABELS, type Role, type ServiceArea, canAccessAdmin } from "@/lib/permissions";
+import { SERVICE_AREAS, SERVICE_AREA_LABELS, ROLE_LABELS, type Role, type ServiceArea, canAccessAdmin, canAccessModuleAnalytics } from "@/lib/permissions";
+import { useCurrentPermissions } from "@/hooks/useCurrentPermissions";
 import { updateRegistration } from "@/lib/registrations.functions";
 import { HospitalityCalendarSection } from "@/components/HospitalityCalendar";
 import { HospitalityRankingSection } from "@/components/HospitalityRanking";
