@@ -209,17 +209,146 @@ export function BackupRestorePanel() {
     setBusy(true);
     try {
       const r: any = await doSchemaDoc();
-      const rows = (r.rows || []).map((row: any) => ({
-        模块: row.module,
-        表名: row.table,
-        用途: row.note,
-        记录数: row.record_count,
-      }));
-      const ws = XLSX.utils.json_to_sheet(rows);
-      ws["!cols"] = [{ wch: 20 }, { wch: 32 }, { wch: 32 }, { wch: 10 }];
+      const tableRows: Array<{ module: string; table: string; note: string; record_count: number }>
+        = r.rows || [];
+      const columns: Array<any> = r.columns || [];
+      const policies: Array<any> = r.policies || [];
+      const modules: Array<{ key: string; label: string; tables: string[] }> = r.modules || [];
+      const moduleMap: Record<string, string> = r.moduleMap || {};
+
+      const totalTables = tableRows.length;
+      const totalRecords = tableRows.reduce((s, x) => s + (x.record_count || 0), 0);
+      const now = new Date();
+      const exportTime = now.toLocaleString("zh-CN");
+
       const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "数据库结构");
-      XLSX.writeFile(wb, `hoc3-数据库结构-${fileTimestamp()}.xlsx`);
+      const add = (name: string, data: any[], cols: number[]) => {
+        const ws = XLSX.utils.json_to_sheet(data);
+        ws["!cols"] = cols.map((wch) => ({ wch }));
+        XLSX.utils.book_append_sheet(wb, ws, name);
+      };
+
+      // Sheet1 系统总览
+      add(
+        "系统总览",
+        [
+          { 项目: "系统名称", 内容: "HOC3 教会管理系统" },
+          { 项目: "数据库名称", 内容: "Lovable Cloud (PostgreSQL)" },
+          { 项目: "创建时间", 内容: "—" },
+          { 项目: "表数量", 内容: totalTables },
+          { 项目: "记录数量", 内容: totalRecords },
+          { 项目: "模块数量", 内容: modules.length },
+          { 项目: "导出时间", 内容: exportTime },
+          { 项目: "版本号", 内容: "v1.0" },
+        ],
+        [16, 48],
+      );
+
+      // Sheet2 模块清单
+      const moduleRecordCount: Record<string, number> = {};
+      for (const row of tableRows) {
+        const mod = row.module || "—";
+        moduleRecordCount[mod] = (moduleRecordCount[mod] || 0) + (row.record_count || 0);
+      }
+      add(
+        "模块清单",
+        modules.map((m) => ({
+          模块名称: m.label,
+          功能说明: m.tables.map((t) => TABLE_NOTES[t] || t).slice(0, 4).join("、"),
+          使用表数量: m.tables.length,
+          记录数量: moduleRecordCount[m.label] || 0,
+        })),
+        [20, 50, 12, 12],
+      );
+
+      // Sheet3 数据库表清单
+      add(
+        "数据库表清单",
+        tableRows.map((r2) => ({
+          模块: r2.module,
+          表名: r2.table,
+          用途: r2.note,
+          记录数: r2.record_count,
+          创建时间: "—",
+        })),
+        [20, 36, 32, 10, 16],
+      );
+
+      // Sheet4 字段说明
+      add(
+        "字段说明",
+        columns.map((c) => ({
+          表名: c.table_name,
+          字段名: c.column_name,
+          类型: c.data_type,
+          说明: TABLE_NOTES[c.table_name] || "",
+          是否主键: c.is_primary_key ? "是" : "否",
+          是否允许为空: c.is_nullable === "YES" ? "是" : "否",
+          默认值: c.column_default || "",
+        })),
+        [32, 28, 18, 28, 10, 14, 28],
+      );
+
+      // Sheet5 权限说明
+      add(
+        "权限说明",
+        [
+          { 角色: "super_admin", 模块: "全部", 权限: "完全控制（备份、恢复、用户管理、所有模块读写）" },
+          { 角色: "admin", 模块: "全部业务模块", 权限: "管理（除备份/恢复外的全部读写）" },
+          { 角色: "worker (newcomer)", 模块: "新人登记", 权限: "操作（登记、跟进）" },
+          { 角色: "worker (welcome)", 模块: "迎宾接待 / 服侍", 权限: "操作（同工安排、接待事工、出席）" },
+          { 角色: "worker (kitchen)", 模块: "厨房事工", 权限: "操作（饭食计划、餐次类别、活动订餐）" },
+          { 角色: "worker (sunday_school)", 模块: "主日学", 权限: "操作（课程、签到、升班）" },
+          { 角色: "worker (media)", 模块: "影音投影", 权限: "操作（广播、笔记）" },
+          { 角色: "worker (tv_display)", 模块: "TV 屏幕", 权限: "操作（屏幕、播放列表、海报）" },
+          { 角色: "worker (retreat)", 模块: "退修会", 权限: "操作（报名管理）" },
+          { 角色: "viewer", 模块: "公开内容", 权限: "只读（首页、公告、屏幕、活动）" },
+          { 角色: "anon (访客)", 模块: "公开表单", 权限: "提交（登记、签到、反馈）" },
+        ],
+        [22, 22, 60],
+      );
+
+      // Sheet6 RLS策略
+      add(
+        "RLS策略",
+        policies.map((p) => ({
+          表名: p.table_name,
+          策略名称: p.policy_name,
+          命令: p.cmd,
+          角色: p.roles,
+          说明: p.qual || p.with_check || "—",
+        })),
+        [32, 40, 10, 24, 60],
+      );
+
+      // Sheet7 模块与数据表关系
+      const rel: Array<{ 模块: string; 数据表: string; 用途: string }> = [];
+      for (const m of modules) {
+        for (const t of m.tables) {
+          rel.push({ 模块: m.label, 数据表: t, 用途: TABLE_NOTES[t] || "" });
+        }
+      }
+      add("模块与数据表关系", rel, [22, 36, 36]);
+
+      // Sheet8 迁移说明
+      add(
+        "迁移说明",
+        [
+          { 步骤: "1", 类别: "系统迁移步骤", 内容: "在新环境部署本前端项目（Lovable / Vercel / VPS），保留 routes 与 components 不变。" },
+          { 步骤: "2", 类别: "系统迁移步骤", 内容: "复制 .env：VITE_SUPABASE_URL / VITE_SUPABASE_PUBLISHABLE_KEY / SUPABASE_SERVICE_ROLE_KEY。" },
+          { 步骤: "3", 类别: "Supabase 迁移步骤", 内容: "新建 Supabase 项目，按 supabase/migrations 顺序执行迁移，重建全部表、函数、RLS。" },
+          { 步骤: "4", 类别: "Supabase 迁移步骤", 内容: "登录系统并执行『初始化为超级管理员』，然后在『数据库管理中心』使用一键恢复上传 JSON。" },
+          { 步骤: "5", 类别: "VPS 迁移步骤", 内容: "若使用自托管 Postgres：pg_dump 旧库 → pg_restore 到新库；同步 auth.users 与 public 数据，重新生成 service_role key。" },
+          { 步骤: "6", 类别: "VPS 迁移步骤", 内容: "确保启用扩展：pgcrypto；并执行所有 SECURITY DEFINER 函数授权。" },
+          { 步骤: "7", 类别: "恢复顺序", 内容: "先：user_profiles → user_roles → user_preferences；再：fellowships / ministries / service_projects 等基础表；最后：业务记录（registrations、attendance_records、meal_plans 等）。" },
+          { 步骤: "8", 类别: "恢复顺序", 内容: "聊天 / 公告 / 反馈最后恢复，避免外键时间戳干扰。" },
+          { 步骤: "9", 类别: "注意事项", 内容: "恢复前务必『备份预览』确认表数量；选择『合并模式』新增数据，或『覆盖模式』清空重建。" },
+          { 步骤: "10", 类别: "注意事项", 内容: "本说明书不含个人资料，仅描述结构、权限、RLS、模块关系，可安全归档分享。" },
+        ],
+        [6, 18, 80],
+      );
+
+      XLSX.writeFile(wb, `hoc3-数据库说明书-${fileTimestamp()}.xlsx`);
       toast.success("已导出数据库结构说明书");
     } catch (e: any) {
       toast.error(`导出失败：${e?.message || e}`);
