@@ -2925,6 +2925,15 @@ function AdminPage() {
             </div>
           )}
         </section>
+          </div>
+        )}
+        {welcomeSubTab === "faith" && (
+          <div className="space-y-8 mt-8">
+            <FaithFollowupSection regs={regs} />
+          </div>
+        )}
+        {welcomeSubTab === "reception" && (
+          <div className="space-y-8 mt-8">
         <section className="bg-card border border-border/50 rounded-2xl p-6">
           <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
             <h2 className="font-serif text-xl">人数统计</h2>
@@ -3131,10 +3140,6 @@ function AdminPage() {
             </div>
           )}
         </section>
-          </div>
-        )}
-        {welcomeSubTab === "reception" && (
-          <div className="space-y-8 mt-8">
             <HospitalityCalendarSection />
           </div>
         )}
