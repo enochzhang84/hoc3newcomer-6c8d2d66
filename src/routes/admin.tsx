@@ -539,7 +539,7 @@ function AdminPage() {
   const [newMealNotes, setNewMealNotes] = useState<string>("");
   const [kitchenSubTab, setKitchenSubTab] = useState<string>("meals-stats");
   const [kitchenDetailRow, setKitchenDetailRow] = useState<AttendanceRecord | null>(null);
-  const [sundaySubTab, setSundaySubTab] = useState<string>("adult");
+  const [sundaySubTab, setSundaySubTab] = useState<string>("stats");
   const [welcomeSubTab, setWelcomeSubTab] = useState<string>("greet");
   const _perms = useCurrentPermissions();
   const _canWelcomeStats = !_perms.loading && canAccessModuleAnalytics(_perms.role, _perms.serviceArea, "welcome", _perms.analytics);
@@ -3540,10 +3540,10 @@ function AdminPage() {
             </TabsContent>
 
             <TabsContent value="sunday" className="space-y-8 mt-0">
-        <ModuleSplitLayout area="sunday_school" analytics={<SundayAnalytics />}>
-        {/* Chrome-style sub-tabs — 2 equal columns */}
-        <div className="grid grid-cols-2 items-end gap-1 border-b border-border/60 px-2 pt-1 -mb-2">
+        {/* Chrome-style sub-tabs — 3 equal columns */}
+        <div className="grid grid-cols-3 items-end gap-1 border-b border-border/60 px-2 pt-1 -mb-2">
           {[
+            { v: "stats", label: "主日学统计" },
             { v: "adult", label: t("subAdultSS") },
             { v: "kids", label: t("subKidsSS") },
           ].map((tab) => {
@@ -3564,6 +3564,72 @@ function AdminPage() {
             );
           })}
         </div>
+
+        <div className="mt-8">
+        {sundaySubTab === "stats" && (
+        <div className="space-y-6">
+          <section>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <CheckinActivityCard
+                title="成人主日学"
+                dates={sundayCheckins.map((k) => k.checkin_date)}
+                categories={sundayCheckins.map((k) => k.course_name ?? "未分类")}
+                categoryLabel="本周活跃课程"
+              />
+              <CheckinActivityCard
+                title="团契 / 小组聚会"
+                dates={fellowshipCheckins.map((k) => k.checkin_date)}
+                categories={fellowshipCheckins.map((k) => k.fellowship)}
+                categoryLabel="本周活跃团契"
+              />
+            </div>
+          </section>
+
+          <section>
+            <h2 className="font-serif text-xl mb-4">儿童主日学统计</h2>
+            <KidsAttendanceStats records={attendance} />
+          </section>
+
+          <section>
+            <Collapsible open={kidsEnrollOpen} onOpenChange={setKidsEnrollOpen}>
+              <div className="flex items-center justify-between mb-3">
+                <CollapsibleTrigger className="flex items-center gap-2 font-serif text-xl hover:opacity-80">
+                  <span>{kidsEnrollOpen ? "▼" : "▶"}</span>
+                  <span>儿童班级报名统计</span>
+                </CollapsibleTrigger>
+                {!kidsEnrollOpen && (
+                  <span className="text-xs text-muted-foreground">
+                    👦 {kidsRows.reduce((s, r: any) => s + (r.student_count ?? 0), 0)} 人 ·
+                    📚 {kidsRows.length} 班
+                  </span>
+                )}
+              </div>
+              <CollapsibleContent>
+                <KidsEnrollmentStats classes={kidsRows} snapshots={kidsSnapshots} />
+              </CollapsibleContent>
+            </Collapsible>
+          </section>
+
+          <section>
+            <Collapsible open={sundayParticipationOpen} onOpenChange={setSundayParticipationOpen}>
+              <div className="flex items-center justify-between mb-3">
+                <CollapsibleTrigger className="flex items-center gap-2 font-serif text-xl hover:opacity-80">
+                  <span>{sundayParticipationOpen ? "▼" : "▶"}</span>
+                  <span>课程统计</span>
+                </CollapsibleTrigger>
+                {!sundayParticipationOpen && (
+                  <span className="text-xs text-muted-foreground">
+                    📚 {courses.length} 门课程 · 🙋 {sundayCheckins.length} 次签到
+                  </span>
+                )}
+              </div>
+              <CollapsibleContent>
+                <SundayParticipationStats checkins={sundayCheckins} courses={courses} />
+              </CollapsibleContent>
+            </Collapsible>
+          </section>
+        </div>
+        )}
 
         {sundaySubTab === "adult" && (<>
         <section className="bg-card border border-border/50 rounded-2xl p-6">
@@ -4360,7 +4426,7 @@ ${rows.length===0?'<tr><td colspan="5" style="text-align:center;color:#888;paddi
           </div>
         </section>
         </>)}
-        </ModuleSplitLayout>
+        </div>
             </TabsContent>
 
             <TabsContent value="events" className="space-y-8 mt-0">
