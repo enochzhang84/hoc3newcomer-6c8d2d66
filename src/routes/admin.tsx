@@ -44,6 +44,11 @@ import { SundayAnalytics } from "@/components/admin/analytics/SundayAnalytics";
 import { NewcomerAnalytics } from "@/components/admin/analytics/NewcomerAnalytics";
 import { WelcomeAnalytics } from "@/components/admin/analytics/WelcomeAnalytics";
 import { MediaAnalytics } from "@/components/admin/analytics/MediaAnalytics";
+import {
+  ServiceRankingBoard,
+  isMediaServiceEntry,
+  isKitchenServiceEntry,
+} from "@/components/admin/analytics/ServiceRankingBoard";
 
 type Reg = {
   id: string;
