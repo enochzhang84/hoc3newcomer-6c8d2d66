@@ -1400,6 +1400,33 @@ export type Database = {
         }
         Relationships: []
       }
+      user_module_analytics: {
+        Row: {
+          created_at: string
+          enabled: boolean
+          id: string
+          service_area: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          service_area: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          service_area?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_preferences: {
         Row: {
           last_messages_seen_at: string
@@ -1501,6 +1528,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_view_analytics: {
+        Args: { _area: string; _uid: string }
+        Returns: boolean
+      }
       expire_display_screen: { Args: { _slug: string }; Returns: undefined }
       get_service_area: { Args: { _uid: string }; Returns: string }
       has_role: {
@@ -1513,6 +1544,10 @@ export type Database = {
       is_admin_or_above: { Args: { _uid: string }; Returns: boolean }
       is_super_admin: { Args: { _uid: string }; Returns: boolean }
       touch_display_screen: { Args: { _slug: string }; Returns: undefined }
+      worker_in_area: {
+        Args: { _area: string; _uid: string }
+        Returns: boolean
+      }
     }
     Enums: {
       app_role: "admin" | "user" | "viewer" | "super_admin" | "worker"
