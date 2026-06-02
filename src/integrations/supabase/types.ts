@@ -173,6 +173,42 @@ export type Database = {
         }
         Relationships: []
       }
+      backup_logs: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          creator_name: string | null
+          file_size_bytes: number
+          id: string
+          kind: string
+          summary: Json
+          total_records: number
+          total_tables: number
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          creator_name?: string | null
+          file_size_bytes?: number
+          id?: string
+          kind?: string
+          summary?: Json
+          total_records?: number
+          total_tables?: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          creator_name?: string | null
+          file_size_bytes?: number
+          id?: string
+          kind?: string
+          summary?: Json
+          total_records?: number
+          total_tables?: number
+        }
+        Relationships: []
+      }
       baptisms: {
         Row: {
           baptism_date: string
