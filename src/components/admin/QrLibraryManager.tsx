@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -34,6 +34,7 @@ import {
   Printer,
   Link2,
   Star,
+  QrCode,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -109,6 +110,16 @@ export function QrLibraryManager({
   const [editingItem, setEditingItem] = useState<QrItem | null>(null);
   const [creatingItem, setCreatingItem] = useState(false);
   const [catDialog, setCatDialog] = useState<{ mode: "create" | "rename"; cat?: Category } | null>(null);
+  const [confirmState, setConfirmState] = useState<{
+    title: string;
+    message: string;
+    onOk: () => void;
+  } | null>(null);
+  const askConfirm = useCallback(
+    (title: string, message: string, onOk: () => void) =>
+      setConfirmState({ title, message, onOk }),
+    [],
+  );
 
   const legacyItems = useMemo(() => buildLegacyItems(publicBase, eventToken), [publicBase, eventToken]);
 
@@ -140,14 +151,21 @@ export function QrLibraryManager({
     return allItems.find((i) => i.id === id) ?? null;
   }, [selectedIds, allItems]);
 
-  function toggleSelect(id: string, e?: React.MouseEvent) {
+  const toggleSelect = useCallback((id: string, e?: React.MouseEvent) => {
     setSelectedIds((prev) => {
-      const next = new Set(e?.metaKey || e?.ctrlKey ? prev : []);
-      if (prev.has(id) && (e?.metaKey || e?.ctrlKey)) next.delete(id);
+      const multi = !!(e?.metaKey || e?.ctrlKey);
+      // Plain click: select only this one; click again deselects.
+      if (!multi) {
+        if (prev.size === 1 && prev.has(id)) return new Set();
+        return new Set([id]);
+      }
+      // Multi-select toggle.
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
       else next.add(id);
       return next;
     });
-  }
+  }, []);
 
   // ===== Category CRUD =====
   async function saveCategory(name: string) {
@@ -167,12 +185,17 @@ export function QrLibraryManager({
   }
 
   async function deleteCategory(cat: Category) {
-    if (!confirm(`确定删除分类「${cat.name}」？分类内的二维码不会被删除，只是变为未分类。`)) return;
-    const { error } = await supabase.from("qr_categories").delete().eq("id", cat.id);
-    if (error) { toast.error(error.message); return; }
-    if (selectedCat === cat.id) setSelectedCat(ALL_CATEGORY_ID);
-    toast.success("分类已删除");
-    await refresh();
+    askConfirm(
+      "删除分类",
+      `确定删除分类「${cat.name}」？分类内的二维码不会被删除，只是变为未分类。`,
+      async () => {
+        const { error } = await supabase.from("qr_categories").delete().eq("id", cat.id);
+        if (error) { toast.error(error.message); return; }
+        if (selectedCat === cat.id) setSelectedCat(ALL_CATEGORY_ID);
+        toast.success("分类已删除");
+        await refresh();
+      },
+    );
   }
 
   // ===== Item ops =====
@@ -181,23 +204,25 @@ export function QrLibraryManager({
       toast.info("系统内置二维码不可删除");
       return;
     }
-    if (!confirm(`确定删除「${item.name}」？`)) return;
-    const { error } = await supabase.from("qr_library").delete().eq("id", item.id);
-    if (error) { toast.error(error.message); return; }
-    setSelectedIds((s) => { const n = new Set(s); n.delete(item.id); return n; });
-    toast.success("已删除");
-    await refresh();
+    askConfirm("删除二维码", `确定删除「${item.name}」？`, async () => {
+      const { error } = await supabase.from("qr_library").delete().eq("id", item.id);
+      if (error) { toast.error(error.message); return; }
+      setSelectedIds((s) => { const n = new Set(s); n.delete(item.id); return n; });
+      toast.success("已删除");
+      await refresh();
+    });
   }
 
   async function batchDelete() {
     const ids = Array.from(selectedIds).filter((id) => !id.startsWith("legacy:"));
     if (!ids.length) return;
-    if (!confirm(`确定删除选中的 ${ids.length} 个二维码？`)) return;
-    const { error } = await supabase.from("qr_library").delete().in("id", ids);
-    if (error) { toast.error(error.message); return; }
-    setSelectedIds(new Set());
-    toast.success("已删除");
-    await refresh();
+    askConfirm("批量删除", `确定删除选中的 ${ids.length} 个二维码？`, async () => {
+      const { error } = await supabase.from("qr_library").delete().in("id", ids);
+      if (error) { toast.error(error.message); return; }
+      setSelectedIds(new Set());
+      toast.success("已删除");
+      await refresh();
+    });
   }
 
   async function moveToCategory(item: QrItem, categoryId: string | null) {
