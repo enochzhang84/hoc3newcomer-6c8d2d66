@@ -213,11 +213,12 @@ export function QrLibraryManager({
     if (!url) { toast.error("无可用链接"); return; }
     // Get latest home_page_settings row, or create one.
     const { data: existing } = await supabase.from("home_page_settings").select("id").limit(1).maybeSingle();
+    const patch: Record<string, string> = { [slot]: url };
     if (existing?.id) {
-      const { error } = await supabase.from("home_page_settings").update({ [slot]: url }).eq("id", existing.id);
+      const { error } = await supabase.from("home_page_settings").update(patch as never).eq("id", existing.id);
       if (error) { toast.error(error.message); return; }
     } else {
-      const { error } = await supabase.from("home_page_settings").insert({ [slot]: url });
+      const { error } = await supabase.from("home_page_settings").insert(patch as never);
       if (error) { toast.error(error.message); return; }
     }
     if (!item.id.startsWith("legacy:")) {
