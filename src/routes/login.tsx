@@ -53,15 +53,16 @@ function LoginPage() {
         .from("user_roles")
         .select("role")
         .eq("user_id", uid);
+      const superStatus = await doHasSuper();
+      if (!superStatus.hasSuperAdmin) {
+        setNeedsFirstAdmin(true);
+        toast.info("系统尚未初始化管理员，请先将当前用户设为首位超级管理员。");
+        setLoading(false);
+        return;
+      }
       if (!roles || roles.length === 0) {
-        const status = await doHasSuper();
-        if (!status.hasSuperAdmin) {
-          setNeedsFirstAdmin(true);
-          toast.info("系统尚未初始化管理员，请先将当前用户设为首位超级管理员。");
-        } else {
-          await supabase.auth.signOut();
-          toast.error("您的账号尚未审核，请联系主管理员授权后再登录");
-        }
+        await supabase.auth.signOut();
+        toast.error("您的账号尚未审核，请联系主管理员授权后再登录");
         setLoading(false);
         return;
       }
