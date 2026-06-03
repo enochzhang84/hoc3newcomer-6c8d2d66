@@ -202,7 +202,55 @@ export function ElderWeeklyOverview(props: ElderOverviewProps) {
               <Editor value={edit.duty} editing={editing} onChange={(v) => setEdit({ ...edit, duty: v })} />
             </Block>
             <Block title="儿童事工">
-              <Editor value={edit.kids} editing={editing} onChange={(v) => setEdit({ ...edit, kids: v })} />
+              <table className="bulletin-table w-full text-[14px]">
+                <thead>
+                  <tr>
+                    <th className="border px-1 py-0.5 text-center font-semibold">时间</th>
+                    <th className="border px-1 py-0.5 text-center font-semibold">年级 / 级别</th>
+                    <th className="border px-1 py-0.5 text-center font-semibold">教室</th>
+                    <th className="border px-1 py-0.5 text-center font-semibold">负责同工</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td className="border px-1 py-0.5 text-center align-middle" rowSpan={5}>
+                      <div>11:00am–12:30pm</div>
+                      <div className="mt-0.5">儿童主日学聚会</div>
+                    </td>
+                    <td className="border px-1 py-0.5">1.&nbsp;Nursery (0–2 岁)</td>
+                    <td className="border px-1 py-0.5 text-center">夏靖</td>
+                    <td className="border px-1 py-0.5 text-center">顾雨珊</td>
+                  </tr>
+                  <tr>
+                    <td className="border px-1 py-0.5">2.&nbsp;Preschool (3–5 岁)</td>
+                    <td className="border px-1 py-0.5 text-center">吕小梅</td>
+                    <td className="border px-1 py-0.5 text-center">吕小梅</td>
+                  </tr>
+                  <tr>
+                    <td className="border px-1 py-0.5">3.&nbsp;K/1st (K–1 年级)</td>
+                    <td className="border px-1 py-0.5 text-center">王允义</td>
+                    <td className="border px-1 py-0.5 text-center">吕小梅</td>
+                  </tr>
+                  <tr>
+                    <td className="border px-1 py-0.5">4.&nbsp;2nd/3rd (2–3 年级)</td>
+                    <td className="border px-1 py-0.5 text-center">冯国富</td>
+                    <td className="border px-1 py-0.5 text-center">冯国富</td>
+                  </tr>
+                  <tr>
+                    <td className="border px-1 py-0.5">5.&nbsp;4th/5th (4–5 年级)</td>
+                    <td className="border px-1 py-0.5 text-center">&nbsp;</td>
+                    <td className="border px-1 py-0.5 text-center">谢刚</td>
+                  </tr>
+                  <tr>
+                    <td className="border px-1 py-0.5 text-center">
+                      <div>周五</div>
+                      <div>7:45–9:30pm</div>
+                    </td>
+                    <td className="border px-1 py-0.5 text-center" colSpan={2}>Awana</td>
+                    <td className="border px-1 py-0.5 text-center">故纪中</td>
+                  </tr>
+                </tbody>
+              </table>
             </Block>
             <Block title={`上周人数统计${latest ? `（${latest.record_date}）` : ""}`}>
               {latest ? (
