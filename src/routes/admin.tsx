@@ -37,7 +37,7 @@ import { useCurrentPermissions } from "@/hooks/useCurrentPermissions";
 import { updateRegistration } from "@/lib/registrations.functions";
 import { HospitalityCalendarSection } from "@/components/HospitalityCalendar";
 import { HospitalityRankingSection } from "@/components/HospitalityRanking";
-import { FaithFollowupSection } from "@/components/admin/FaithFollowupSection";
+import { FaithFollowupCRM as FaithFollowupSection } from "@/components/admin/FaithFollowupCRM";
 import { RegistrationListCRM } from "@/components/admin/RegistrationListCRM";
 import { DutyCalendarSection } from "@/components/DutyCalendar";
 import MealPlanCalendar from "@/components/MealPlanCalendar";
