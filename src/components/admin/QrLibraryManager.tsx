@@ -503,6 +503,35 @@ ${item.description ? `<p class="desc">${item.description}</p>` : ""}
           onSaved={() => { setCreatingItem(false); setEditingItem(null); void refresh(); }}
         />
       )}
+      {/* Non-blocking confirm */}
+      {confirmState && (
+        <Dialog open onOpenChange={(o) => !o && setConfirmState(null)}>
+          <DialogContent
+            className="max-w-sm"
+            onInteractOutside={(e) => e.preventDefault()}
+          >
+            <DialogHeader>
+              <DialogTitle>{confirmState.title}</DialogTitle>
+            </DialogHeader>
+            <div className="text-sm text-foreground/80 whitespace-pre-wrap">
+              {confirmState.message}
+            </div>
+            <DialogFooter>
+              <Button variant="ghost" onClick={() => setConfirmState(null)}>取消</Button>
+              <Button
+                variant="destructive"
+                onClick={() => {
+                  const fn = confirmState.onOk;
+                  setConfirmState(null);
+                  fn();
+                }}
+              >
+                确定
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }
