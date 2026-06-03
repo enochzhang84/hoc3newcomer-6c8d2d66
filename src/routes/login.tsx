@@ -1,19 +1,24 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { hasSuperAdmin, initSuperAdmin } from "@/lib/backup.functions";
 
 export const Route = createFileRoute("/login")({
   component: LoginPage,
 });
 
 function LoginPage() {
+  const doHasSuper = useServerFn(hasSuperAdmin);
+  const doInitSuper = useServerFn(initSuperAdmin);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [needsFirstAdmin, setNeedsFirstAdmin] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -49,8 +54,14 @@ function LoginPage() {
         .select("role")
         .eq("user_id", uid);
       if (!roles || roles.length === 0) {
-        await supabase.auth.signOut();
-        toast.error("您的账号尚未审核，请联系主管理员授权后再登录");
+        const status = await doHasSuper();
+        if (!status.hasSuperAdmin) {
+          setNeedsFirstAdmin(true);
+          toast.info("系统尚未初始化管理员，请先将当前用户设为首位超级管理员。");
+        } else {
+          await supabase.auth.signOut();
+          toast.error("您的账号尚未审核，请联系主管理员授权后再登录");
+        }
         setLoading(false);
         return;
       }
@@ -59,6 +70,18 @@ function LoginPage() {
     setTimeout(() => {
       window.location.assign("/admin");
     }, 3000);
+  }
+
+  async function handleInitFirstAdmin() {
+    setLoading(true);
+    try {
+      await doInitSuper();
+      toast.success("已设为首位超级管理员，正在进入后台...");
+      window.location.assign("/admin");
+    } catch (e: any) {
+      toast.error(`初始化失败：${e?.message || e}`);
+      setLoading(false);
+    }
   }
 
   return (
@@ -71,6 +94,14 @@ function LoginPage() {
         </div>
 
         <form onSubmit={handleSubmit} className="bg-card border border-border/50 rounded-2xl p-8 space-y-4 shadow-sm">
+          {needsFirstAdmin && (
+            <div className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 space-y-3">
+              <p>系统尚未初始化管理员，是否将当前用户设为首位超级管理员？</p>
+              <Button type="button" size="sm" onClick={handleInitFirstAdmin} disabled={loading}>
+                初始化为首位超级管理员
+              </Button>
+            </div>
+          )}
           <div className="space-y-2">
             <Label>邮箱</Label>
             <Input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
