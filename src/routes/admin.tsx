@@ -1230,6 +1230,40 @@ function AdminPage() {
   }, []);
 
   if (checking) return <div className="min-h-screen flex items-center justify-center text-muted-foreground">加载中...</div>;
+  if (noSuperAdminDetected) {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-4">
+        <div className="w-full max-w-md rounded-2xl border border-border/50 bg-card p-6 text-center shadow-sm">
+          <div className="text-4xl mb-3">🛡️</div>
+          <h1 className="font-serif text-2xl text-foreground mb-2">恢复首位超级管理员</h1>
+          <p className="text-sm text-muted-foreground mb-5">
+            系统尚未初始化管理员，是否将当前用户设为首位超级管理员？
+          </p>
+          <div className="flex flex-col gap-2 sm:flex-row sm:justify-center">
+            <Button
+              onClick={async () => {
+                try {
+                  await initCurrentSuperAdminFn();
+                  toast.success("已恢复首位超级管理员，正在刷新后台...");
+                  window.location.reload();
+                } catch (err) {
+                  toast.error((err as Error).message);
+                }
+              }}
+            >
+              恢复首位超级管理员
+            </Button>
+            <Button variant="outline" onClick={async () => {
+              await supabase.auth.signOut();
+              navigate({ to: "/login" });
+            }}>
+              退出登录
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
   if (!userRole) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-4">
