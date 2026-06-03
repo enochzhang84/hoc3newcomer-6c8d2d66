@@ -172,30 +172,30 @@ export function ElderWeeklyOverview(props: ElderOverviewProps) {
       <div
         id="elder-bulletin"
         className="bg-white text-black p-6 print:p-2"
-        style={{ fontFamily: "'PMingLiU','MingLiU','SimSun','宋体',serif", fontSize: "14px", lineHeight: 1.55, fontWeight: 600 }}
+        style={{ fontFamily: "'PMingLiU','MingLiU','SimSun','宋体',serif", fontSize: "17px", lineHeight: 1.55, fontWeight: 600 }}
       >
         <div className="text-center pb-2 mb-4">
           <div
-            className="text-[18px] tracking-[0.12em]"
+            className="text-[22px] tracking-[0.12em]"
             style={{ fontFamily: "'STZhongsong','STSong','SimSun',serif", fontWeight: 700 }}
           >
             基督之家第三家
           </div>
           <div
-            className="text-[20px] tracking-[0.12em] mt-1"
+            className="text-[24px] tracking-[0.12em] mt-1"
             style={{ fontFamily: "'STZhongsong','STSong','SimSun',serif", fontWeight: 700 }}
           >
             今日周报总览
           </div>
           <div
-            className="text-[12px] mt-1 tracking-widest"
+            className="text-[14px] mt-1 tracking-widest"
             style={{ fontFamily: "'Times New Roman','PMingLiU',serif" }}
           >
             主后 {today.getFullYear()} 年 {today.getMonth() + 1} 月 {today.getDate()} 日　|　本周自 {fmtCN(wkStart)} 起
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-x-6 print:grid-cols-3 text-[13px] leading-[1.5] items-stretch">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-x-6 print:grid-cols-3 text-[17px] leading-[1.55] items-stretch">
           {/* 左栏 */}
           <div className="space-y-4 break-inside-avoid md:pr-4">
             <Block title="圣工轮值表（今日）">
@@ -225,12 +225,12 @@ export function ElderWeeklyOverview(props: ElderOverviewProps) {
           {/* 中栏 */}
           <div className="break-inside-avoid md:px-4 flex flex-col h-full">
             <div
-              className="text-center pb-1 mb-2 tracking-[0.12em] text-[16px]"
+              className="text-center pb-1 mb-2 tracking-[0.12em] text-[20px]"
               style={{ fontFamily: "'STZhongsong','STSong','SimSun',serif", fontWeight: 700 }}
             >
               中文堂主日敬拜程序
             </div>
-            <h3 className="section-title text-[14px] tracking-[0.1em] text-center pb-0.5 mb-1.5">
+            <h3 className="section-title text-[20px] tracking-[0.1em] text-center pb-0.5 mb-1.5">
               今日主日崇拜
             </h3>
             <div className="flex-1 flex flex-col">
@@ -285,19 +285,22 @@ export function ElderWeeklyOverview(props: ElderOverviewProps) {
         #elder-bulletin .bulletin-table {
           border-collapse: collapse;
           font-family: 'PMingLiU','MingLiU','SimSun',serif;
-          font-weight: 600;
+          font-weight: 700;
         }
         #elder-bulletin .bulletin-table td,
         #elder-bulletin .bulletin-table th {
-          font-size: 13px;
-          line-height: 1.35;
-          padding: 3px 6px;
+          font-size: 17px;
+          line-height: 1.45;
+          padding: 4px 8px;
           border: 1px solid #000;
           font-weight: 600;
         }
         #elder-bulletin .latin-text {
           font-family: 'Times New Roman','PMingLiU',serif;
           font-weight: 700;
+        }
+        #elder-bulletin .bulletin-table td.text-right.latin-text {
+          font-size: 18px;
         }
         @media print {
           body * { visibility: hidden !important; }
@@ -312,7 +315,7 @@ export function ElderWeeklyOverview(props: ElderOverviewProps) {
 function Block({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="break-inside-avoid">
-      <h3 className="section-title text-[14px] tracking-[0.1em] text-center pb-0.5 mb-1.5">
+      <h3 className="section-title text-[20px] tracking-[0.1em] text-center pb-0.5 mb-1.5">
         {title}
       </h3>
       <div>{children}</div>
@@ -345,7 +348,7 @@ function Editor({ value, editing, onChange, stretch }: { value: string; editing:
     const lines = value.split("\n");
     return (
       <div
-        className="flex-1 flex flex-col justify-between text-[12px]"
+        className="flex-1 flex flex-col justify-between text-[17px] leading-[1.55]"
         style={{ fontFamily: "inherit", minHeight: "100%" }}
       >
         {lines.map((ln, i) => (
@@ -356,7 +359,7 @@ function Editor({ value, editing, onChange, stretch }: { value: string; editing:
   }
   return (
     <pre
-      className="whitespace-pre-wrap text-[12px] leading-[1.55] m-0"
+      className="whitespace-pre-wrap text-[17px] leading-[1.55] m-0"
       style={{ fontFamily: "inherit" }}
     >
       {value}
