@@ -29,6 +29,7 @@ import { listUsersWithRoles, setUserRole, deleteUser, createUserWithRole, update
 import { useI18n, type TKey } from "@/lib/i18n";
 import { HomePageSettingsPanel } from "@/components/admin/HomePageSettingsPanel";
 import { BackupRestorePanel } from "@/components/admin/BackupRestorePanel";
+import { checkSuperAdminExists, initializeCurrentUserAsSuperAdmin } from "@/lib/bootstrap-admin.functions";
 import { SERVICE_AREAS, SERVICE_AREA_LABELS, ROLE_LABELS, type Role, type ServiceArea, canAccessAdmin, canAccessModuleAnalytics } from "@/lib/permissions";
 import { useCurrentPermissions } from "@/hooks/useCurrentPermissions";
 import { updateRegistration } from "@/lib/registrations.functions";
@@ -474,6 +475,7 @@ function AdminPage() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [userRole, setUserRoleState] = useState<Role | null>(null);
+  const [noSuperAdminDetected, setNoSuperAdminDetected] = useState(false);
   const [permsDialogUser, setPermsDialogUser] = useState<AppUser | null>(null);
   const [currentServiceArea, setCurrentServiceArea] = useState<ServiceArea | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
@@ -667,6 +669,8 @@ function AdminPage() {
   };
 
   const fetchUsersFn = useServerFn(listUsersWithRoles);
+  const checkSuperAdminFn = useServerFn(checkSuperAdminExists);
+  const initCurrentSuperAdminFn = useServerFn(initializeCurrentUserAsSuperAdmin);
   const setUserRoleFn = useServerFn(setUserRole);
   const deleteUserFn = useServerFn(deleteUser);
   const createUserFn = useServerFn(createUserWithRole);
