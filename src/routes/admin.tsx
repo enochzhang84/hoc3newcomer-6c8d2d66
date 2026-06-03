@@ -6387,25 +6387,42 @@ ${rows.length===0?'<tr><td colspan="5" style="text-align:center;color:#888;paddi
           </DialogContent>
         </Dialog>
 
-        {/* QR Library Dialog */}
-        <Dialog open={qrLibOpen} onOpenChange={setQrLibOpen}>
-          <DialogContent
-            className="max-w-6xl w-[95vw] max-h-[90vh] overflow-hidden p-4"
-            onInteractOutside={(e) => e.preventDefault()}
-            onPointerDownOutside={(e) => e.preventDefault()}
+        {/* QR Library - Windows 11 style slide-in panel (no overlay, below floating chat) */}
+        {qrLibOpen && (
+          <div
+            className="fixed inset-y-0 right-0 z-40 print:hidden flex flex-col bg-[#f3f3f3] dark:bg-neutral-900 border-l border-black/10 shadow-2xl animate-in slide-in-from-right duration-200"
+            style={{ width: "min(1200px, 92vw)" }}
+            role="dialog"
+            aria-label="二维码资源管理中心"
           >
-            <DialogHeader>
-              <DialogTitle>二维码资源管理中心</DialogTitle>
-            </DialogHeader>
-            {qrLibOpen && (
+            <div className="flex items-center justify-between px-5 py-3 border-b border-black/10 bg-white/70 dark:bg-neutral-800/70 backdrop-blur">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-md bg-blue-600/10 text-blue-600 flex items-center justify-center">
+                  <span className="text-sm">▦</span>
+                </div>
+                <div>
+                  <div className="text-sm font-semibold text-foreground">二维码资源管理中心</div>
+                  <div className="text-[11px] text-muted-foreground">系统工具栏 · 二维码库</div>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setQrLibOpen(false)}
+                className="h-8 w-8 rounded-md hover:bg-black/5 dark:hover:bg-white/10 text-foreground flex items-center justify-center"
+                aria-label="关闭"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="flex-1 min-h-0 overflow-hidden p-3">
               <QrLibraryManager
                 publicBase={publicBase}
                 eventToken={(events.find((e) => e.is_active) ?? events[0])?.qr_token ?? null}
                 canEdit={isSuperAdmin || userRole === "admin"}
               />
-            )}
-          </DialogContent>
-        </Dialog>
+            </div>
+          </div>
+        )}
 
       </main>
     </div>
