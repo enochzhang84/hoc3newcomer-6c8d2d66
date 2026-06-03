@@ -1,11 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { QRCodeSVG } from "qrcode.react";
 import { useWin98Dialog } from "./Win98Dialog";
+import {
+  Win98Button,
+  Win98Input,
+  Win98Textarea,
+  Win98Label,
+  Win98GroupBox,
+} from "./win98";
 import logoDefault from "@/assets/logo.png";
 
 type Settings = {
@@ -17,7 +20,7 @@ type Settings = {
   welcome_subtitle: string | null;
   welcome_description: string | null;
   welcome_image_url: string | null;
-  welcome_mode: string | null; // 'text' | 'image' | 'html'
+  welcome_mode: string | null;
   welcome_content_html: string | null;
   qr_title: string | null;
   qr_description: string | null;
@@ -30,8 +33,44 @@ const BUCKET = "site-assets";
 
 function publicUrl(path: string): string {
   const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
-  // append cache-buster so newly uploaded image refreshes
   return `${data.publicUrl}?t=${Date.now()}`;
+}
+
+/** Tab-style toggle in Win98 look */
+function Win98Tab({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className="px-3 h-7 text-[12px] text-black"
+      style={
+        active
+          ? {
+              background: "#c0c0c0",
+              borderStyle: "solid",
+              borderWidth: 2,
+              borderColor: "#808080 #ffffff #ffffff #808080",
+              boxShadow: "inset 1px 1px 0 #000, inset -1px -1px 0 #dfdfdf",
+            }
+          : {
+              background: "#c0c0c0",
+              borderStyle: "solid",
+              borderWidth: 2,
+              borderColor: "#ffffff #808080 #808080 #ffffff",
+              boxShadow: "inset 1px 1px 0 #dfdfdf, inset -1px -1px 0 #000",
+            }
+      }
+    >
+      {children}
+    </button>
+  );
 }
 
 export function HomePageSettingsPanel() {
@@ -40,7 +79,6 @@ export function HomePageSettingsPanel() {
   const [s, setS] = useState<Settings | null>(null);
   const { alert, confirm, dialog } = useWin98Dialog();
 
-  // QR generator state
   const origin = typeof window !== "undefined" ? window.location.origin : "";
   const [qrType, setQrType] = useState<"newcomer" | "retreat" | "custom">("newcomer");
   const [qrCustom, setQrCustom] = useState("");
@@ -67,7 +105,8 @@ export function HomePageSettingsPanel() {
     })();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const update = (patch: Partial<Settings>) => setS((cur) => (cur ? { ...cur, ...patch } : cur));
+  const update = (patch: Partial<Settings>) =>
+    setS((cur) => (cur ? { ...cur, ...patch } : cur));
 
   async function uploadFile(file: File, fileName: string): Promise<string | null> {
     const path = `home/${fileName}`;
@@ -105,7 +144,7 @@ export function HomePageSettingsPanel() {
       .eq("id", s.id);
     setSaving(false);
     if (error) alert("保存失败", error.message, "error");
-    else alert("保存成功", "全部设置已保存。", "success");
+    else alert("系统提示", "全部设置已保存。", "success");
   }
 
   // ---- QR helpers ----
@@ -158,7 +197,7 @@ export function HomePageSettingsPanel() {
   async function copyLink() {
     try {
       await navigator.clipboard.writeText(qrValue);
-      alert("已复制", qrValue, "success");
+      alert("系统提示", qrValue, "success");
     } catch {
       alert("复制失败", "浏览器不支持自动复制，请手动复制。", "error");
     }
@@ -190,41 +229,57 @@ export function HomePageSettingsPanel() {
     if (!url) return alert("保存失败", "二维码上传失败。", "error");
     if (qrType === "newcomer") update({ qr_newcomer_url: url });
     else if (qrType === "retreat") update({ qr_retreat_url: url });
-    alert("已保存", "二维码图片已上传，记得点击底部「保存全部设置」持久化。", "success");
+    alert(
+      "系统提示",
+      "二维码图片已上传，记得点击底部「保存全部设置」持久化。",
+      "success",
+    );
   }
 
   function replaceSiteQr(scope: "newcomer" | "retreat" | "all") {
-    confirm("确认替换", `将使用当前生成的二维码替换：${scope === "all" ? "全部二维码" : scope === "newcomer" ? "新人登记二维码" : "退修会二维码"}。继续？`, async () => {
-      const url = await uploadQrAsPng(`qr-${scope === "all" ? qrType : scope}`);
-      if (!url) return alert("替换失败", "二维码上传失败。", "error");
-      const patch: Partial<Settings> = {};
-      if (scope === "newcomer" || scope === "all") patch.qr_newcomer_url = url;
-      if (scope === "retreat" || scope === "all") patch.qr_retreat_url = url;
-      if (scope === "all") patch.qr_image_url = url;
-      update(patch);
-      alert("替换成功", "请点击底部「保存全部设置」持久化。", "success");
-    }, "warn");
+    confirm(
+      "系统提示",
+      `将使用当前生成的二维码替换：${
+        scope === "all" ? "全部二维码" : scope === "newcomer" ? "新人登记二维码" : "退修会二维码"
+      }。是否继续？`,
+      async () => {
+        const url = await uploadQrAsPng(`qr-${scope === "all" ? qrType : scope}`);
+        if (!url) return alert("替换失败", "二维码上传失败。", "error");
+        const patch: Partial<Settings> = {};
+        if (scope === "newcomer" || scope === "all") patch.qr_newcomer_url = url;
+        if (scope === "retreat" || scope === "all") patch.qr_retreat_url = url;
+        if (scope === "all") patch.qr_image_url = url;
+        update(patch);
+        alert("系统提示", "替换成功，请点击底部「保存全部设置」持久化。", "success");
+      },
+      "warn",
+    );
   }
 
   if (loading) {
-    return <div className="text-sm text-muted-foreground">加载中…</div>;
+    return <div className="text-[12px] text-black">加载中…</div>;
   }
   if (!s) {
-    return <div className="text-sm text-destructive">未找到主页设置记录</div>;
+    return <div className="text-[12px] text-black">未找到主页设置记录</div>;
   }
 
   return (
-    <div className="space-y-6">
+    <div className="text-black text-[12px] font-[Tahoma,'MS_Sans_Serif',sans-serif]">
       {dialog}
-      {/* Logo */}
-      <section className="bg-card border border-border/50 rounded-2xl p-5 space-y-3">
-        <h3 className="font-serif text-lg">Logo 设置</h3>
-        <div className="flex items-center gap-4">
+
+      {/* Logo 设置 */}
+      <Win98GroupBox title="Logo 设置">
+        <div className="flex items-center gap-3">
           <img
             src={s.logo_url || logoDefault}
             onError={(e) => ((e.currentTarget as HTMLImageElement).src = logoDefault)}
             alt="Logo 预览"
-            className="h-16 w-16 object-contain rounded-md border border-border/40 bg-muted/30"
+            className="h-16 w-16 object-contain bg-white"
+            style={{
+              borderStyle: "solid",
+              borderWidth: 2,
+              borderColor: "#808080 #ffffff #ffffff #808080",
+            }}
           />
           <div className="flex flex-wrap gap-2">
             <label className="cursor-pointer">
@@ -239,106 +294,109 @@ export function HomePageSettingsPanel() {
                   if (url) update({ logo_url: url });
                 }}
               />
-              <span className="inline-flex items-center justify-center h-9 px-3 rounded-md border border-input bg-background text-sm hover:bg-accent">
-                上传 Logo
-              </span>
+              <Win98Button asChild>上传 Logo</Win98Button>
             </label>
-            <Button variant="outline" size="sm" onClick={() => update({ logo_url: null })}>
-              恢复默认 Logo
-            </Button>
+            <Win98Button onClick={() => update({ logo_url: null })}>恢复默认 Logo</Win98Button>
           </div>
         </div>
-        <div className="grid sm:grid-cols-2 gap-3 pt-2">
-          <div className="space-y-1">
-            <Label>Logo 主标题 (logo_title)</Label>
-            <Input
+        <div className="grid sm:grid-cols-2 gap-3 pt-1">
+          <div>
+            <Win98Label>Logo 主标题</Win98Label>
+            <Win98Input
               value={s.logo_title ?? ""}
               onChange={(e) => update({ logo_title: e.target.value })}
               placeholder="例如：基督三家事工中心"
             />
           </div>
-          <div className="space-y-1">
-            <Label>Logo 副标题 (logo_subtitle)</Label>
-            <Input
+          <div>
+            <Win98Label>Logo 副标题</Win98Label>
+            <Win98Input
               value={s.logo_subtitle ?? ""}
               onChange={(e) => update({ logo_subtitle: e.target.value })}
               placeholder="例如：HOC3 Ministry Center"
             />
           </div>
         </div>
-        <p className="text-xs text-muted-foreground">用于扫码页 / 后台左上角文字显示。</p>
-      </section>
+        <div className="text-[11px] pt-1">用于扫码页 / 后台左上角文字显示。</div>
+      </Win98GroupBox>
 
-      {/* Welcome */}
-      <section className="bg-card border border-border/50 rounded-2xl p-5 space-y-3">
-        <h3 className="font-serif text-lg">左侧欢迎区设置</h3>
-        <div className="space-y-1">
-          <Label>显示模式 (welcome_mode)</Label>
-          <div className="flex gap-2">
+      {/* 欢迎区 */}
+      <Win98GroupBox title="左侧欢迎区设置">
+        <div>
+          <Win98Label>显示模式</Win98Label>
+          <div className="flex gap-1">
             {(["text", "image", "html"] as const).map((m) => (
-              <button
+              <Win98Tab
                 key={m}
+                active={(s.welcome_mode || "text") === m}
                 onClick={() => update({ welcome_mode: m })}
-                className={`px-3 h-9 rounded-md border text-sm ${
-                  (s.welcome_mode || "text") === m
-                    ? "bg-primary text-primary-foreground border-primary"
-                    : "bg-background border-input hover:bg-accent"
-                }`}
               >
                 {m === "text" ? "文字模式" : m === "image" ? "图片模式" : "HTML 模式"}
-              </button>
+              </Win98Tab>
             ))}
           </div>
         </div>
         <div className="grid sm:grid-cols-2 gap-3">
-          <div className="space-y-1">
-            <Label>欢迎标题</Label>
-            <Input
+          <div>
+            <Win98Label>欢迎标题</Win98Label>
+            <Win98Input
               value={s.welcome_title ?? ""}
               onChange={(e) => update({ welcome_title: e.target.value })}
               placeholder="例如：基督三家欢迎你"
             />
           </div>
-          <div className="space-y-1">
-            <Label>欢迎副标题</Label>
-            <Input
+          <div>
+            <Win98Label>欢迎副标题</Win98Label>
+            <Win98Input
               value={s.welcome_subtitle ?? ""}
               onChange={(e) => update({ welcome_subtitle: e.target.value })}
               placeholder="例如：The Home of Christ Church"
             />
           </div>
         </div>
-        <div className="space-y-1">
-          <Label>欢迎说明文字</Label>
-          <Textarea
+        <div>
+          <Win98Label>欢迎说明文字</Win98Label>
+          <Win98Textarea
             value={s.welcome_description ?? ""}
             onChange={(e) => update({ welcome_description: e.target.value })}
             placeholder="自由介绍文字…"
             rows={3}
           />
         </div>
-        <div className="space-y-1">
-          <Label>自定义 HTML 内容 (welcome_content_html)</Label>
-          <Textarea
+        <div>
+          <Win98Label>自定义 HTML 内容</Win98Label>
+          <Win98Textarea
             value={s.welcome_content_html ?? ""}
             onChange={(e) => update({ welcome_content_html: e.target.value })}
             placeholder="<div>支持任意 HTML，仅在「HTML 模式」下渲染</div>"
             rows={5}
-            className="font-mono text-xs"
+            className="font-mono"
           />
         </div>
-        <div className="space-y-2">
-          <Label>左侧背景图</Label>
-          <div className="flex items-center gap-4">
+        <div>
+          <Win98Label>左侧背景图</Win98Label>
+          <div className="flex items-center gap-3">
             {s.welcome_image_url ? (
               <img
                 src={s.welcome_image_url}
                 alt="背景图预览"
-                className="h-24 w-40 object-cover rounded-md border border-border/40"
+                className="h-24 w-40 object-cover bg-white"
+                style={{
+                  borderStyle: "solid",
+                  borderWidth: 2,
+                  borderColor: "#808080 #ffffff #ffffff #808080",
+                }}
                 onError={(e) => ((e.currentTarget as HTMLImageElement).style.opacity = "0.3")}
               />
             ) : (
-              <div className="h-24 w-40 rounded-md border border-dashed border-border/60 grid place-items-center text-xs text-muted-foreground">
+              <div
+                className="h-24 w-40 grid place-items-center text-[11px] bg-white"
+                style={{
+                  borderStyle: "solid",
+                  borderWidth: 2,
+                  borderColor: "#808080 #ffffff #ffffff #808080",
+                }}
+              >
                 未设置
               </div>
             )}
@@ -355,132 +413,165 @@ export function HomePageSettingsPanel() {
                     if (url) update({ welcome_image_url: url });
                   }}
                 />
-                <span className="inline-flex items-center justify-center h-9 px-3 rounded-md border border-input bg-background text-sm hover:bg-accent">
-                  上传背景图
-                </span>
+                <Win98Button asChild>上传背景图</Win98Button>
               </label>
-              <Button variant="outline" size="sm" onClick={() => update({ welcome_image_url: null })}>
+              <Win98Button onClick={() => update({ welcome_image_url: null })}>
                 清除背景图
-              </Button>
+              </Win98Button>
             </div>
           </div>
         </div>
-      </section>
+      </Win98GroupBox>
 
       {/* QR Generator */}
-      <section className="bg-card border border-border/50 rounded-2xl p-5 space-y-4">
-        <h3 className="font-serif text-lg">二维码生成器</h3>
-        <p className="text-xs text-muted-foreground">
-          自动使用当前站点地址 <code className="px-1 bg-muted rounded">{origin}</code> 生成二维码。
-        </p>
-        <div className="flex flex-wrap gap-2">
+      <Win98GroupBox title="二维码生成器">
+        <div className="text-[11px]">
+          自动使用当前站点地址 <code className="px-1 bg-white border border-[#808080]">{origin}</code> 生成二维码。
+        </div>
+        <div className="flex flex-wrap gap-1">
           {(
             [
-              { k: "newcomer", label: "新人扫码登记", url: `${origin}/register` },
-              { k: "retreat", label: "退修会报名", url: `${origin}/retreat-register` },
-              { k: "custom", label: "自定义链接", url: "自定义" },
+              { k: "newcomer", label: "新人扫码登记" },
+              { k: "retreat", label: "退修会报名" },
+              { k: "custom", label: "自定义链接" },
             ] as const
           ).map((t) => (
-            <button
-              key={t.k}
-              onClick={() => setQrType(t.k)}
-              className={`px-3 h-9 rounded-md border text-sm ${
-                qrType === t.k
-                  ? "bg-primary text-primary-foreground border-primary"
-                  : "bg-background border-input hover:bg-accent"
-              }`}
-            >
+            <Win98Tab key={t.k} active={qrType === t.k} onClick={() => setQrType(t.k)}>
               {t.label}
-            </button>
+            </Win98Tab>
           ))}
         </div>
         {qrType === "custom" && (
-          <Input
+          <Win98Input
             value={qrCustom}
             onChange={(e) => setQrCustom(e.target.value)}
             placeholder="https://..."
           />
         )}
-        <div className="flex flex-col sm:flex-row gap-5 items-start">
-          <div ref={qrSvgRef} className="bg-white p-3 rounded-md border border-border/40">
+        <div className="flex flex-col sm:flex-row gap-4 items-start">
+          <div
+            ref={qrSvgRef}
+            className="bg-white p-3"
+            style={{
+              borderStyle: "solid",
+              borderWidth: 2,
+              borderColor: "#808080 #ffffff #ffffff #808080",
+            }}
+          >
             <QRCodeSVG value={qrValue} size={200} level="H" />
           </div>
           <div className="flex-1 space-y-2">
-            <div className="text-xs break-all bg-muted/40 rounded px-2 py-1">{qrValue}</div>
-            <div className="flex flex-wrap gap-2">
-              <Button size="sm" variant="outline" onClick={copyLink}>复制链接</Button>
-              <Button size="sm" variant="outline" onClick={downloadPng}>下载 PNG</Button>
-              <Button size="sm" variant="outline" onClick={printQr}>打印二维码</Button>
-              <Button size="sm" onClick={saveQr}>保存二维码</Button>
+            <div
+              className="text-[11px] break-all px-2 py-1 bg-white"
+              style={{
+                borderStyle: "solid",
+                borderWidth: 2,
+                borderColor: "#808080 #ffffff #ffffff #808080",
+              }}
+            >
+              {qrValue}
             </div>
-            <div className="pt-3 border-t border-border/40 mt-3 space-y-2">
-              <div className="text-xs font-semibold text-muted-foreground">一键替换网站内二维码</div>
+            <div className="flex flex-wrap gap-2">
+              <Win98Button onClick={copyLink}>复制链接</Win98Button>
+              <Win98Button onClick={downloadPng}>下载 PNG</Win98Button>
+              <Win98Button onClick={printQr}>打印二维码</Win98Button>
+              <Win98Button onClick={saveQr}>保存二维码</Win98Button>
+            </div>
+            <div className="pt-2 mt-2" style={{ borderTop: "1px solid #808080" }}>
+              <div className="text-[11px] font-bold mb-1">一键替换网站内二维码</div>
               <div className="flex flex-wrap gap-2">
-                <Button size="sm" variant="secondary" onClick={() => replaceSiteQr("newcomer")}>
+                <Win98Button onClick={() => replaceSiteQr("newcomer")}>
                   替换新人登记二维码
-                </Button>
-                <Button size="sm" variant="secondary" onClick={() => replaceSiteQr("retreat")}>
+                </Win98Button>
+                <Win98Button onClick={() => replaceSiteQr("retreat")}>
                   替换退修会二维码
-                </Button>
-                <Button size="sm" variant="destructive" onClick={() => replaceSiteQr("all")}>
-                  替换全部二维码
-                </Button>
+                </Win98Button>
+                <Win98Button onClick={() => replaceSiteQr("all")}>替换全部二维码</Win98Button>
               </div>
             </div>
             {(s.qr_newcomer_url || s.qr_retreat_url) && (
-              <div className="grid grid-cols-2 gap-3 pt-3">
+              <div className="grid grid-cols-2 gap-3 pt-2">
                 {s.qr_newcomer_url && (
                   <div className="text-center">
-                    <img src={s.qr_newcomer_url} alt="新人二维码" className="h-24 w-24 mx-auto object-contain border border-border/40 rounded" />
-                    <div className="text-[10px] mt-1 text-muted-foreground">当前新人二维码</div>
+                    <img
+                      src={s.qr_newcomer_url}
+                      alt="新人二维码"
+                      className="h-24 w-24 mx-auto object-contain bg-white"
+                      style={{
+                        borderStyle: "solid",
+                        borderWidth: 2,
+                        borderColor: "#808080 #ffffff #ffffff #808080",
+                      }}
+                    />
+                    <div className="text-[10px] mt-1">当前新人二维码</div>
                   </div>
                 )}
                 {s.qr_retreat_url && (
                   <div className="text-center">
-                    <img src={s.qr_retreat_url} alt="退修会二维码" className="h-24 w-24 mx-auto object-contain border border-border/40 rounded" />
-                    <div className="text-[10px] mt-1 text-muted-foreground">当前退修会二维码</div>
+                    <img
+                      src={s.qr_retreat_url}
+                      alt="退修会二维码"
+                      className="h-24 w-24 mx-auto object-contain bg-white"
+                      style={{
+                        borderStyle: "solid",
+                        borderWidth: 2,
+                        borderColor: "#808080 #ffffff #ffffff #808080",
+                      }}
+                    />
+                    <div className="text-[10px] mt-1">当前退修会二维码</div>
                   </div>
                 )}
               </div>
             )}
           </div>
         </div>
-      </section>
+      </Win98GroupBox>
 
-      {/* QR */}
-      <section className="bg-card border border-border/50 rounded-2xl p-5 space-y-3">
-        <h3 className="font-serif text-lg">右侧二维码区设置</h3>
-        <p className="text-xs text-muted-foreground">
+      {/* Right-side QR */}
+      <Win98GroupBox title="右侧二维码区设置">
+        <div className="text-[11px]">
           二维码图片仅用于展示。实际登记链接仍由活动二维码自动生成，不受这里影响。
-        </p>
+        </div>
         <div className="grid sm:grid-cols-2 gap-3">
-          <div className="space-y-1">
-            <Label>二维码标题</Label>
-            <Input
+          <div>
+            <Win98Label>二维码标题</Win98Label>
+            <Win98Input
               value={s.qr_title ?? ""}
               onChange={(e) => update({ qr_title: e.target.value })}
               placeholder="例如：新人登记"
             />
           </div>
-          <div className="space-y-1">
-            <Label>二维码说明</Label>
-            <Input
+          <div>
+            <Win98Label>二维码说明</Win98Label>
+            <Win98Input
               value={s.qr_description ?? ""}
               onChange={(e) => update({ qr_description: e.target.value })}
               placeholder="例如：扫码填写新人资料"
             />
           </div>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
           {s.qr_image_url ? (
             <img
               src={s.qr_image_url}
               alt="二维码预览"
-              className="h-28 w-28 object-contain rounded-md border border-border/40 bg-white"
+              className="h-28 w-28 object-contain bg-white"
+              style={{
+                borderStyle: "solid",
+                borderWidth: 2,
+                borderColor: "#808080 #ffffff #ffffff #808080",
+              }}
               onError={(e) => ((e.currentTarget as HTMLImageElement).style.opacity = "0.3")}
             />
           ) : (
-            <div className="h-28 w-28 rounded-md border border-dashed border-border/60 grid place-items-center text-xs text-muted-foreground">
+            <div
+              className="h-28 w-28 grid place-items-center text-[11px] bg-white"
+              style={{
+                borderStyle: "solid",
+                borderWidth: 2,
+                borderColor: "#808080 #ffffff #ffffff #808080",
+              }}
+            >
               使用动态二维码
             </div>
           )}
@@ -497,21 +588,22 @@ export function HomePageSettingsPanel() {
                   if (url) update({ qr_image_url: url });
                 }}
               />
-              <span className="inline-flex items-center justify-center h-9 px-3 rounded-md border border-input bg-background text-sm hover:bg-accent">
-                上传二维码
-              </span>
+              <Win98Button asChild>上传二维码</Win98Button>
             </label>
-            <Button variant="outline" size="sm" onClick={() => update({ qr_image_url: null })}>
+            <Win98Button onClick={() => update({ qr_image_url: null })}>
               恢复默认二维码
-            </Button>
+            </Win98Button>
           </div>
         </div>
-      </section>
+      </Win98GroupBox>
 
-      <div className="flex justify-end gap-2 sticky bottom-2">
-        <Button onClick={save} disabled={saving} className="rounded-full px-6">
+      <div
+        className="flex justify-end gap-2 sticky bottom-0 pt-2 mt-2"
+        style={{ background: "#c0c0c0", borderTop: "1px solid #ffffff" }}
+      >
+        <Win98Button onClick={save} disabled={saving}>
           {saving ? "保存中…" : "保存全部设置"}
-        </Button>
+        </Win98Button>
       </div>
     </div>
   );
