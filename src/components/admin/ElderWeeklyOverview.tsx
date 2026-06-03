@@ -174,7 +174,7 @@ export function ElderWeeklyOverview(props: ElderOverviewProps) {
         className="bg-white text-black p-6 print:p-2"
         style={{ fontFamily: "'Songti SC','SimSun','宋体','PMingLiU','新细明体',serif" }}
       >
-        <div className="text-center pb-2 mb-4 border-b border-double border-black">
+        <div className="text-center pb-2 mb-4">
           <div className="text-[15px] tracking-[0.4em] pl-[0.4em]">基督之家第三家</div>
           <div className="text-[22px] font-bold tracking-[0.3em] pl-[0.3em] mt-1">今 日 周 报 总 览</div>
           <div className="text-[11px] mt-1 tracking-widest">
@@ -182,9 +182,9 @@ export function ElderWeeklyOverview(props: ElderOverviewProps) {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-x-6 print:grid-cols-3 text-[12.5px] leading-[1.7]">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-x-8 print:grid-cols-3 text-[12.5px] leading-[1.7]">
           {/* 左栏 */}
-          <div className="space-y-4 break-inside-avoid md:border-r md:border-black/40 md:pr-6">
+          <div className="space-y-4 break-inside-avoid md:pr-4">
             <Block title="圣工轮值表（今日）">
               <Editor value={edit.duty} editing={editing} onChange={(v) => setEdit({ ...edit, duty: v })} />
             </Block>
@@ -193,7 +193,7 @@ export function ElderWeeklyOverview(props: ElderOverviewProps) {
             </Block>
             <Block title={`上周人数统计${latest ? `（${latest.record_date}）` : ""}`}>
               {latest ? (
-                <table className="w-full border-collapse text-[12.5px]">
+                <table className="w-full text-[12.5px]">
                   <tbody>
                     <Row k="大堂敬拜" v={String(latest.worship_count)} />
                     <Row k="儿童学生" v={String(latest.children_students)} />
@@ -210,7 +210,7 @@ export function ElderWeeklyOverview(props: ElderOverviewProps) {
           </div>
 
           {/* 中栏 */}
-          <div className="space-y-4 break-inside-avoid md:border-r md:border-black/40 md:px-6">
+          <div className="space-y-4 break-inside-avoid md:px-4">
             <div className="text-center font-bold pb-1 mb-2 tracking-[0.3em] pl-[0.3em] text-[14px]">
               中文堂主日敬拜程序
             </div>
@@ -230,7 +230,7 @@ export function ElderWeeklyOverview(props: ElderOverviewProps) {
           </div>
 
           {/* 右栏 */}
-          <div className="space-y-4 break-inside-avoid md:pl-6">
+          <div className="space-y-4 break-inside-avoid md:pl-4">
             <Block title="成人主日学课程">
               {courses.length > 0 ? (
                 <ul className="list-disc pl-5">
@@ -276,7 +276,7 @@ export function ElderWeeklyOverview(props: ElderOverviewProps) {
 function Block({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="break-inside-avoid">
-      <h3 className="font-bold text-[13.5px] tracking-[0.2em] pl-[0.2em] text-center border-b border-black pb-0.5 mb-1.5">
+      <h3 className="font-bold text-[13.5px] tracking-[0.2em] pl-[0.2em] text-center pb-0.5 mb-1.5">
         ◎ {title} ◎
       </h3>
       <div>{children}</div>
@@ -287,8 +287,8 @@ function Block({ title, children }: { title: string; children: React.ReactNode }
 function Row({ k, v }: { k: string; v: string }) {
   return (
     <tr>
-      <td className="border border-black px-1 py-0.5">{k}</td>
-      <td className="border border-black px-1 py-0.5 text-right tabular-nums">{v}</td>
+      <td className="px-1 py-0.5">{k}</td>
+      <td className="px-1 py-0.5 text-right tabular-nums">{v}</td>
     </tr>
   );
 }
@@ -300,7 +300,7 @@ function Editor({ value, editing, onChange }: { value: string; editing: boolean;
         value={value}
         onChange={(e) => onChange(e.target.value)}
         rows={Math.min(16, Math.max(3, value.split("\n").length + 1))}
-        className="w-full border border-black p-1 text-[12px] bg-yellow-50 print:bg-white"
+        className="w-full border border-dashed border-black/30 p-1 text-[12px] bg-white print:bg-white print:border-0"
         style={{ fontFamily: "inherit" }}
       />
     );
