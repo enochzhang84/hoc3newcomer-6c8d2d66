@@ -225,12 +225,12 @@ export function ElderWeeklyOverview(props: ElderOverviewProps) {
           {/* 中栏 */}
           <div className="break-inside-avoid md:px-4 flex flex-col h-full">
             <div
-              className="text-center pb-1 mb-2 tracking-[0.12em] text-[16px]"
+              className="text-center pb-1 mb-2 tracking-[0.12em] text-[20px]"
               style={{ fontFamily: "'STZhongsong','STSong','SimSun',serif", fontWeight: 700 }}
             >
               中文堂主日敬拜程序
             </div>
-            <h3 className="section-title text-[14px] tracking-[0.1em] text-center pb-0.5 mb-1.5">
+            <h3 className="section-title text-[20px] tracking-[0.1em] text-center pb-0.5 mb-1.5">
               今日主日崇拜
             </h3>
             <div className="flex-1 flex flex-col">
