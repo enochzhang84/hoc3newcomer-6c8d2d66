@@ -285,19 +285,22 @@ export function ElderWeeklyOverview(props: ElderOverviewProps) {
         #elder-bulletin .bulletin-table {
           border-collapse: collapse;
           font-family: 'PMingLiU','MingLiU','SimSun',serif;
-          font-weight: 600;
+          font-weight: 700;
         }
         #elder-bulletin .bulletin-table td,
         #elder-bulletin .bulletin-table th {
-          font-size: 13px;
-          line-height: 1.35;
-          padding: 3px 6px;
+          font-size: 17px;
+          line-height: 1.45;
+          padding: 4px 8px;
           border: 1px solid #000;
           font-weight: 600;
         }
         #elder-bulletin .latin-text {
           font-family: 'Times New Roman','PMingLiU',serif;
           font-weight: 700;
+        }
+        #elder-bulletin .bulletin-table td.text-right.latin-text {
+          font-size: 18px;
         }
         @media print {
           body * { visibility: hidden !important; }
