@@ -195,7 +195,7 @@ export function ElderWeeklyOverview(props: ElderOverviewProps) {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-x-6 print:grid-cols-3 text-[13px] leading-[1.5]">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-x-6 print:grid-cols-3 text-[13px] leading-[1.5] items-stretch">
           {/* 左栏 */}
           <div className="space-y-4 break-inside-avoid md:pr-4">
             <Block title="圣工轮值表（今日）">
@@ -223,16 +223,24 @@ export function ElderWeeklyOverview(props: ElderOverviewProps) {
           </div>
 
           {/* 中栏 */}
-          <div className="space-y-4 break-inside-avoid md:px-4">
+          <div className="break-inside-avoid md:px-4 flex flex-col h-full">
             <div
               className="text-center pb-1 mb-2 tracking-[0.12em] text-[16px]"
-            style={{ fontFamily: "'STZhongsong','STSong','SimSun',serif", fontWeight: 700 }}
+              style={{ fontFamily: "'STZhongsong','STSong','SimSun',serif", fontWeight: 700 }}
             >
               中文堂主日敬拜程序
             </div>
-            <Block title="今日主日崇拜">
-              <Editor value={edit.worship} editing={editing} onChange={(v) => setEdit({ ...edit, worship: v })} />
-            </Block>
+            <h3 className="section-title text-[14px] tracking-[0.1em] text-center pb-0.5 mb-1.5">
+              今日主日崇拜
+            </h3>
+            <div className="flex-1 flex flex-col">
+              <Editor
+                value={edit.worship}
+                editing={editing}
+                onChange={(v) => setEdit({ ...edit, worship: v })}
+                stretch
+              />
+            </div>
           </div>
 
           {/* 右栏 */}
@@ -321,16 +329,29 @@ function Row({ k, v }: { k: string; v: string }) {
   );
 }
 
-function Editor({ value, editing, onChange }: { value: string; editing: boolean; onChange: (v: string) => void }) {
+function Editor({ value, editing, onChange, stretch }: { value: string; editing: boolean; onChange: (v: string) => void; stretch?: boolean }) {
   if (editing) {
     return (
       <textarea
         value={value}
         onChange={(e) => onChange(e.target.value)}
         rows={Math.min(16, Math.max(3, value.split("\n").length + 1))}
-        className="w-full border border-dashed border-black/30 p-1 text-[12px] bg-white print:bg-white print:border-0"
+        className={`w-full border border-dashed border-black/30 p-1 text-[12px] bg-white print:bg-white print:border-0 ${stretch ? "flex-1 min-h-[300px]" : ""}`}
         style={{ fontFamily: "inherit" }}
       />
+    );
+  }
+  if (stretch) {
+    const lines = value.split("\n");
+    return (
+      <div
+        className="flex-1 flex flex-col justify-between text-[12px]"
+        style={{ fontFamily: "inherit", minHeight: "100%" }}
+      >
+        {lines.map((ln, i) => (
+          <div key={i} className="whitespace-pre-wrap">{ln || "\u00A0"}</div>
+        ))}
+      </div>
     );
   }
   return (
