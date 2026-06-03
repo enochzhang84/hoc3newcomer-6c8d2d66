@@ -172,17 +172,30 @@ export function ElderWeeklyOverview(props: ElderOverviewProps) {
       <div
         id="elder-bulletin"
         className="bg-white text-black p-6 print:p-2"
-        style={{ fontFamily: "'Songti SC','SimSun','宋体','PMingLiU','新细明体',serif" }}
+        style={{ fontFamily: "'PMingLiU','MingLiU','SimSun','宋体',serif", fontSize: "14px", lineHeight: 1.55 }}
       >
         <div className="text-center pb-2 mb-4">
-          <div className="text-[15px] tracking-[0.4em] pl-[0.4em]">基督之家第三家</div>
-          <div className="text-[22px] font-bold tracking-[0.3em] pl-[0.3em] mt-1">今 日 周 报 总 览</div>
-          <div className="text-[11px] mt-1 tracking-widest">
+          <div
+            className="text-[18px] tracking-[0.12em]"
+            style={{ fontFamily: "'STZhongsong','STSong','SimSun',serif", fontWeight: 600 }}
+          >
+            基督之家第三家
+          </div>
+          <div
+            className="text-[20px] tracking-[0.12em] mt-1"
+            style={{ fontFamily: "'STZhongsong','STSong','SimSun',serif", fontWeight: 600 }}
+          >
+            今日周报总览
+          </div>
+          <div
+            className="text-[12px] mt-1 tracking-widest"
+            style={{ fontFamily: "'Times New Roman','PMingLiU',serif" }}
+          >
             主后 {today.getFullYear()} 年 {today.getMonth() + 1} 月 {today.getDate()} 日　|　本周自 {fmtCN(wkStart)} 起
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-x-8 print:grid-cols-3 text-[12.5px] leading-[1.7]">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-x-6 print:grid-cols-3 text-[13px] leading-[1.5]">
           {/* 左栏 */}
           <div className="space-y-4 break-inside-avoid md:pr-4">
             <Block title="圣工轮值表（今日）">
@@ -193,7 +206,7 @@ export function ElderWeeklyOverview(props: ElderOverviewProps) {
             </Block>
             <Block title={`上周人数统计${latest ? `（${latest.record_date}）` : ""}`}>
               {latest ? (
-                <table className="w-full text-[12.5px]">
+                <table className="bulletin-table w-full">
                   <tbody>
                     <Row k="大堂敬拜" v={String(latest.worship_count)} />
                     <Row k="儿童学生" v={String(latest.children_students)} />
@@ -211,7 +224,10 @@ export function ElderWeeklyOverview(props: ElderOverviewProps) {
 
           {/* 中栏 */}
           <div className="space-y-4 break-inside-avoid md:px-4">
-            <div className="text-center font-bold pb-1 mb-2 tracking-[0.3em] pl-[0.3em] text-[14px]">
+            <div
+              className="text-center pb-1 mb-2 tracking-[0.12em] text-[16px]"
+              style={{ fontFamily: "'STZhongsong','STSong','SimSun',serif", fontWeight: 600 }}
+            >
               中文堂主日敬拜程序
             </div>
             <Block title="今日主日崇拜">
@@ -263,6 +279,24 @@ export function ElderWeeklyOverview(props: ElderOverviewProps) {
       </div>
 
       <style>{`
+        #elder-bulletin .section-title {
+          font-family: 'KaiTi','DFKai-SB','BiauKai','STKaiti','SimSun',serif;
+          font-weight: 600;
+        }
+        #elder-bulletin .bulletin-table {
+          border-collapse: collapse;
+          font-family: 'PMingLiU','MingLiU','SimSun',serif;
+        }
+        #elder-bulletin .bulletin-table td,
+        #elder-bulletin .bulletin-table th {
+          font-size: 13px;
+          line-height: 1.35;
+          padding: 3px 6px;
+          border: 1px solid #000;
+        }
+        #elder-bulletin .latin-text {
+          font-family: 'Times New Roman','PMingLiU',serif;
+        }
         @media print {
           body * { visibility: hidden !important; }
           #elder-bulletin, #elder-bulletin * { visibility: visible !important; }
@@ -276,8 +310,8 @@ export function ElderWeeklyOverview(props: ElderOverviewProps) {
 function Block({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="break-inside-avoid">
-      <h3 className="font-bold text-[13.5px] tracking-[0.2em] pl-[0.2em] text-center pb-0.5 mb-1.5">
-        ◎ {title} ◎
+      <h3 className="section-title text-[14px] tracking-[0.1em] text-center pb-0.5 mb-1.5">
+        {title}
       </h3>
       <div>{children}</div>
     </section>
@@ -287,8 +321,8 @@ function Block({ title, children }: { title: string; children: React.ReactNode }
 function Row({ k, v }: { k: string; v: string }) {
   return (
     <tr>
-      <td className="px-1 py-0.5">{k}</td>
-      <td className="px-1 py-0.5 text-right tabular-nums">{v}</td>
+      <td>{k}</td>
+      <td className="text-right tabular-nums latin-text">{v}</td>
     </tr>
   );
 }
