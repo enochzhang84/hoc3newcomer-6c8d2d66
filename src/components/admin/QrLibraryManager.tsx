@@ -470,12 +470,15 @@ ${item.description ? `<p class="desc">${item.description}</p>` : ""}
           ) : filtered.length === 0 ? (
             <div className="text-sm text-muted-foreground p-6 text-center">此分类暂无二维码</div>
           ) : viewMode === "icon" ? (
+            <>
             <div className="grid grid-cols-[repeat(auto-fill,minmax(140px,1fr))] gap-3">
-              {filtered.map((it) => (
+              {visibleList.map((it) => (
                 <QrCard
                   key={it.id}
                   item={it}
                   selected={selectedIds.has(it.id)}
+                  lite={isPreview && !forceRenderQr.has(it.id)}
+                  onGenerate={() => requestRenderQr(it.id)}
                   onClick={(e) => toggleSelect(it.id, e)}
                   onDoubleClick={() => canEdit && !it.id.startsWith("legacy:") && setEditingItem(it)}
                   menu={
@@ -495,6 +498,15 @@ ${item.description ? `<p class="desc">${item.description}</p>` : ""}
                 />
               ))}
             </div>
+            {hiddenCount > 0 && (
+              <div className="mt-3 flex flex-col items-center gap-1 text-xs text-muted-foreground">
+                <div>预览环境下已隐藏 {hiddenCount} 个二维码以避免卡顿</div>
+                <Button size="sm" variant="outline" onClick={() => setShowAllInPreview(true)}>
+                  显示全部 ({filtered.length})
+                </Button>
+              </div>
+            )}
+            </>
           ) : (
             <ListView
               items={filtered}
