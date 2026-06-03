@@ -315,7 +315,7 @@ export function ElderWeeklyOverview(props: ElderOverviewProps) {
 function Block({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="break-inside-avoid">
-      <h3 className="section-title text-[14px] tracking-[0.1em] text-center pb-0.5 mb-1.5">
+      <h3 className="section-title text-[20px] tracking-[0.1em] text-center pb-0.5 mb-1.5">
         {title}
       </h3>
       <div>{children}</div>
@@ -348,7 +348,7 @@ function Editor({ value, editing, onChange, stretch }: { value: string; editing:
     const lines = value.split("\n");
     return (
       <div
-        className="flex-1 flex flex-col justify-between text-[12px]"
+        className="flex-1 flex flex-col justify-between text-[17px] leading-[1.55]"
         style={{ fontFamily: "inherit", minHeight: "100%" }}
       >
         {lines.map((ln, i) => (
@@ -359,7 +359,7 @@ function Editor({ value, editing, onChange, stretch }: { value: string; editing:
   }
   return (
     <pre
-      className="whitespace-pre-wrap text-[12px] leading-[1.55] m-0"
+      className="whitespace-pre-wrap text-[17px] leading-[1.55] m-0"
       style={{ fontFamily: "inherit" }}
     >
       {value}
