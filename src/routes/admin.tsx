@@ -29,6 +29,7 @@ import { listUsersWithRoles, setUserRole, deleteUser, createUserWithRole, update
 import { useI18n, type TKey } from "@/lib/i18n";
 import { HomePageSettingsPanel } from "@/components/admin/HomePageSettingsPanel";
 import { BackupRestorePanel } from "@/components/admin/BackupRestorePanel";
+import { checkSuperAdminExists, initializeCurrentUserAsSuperAdmin } from "@/lib/bootstrap-admin.functions";
 import { SERVICE_AREAS, SERVICE_AREA_LABELS, ROLE_LABELS, type Role, type ServiceArea, canAccessAdmin, canAccessModuleAnalytics } from "@/lib/permissions";
 import { useCurrentPermissions } from "@/hooks/useCurrentPermissions";
 import { updateRegistration } from "@/lib/registrations.functions";
@@ -474,6 +475,7 @@ function AdminPage() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [userRole, setUserRoleState] = useState<Role | null>(null);
+  const [noSuperAdminDetected, setNoSuperAdminDetected] = useState(false);
   const [permsDialogUser, setPermsDialogUser] = useState<AppUser | null>(null);
   const [currentServiceArea, setCurrentServiceArea] = useState<ServiceArea | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
@@ -667,6 +669,8 @@ function AdminPage() {
   };
 
   const fetchUsersFn = useServerFn(listUsersWithRoles);
+  const checkSuperAdminFn = useServerFn(checkSuperAdminExists);
+  const initCurrentSuperAdminFn = useServerFn(initializeCurrentUserAsSuperAdmin);
   const setUserRoleFn = useServerFn(setUserRole);
   const deleteUserFn = useServerFn(deleteUser);
   const createUserFn = useServerFn(createUserWithRole);
@@ -1039,6 +1043,14 @@ function AdminPage() {
               sa && (SERVICE_AREAS as readonly string[]).includes(sa) ? (sa as ServiceArea) : null,
             );
           } catch { /* ignore */ }
+          if (!canAccessAdmin(role)) {
+            const status = await checkSuperAdminFn();
+            if (!status.hasSuperAdmin) {
+              setNoSuperAdminDetected(true);
+              setChecking(false);
+              return;
+            }
+          }
           setChecking(false);
           if (!canAccessAdmin(role)) {
             toast.error("您没有访问后台的权限");
@@ -1115,6 +1127,7 @@ function AdminPage() {
     };
   }, [
     navigate,
+    checkSuperAdminFn,
     loadData,
     loadUsers,
     loadMessagesCount,
@@ -1217,6 +1230,40 @@ function AdminPage() {
   }, []);
 
   if (checking) return <div className="min-h-screen flex items-center justify-center text-muted-foreground">加载中...</div>;
+  if (noSuperAdminDetected) {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-4">
+        <div className="w-full max-w-md rounded-2xl border border-border/50 bg-card p-6 text-center shadow-sm">
+          <div className="text-4xl mb-3">🛡️</div>
+          <h1 className="font-serif text-2xl text-foreground mb-2">恢复首位超级管理员</h1>
+          <p className="text-sm text-muted-foreground mb-5">
+            系统尚未初始化管理员，是否将当前用户设为首位超级管理员？
+          </p>
+          <div className="flex flex-col gap-2 sm:flex-row sm:justify-center">
+            <Button
+              onClick={async () => {
+                try {
+                  await initCurrentSuperAdminFn();
+                  toast.success("已恢复首位超级管理员，正在刷新后台...");
+                  window.location.reload();
+                } catch (err) {
+                  toast.error((err as Error).message);
+                }
+              }}
+            >
+              恢复首位超级管理员
+            </Button>
+            <Button variant="outline" onClick={async () => {
+              await supabase.auth.signOut();
+              navigate({ to: "/login" });
+            }}>
+              退出登录
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
   if (!userRole) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-4">

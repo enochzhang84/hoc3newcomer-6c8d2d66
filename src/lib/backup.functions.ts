@@ -556,9 +556,16 @@ export const initSuperAdmin = createServerFn({ method: "POST" })
     if (existing && existing.length > 0) {
       throw new Error("Super admin already exists");
     }
+    const { error: profileError } = await supabaseAdmin
+      .from("user_profiles")
+      .upsert({ user_id: context.userId }, { onConflict: "user_id" });
+    if (profileError) throw new Error(profileError.message);
     const { error: e2 } = await supabaseAdmin
       .from("user_roles")
-      .insert({ user_id: context.userId, role: "super_admin" });
+      .upsert(
+        { user_id: context.userId, role: "super_admin" },
+        { onConflict: "user_id,role" },
+      );
     if (e2) throw new Error(e2.message);
     return { ok: true } as any;
   });
