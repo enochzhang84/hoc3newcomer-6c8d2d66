@@ -197,7 +197,7 @@ export function ElderWeeklyOverview(props: ElderOverviewProps) {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-x-6 print:grid-cols-3 text-[17px] leading-[1.55] items-stretch">
           {/* 左栏 */}
-          <div className="space-y-4 break-inside-avoid md:pr-4">
+          <div className="space-y-4 break-inside-avoid md:pr-4 flex flex-col h-full">
             <Block title="圣工轮值表（今日）">
               <Editor value={edit.duty} editing={editing} onChange={(v) => setEdit({ ...edit, duty: v })} />
             </Block>
@@ -252,6 +252,7 @@ export function ElderWeeklyOverview(props: ElderOverviewProps) {
                 </tbody>
               </table>
             </Block>
+            <div className="flex-1" aria-hidden />
             <Block title={`上周人数统计${latest ? `（${latest.record_date}）` : ""}`}>
               {latest ? (
                 <table className="bulletin-table w-full">
@@ -263,10 +264,6 @@ export function ElderWeeklyOverview(props: ElderOverviewProps) {
                   </tbody>
                 </table>
               ) : <div>暂无数据</div>}
-            </Block>
-            <Block title="奉献统计">
-              <div className="mb-1">本周饭食人数：<b className="latin-text">{weekMealCount}</b>（<span className="latin-text">{weekMeals.length}</span> 餐）</div>
-              <Editor value={edit.offerings} editing={editing} onChange={(v) => setEdit({ ...edit, offerings: v })} />
             </Block>
           </div>
 
