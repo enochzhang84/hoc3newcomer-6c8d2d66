@@ -1043,6 +1043,14 @@ function AdminPage() {
               sa && (SERVICE_AREAS as readonly string[]).includes(sa) ? (sa as ServiceArea) : null,
             );
           } catch { /* ignore */ }
+          if (!canAccessAdmin(role)) {
+            const status = await checkSuperAdminFn();
+            if (!status.hasSuperAdmin) {
+              setNoSuperAdminDetected(true);
+              setChecking(false);
+              return;
+            }
+          }
           setChecking(false);
           if (!canAccessAdmin(role)) {
             toast.error("您没有访问后台的权限");
@@ -1119,6 +1127,7 @@ function AdminPage() {
     };
   }, [
     navigate,
+    checkSuperAdminFn,
     loadData,
     loadUsers,
     loadMessagesCount,
