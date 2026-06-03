@@ -216,8 +216,8 @@ export function ElderWeeklyOverview(props: ElderOverviewProps) {
                 </table>
               ) : <div>暂无数据</div>}
             </Block>
-            <Block title="本周饭食 / 奉献统计">
-              <div className="mb-1">本周饭食人数：<b>{weekMealCount}</b>（{weekMeals.length} 餐）</div>
+            <Block title="奉献统计">
+              <div className="mb-1">本周饭食人数：<b className="latin-text">{weekMealCount}</b>（<span className="latin-text">{weekMeals.length}</span> 餐）</div>
               <Editor value={edit.offerings} editing={editing} onChange={(v) => setEdit({ ...edit, offerings: v })} />
             </Block>
           </div>
