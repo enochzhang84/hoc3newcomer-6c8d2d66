@@ -92,6 +92,26 @@ const UNCATEGORIZED_ID = "__uncategorized__";
 
 type ViewMode = "icon" | "list";
 
+/** Detect Lovable editor / iframe preview. */
+function detectPreviewEnv(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    if (window.self !== window.top) return true;
+  } catch {
+    // Cross-origin access throws -> we ARE in an iframe
+    return true;
+  }
+  try {
+    const h = window.location.hostname;
+    if (/lovable\.app$|lovableproject\.com$|lovable\.dev$/i.test(h)) return true;
+  } catch {
+    /* noop */
+  }
+  return false;
+}
+
+const PREVIEW_INITIAL_LIMIT = 6;
+
 export function QrLibraryManager({
   publicBase,
   eventToken,
@@ -101,6 +121,7 @@ export function QrLibraryManager({
   eventToken?: string | null;
   canEdit: boolean;
 }) {
+  const isPreview = useMemo(() => detectPreviewEnv(), []);
   const [categories, setCategories] = useState<Category[]>([]);
   const [items, setItems] = useState<QrItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -109,6 +130,9 @@ export function QrLibraryManager({
   const [viewMode, setViewMode] = useState<ViewMode>("icon");
   const [editingItem, setEditingItem] = useState<QrItem | null>(null);
   const [creatingItem, setCreatingItem] = useState(false);
+  const [showAllInPreview, setShowAllInPreview] = useState(false);
+  /** In preview, only generate QR on explicit user opt-in to avoid jank. */
+  const [forceRenderQr, setForceRenderQr] = useState<Set<string>>(new Set());
   const [catDialog, setCatDialog] = useState<{ mode: "create" | "rename"; cat?: Category } | null>(null);
   const [confirmState, setConfirmState] = useState<{
     title: string;
@@ -144,6 +168,25 @@ export function QrLibraryManager({
     if (selectedCat === UNCATEGORIZED_ID) return items.filter((i) => !i.category_id);
     return items.filter((i) => i.category_id === selectedCat);
   }, [selectedCat, items, legacyItems, allItems]);
+
+  // In Lovable preview, cap how many cards we mount to keep things snappy.
+  const visibleList = useMemo(() => {
+    if (!isPreview || showAllInPreview || viewMode !== "icon") return filtered;
+    return filtered.slice(0, PREVIEW_INITIAL_LIMIT);
+  }, [filtered, isPreview, showAllInPreview, viewMode]);
+  const hiddenCount = filtered.length - visibleList.length;
+
+  // Reset paging when changing category/view.
+  useEffect(() => { setShowAllInPreview(false); }, [selectedCat, viewMode]);
+
+  const requestRenderQr = useCallback((id: string) => {
+    setForceRenderQr((s) => {
+      if (s.has(id)) return s;
+      const n = new Set(s);
+      n.add(id);
+      return n;
+    });
+  }, []);
 
   const selectedItem = useMemo(() => {
     if (selectedIds.size !== 1) return null;
@@ -427,12 +470,15 @@ ${item.description ? `<p class="desc">${item.description}</p>` : ""}
           ) : filtered.length === 0 ? (
             <div className="text-sm text-muted-foreground p-6 text-center">此分类暂无二维码</div>
           ) : viewMode === "icon" ? (
+            <>
             <div className="grid grid-cols-[repeat(auto-fill,minmax(140px,1fr))] gap-3">
-              {filtered.map((it) => (
+              {visibleList.map((it) => (
                 <QrCard
                   key={it.id}
                   item={it}
                   selected={selectedIds.has(it.id)}
+                  lite={isPreview && !forceRenderQr.has(it.id)}
+                  onGenerate={() => requestRenderQr(it.id)}
                   onClick={(e) => toggleSelect(it.id, e)}
                   onDoubleClick={() => canEdit && !it.id.startsWith("legacy:") && setEditingItem(it)}
                   menu={
@@ -452,6 +498,15 @@ ${item.description ? `<p class="desc">${item.description}</p>` : ""}
                 />
               ))}
             </div>
+            {hiddenCount > 0 && (
+              <div className="mt-3 flex flex-col items-center gap-1 text-xs text-muted-foreground">
+                <div>预览环境下已隐藏 {hiddenCount} 个二维码以避免卡顿</div>
+                <Button size="sm" variant="outline" onClick={() => setShowAllInPreview(true)}>
+                  显示全部 ({filtered.length})
+                </Button>
+              </div>
+            )}
+            </>
           ) : (
             <ListView
               items={filtered}
@@ -557,10 +612,14 @@ const QrThumb = memo(function QrThumb({
   imageUrl,
   targetUrl,
   size,
+  lite,
+  onGenerate,
 }: {
   imageUrl: string | null;
   targetUrl: string | null;
   size: number;
+  lite?: boolean;
+  onGenerate?: () => void;
 }) {
   if (imageUrl) {
     return (
@@ -574,6 +633,20 @@ const QrThumb = memo(function QrThumb({
     );
   }
   if (targetUrl) {
+    if (lite) {
+      return (
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); onGenerate?.(); }}
+          style={{ width: size, height: size }}
+          className="flex flex-col items-center justify-center gap-1 border border-dashed border-border/60 rounded text-[10px] text-muted-foreground hover:bg-accent/50"
+          title="预览环境已暂缓生成，点击生成二维码"
+        >
+          <QrCode className="size-5 opacity-50" />
+          <span>点击生成</span>
+        </button>
+      );
+    }
     return <QRCodeSVG value={targetUrl} size={size} level="H" />;
   }
   return (
@@ -586,12 +659,14 @@ const QrThumb = memo(function QrThumb({
   );
 });
 
-const QrCard = memo(function QrCard({ item, selected, onClick, onDoubleClick, menu }: {
+const QrCard = memo(function QrCard({ item, selected, onClick, onDoubleClick, menu, lite, onGenerate }: {
   item: QrItem;
   selected: boolean;
   onClick: (e: React.MouseEvent) => void;
   onDoubleClick: () => void;
   menu: React.ReactNode;
+  lite?: boolean;
+  onGenerate?: () => void;
 }) {
   return (
     <ContextMenu>
@@ -605,7 +680,7 @@ const QrCard = memo(function QrCard({ item, selected, onClick, onDoubleClick, me
           )}
         >
           <div className="bg-white p-1.5 rounded">
-            <QrThumb imageUrl={item.image_url} targetUrl={item.target_url} size={110} />
+            <QrThumb imageUrl={item.image_url} targetUrl={item.target_url} size={110} lite={lite} onGenerate={onGenerate} />
           </div>
           <div className="text-xs font-medium text-center truncate w-full" title={item.name}>{item.name}</div>
           {item.is_default && (
