@@ -613,9 +613,7 @@ function ListView({ items, selectedIds, onSelect, renderMenu }: {
               )}
             >
               <div className="truncate flex items-center gap-2">
-                <span className="inline-block bg-white p-0.5 rounded">
-                  {it.target_url ? <QRCodeSVG value={it.target_url} size={20} level="L" /> : <span className="block w-5 h-5" />}
-                </span>
+                <QrCode className="size-4 shrink-0 text-muted-foreground" />
                 {it.name}
               </div>
               <div className="text-xs text-muted-foreground truncate">{it.usage_type || "—"}</div>
