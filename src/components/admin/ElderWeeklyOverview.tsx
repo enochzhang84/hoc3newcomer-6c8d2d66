@@ -233,26 +233,6 @@ export function ElderWeeklyOverview(props: ElderOverviewProps) {
             <Block title="今日主日崇拜">
               <Editor value={edit.worship} editing={editing} onChange={(v) => setEdit({ ...edit, worship: v })} />
             </Block>
-          <Block title="经训">
-            <div className="leading-[1.7]">
-              「你们要常常喜乐，不住的祷告，凡事谢恩；因为这是神在基督耶稣里向你们所定的旨意。」
-              <div className="text-right mt-1">—— 帖撒罗尼迦前书 5:16–18</div>
-            </div>
-          </Block>
-          <Block title="欢迎事项">
-            <div className="leading-[1.7]">
-              欢迎所有第一次来到基督之家第三家的朋友！愿主的恩典与您同在。<br />
-              聚会后请到接待处填写新人登记卡，我们将有同工与您联系，分享福音与教会生活。
-            </div>
-          </Block>
-          <Block title="聚会提醒">
-            <ul className="list-disc pl-5 leading-[1.7]">
-              <li>主日崇拜：每周日上午 10:30</li>
-              <li>成人主日学：每周日上午 9:15</li>
-              <li>祷告会：每周三晚 7:30</li>
-              <li>团契小组：详见右栏聚会时间</li>
-            </ul>
-          </Block>
           </div>
 
           {/* 右栏 */}
