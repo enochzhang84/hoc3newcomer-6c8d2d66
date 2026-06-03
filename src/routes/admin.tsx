@@ -6379,7 +6379,11 @@ ${rows.length===0?'<tr><td colspan="5" style="text-align:center;color:#888;paddi
 
         {/* QR Library Dialog */}
         <Dialog open={qrLibOpen} onOpenChange={setQrLibOpen}>
-          <DialogContent className="max-w-6xl w-[95vw] max-h-[90vh] overflow-hidden p-4">
+          <DialogContent
+            className="max-w-6xl w-[95vw] max-h-[90vh] overflow-hidden p-4"
+            onInteractOutside={(e) => e.preventDefault()}
+            onPointerDownOutside={(e) => e.preventDefault()}
+          >
             <DialogHeader>
               <DialogTitle>二维码资源管理中心</DialogTitle>
             </DialogHeader>
