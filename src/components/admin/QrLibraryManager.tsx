@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -553,7 +553,7 @@ function SidebarItem({ icon, label, count, active, onClick }: {
   );
 }
 
-function QrCard({ item, selected, onClick, onDoubleClick, menu }: {
+const QrCard = memo(function QrCard({ item, selected, onClick, onDoubleClick, menu }: {
   item: QrItem;
   selected: boolean;
   onClick: (e: React.MouseEvent) => void;
@@ -589,7 +589,7 @@ function QrCard({ item, selected, onClick, onDoubleClick, menu }: {
       {menu}
     </ContextMenu>
   );
-}
+});
 
 function ListView({ items, selectedIds, onSelect, renderMenu }: {
   items: QrItem[];
