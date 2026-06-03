@@ -50,6 +50,7 @@ import { SundayAnalytics } from "@/components/admin/analytics/SundayAnalytics";
 import { NewcomerAnalytics } from "@/components/admin/analytics/NewcomerAnalytics";
 import { WelcomeAnalytics } from "@/components/admin/analytics/WelcomeAnalytics";
 import { MediaAnalytics } from "@/components/admin/analytics/MediaAnalytics";
+import { ElderWeeklyOverview } from "@/components/admin/ElderWeeklyOverview";
 import {
   ServiceRankingBoard,
   isMediaServiceEntry,
@@ -1891,6 +1892,15 @@ function AdminPage() {
                   </button>
                 ))}
               </div>
+              <ElderWeeklyOverview
+                regs={regs}
+                attendance={attendance}
+                sundayCheckins={sundayCheckins}
+                fellowshipCheckins={fellowshipCheckins}
+                courses={courses}
+                fellowships={fellowships}
+                mealPlans={mealPlans}
+              />
             </section>
           );
         })()}
