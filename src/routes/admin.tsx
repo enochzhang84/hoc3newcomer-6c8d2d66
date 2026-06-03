@@ -1892,6 +1892,15 @@ function AdminPage() {
                   </button>
                 ))}
               </div>
+              <ElderWeeklyOverview
+                regs={regs}
+                attendance={attendance}
+                sundayCheckins={sundayCheckins}
+                fellowshipCheckins={fellowshipCheckins}
+                courses={courses}
+                fellowships={fellowships}
+                mealPlans={mealPlans}
+              />
             </section>
           );
         })()}
