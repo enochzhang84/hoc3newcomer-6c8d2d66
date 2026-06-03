@@ -172,7 +172,7 @@ export function ElderWeeklyOverview(props: ElderOverviewProps) {
       <div
         id="elder-bulletin"
         className="bg-white text-black p-6 print:p-2"
-        style={{ fontFamily: "'PMingLiU','MingLiU','SimSun','宋体',serif", fontSize: "14px", lineHeight: 1.55, fontWeight: 550 }}
+        style={{ fontFamily: "'PMingLiU','MingLiU','SimSun','宋体',serif", fontSize: "14px", lineHeight: 1.55, fontWeight: 600 }}
       >
         <div className="text-center pb-2 mb-4">
           <div
@@ -216,8 +216,8 @@ export function ElderWeeklyOverview(props: ElderOverviewProps) {
                 </table>
               ) : <div>暂无数据</div>}
             </Block>
-            <Block title="本周饭食 / 奉献统计">
-              <div className="mb-1">本周饭食人数：<b>{weekMealCount}</b>（{weekMeals.length} 餐）</div>
+            <Block title="奉献统计">
+              <div className="mb-1">本周饭食人数：<b className="latin-text">{weekMealCount}</b>（<span className="latin-text">{weekMeals.length}</span> 餐）</div>
               <Editor value={edit.offerings} editing={editing} onChange={(v) => setEdit({ ...edit, offerings: v })} />
             </Block>
           </div>
@@ -233,26 +233,6 @@ export function ElderWeeklyOverview(props: ElderOverviewProps) {
             <Block title="今日主日崇拜">
               <Editor value={edit.worship} editing={editing} onChange={(v) => setEdit({ ...edit, worship: v })} />
             </Block>
-          <Block title="经训">
-            <div className="leading-[1.7]">
-              「你们要常常喜乐，不住的祷告，凡事谢恩；因为这是神在基督耶稣里向你们所定的旨意。」
-              <div className="text-right mt-1">—— 帖撒罗尼迦前书 5:16–18</div>
-            </div>
-          </Block>
-          <Block title="欢迎事项">
-            <div className="leading-[1.7]">
-              欢迎所有第一次来到基督之家第三家的朋友！愿主的恩典与您同在。<br />
-              聚会后请到接待处填写新人登记卡，我们将有同工与您联系，分享福音与教会生活。
-            </div>
-          </Block>
-          <Block title="聚会提醒">
-            <ul className="list-disc pl-5 leading-[1.7]">
-              <li>主日崇拜：每周日上午 10:30</li>
-              <li>成人主日学：每周日上午 9:15</li>
-              <li>祷告会：每周三晚 7:30</li>
-              <li>团契小组：详见右栏聚会时间</li>
-            </ul>
-          </Block>
           </div>
 
           {/* 右栏 */}
@@ -293,10 +273,11 @@ export function ElderWeeklyOverview(props: ElderOverviewProps) {
           font-family: 'KaiTi','DFKai-SB','BiauKai','STKaiti','SimSun',serif;
           font-weight: 700;
         }
+        #elder-bulletin b, #elder-bulletin strong { font-weight: 700; }
         #elder-bulletin .bulletin-table {
           border-collapse: collapse;
           font-family: 'PMingLiU','MingLiU','SimSun',serif;
-          font-weight: 550;
+          font-weight: 600;
         }
         #elder-bulletin .bulletin-table td,
         #elder-bulletin .bulletin-table th {
@@ -304,11 +285,11 @@ export function ElderWeeklyOverview(props: ElderOverviewProps) {
           line-height: 1.35;
           padding: 3px 6px;
           border: 1px solid #000;
-          font-weight: 550;
+          font-weight: 600;
         }
         #elder-bulletin .latin-text {
           font-family: 'Times New Roman','PMingLiU',serif;
-          font-weight: 600;
+          font-weight: 700;
         }
         @media print {
           body * { visibility: hidden !important; }
