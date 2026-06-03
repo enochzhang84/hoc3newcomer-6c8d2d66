@@ -244,7 +244,7 @@ export function ElderWeeklyOverview(props: ElderOverviewProps) {
           </div>
 
           {/* 右栏 */}
-          <div className="space-y-4 break-inside-avoid md:pl-4">
+          <div className="space-y-4 break-inside-avoid md:pl-4 flex flex-col h-full">
             <Block title="成人主日学课程">
               {courses.length > 0 ? (
                 <ul className="list-disc pl-5">
@@ -256,6 +256,7 @@ export function ElderWeeklyOverview(props: ElderOverviewProps) {
               ) : <div>暂无课程</div>}
               <div className="mt-1">今日主日学签到合计：<b>{todaySS.length}</b> 人</div>
             </Block>
+            <div className="flex-1" aria-hidden />
             <Block title="团契 / 小组聚会">
               {fellowships.length > 0 ? (
                 <ul className="list-disc pl-5">
@@ -265,12 +266,6 @@ export function ElderWeeklyOverview(props: ElderOverviewProps) {
                   })}
                 </ul>
               ) : <div>暂无团契</div>}
-            </Block>
-            <Block title="本周家讯">
-              <Editor value={edit.newsletter} editing={editing} onChange={(v) => setEdit({ ...edit, newsletter: v })} />
-            </Block>
-            <Block title="祷告事项">
-              <Editor value={edit.prayer} editing={editing} onChange={(v) => setEdit({ ...edit, prayer: v })} />
             </Block>
           </div>
         </div>
