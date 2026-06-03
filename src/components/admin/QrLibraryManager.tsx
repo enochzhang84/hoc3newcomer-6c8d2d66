@@ -92,6 +92,26 @@ const UNCATEGORIZED_ID = "__uncategorized__";
 
 type ViewMode = "icon" | "list";
 
+/** Detect Lovable editor / iframe preview. */
+function detectPreviewEnv(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    if (window.self !== window.top) return true;
+  } catch {
+    // Cross-origin access throws -> we ARE in an iframe
+    return true;
+  }
+  try {
+    const h = window.location.hostname;
+    if (/lovable\.app$|lovableproject\.com$|lovable\.dev$/i.test(h)) return true;
+  } catch {
+    /* noop */
+  }
+  return false;
+}
+
+const PREVIEW_INITIAL_LIMIT = 6;
+
 export function QrLibraryManager({
   publicBase,
   eventToken,
@@ -101,6 +121,7 @@ export function QrLibraryManager({
   eventToken?: string | null;
   canEdit: boolean;
 }) {
+  const isPreview = useMemo(() => detectPreviewEnv(), []);
   const [categories, setCategories] = useState<Category[]>([]);
   const [items, setItems] = useState<QrItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -109,6 +130,9 @@ export function QrLibraryManager({
   const [viewMode, setViewMode] = useState<ViewMode>("icon");
   const [editingItem, setEditingItem] = useState<QrItem | null>(null);
   const [creatingItem, setCreatingItem] = useState(false);
+  const [showAllInPreview, setShowAllInPreview] = useState(false);
+  /** In preview, only generate QR on explicit user opt-in to avoid jank. */
+  const [forceRenderQr, setForceRenderQr] = useState<Set<string>>(new Set());
   const [catDialog, setCatDialog] = useState<{ mode: "create" | "rename"; cat?: Category } | null>(null);
   const [confirmState, setConfirmState] = useState<{
     title: string;
@@ -144,6 +168,25 @@ export function QrLibraryManager({
     if (selectedCat === UNCATEGORIZED_ID) return items.filter((i) => !i.category_id);
     return items.filter((i) => i.category_id === selectedCat);
   }, [selectedCat, items, legacyItems, allItems]);
+
+  // In Lovable preview, cap how many cards we mount to keep things snappy.
+  const visibleList = useMemo(() => {
+    if (!isPreview || showAllInPreview || viewMode !== "icon") return filtered;
+    return filtered.slice(0, PREVIEW_INITIAL_LIMIT);
+  }, [filtered, isPreview, showAllInPreview, viewMode]);
+  const hiddenCount = filtered.length - visibleList.length;
+
+  // Reset paging when changing category/view.
+  useEffect(() => { setShowAllInPreview(false); }, [selectedCat, viewMode]);
+
+  const requestRenderQr = useCallback((id: string) => {
+    setForceRenderQr((s) => {
+      if (s.has(id)) return s;
+      const n = new Set(s);
+      n.add(id);
+      return n;
+    });
+  }, []);
 
   const selectedItem = useMemo(() => {
     if (selectedIds.size !== 1) return null;
