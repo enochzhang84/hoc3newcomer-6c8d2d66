@@ -659,13 +659,7 @@ function Inspector({ item, categoryName }: { item: QrItem; categoryName: string 
   return (
     <div className="space-y-3">
       <div className="bg-white p-2 rounded mx-auto w-fit">
-        {item.image_url ? (
-          <img src={item.image_url} alt={item.name} className="w-[180px] h-[180px] object-contain" />
-        ) : item.target_url ? (
-          <QRCodeSVG value={item.target_url} size={180} level="H" />
-        ) : (
-          <div className="w-[180px] h-[180px] flex items-center justify-center text-xs text-muted-foreground">无链接</div>
-        )}
+        <QrThumb imageUrl={item.image_url} targetUrl={item.target_url} size={180} />
       </div>
       <Field label="名称" value={item.name} />
       <Field label="分类" value={categoryName} />
