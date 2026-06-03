@@ -275,9 +275,11 @@ export function ElderWeeklyOverview(props: ElderOverviewProps) {
 
 function Block({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div>
-      <div className="font-bold text-center border-b border-black pb-0.5 mb-1">{title}</div>
-      <div>{children}</div>
+    <div className="border border-black">
+      <div className="font-bold text-center border-b border-black py-0.5 px-1 bg-white tracking-[0.15em] pl-[0.15em] text-[12px]">
+        {title}
+      </div>
+      <div className="p-1.5">{children}</div>
     </div>
   );
 }
@@ -298,9 +300,17 @@ function Editor({ value, editing, onChange }: { value: string; editing: boolean;
         value={value}
         onChange={(e) => onChange(e.target.value)}
         rows={Math.min(16, Math.max(3, value.split("\n").length + 1))}
-        className="w-full border border-black p-1 text-[12px] font-mono bg-yellow-50 print:bg-white"
+        className="w-full border border-black p-1 text-[12px] bg-yellow-50 print:bg-white"
+        style={{ fontFamily: "inherit" }}
       />
     );
   }
-  return <pre className="whitespace-pre-wrap font-sans text-[12px] leading-snug m-0">{value}</pre>;
+  return (
+    <pre
+      className="whitespace-pre-wrap text-[12px] leading-[1.55] m-0"
+      style={{ fontFamily: "inherit" }}
+    >
+      {value}
+    </pre>
+  );
 }
