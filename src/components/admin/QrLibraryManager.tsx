@@ -553,6 +553,39 @@ function SidebarItem({ icon, label, count, active, onClick }: {
   );
 }
 
+const QrThumb = memo(function QrThumb({
+  imageUrl,
+  targetUrl,
+  size,
+}: {
+  imageUrl: string | null;
+  targetUrl: string | null;
+  size: number;
+}) {
+  if (imageUrl) {
+    return (
+      <img
+        src={imageUrl}
+        loading="lazy"
+        alt=""
+        style={{ width: size, height: size }}
+        className="object-contain"
+      />
+    );
+  }
+  if (targetUrl) {
+    return <QRCodeSVG value={targetUrl} size={size} level="H" />;
+  }
+  return (
+    <div
+      style={{ width: size, height: size }}
+      className="flex items-center justify-center text-[10px] text-muted-foreground"
+    >
+      无链接
+    </div>
+  );
+});
+
 const QrCard = memo(function QrCard({ item, selected, onClick, onDoubleClick, menu }: {
   item: QrItem;
   selected: boolean;
@@ -572,13 +605,7 @@ const QrCard = memo(function QrCard({ item, selected, onClick, onDoubleClick, me
           )}
         >
           <div className="bg-white p-1.5 rounded">
-            {item.image_url ? (
-              <img src={item.image_url} alt={item.name} className="w-[110px] h-[110px] object-contain" />
-            ) : item.target_url ? (
-              <QRCodeSVG value={item.target_url} size={110} level="H" />
-            ) : (
-              <div className="w-[110px] h-[110px] flex items-center justify-center text-[10px] text-muted-foreground">无链接</div>
-            )}
+            <QrThumb imageUrl={item.image_url} targetUrl={item.target_url} size={110} />
           </div>
           <div className="text-xs font-medium text-center truncate w-full" title={item.name}>{item.name}</div>
           {item.is_default && (
