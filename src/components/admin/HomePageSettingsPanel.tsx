@@ -1,11 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { QRCodeSVG } from "qrcode.react";
 import { useWin98Dialog } from "./Win98Dialog";
+import {
+  Win98Button,
+  Win98Input,
+  Win98Textarea,
+  Win98Label,
+  Win98GroupBox,
+} from "./win98";
 import logoDefault from "@/assets/logo.png";
 
 type Settings = {
