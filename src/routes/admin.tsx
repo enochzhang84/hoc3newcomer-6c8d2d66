@@ -6382,11 +6382,17 @@ ${rows.length===0?'<tr><td colspan="5" style="text-align:center;color:#888;paddi
 
         {/* QR Library Dialog */}
         <Dialog open={qrLibOpen} onOpenChange={setQrLibOpen}>
-          <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto">
+          <DialogContent className="max-w-6xl w-[95vw] max-h-[90vh] overflow-hidden p-4">
             <DialogHeader>
-              <DialogTitle>二维码库</DialogTitle>
+              <DialogTitle>二维码资源管理中心</DialogTitle>
             </DialogHeader>
-            <QrLibrary publicBase={publicBase} events={events} />
+            {qrLibOpen && (
+              <QrLibraryManager
+                publicBase={publicBase}
+                eventToken={(events.find((e) => e.is_active) ?? events[0])?.qr_token ?? null}
+                canEdit={isSuperAdmin || userRole === "admin"}
+              />
+            )}
           </DialogContent>
         </Dialog>
 
