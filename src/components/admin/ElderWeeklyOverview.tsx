@@ -172,7 +172,7 @@ export function ElderWeeklyOverview(props: ElderOverviewProps) {
       <div
         id="elder-bulletin"
         className="bg-white text-black p-6 print:p-2"
-        style={{ fontFamily: "'PMingLiU','MingLiU','SimSun','宋体',serif", fontSize: "14px", lineHeight: 1.55, fontWeight: 550 }}
+        style={{ fontFamily: "'PMingLiU','MingLiU','SimSun','宋体',serif", fontSize: "14px", lineHeight: 1.55, fontWeight: 600 }}
       >
         <div className="text-center pb-2 mb-4">
           <div
@@ -273,10 +273,11 @@ export function ElderWeeklyOverview(props: ElderOverviewProps) {
           font-family: 'KaiTi','DFKai-SB','BiauKai','STKaiti','SimSun',serif;
           font-weight: 700;
         }
+        #elder-bulletin b, #elder-bulletin strong { font-weight: 700; }
         #elder-bulletin .bulletin-table {
           border-collapse: collapse;
           font-family: 'PMingLiU','MingLiU','SimSun',serif;
-          font-weight: 550;
+          font-weight: 600;
         }
         #elder-bulletin .bulletin-table td,
         #elder-bulletin .bulletin-table th {
@@ -284,11 +285,11 @@ export function ElderWeeklyOverview(props: ElderOverviewProps) {
           line-height: 1.35;
           padding: 3px 6px;
           border: 1px solid #000;
-          font-weight: 550;
+          font-weight: 600;
         }
         #elder-bulletin .latin-text {
           font-family: 'Times New Roman','PMingLiU',serif;
-          font-weight: 600;
+          font-weight: 700;
         }
         @media print {
           body * { visibility: hidden !important; }
