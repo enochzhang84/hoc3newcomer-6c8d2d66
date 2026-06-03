@@ -38,6 +38,7 @@ import { updateRegistration } from "@/lib/registrations.functions";
 import { HospitalityCalendarSection } from "@/components/HospitalityCalendar";
 import { HospitalityRankingSection } from "@/components/HospitalityRanking";
 import { FaithFollowupSection } from "@/components/admin/FaithFollowupSection";
+import { RegistrationListCRM } from "@/components/admin/RegistrationListCRM";
 import { DutyCalendarSection } from "@/components/DutyCalendar";
 import MealPlanCalendar from "@/components/MealPlanCalendar";
 import EventMealNotebook from "@/components/EventMealNotebook";
@@ -2839,281 +2840,29 @@ function AdminPage() {
 
         {welcomeSubTab === "greet" && (
           <div className="space-y-8 mt-8">
-        <section className="bg-card border border-border/50 rounded-2xl p-6">
-          <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-            <h2 className="font-serif text-xl">登记名单</h2>
-            <div className="flex items-center gap-2 flex-wrap">
-              <Button
-                variant={filterDate ? "outline" : "default"}
-                size="sm"
-                onClick={() => setFilterDate(undefined)}
-              >
-                全部名单
-              </Button>
-              <Popover open={dateOpen} onOpenChange={setDateOpen}>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className={cn(
-                      "gap-1",
-                      filterDate && "border-primary text-primary"
-                    )}
-                  >
-                    <CalendarIcon className="size-4" />
-                    {filterDate ? format(filterDate, "MM/dd", { locale: zhCN }) : "日期筛选"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-3" align="end">
-                  <Calendar
-                    mode="single"
-                    selected={filterDate}
-                    onSelect={setFilterDate}
-                    initialFocus
-                    className="p-3 pointer-events-auto"
-                  />
-                  <div className="border-t border-border/60 mt-2 pt-2">
-                    <RadioGroup
-                      value={dateFilterMode}
-                      onValueChange={(v) => setDateFilterMode(v as "day" | "after" | "before")}
-                      className="flex gap-4 px-1"
-                    >
-                      <div className="flex items-center gap-1.5">
-                        <RadioGroupItem value="day" id="day" />
-                        <Label htmlFor="day" className="text-xs cursor-pointer">当日</Label>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <RadioGroupItem value="after" id="after" />
-                        <Label htmlFor="after" className="text-xs cursor-pointer">之后</Label>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <RadioGroupItem value="before" id="before" />
-                        <Label htmlFor="before" className="text-xs cursor-pointer">以前</Label>
-                      </div>
-                    </RadioGroup>
-                  </div>
-                  <div className="flex justify-between mt-2 pt-2 border-t border-border/60">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        setFilterDate(undefined);
-                        setDateOpen(false);
-                      }}
-                    >
-                      清除
-                    </Button>
-                    <Button
-                      size="sm"
-                      onClick={() => setDateOpen(false)}
-                      disabled={!filterDate}
-                    >
-                      应用
-                    </Button>
-                  </div>
-                </PopoverContent>
-              </Popover>
-              {filterDate && (
-                <span className="text-xs text-muted-foreground">
-                  {dateFilterMode === "day" ? "=" : dateFilterMode === "after" ? ">" : "<"} {format(filterDate, "yyyy-MM-dd", { locale: zhCN })}
-                </span>
-              )}
-              <Input
-                placeholder="搜索姓名或电话"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="w-56"
-              />
-              <Button
-                onClick={() => printHandwrittenForms(filtered)}
-                disabled={filtered.length === 0}
-                variant="outline"
-              >
-                打印手写版
-              </Button>
-              <Button onClick={exportExcel} disabled={filtered.length === 0}>
-                导出 Excel
-              </Button>
-              <Button onClick={exportAllExcel} disabled={regs.length === 0} variant="outline">
-                导出全部 Excel
-              </Button>
-            </div>
-          </div>
-
-          <div className="overflow-x-auto">
-            <div className="max-h-[420px] overflow-y-auto rounded-lg border border-border/50">
-              <table className="w-full text-sm">
-                <thead className="sticky top-0 z-10">
-                  <tr className="text-left border-b border-border/60 text-muted-foreground bg-muted/80 backdrop-blur-sm">
-                    <th className="py-2 px-2">时间</th>
-                    <th className="py-2 px-2">姓名(中)</th>
-                    <th className="py-2 px-2">姓名(英)</th>
-                    <th className="py-2 px-2">
-                      <select
-                        value={statusFilter}
-                        onChange={(e) => setStatusFilter(e.target.value as "all" | "未联系" | "已联系")}
-                        className="bg-transparent border border-border/60 rounded px-1 py-0.5 text-xs cursor-pointer"
-                        title="跟进状态筛选"
-                      >
-                        <option value="all">跟进状态 ▾</option>
-                        <option value="未联系">未联系</option>
-                        <option value="已联系">已联系</option>
-                      </select>
-                    </th>
-                    <th className="py-2 px-2">性别</th>
-                    <th className="py-2 px-2">年龄</th>
-                    <th className="py-2 px-2">电话</th>
-                    <th className="py-2 px-2">电邮</th>
-                    <th className="py-2 px-2">地址</th>
-                    <th className="py-2 px-2">城市/邮编</th>
-                    <th className="py-2 px-2">信仰</th>
-                    <th className="py-2 px-2">婚姻</th>
-                    <th className="py-2 px-2">介绍</th>
-                    <th className="py-2 px-2">来源</th>
-                    <th className="py-2 px-2">标记</th>
-                    <th className="py-2 px-2">跟进人</th>
-                    <th></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {paginated.map((r) => (
-                    <tr key={r.id} className="border-b border-border/30 hover:bg-muted/30">
-                      <td className="py-2 px-2 text-muted-foreground whitespace-nowrap">
-                        {new Date(r.created_at).toLocaleString("zh-CN", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" })}
-                      </td>
-                      <td className="py-2 px-2 font-medium">{r.name}</td>
-                      <td className="py-2 px-2">{r.name_en ?? "—"}</td>
-                      <td className="py-2 px-2">
-                        <select
-                          value={r.district === "已联系" ? "已联系" : "未联系"}
-                          onChange={(e) => updateStatus(r, e.target.value as "未联系" | "已联系")}
-                          className={`bg-transparent border border-border/60 rounded px-1 py-0.5 text-xs cursor-pointer ${r.district === "已联系" ? "text-primary" : "text-muted-foreground"}`}
-                        >
-                          <option value="未联系">未联系 ▾</option>
-                          <option value="已联系">已联系</option>
-                        </select>
-                      </td>
-                      <td className="py-2 px-2">{r.gender ?? "—"}</td>
-                      <td className="py-2 px-2">{r.age_group ?? "—"}</td>
-                      <td className="py-2 px-2">{r.phone ?? "—"}</td>
-                      <td className="py-2 px-2">{r.email ?? "—"}</td>
-                      <td className="py-2 px-2">{r.address ?? "—"}</td>
-                      <td className="py-2 px-2 whitespace-nowrap">{[r.city, r.zip].filter(Boolean).join(" / ") || "—"}</td>
-                      <td className="py-2 px-2">
-                        {r.faith === "christian"
-                          ? `基督徒${r.faith_years ? ` ${r.faith_years}年` : ""}`
-                          : r.faith === "seeker"
-                            ? "慕道友"
-                            : r.faith === "other"
-                              ? `其他${r.faith_other ? `:${r.faith_other}` : ""}`
-                              : "—"}
-                      </td>
-                      <td className="py-2 px-2">
-                        {r.marital_status === "married"
-                          ? `已婚${r.spouse_name ? `(${r.spouse_name})` : ""}`
-                          : r.marital_status === "single"
-                            ? "单身"
-                            : "—"}
-                      </td>
-                      <td className="py-2 px-2">
-                        {formatReferrer(r) || "—"}
-                      </td>
-                      <td className="py-2 px-2">
-                        {formatSourceChannel(r) || "—"}
-                      </td>
-                      <td className="py-2 px-2 space-x-1 whitespace-nowrap">
-                        {r.wants_visit && <Tag>欢迎探访</Tag>}
-                        {r.wants_info && <Tag tone="accent">需资料</Tag>}
-                      </td>
-                      <td className="py-2 px-2">
-                        {editingFollowUpId === r.id ? (
-                          <input
-                            autoFocus
-                            value={followUpDraft}
-                            onChange={(e) => setFollowUpDraft(e.target.value)}
-                            onKeyDown={async (e) => {
-                              if (e.key === "Enter") {
-                                const val = followUpDraft.trim();
-                                const { error } = await supabase
-                                  .from("registrations")
-                                  .update({ follow_up_person: val || null })
-                                  .eq("id", r.id);
-                                if (error) toast.error(error.message);
-                                else {
-                                  setRegs((prev) => prev.map((x) => x.id === r.id ? { ...x, follow_up_person: val || null } : x));
-                                  setEditingFollowUpId(null);
-                                  toast.success("已保存");
-                                }
-                              } else if (e.key === "Escape") {
-                                setEditingFollowUpId(null);
-                              }
-                            }}
-                            onBlur={() => setEditingFollowUpId(null)}
-                            className="bg-transparent border border-border/60 rounded px-1 py-0.5 text-xs w-20"
-                            placeholder="姓名"
-                          />
-                        ) : (
-                          <div className="flex items-center gap-2">
-                            <span className={r.follow_up_person ? "" : "text-muted-foreground"}>
-                              {r.follow_up_person || "—"}
-                            </span>
-                            <button
-                              onClick={() => {
-                                setFollowUpDraft(r.follow_up_person ?? "");
-                                setEditingFollowUpId(r.id);
-                              }}
-                              className="text-xs text-primary hover:underline"
-                            >
-                              编辑
-                            </button>
-                          </div>
-                        )}
-                      </td>
-                      <td className="py-2 px-2 text-right space-x-3 whitespace-nowrap">
-                        <button onClick={() => { setEditForm({ ...r }); setEditOpen(true); }} className="text-xs text-primary hover:underline">编辑</button>
-                        <button onClick={() => deleteReg(r.id)} className="text-xs text-destructive hover:underline">删除</button>
-                      </td>
-                    </tr>
-                  ))}
-                  {paginated.length === 0 && (
-                    <tr>
-                      <td colSpan={16} className="py-12 text-center text-muted-foreground">
-                        暂无登记记录
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          {/* Pagination */}
-          {filtered.length > 0 && (
-            <div className="flex items-center justify-between mt-4">
-              <p className="text-xs text-muted-foreground">
-                共 {filtered.length} 条，第 {page}/{totalPages} 页
-              </p>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  disabled={page <= 1}
-                >
-                  上一页
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                  disabled={page >= totalPages}
-                >
-                  下一页
-                </Button>
-              </div>
-            </div>
-          )}
-        </section>
+        <RegistrationListCRM
+          regs={regs as any}
+          filtered={filtered as any}
+          paginated={paginated as any}
+          search={search}
+          setSearch={setSearch}
+          filterDate={filterDate}
+          setFilterDate={setFilterDate}
+          dateFilterMode={dateFilterMode}
+          setDateFilterMode={setDateFilterMode}
+          statusFilter={statusFilter}
+          setStatusFilter={setStatusFilter}
+          page={page}
+          setPage={setPage}
+          totalPages={totalPages}
+          setRegs={setRegs as any}
+          updateStatus={updateStatus as any}
+          deleteReg={deleteReg}
+          onEdit={(r) => { setEditForm({ ...r } as any); setEditOpen(true); }}
+          exportExcel={exportExcel}
+          exportAllExcel={exportAllExcel}
+          printHandwrittenForms={printHandwrittenForms as any}
+        />
           </div>
         )}
         {welcomeSubTab === "faith" && (
