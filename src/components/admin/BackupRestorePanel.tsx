@@ -365,9 +365,9 @@ export function BackupRestorePanel() {
 
       {needsInit && (
         <div className="rounded-md border border-destructive/40 bg-destructive/5 p-3 text-sm">
-          <p className="mb-2">检测到系统暂无超级管理员。</p>
+          <p className="mb-2">检测到系统暂无超级管理员，可将当前账号恢复为首位超级管理员。</p>
           <Button variant="destructive" disabled={busy} onClick={onInit}>
-            初始化为超级管理员
+            恢复首位超级管理员
           </Button>
         </div>
       )}
