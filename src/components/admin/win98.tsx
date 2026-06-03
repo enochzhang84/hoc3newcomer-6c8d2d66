@@ -188,16 +188,6 @@ export function Win98Window({
             </button>
           </div>
         </div>
-        {/* Menu strip (cosmetic) */}
-        <div
-          className="px-1.5 py-[2px] text-[12px] select-none"
-          style={{ background: "#c0c0c0", borderBottom: "1px solid #808080" }}
-        >
-          <span className="px-1">文件(F)</span>
-          <span className="px-1">编辑(E)</span>
-          <span className="px-1">查看(V)</span>
-          <span className="px-1">帮助(H)</span>
-        </div>
         {/* Body */}
         <div
           className="flex-1 overflow-auto p-3 win98-scroll"
