@@ -783,37 +783,55 @@ export type Database = {
       home_page_settings: {
         Row: {
           id: string
+          logo_subtitle: string | null
+          logo_title: string | null
           logo_url: string | null
           qr_description: string | null
           qr_image_url: string | null
+          qr_newcomer_url: string | null
+          qr_retreat_url: string | null
           qr_title: string | null
           updated_at: string
+          welcome_content_html: string | null
           welcome_description: string | null
           welcome_image_url: string | null
+          welcome_mode: string
           welcome_subtitle: string | null
           welcome_title: string | null
         }
         Insert: {
           id?: string
+          logo_subtitle?: string | null
+          logo_title?: string | null
           logo_url?: string | null
           qr_description?: string | null
           qr_image_url?: string | null
+          qr_newcomer_url?: string | null
+          qr_retreat_url?: string | null
           qr_title?: string | null
           updated_at?: string
+          welcome_content_html?: string | null
           welcome_description?: string | null
           welcome_image_url?: string | null
+          welcome_mode?: string
           welcome_subtitle?: string | null
           welcome_title?: string | null
         }
         Update: {
           id?: string
+          logo_subtitle?: string | null
+          logo_title?: string | null
           logo_url?: string | null
           qr_description?: string | null
           qr_image_url?: string | null
+          qr_newcomer_url?: string | null
+          qr_retreat_url?: string | null
           qr_title?: string | null
           updated_at?: string
+          welcome_content_html?: string | null
           welcome_description?: string | null
           welcome_image_url?: string | null
+          welcome_mode?: string
           welcome_subtitle?: string | null
           welcome_title?: string | null
         }
