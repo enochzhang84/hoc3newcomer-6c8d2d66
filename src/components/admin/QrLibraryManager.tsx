@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -34,6 +34,7 @@ import {
   Printer,
   Link2,
   Star,
+  QrCode,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -109,6 +110,16 @@ export function QrLibraryManager({
   const [editingItem, setEditingItem] = useState<QrItem | null>(null);
   const [creatingItem, setCreatingItem] = useState(false);
   const [catDialog, setCatDialog] = useState<{ mode: "create" | "rename"; cat?: Category } | null>(null);
+  const [confirmState, setConfirmState] = useState<{
+    title: string;
+    message: string;
+    onOk: () => void;
+  } | null>(null);
+  const askConfirm = useCallback(
+    (title: string, message: string, onOk: () => void) =>
+      setConfirmState({ title, message, onOk }),
+    [],
+  );
 
   const legacyItems = useMemo(() => buildLegacyItems(publicBase, eventToken), [publicBase, eventToken]);
 
@@ -140,14 +151,21 @@ export function QrLibraryManager({
     return allItems.find((i) => i.id === id) ?? null;
   }, [selectedIds, allItems]);
 
-  function toggleSelect(id: string, e?: React.MouseEvent) {
+  const toggleSelect = useCallback((id: string, e?: React.MouseEvent) => {
     setSelectedIds((prev) => {
-      const next = new Set(e?.metaKey || e?.ctrlKey ? prev : []);
-      if (prev.has(id) && (e?.metaKey || e?.ctrlKey)) next.delete(id);
+      const multi = !!(e?.metaKey || e?.ctrlKey);
+      // Plain click: select only this one; click again deselects.
+      if (!multi) {
+        if (prev.size === 1 && prev.has(id)) return new Set();
+        return new Set([id]);
+      }
+      // Multi-select toggle.
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
       else next.add(id);
       return next;
     });
-  }
+  }, []);
 
   // ===== Category CRUD =====
   async function saveCategory(name: string) {
@@ -167,12 +185,17 @@ export function QrLibraryManager({
   }
 
   async function deleteCategory(cat: Category) {
-    if (!confirm(`确定删除分类「${cat.name}」？分类内的二维码不会被删除，只是变为未分类。`)) return;
-    const { error } = await supabase.from("qr_categories").delete().eq("id", cat.id);
-    if (error) { toast.error(error.message); return; }
-    if (selectedCat === cat.id) setSelectedCat(ALL_CATEGORY_ID);
-    toast.success("分类已删除");
-    await refresh();
+    askConfirm(
+      "删除分类",
+      `确定删除分类「${cat.name}」？分类内的二维码不会被删除，只是变为未分类。`,
+      async () => {
+        const { error } = await supabase.from("qr_categories").delete().eq("id", cat.id);
+        if (error) { toast.error(error.message); return; }
+        if (selectedCat === cat.id) setSelectedCat(ALL_CATEGORY_ID);
+        toast.success("分类已删除");
+        await refresh();
+      },
+    );
   }
 
   // ===== Item ops =====
@@ -181,23 +204,25 @@ export function QrLibraryManager({
       toast.info("系统内置二维码不可删除");
       return;
     }
-    if (!confirm(`确定删除「${item.name}」？`)) return;
-    const { error } = await supabase.from("qr_library").delete().eq("id", item.id);
-    if (error) { toast.error(error.message); return; }
-    setSelectedIds((s) => { const n = new Set(s); n.delete(item.id); return n; });
-    toast.success("已删除");
-    await refresh();
+    askConfirm("删除二维码", `确定删除「${item.name}」？`, async () => {
+      const { error } = await supabase.from("qr_library").delete().eq("id", item.id);
+      if (error) { toast.error(error.message); return; }
+      setSelectedIds((s) => { const n = new Set(s); n.delete(item.id); return n; });
+      toast.success("已删除");
+      await refresh();
+    });
   }
 
   async function batchDelete() {
     const ids = Array.from(selectedIds).filter((id) => !id.startsWith("legacy:"));
     if (!ids.length) return;
-    if (!confirm(`确定删除选中的 ${ids.length} 个二维码？`)) return;
-    const { error } = await supabase.from("qr_library").delete().in("id", ids);
-    if (error) { toast.error(error.message); return; }
-    setSelectedIds(new Set());
-    toast.success("已删除");
-    await refresh();
+    askConfirm("批量删除", `确定删除选中的 ${ids.length} 个二维码？`, async () => {
+      const { error } = await supabase.from("qr_library").delete().in("id", ids);
+      if (error) { toast.error(error.message); return; }
+      setSelectedIds(new Set());
+      toast.success("已删除");
+      await refresh();
+    });
   }
 
   async function moveToCategory(item: QrItem, categoryId: string | null) {
@@ -478,6 +503,35 @@ ${item.description ? `<p class="desc">${item.description}</p>` : ""}
           onSaved={() => { setCreatingItem(false); setEditingItem(null); void refresh(); }}
         />
       )}
+      {/* Non-blocking confirm */}
+      {confirmState && (
+        <Dialog open onOpenChange={(o) => !o && setConfirmState(null)}>
+          <DialogContent
+            className="max-w-sm"
+            onInteractOutside={(e) => e.preventDefault()}
+          >
+            <DialogHeader>
+              <DialogTitle>{confirmState.title}</DialogTitle>
+            </DialogHeader>
+            <div className="text-sm text-foreground/80 whitespace-pre-wrap">
+              {confirmState.message}
+            </div>
+            <DialogFooter>
+              <Button variant="ghost" onClick={() => setConfirmState(null)}>取消</Button>
+              <Button
+                variant="destructive"
+                onClick={() => {
+                  const fn = confirmState.onOk;
+                  setConfirmState(null);
+                  fn();
+                }}
+              >
+                确定
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }
@@ -499,7 +553,40 @@ function SidebarItem({ icon, label, count, active, onClick }: {
   );
 }
 
-function QrCard({ item, selected, onClick, onDoubleClick, menu }: {
+const QrThumb = memo(function QrThumb({
+  imageUrl,
+  targetUrl,
+  size,
+}: {
+  imageUrl: string | null;
+  targetUrl: string | null;
+  size: number;
+}) {
+  if (imageUrl) {
+    return (
+      <img
+        src={imageUrl}
+        loading="lazy"
+        alt=""
+        style={{ width: size, height: size }}
+        className="object-contain"
+      />
+    );
+  }
+  if (targetUrl) {
+    return <QRCodeSVG value={targetUrl} size={size} level="H" />;
+  }
+  return (
+    <div
+      style={{ width: size, height: size }}
+      className="flex items-center justify-center text-[10px] text-muted-foreground"
+    >
+      无链接
+    </div>
+  );
+});
+
+const QrCard = memo(function QrCard({ item, selected, onClick, onDoubleClick, menu }: {
   item: QrItem;
   selected: boolean;
   onClick: (e: React.MouseEvent) => void;
@@ -518,13 +605,7 @@ function QrCard({ item, selected, onClick, onDoubleClick, menu }: {
           )}
         >
           <div className="bg-white p-1.5 rounded">
-            {item.image_url ? (
-              <img src={item.image_url} alt={item.name} className="w-[110px] h-[110px] object-contain" />
-            ) : item.target_url ? (
-              <QRCodeSVG value={item.target_url} size={110} level="H" />
-            ) : (
-              <div className="w-[110px] h-[110px] flex items-center justify-center text-[10px] text-muted-foreground">无链接</div>
-            )}
+            <QrThumb imageUrl={item.image_url} targetUrl={item.target_url} size={110} />
           </div>
           <div className="text-xs font-medium text-center truncate w-full" title={item.name}>{item.name}</div>
           {item.is_default && (
@@ -535,7 +616,7 @@ function QrCard({ item, selected, onClick, onDoubleClick, menu }: {
       {menu}
     </ContextMenu>
   );
-}
+});
 
 function ListView({ items, selectedIds, onSelect, renderMenu }: {
   items: QrItem[];
@@ -559,9 +640,7 @@ function ListView({ items, selectedIds, onSelect, renderMenu }: {
               )}
             >
               <div className="truncate flex items-center gap-2">
-                <span className="inline-block bg-white p-0.5 rounded">
-                  {it.target_url ? <QRCodeSVG value={it.target_url} size={20} level="L" /> : <span className="block w-5 h-5" />}
-                </span>
+                <QrCode className="size-4 shrink-0 text-muted-foreground" />
                 {it.name}
               </div>
               <div className="text-xs text-muted-foreground truncate">{it.usage_type || "—"}</div>
@@ -580,13 +659,7 @@ function Inspector({ item, categoryName }: { item: QrItem; categoryName: string 
   return (
     <div className="space-y-3">
       <div className="bg-white p-2 rounded mx-auto w-fit">
-        {item.image_url ? (
-          <img src={item.image_url} alt={item.name} className="w-[180px] h-[180px] object-contain" />
-        ) : item.target_url ? (
-          <QRCodeSVG value={item.target_url} size={180} level="H" />
-        ) : (
-          <div className="w-[180px] h-[180px] flex items-center justify-center text-xs text-muted-foreground">无链接</div>
-        )}
+        <QrThumb imageUrl={item.image_url} targetUrl={item.target_url} size={180} />
       </div>
       <Field label="名称" value={item.name} />
       <Field label="分类" value={categoryName} />
