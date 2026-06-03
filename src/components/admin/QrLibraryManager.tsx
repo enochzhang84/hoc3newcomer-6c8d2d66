@@ -612,10 +612,14 @@ const QrThumb = memo(function QrThumb({
   imageUrl,
   targetUrl,
   size,
+  lite,
+  onGenerate,
 }: {
   imageUrl: string | null;
   targetUrl: string | null;
   size: number;
+  lite?: boolean;
+  onGenerate?: () => void;
 }) {
   if (imageUrl) {
     return (
@@ -629,6 +633,20 @@ const QrThumb = memo(function QrThumb({
     );
   }
   if (targetUrl) {
+    if (lite) {
+      return (
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); onGenerate?.(); }}
+          style={{ width: size, height: size }}
+          className="flex flex-col items-center justify-center gap-1 border border-dashed border-border/60 rounded text-[10px] text-muted-foreground hover:bg-accent/50"
+          title="预览环境已暂缓生成，点击生成二维码"
+        >
+          <QrCode className="size-5 opacity-50" />
+          <span>点击生成</span>
+        </button>
+      );
+    }
     return <QRCodeSVG value={targetUrl} size={size} level="H" />;
   }
   return (
@@ -641,12 +659,14 @@ const QrThumb = memo(function QrThumb({
   );
 });
 
-const QrCard = memo(function QrCard({ item, selected, onClick, onDoubleClick, menu }: {
+const QrCard = memo(function QrCard({ item, selected, onClick, onDoubleClick, menu, lite, onGenerate }: {
   item: QrItem;
   selected: boolean;
   onClick: (e: React.MouseEvent) => void;
   onDoubleClick: () => void;
   menu: React.ReactNode;
+  lite?: boolean;
+  onGenerate?: () => void;
 }) {
   return (
     <ContextMenu>
@@ -660,7 +680,7 @@ const QrCard = memo(function QrCard({ item, selected, onClick, onDoubleClick, me
           )}
         >
           <div className="bg-white p-1.5 rounded">
-            <QrThumb imageUrl={item.image_url} targetUrl={item.target_url} size={110} />
+            <QrThumb imageUrl={item.image_url} targetUrl={item.target_url} size={110} lite={lite} onGenerate={onGenerate} />
           </div>
           <div className="text-xs font-medium text-center truncate w-full" title={item.name}>{item.name}</div>
           {item.is_default && (
