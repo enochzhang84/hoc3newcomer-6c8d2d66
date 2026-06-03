@@ -21,7 +21,7 @@ type SundayCheckin = Checkin & { course_name?: string | null };
 type FellowshipCheckin = Checkin & { fellowship: string };
 type Course = { id: string; name: string };
 type Fellowship = { id: string; name: string };
-type MealPlan = { id: string; meal_date: string; attendees_count: number | null; meal_type?: string | null };
+type MealPlan = { id: string; plan_date: string; attendees: number; meal_type?: string | null };
 
 export type ElderOverviewProps = {
   regs: Reg[];
@@ -131,8 +131,8 @@ export function ElderWeeklyOverview(props: ElderOverviewProps) {
   // 上周人数统计：取最近一条 attendance
   const latest = attendance[0];
   // 本周饭食
-  const weekMeals = mealPlans.filter((m) => new Date(m.meal_date) >= wkStart);
-  const weekMealCount = weekMeals.reduce((s, m) => s + (m.attendees_count ?? 0), 0);
+  const weekMeals = mealPlans.filter((m) => new Date(m.plan_date) >= wkStart);
+  const weekMealCount = weekMeals.reduce((s, m) => s + (m.attendees ?? 0), 0);
   // 主日学今日签到
   const todaySS = sundayCheckins.filter((c) => sameLocalDate(c.checkin_date, today));
   // 团契本周参与
