@@ -172,30 +172,30 @@ export function ElderWeeklyOverview(props: ElderOverviewProps) {
       <div
         id="elder-bulletin"
         className="bg-white text-black p-6 print:p-2"
-        style={{ fontFamily: "'PMingLiU','MingLiU','SimSun','宋体',serif", fontSize: "14px", lineHeight: 1.55, fontWeight: 600 }}
+        style={{ fontFamily: "'PMingLiU','MingLiU','SimSun','宋体',serif", fontSize: "17px", lineHeight: 1.55, fontWeight: 600 }}
       >
         <div className="text-center pb-2 mb-4">
           <div
-            className="text-[18px] tracking-[0.12em]"
+            className="text-[22px] tracking-[0.12em]"
             style={{ fontFamily: "'STZhongsong','STSong','SimSun',serif", fontWeight: 700 }}
           >
             基督之家第三家
           </div>
           <div
-            className="text-[20px] tracking-[0.12em] mt-1"
+            className="text-[24px] tracking-[0.12em] mt-1"
             style={{ fontFamily: "'STZhongsong','STSong','SimSun',serif", fontWeight: 700 }}
           >
             今日周报总览
           </div>
           <div
-            className="text-[12px] mt-1 tracking-widest"
+            className="text-[14px] mt-1 tracking-widest"
             style={{ fontFamily: "'Times New Roman','PMingLiU',serif" }}
           >
             主后 {today.getFullYear()} 年 {today.getMonth() + 1} 月 {today.getDate()} 日　|　本周自 {fmtCN(wkStart)} 起
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-x-6 print:grid-cols-3 text-[13px] leading-[1.5] items-stretch">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-x-6 print:grid-cols-3 text-[17px] leading-[1.55] items-stretch">
           {/* 左栏 */}
           <div className="space-y-4 break-inside-avoid md:pr-4">
             <Block title="圣工轮值表（今日）">
