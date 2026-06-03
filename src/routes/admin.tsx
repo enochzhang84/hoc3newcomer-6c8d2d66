@@ -2764,17 +2764,13 @@ function AdminPage() {
         </section>
         )}
         {/* 主页设置 Dialog */}
-        <Dialog open={homeSettingsOpen} onOpenChange={setHomeSettingsOpen}>
-          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>主页设置</DialogTitle>
-              <DialogDescription>
-                修改首页 Logo、欢迎区文字与图片、二维码图片与说明。仅管理员可修改。
-              </DialogDescription>
-            </DialogHeader>
-            {homeSettingsOpen && <HomePageSettingsPanel />}
-          </DialogContent>
-        </Dialog>
+        <Win98Window
+          open={homeSettingsOpen}
+          title="主页设置 - 控制面板"
+          onClose={() => setHomeSettingsOpen(false)}
+        >
+          {homeSettingsOpen && <HomePageSettingsPanel />}
+        </Win98Window>
         {/* 备份与恢复 Dialog */}
         <Dialog open={backupOpen} onOpenChange={setBackupOpen}>
           <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
