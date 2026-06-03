@@ -247,24 +247,24 @@ export function ElderWeeklyOverview(props: ElderOverviewProps) {
           <div className="space-y-4 break-inside-avoid md:pl-4 flex flex-col h-full">
             <Block title="成人主日学课程">
               {courses.length > 0 ? (
-                <ul className="list-disc pl-5">
+                <div className="space-y-0.5">
                   {courses.slice(0, 12).map((c) => {
                     const cnt = todaySS.filter((s) => s.course_name === c.name).length;
-                    return <li key={c.id}>{c.name}{cnt > 0 ? `（今日 ${cnt} 人）` : ""}</li>;
+                    return <BulletinLine key={c.id} left={c.name} right={cnt > 0 ? `今日 ${cnt} 人` : "—"} />;
                   })}
-                </ul>
+                </div>
               ) : <div>暂无课程</div>}
-              <div className="mt-1">今日主日学签到合计：<b>{todaySS.length}</b> 人</div>
+              <BulletinLine left="今日主日学签到合计" right={`${todaySS.length} 人`} />
             </Block>
             <div className="flex-1" aria-hidden />
             <Block title="团契 / 小组聚会">
               {fellowships.length > 0 ? (
-                <ul className="list-disc pl-5">
+                <div className="space-y-0.5">
                   {fellowships.slice(0, 14).map((f) => {
                     const cnt = weekFellow.filter((c) => c.fellowship === f.name).length;
-                    return <li key={f.id}>{f.name}{cnt > 0 ? `（本周 ${cnt} 人）` : ""}</li>;
+                    return <BulletinLine key={f.id} left={f.name} right={cnt > 0 ? `本周 ${cnt} 人` : "—"} />;
                   })}
-                </ul>
+                </div>
               ) : <div>暂无团契</div>}
             </Block>
           </div>
@@ -277,6 +277,28 @@ export function ElderWeeklyOverview(props: ElderOverviewProps) {
           font-weight: 700;
         }
         #elder-bulletin b, #elder-bulletin strong { font-weight: 700; }
+        #elder-bulletin .bln-row {
+          display: flex;
+          align-items: baseline;
+          gap: 0.4em;
+          line-height: 1.7;
+        }
+        #elder-bulletin .bln-left { white-space: nowrap; flex-shrink: 0; }
+        #elder-bulletin .bln-mid {
+          flex: 1;
+          border-bottom: 1px dotted #000;
+          transform: translateY(-0.35em);
+          min-width: 1.5em;
+        }
+        #elder-bulletin .bln-mid-text {
+          flex: 0 1 auto;
+          color: #000;
+          padding: 0 0.3em;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+        #elder-bulletin .bln-right { white-space: nowrap; flex-shrink: 0; text-align: right; }
         #elder-bulletin .bulletin-table {
           border-collapse: collapse;
           font-family: 'PMingLiU','MingLiU','SimSun',serif;
@@ -327,6 +349,57 @@ function Row({ k, v }: { k: string; v: string }) {
   );
 }
 
+/** Split a bulletin line into left / mid / right segments using common
+ * separators found in printed church bulletins. */
+function splitBulletinLine(raw: string): { left: string; mid: string; right: string } | null {
+  const line = raw.trim();
+  if (!line) return null;
+  // Try ellipsis-style separators first
+  const ellipsisRe = /…{1,}|\.{3,}/g;
+  const parts = line.split(ellipsisRe).map((s) => s.trim()).filter(Boolean);
+  if (parts.length >= 2) {
+    const left = parts[0];
+    const right = parts[parts.length - 1];
+    const mid = parts.slice(1, -1).join(" ");
+    return { left, mid, right };
+  }
+  // Fallback: split by Chinese / ASCII colon — keep last segment as the right side
+  const colonRe = /[：:]/;
+  if (colonRe.test(line)) {
+    const idx = line.search(colonRe);
+    return { left: line.slice(0, idx).trim(), mid: "", right: line.slice(idx + 1).trim() };
+  }
+  return null;
+}
+
+function BulletinLine({ left, mid, right }: { left: string; mid?: string; right: string }) {
+  return (
+    <div className="bln-row">
+      <span className="bln-left">{left}</span>
+      {mid ? <span className="bln-mid-text">{mid}</span> : null}
+      <span className="bln-mid" aria-hidden />
+      <span className="bln-right">{right || "\u00A0"}</span>
+    </div>
+  );
+}
+
+function BulletinBlock({ value }: { value: string }) {
+  const lines = value.split("\n");
+  return (
+    <div>
+      {lines.map((ln, i) => {
+        const parts = splitBulletinLine(ln);
+        if (!parts) {
+          return (
+            <div key={i} className="whitespace-pre-wrap">{ln || "\u00A0"}</div>
+          );
+        }
+        return <BulletinLine key={i} left={parts.left} mid={parts.mid} right={parts.right} />;
+      })}
+    </div>
+  );
+}
+
 function Editor({ value, editing, onChange, stretch }: { value: string; editing: boolean; onChange: (v: string) => void; stretch?: boolean }) {
   if (editing) {
     return (
@@ -340,24 +413,14 @@ function Editor({ value, editing, onChange, stretch }: { value: string; editing:
     );
   }
   if (stretch) {
-    const lines = value.split("\n");
     return (
       <div
         className="flex-1 flex flex-col justify-between text-[17px] leading-[1.55]"
         style={{ fontFamily: "inherit", minHeight: "100%" }}
       >
-        {lines.map((ln, i) => (
-          <div key={i} className="whitespace-pre-wrap">{ln || "\u00A0"}</div>
-        ))}
+        <BulletinBlock value={value} />
       </div>
     );
   }
-  return (
-    <pre
-      className="whitespace-pre-wrap text-[17px] leading-[1.55] m-0"
-      style={{ fontFamily: "inherit" }}
-    >
-      {value}
-    </pre>
-  );
+  return <BulletinBlock value={value} />;
 }
