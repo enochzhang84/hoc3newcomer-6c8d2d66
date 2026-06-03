@@ -141,12 +141,12 @@ export function ElderWeeklyOverview(props: ElderOverviewProps) {
   return (
     <section className="mt-8 print:mt-0">
       <div className="flex items-center justify-between mb-3 print:hidden">
-        <h3 className="text-lg font-semibold">📰 今日周报总览 / 长老总览</h3>
-        <div className="flex flex-wrap gap-2">
+        <div className="text-xs text-muted-foreground">电子版教会周报 · 数据自动汇总</div>
+        <div className="flex flex-wrap gap-1.5">
           <button
             type="button"
             onClick={() => setEditing((v) => !v)}
-            className="text-sm px-3 py-1.5 rounded-md border border-border/60 hover:bg-muted/40"
+            className="text-xs px-2.5 py-1 border border-black/70 bg-white text-black hover:bg-neutral-100"
           >
             {editing ? "完成编辑" : "编辑模板"}
           </button>
@@ -154,7 +154,7 @@ export function ElderWeeklyOverview(props: ElderOverviewProps) {
             <button
               type="button"
               onClick={onRefresh}
-              className="text-sm px-3 py-1.5 rounded-md border border-border/60 hover:bg-muted/40"
+              className="text-xs px-2.5 py-1 border border-black/70 bg-white text-black hover:bg-neutral-100"
             >
               刷新数据
             </button>
@@ -162,7 +162,7 @@ export function ElderWeeklyOverview(props: ElderOverviewProps) {
           <button
             type="button"
             onClick={() => window.print()}
-            className="text-sm px-3 py-1.5 rounded-md border border-border/60 hover:bg-muted/40"
+            className="text-xs px-2.5 py-1 border border-black/70 bg-white text-black hover:bg-neutral-100"
           >
             打印 / 导出 PDF
           </button>
@@ -171,19 +171,20 @@ export function ElderWeeklyOverview(props: ElderOverviewProps) {
 
       <div
         id="elder-bulletin"
-        className="bg-white text-black border border-black p-3 print:p-2 print:border-0"
-        style={{ fontFamily: "'Noto Serif SC', 'Songti SC', serif" }}
+        className="bg-white text-black border border-black p-4 print:p-2 print:border-0"
+        style={{ fontFamily: "'Songti SC','SimSun','宋体','PMingLiU','新细明体',serif" }}
       >
-        <div className="text-center border-b-2 border-black pb-2 mb-3">
-          <div className="text-xl font-bold">基督之家第三家 — 今日周报总览</div>
-          <div className="text-xs mt-1">
-            日期：{today.toLocaleDateString("zh-CN")} ｜ 本周：{fmtCN(wkStart)} 起
+        <div className="text-center pb-2 mb-3 border-b border-black">
+          <div className="text-[15px] tracking-[0.4em] pl-[0.4em]">基督之家第三家</div>
+          <div className="text-[22px] font-bold tracking-[0.3em] pl-[0.3em] mt-1">今 日 周 报 总 览</div>
+          <div className="text-[11px] mt-1 tracking-widest">
+            主后 {today.getFullYear()} 年 {today.getMonth() + 1} 月 {today.getDate()} 日　|　本周自 {fmtCN(wkStart)} 起
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-2 print:grid-cols-3 print:gap-1 text-[12px] leading-snug">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-0 print:grid-cols-3 text-[12px] leading-[1.55] [&>div+div]:md:border-l-0">
           {/* 左栏 */}
-          <div className="border border-black p-2 space-y-2 break-inside-avoid">
+          <div className="border border-black p-2 space-y-2 break-inside-avoid md:border-r-0">
             <Block title="圣工轮值表（今日）">
               <Editor value={edit.duty} editing={editing} onChange={(v) => setEdit({ ...edit, duty: v })} />
             </Block>
@@ -209,8 +210,8 @@ export function ElderWeeklyOverview(props: ElderOverviewProps) {
           </div>
 
           {/* 中栏 */}
-          <div className="border border-black p-2 space-y-2 break-inside-avoid">
-            <div className="text-center font-bold border-b border-black pb-1 mb-1">
+          <div className="border border-black p-2 space-y-2 break-inside-avoid md:border-r-0">
+            <div className="text-center font-bold border-b border-black pb-1 mb-1 tracking-[0.3em] pl-[0.3em]">
               中文堂主日敬拜程序
             </div>
             <Block title="今日主日崇拜">
@@ -274,9 +275,11 @@ export function ElderWeeklyOverview(props: ElderOverviewProps) {
 
 function Block({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div>
-      <div className="font-bold text-center border-b border-black pb-0.5 mb-1">{title}</div>
-      <div>{children}</div>
+    <div className="border border-black">
+      <div className="font-bold text-center border-b border-black py-0.5 px-1 bg-white tracking-[0.15em] pl-[0.15em] text-[12px]">
+        {title}
+      </div>
+      <div className="p-1.5">{children}</div>
     </div>
   );
 }
@@ -297,9 +300,17 @@ function Editor({ value, editing, onChange }: { value: string; editing: boolean;
         value={value}
         onChange={(e) => onChange(e.target.value)}
         rows={Math.min(16, Math.max(3, value.split("\n").length + 1))}
-        className="w-full border border-black p-1 text-[12px] font-mono bg-yellow-50 print:bg-white"
+        className="w-full border border-black p-1 text-[12px] bg-yellow-50 print:bg-white"
+        style={{ fontFamily: "inherit" }}
       />
     );
   }
-  return <pre className="whitespace-pre-wrap font-sans text-[12px] leading-snug m-0">{value}</pre>;
+  return (
+    <pre
+      className="whitespace-pre-wrap text-[12px] leading-[1.55] m-0"
+      style={{ fontFamily: "inherit" }}
+    >
+      {value}
+    </pre>
+  );
 }
