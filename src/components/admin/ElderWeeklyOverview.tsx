@@ -171,10 +171,10 @@ export function ElderWeeklyOverview(props: ElderOverviewProps) {
 
       <div
         id="elder-bulletin"
-        className="bg-white text-black border border-black p-4 print:p-2 print:border-0"
+        className="bg-white text-black p-6 print:p-2"
         style={{ fontFamily: "'Songti SC','SimSun','宋体','PMingLiU','新细明体',serif" }}
       >
-        <div className="text-center pb-2 mb-3 border-b border-black">
+        <div className="text-center pb-2 mb-4 border-b border-double border-black">
           <div className="text-[15px] tracking-[0.4em] pl-[0.4em]">基督之家第三家</div>
           <div className="text-[22px] font-bold tracking-[0.3em] pl-[0.3em] mt-1">今 日 周 报 总 览</div>
           <div className="text-[11px] mt-1 tracking-widest">
@@ -182,9 +182,9 @@ export function ElderWeeklyOverview(props: ElderOverviewProps) {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-0 print:grid-cols-3 text-[12px] leading-[1.55] [&>div+div]:md:border-l-0">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-x-6 print:grid-cols-3 text-[12.5px] leading-[1.7]">
           {/* 左栏 */}
-          <div className="border border-black p-2 space-y-2 break-inside-avoid md:border-r-0">
+          <div className="space-y-4 break-inside-avoid md:border-r md:border-black/40 md:pr-6">
             <Block title="圣工轮值表（今日）">
               <Editor value={edit.duty} editing={editing} onChange={(v) => setEdit({ ...edit, duty: v })} />
             </Block>
@@ -193,7 +193,7 @@ export function ElderWeeklyOverview(props: ElderOverviewProps) {
             </Block>
             <Block title={`上周人数统计${latest ? `（${latest.record_date}）` : ""}`}>
               {latest ? (
-                <table className="w-full border-collapse text-[12px]">
+                <table className="w-full border-collapse text-[12.5px]">
                   <tbody>
                     <Row k="大堂敬拜" v={String(latest.worship_count)} />
                     <Row k="儿童学生" v={String(latest.children_students)} />
@@ -201,7 +201,7 @@ export function ElderWeeklyOverview(props: ElderOverviewProps) {
                     <Row k="总数" v={String(latest.worship_count + latest.children_students + latest.children_teachers)} />
                   </tbody>
                 </table>
-              ) : <div className="text-gray-600">暂无数据</div>}
+              ) : <div>暂无数据</div>}
             </Block>
             <Block title="本周饭食 / 奉献统计">
               <div className="mb-1">本周饭食人数：<b>{weekMealCount}</b>（{weekMeals.length} 餐）</div>
@@ -210,8 +210,8 @@ export function ElderWeeklyOverview(props: ElderOverviewProps) {
           </div>
 
           {/* 中栏 */}
-          <div className="border border-black p-2 space-y-2 break-inside-avoid md:border-r-0">
-            <div className="text-center font-bold border-b border-black pb-1 mb-1 tracking-[0.3em] pl-[0.3em]">
+          <div className="space-y-4 break-inside-avoid md:border-r md:border-black/40 md:px-6">
+            <div className="text-center font-bold pb-1 mb-2 tracking-[0.3em] pl-[0.3em] text-[14px]">
               中文堂主日敬拜程序
             </div>
             <Block title="今日主日崇拜">
@@ -220,7 +220,7 @@ export function ElderWeeklyOverview(props: ElderOverviewProps) {
             <Block title="今日新人登记">
               <div className="mb-1">今日新人：<b>{todayNewcomers.length}</b> 人</div>
               {todayNewcomers.length > 0 && (
-                <ul className="list-disc pl-4">
+                <ul className="list-disc pl-5">
                   {todayNewcomers.slice(0, 12).map((r) => (
                     <li key={r.id}>{r.name ?? "—"}</li>
                   ))}
@@ -230,27 +230,27 @@ export function ElderWeeklyOverview(props: ElderOverviewProps) {
           </div>
 
           {/* 右栏 */}
-          <div className="border border-black p-2 space-y-2 break-inside-avoid">
+          <div className="space-y-4 break-inside-avoid md:pl-6">
             <Block title="成人主日学课程">
               {courses.length > 0 ? (
-                <ul className="list-disc pl-4">
+                <ul className="list-disc pl-5">
                   {courses.slice(0, 12).map((c) => {
                     const cnt = todaySS.filter((s) => s.course_name === c.name).length;
                     return <li key={c.id}>{c.name}{cnt > 0 ? `（今日 ${cnt} 人）` : ""}</li>;
                   })}
                 </ul>
-              ) : <div className="text-gray-600">暂无课程</div>}
+              ) : <div>暂无课程</div>}
               <div className="mt-1">今日主日学签到合计：<b>{todaySS.length}</b> 人</div>
             </Block>
             <Block title="团契 / 小组聚会">
               {fellowships.length > 0 ? (
-                <ul className="list-disc pl-4">
+                <ul className="list-disc pl-5">
                   {fellowships.slice(0, 14).map((f) => {
                     const cnt = weekFellow.filter((c) => c.fellowship === f.name).length;
                     return <li key={f.id}>{f.name}{cnt > 0 ? `（本周 ${cnt} 人）` : ""}</li>;
                   })}
                 </ul>
-              ) : <div className="text-gray-600">暂无团契</div>}
+              ) : <div>暂无团契</div>}
             </Block>
             <Block title="本周家讯">
               <Editor value={edit.newsletter} editing={editing} onChange={(v) => setEdit({ ...edit, newsletter: v })} />
@@ -275,12 +275,12 @@ export function ElderWeeklyOverview(props: ElderOverviewProps) {
 
 function Block({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="border border-black">
-      <div className="font-bold text-center border-b border-black py-0.5 px-1 bg-white tracking-[0.15em] pl-[0.15em] text-[12px]">
-        {title}
-      </div>
-      <div className="p-1.5">{children}</div>
-    </div>
+    <section className="break-inside-avoid">
+      <h3 className="font-bold text-[13.5px] tracking-[0.2em] pl-[0.2em] text-center border-b border-black pb-0.5 mb-1.5">
+        ◎ {title} ◎
+      </h3>
+      <div>{children}</div>
+    </section>
   );
 }
 
