@@ -1,0 +1,586 @@
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Slider } from "@/components/ui/slider";
+import { Switch } from "@/components/ui/switch";
+import {
+  Layers,
+  Video,
+  Image as ImageIcon,
+  Maximize2,
+  Camera,
+  Youtube,
+  Globe,
+  Upload,
+  CornerUpLeft,
+  CornerUpRight,
+  CornerDownLeft,
+  CornerDownRight,
+} from "lucide-react";
+import { toast } from "sonner";
+import { cn } from "@/lib/utils";
+
+type VideoKind = "youtube" | "camera" | "url";
+type PptKind = "image" | "url";
+type Layout =
+  | "ppt-main-video-pip"
+  | "video-main-ppt-pip"
+  | "side-by-side"
+  | "stacked"
+  | "video-only"
+  | "ppt-only";
+type Corner = "tl" | "tr" | "bl" | "br";
+
+function ytId(raw: string): string {
+  if (!raw) return "";
+  try {
+    const u = new URL(raw.trim());
+    const host = u.hostname.replace(/^www\./, "");
+    if (host === "youtu.be") return u.pathname.replace(/^\//, "").split("/")[0] || "";
+    if (host.endsWith("youtube.com")) {
+      if (u.searchParams.get("v")) return u.searchParams.get("v") || "";
+      const parts = u.pathname.split("/").filter(Boolean);
+      const idx = parts.findIndex((p) => p === "live" || p === "embed" || p === "shorts");
+      if (idx >= 0 && parts[idx + 1]) return parts[idx + 1];
+    }
+    return "";
+  } catch {
+    const m = raw.match(/[?&]v=([a-zA-Z0-9_-]{6,})/);
+    return m ? m[1] : "";
+  }
+}
+
+function VideoSourceView({
+  kind,
+  youtubeUrl,
+  videoUrl,
+  cameraStream,
+  className,
+}: {
+  kind: VideoKind;
+  youtubeUrl: string;
+  videoUrl: string;
+  cameraStream: MediaStream | null;
+  className?: string;
+}) {
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  useEffect(() => {
+    if (kind === "camera" && videoRef.current && cameraStream) {
+      videoRef.current.srcObject = cameraStream;
+    }
+  }, [kind, cameraStream]);
+
+  if (kind === "youtube") {
+    const id = ytId(youtubeUrl);
+    if (!id) {
+      return (
+        <div className={cn("flex items-center justify-center text-xs text-white/60 bg-black", className)}>
+          未设置 YouTube 地址
+        </div>
+      );
+    }
+    return (
+      <iframe
+        src={`https://www.youtube.com/embed/${id}?autoplay=1&mute=1`}
+        title="video-source"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        allowFullScreen
+        className={cn("border-0 bg-black", className)}
+      />
+    );
+  }
+  if (kind === "camera") {
+    return (
+      <video
+        ref={videoRef}
+        autoPlay
+        playsInline
+        muted
+        className={cn("bg-black object-cover", className)}
+      />
+    );
+  }
+  if (kind === "url" && videoUrl) {
+    return (
+      <video src={videoUrl} autoPlay loop muted playsInline className={cn("bg-black object-cover", className)} />
+    );
+  }
+  return (
+    <div className={cn("flex items-center justify-center text-xs text-white/60 bg-black", className)}>
+      未设置视频源
+    </div>
+  );
+}
+
+function PptSourceView({
+  kind,
+  imageUrl,
+  pageUrl,
+  className,
+}: {
+  kind: PptKind;
+  imageUrl: string;
+  pageUrl: string;
+  className?: string;
+}) {
+  if (kind === "image") {
+    if (!imageUrl) {
+      return (
+        <div className={cn("flex items-center justify-center text-xs text-white/60 bg-neutral-900", className)}>
+          未上传图片
+        </div>
+      );
+    }
+    return (
+      <div className={cn("bg-neutral-900 flex items-center justify-center overflow-hidden", className)}>
+        <img src={imageUrl} alt="ppt" className="max-w-full max-h-full object-contain" />
+      </div>
+    );
+  }
+  if (!pageUrl) {
+    return (
+      <div className={cn("flex items-center justify-center text-xs text-white/60 bg-neutral-900", className)}>
+        未设置网页地址
+      </div>
+    );
+  }
+  return (
+    <iframe
+      src={pageUrl}
+      title="ppt-source"
+      className={cn("border-0 bg-white", className)}
+    />
+  );
+}
+
+export default function PipComposer() {
+  // Video source
+  const [videoKind, setVideoKind] = useState<VideoKind>("youtube");
+  const [youtubeUrl, setYoutubeUrl] = useState<string>(() =>
+    typeof window === "undefined" ? "" : window.localStorage.getItem("admin_youtube_live_url") || "",
+  );
+  const [videoUrl, setVideoUrl] = useState<string>("");
+  const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
+
+  // PPT source
+  const [pptKind, setPptKind] = useState<PptKind>("image");
+  const [pptImage, setPptImage] = useState<string>("");
+  const [pptUrl, setPptUrl] = useState<string>("");
+
+  // Layout & PIP
+  const [layout, setLayout] = useState<Layout>("ppt-main-video-pip");
+  const [pipPos, setPipPos] = useState<{ x: number; y: number }>({ x: 70, y: 70 }); // percent
+  const [pipSize, setPipSize] = useState<number>(28); // percent of width
+  const [pipRounded, setPipRounded] = useState<boolean>(true);
+  const [pipBorder, setPipBorder] = useState<boolean>(true);
+  const [pipOpacity, setPipOpacity] = useState<number>(100);
+
+  // Refs
+  const stageRef = useRef<HTMLDivElement | null>(null);
+  const dragState = useRef<{ active: boolean; offX: number; offY: number }>({
+    active: false,
+    offX: 0,
+    offY: 0,
+  });
+
+  useEffect(() => {
+    return () => {
+      if (cameraStream) cameraStream.getTracks().forEach((t) => t.stop());
+    };
+  }, [cameraStream]);
+
+  const startCamera = async () => {
+    try {
+      const s = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+      setCameraStream(s);
+      setVideoKind("camera");
+      toast.success("摄像头已开启");
+    } catch {
+      toast.error("无法获取摄像头权限");
+    }
+  };
+
+  const stopCamera = () => {
+    if (cameraStream) cameraStream.getTracks().forEach((t) => t.stop());
+    setCameraStream(null);
+    toast.message("摄像头已关闭");
+  };
+
+  const onUploadPpt = (file: File) => {
+    const url = URL.createObjectURL(file);
+    setPptImage(url);
+    setPptKind("image");
+    toast.success("图片已加载");
+  };
+
+  const setCorner = (c: Corner) => {
+    const margin = 2;
+    const size = pipSize;
+    const aspect = 9 / 16;
+    const hPct = size * aspect; // not exact but ok for default
+    const xMax = 100 - size - margin;
+    const yMax = 100 - hPct * (16 / 9) - margin; // height in % depends on stage aspect
+    const positions: Record<Corner, { x: number; y: number }> = {
+      tl: { x: margin, y: margin },
+      tr: { x: xMax, y: margin },
+      bl: { x: margin, y: Math.max(margin, yMax) },
+      br: { x: xMax, y: Math.max(margin, yMax) },
+    };
+    setPipPos(positions[c]);
+  };
+
+  const handleDragStart = (e: React.PointerEvent) => {
+    if (!stageRef.current) return;
+    const rect = stageRef.current.getBoundingClientRect();
+    const xPx = (pipPos.x / 100) * rect.width;
+    const yPx = (pipPos.y / 100) * rect.height;
+    dragState.current = {
+      active: true,
+      offX: e.clientX - rect.left - xPx,
+      offY: e.clientY - rect.top - yPx,
+    };
+    (e.target as Element).setPointerCapture(e.pointerId);
+  };
+  const handleDragMove = (e: React.PointerEvent) => {
+    if (!dragState.current.active || !stageRef.current) return;
+    const rect = stageRef.current.getBoundingClientRect();
+    const xPx = e.clientX - rect.left - dragState.current.offX;
+    const yPx = e.clientY - rect.top - dragState.current.offY;
+    setPipPos({
+      x: Math.max(0, Math.min(100 - pipSize, (xPx / rect.width) * 100)),
+      y: Math.max(0, Math.min(95, (yPx / rect.height) * 100)),
+    });
+  };
+  const handleDragEnd = (e: React.PointerEvent) => {
+    dragState.current.active = false;
+    try { (e.target as Element).releasePointerCapture(e.pointerId); } catch { /* noop */ }
+  };
+
+  const goFullscreen = () => {
+    if (stageRef.current?.requestFullscreen) stageRef.current.requestFullscreen();
+    else toast.error("当前浏览器不支持全屏");
+  };
+
+  // Layout rendering
+  const renderStage = useMemo(() => {
+    const video = (
+      <VideoSourceView
+        kind={videoKind}
+        youtubeUrl={youtubeUrl}
+        videoUrl={videoUrl}
+        cameraStream={cameraStream}
+        className="w-full h-full"
+      />
+    );
+    const ppt = (
+      <PptSourceView kind={pptKind} imageUrl={pptImage} pageUrl={pptUrl} className="w-full h-full" />
+    );
+
+    if (layout === "side-by-side") {
+      return (
+        <div className="absolute inset-0 grid grid-cols-2">
+          <div className="overflow-hidden">{video}</div>
+          <div className="overflow-hidden">{ppt}</div>
+        </div>
+      );
+    }
+    if (layout === "stacked") {
+      return (
+        <div className="absolute inset-0 grid grid-rows-2">
+          <div className="overflow-hidden">{video}</div>
+          <div className="overflow-hidden">{ppt}</div>
+        </div>
+      );
+    }
+    if (layout === "video-only") {
+      return <div className="absolute inset-0">{video}</div>;
+    }
+    if (layout === "ppt-only") {
+      return <div className="absolute inset-0">{ppt}</div>;
+    }
+
+    // PIP layouts
+    const main = layout === "video-main-ppt-pip" ? video : ppt;
+    const pip = layout === "video-main-ppt-pip" ? ppt : video;
+    return (
+      <>
+        <div className="absolute inset-0">{main}</div>
+        <div
+          onPointerDown={handleDragStart}
+          onPointerMove={handleDragMove}
+          onPointerUp={handleDragEnd}
+          onPointerCancel={handleDragEnd}
+          className={cn(
+            "absolute overflow-hidden cursor-move select-none touch-none shadow-2xl",
+            pipRounded && "rounded-xl",
+            pipBorder && "ring-2 ring-white/80",
+          )}
+          style={{
+            left: `${pipPos.x}%`,
+            top: `${pipPos.y}%`,
+            width: `${pipSize}%`,
+            aspectRatio: "16 / 9",
+            opacity: pipOpacity / 100,
+          }}
+        >
+          <div className="w-full h-full pointer-events-none">{pip}</div>
+        </div>
+      </>
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    layout, videoKind, youtubeUrl, videoUrl, cameraStream,
+    pptKind, pptImage, pptUrl,
+    pipPos.x, pipPos.y, pipSize, pipRounded, pipBorder, pipOpacity,
+  ]);
+
+  const layoutOptions: { v: Layout; label: string }[] = [
+    { v: "ppt-main-video-pip", label: "PPT 大画面 + 视频小窗" },
+    { v: "video-main-ppt-pip", label: "视频大画面 + PPT 小窗" },
+    { v: "side-by-side", label: "左右分屏" },
+    { v: "stacked", label: "上下分屏" },
+    { v: "video-only", label: "仅视频" },
+    { v: "ppt-only", label: "仅 PPT" },
+  ];
+
+  return (
+    <section className="bg-card border border-border/60 rounded-2xl p-6 shadow-sm">
+      <div className="flex items-start justify-between gap-4 flex-wrap mb-5">
+        <div>
+          <h3 className="font-serif text-xl flex items-center gap-2">
+            <Layers className="text-primary" />
+            画面合成器（简易 PIP）
+          </h3>
+          <p className="text-sm text-muted-foreground mt-1">
+            将视频源与 PPT 源合成预览，适合无 OBS 时快速预览直播画面
+          </p>
+        </div>
+        <Button variant="outline" onClick={goFullscreen} className="gap-2">
+          <Maximize2 className="size-4" />
+          全屏预览
+        </Button>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-[280px_minmax(0,1fr)_260px] gap-5">
+        {/* 左侧：输入源 */}
+        <div className="space-y-5">
+          <div className="bg-background/60 border border-border/60 rounded-xl p-4 space-y-3">
+            <div className="text-sm font-medium flex items-center gap-2">
+              <Video className="size-4 text-primary" /> 视频源
+            </div>
+            <div className="grid grid-cols-3 gap-1.5">
+              {([
+                { v: "youtube", label: "YouTube", icon: <Youtube className="size-3.5" /> },
+                { v: "camera", label: "摄像头", icon: <Camera className="size-3.5" /> },
+                { v: "url", label: "视频URL", icon: <Globe className="size-3.5" /> },
+              ] as { v: VideoKind; label: string; icon: React.ReactNode }[]).map((o) => (
+                <button
+                  key={o.v}
+                  type="button"
+                  onClick={() => setVideoKind(o.v)}
+                  className={cn(
+                    "text-xs py-1.5 rounded-md border flex items-center justify-center gap-1 transition-colors",
+                    videoKind === o.v
+                      ? "bg-primary text-primary-foreground border-primary"
+                      : "bg-background border-border hover:bg-muted/40",
+                  )}
+                >
+                  {o.icon}
+                  {o.label}
+                </button>
+              ))}
+            </div>
+            {videoKind === "youtube" && (
+              <Input
+                placeholder="YouTube 链接"
+                value={youtubeUrl}
+                onChange={(e) => setYoutubeUrl(e.target.value)}
+                className="text-sm"
+              />
+            )}
+            {videoKind === "url" && (
+              <Input
+                placeholder="视频地址 (mp4/HLS/RTMP 预留)"
+                value={videoUrl}
+                onChange={(e) => setVideoUrl(e.target.value)}
+                className="text-sm"
+              />
+            )}
+            {videoKind === "camera" && (
+              <div className="flex gap-2">
+                {!cameraStream ? (
+                  <Button size="sm" onClick={startCamera} className="flex-1 gap-1">
+                    <Camera className="size-3.5" /> 开启摄像头
+                  </Button>
+                ) : (
+                  <Button size="sm" variant="outline" onClick={stopCamera} className="flex-1">
+                    关闭摄像头
+                  </Button>
+                )}
+              </div>
+            )}
+          </div>
+
+          <div className="bg-background/60 border border-border/60 rounded-xl p-4 space-y-3">
+            <div className="text-sm font-medium flex items-center gap-2">
+              <ImageIcon className="size-4 text-primary" /> PPT 源
+            </div>
+            <div className="grid grid-cols-2 gap-1.5">
+              {([
+                { v: "image", label: "图片" },
+                { v: "url", label: "网页" },
+              ] as { v: PptKind; label: string }[]).map((o) => (
+                <button
+                  key={o.v}
+                  type="button"
+                  onClick={() => setPptKind(o.v)}
+                  className={cn(
+                    "text-xs py-1.5 rounded-md border transition-colors",
+                    pptKind === o.v
+                      ? "bg-primary text-primary-foreground border-primary"
+                      : "bg-background border-border hover:bg-muted/40",
+                  )}
+                >
+                  {o.label}
+                </button>
+              ))}
+            </div>
+            {pptKind === "image" && (
+              <div className="space-y-2">
+                <label className="flex items-center justify-center gap-2 text-xs px-3 py-2 border border-dashed border-border rounded-md cursor-pointer hover:bg-muted/40">
+                  <Upload className="size-3.5" />
+                  上传图片
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      if (f) onUploadPpt(f);
+                    }}
+                  />
+                </label>
+                {pptImage && (
+                  <div className="text-[11px] text-muted-foreground truncate">
+                    已加载：本地图片
+                  </div>
+                )}
+              </div>
+            )}
+            {pptKind === "url" && (
+              <Input
+                placeholder="网页地址 https://..."
+                value={pptUrl}
+                onChange={(e) => setPptUrl(e.target.value)}
+                className="text-sm"
+              />
+            )}
+          </div>
+        </div>
+
+        {/* 中间：合成预览 */}
+        <div>
+          <div
+            ref={stageRef}
+            className="relative w-full bg-black rounded-xl overflow-hidden border border-border/60 shadow-inner"
+            style={{ aspectRatio: "16 / 9" }}
+          >
+            {renderStage}
+            <div className="absolute top-2 left-2 px-2 py-0.5 rounded bg-black/60 text-[10px] text-white font-mono">
+              PREVIEW · 16:9
+            </div>
+          </div>
+          <p className="text-xs text-muted-foreground mt-2">
+            提示：PIP 小窗可直接拖动；如需推流到直播端，将在后续阶段提供 OBS Browser Source 与 RTMP 输出。
+          </p>
+        </div>
+
+        {/* 右侧：布局 / PIP 控制 */}
+        <div className="space-y-4">
+          <div className="bg-background/60 border border-border/60 rounded-xl p-4 space-y-2">
+            <div className="text-sm font-medium mb-1">布局模式</div>
+            <div className="grid grid-cols-1 gap-1.5">
+              {layoutOptions.map((o) => (
+                <button
+                  key={o.v}
+                  type="button"
+                  onClick={() => setLayout(o.v)}
+                  className={cn(
+                    "text-xs py-1.5 px-2 rounded-md border text-left transition-colors",
+                    layout === o.v
+                      ? "bg-primary text-primary-foreground border-primary"
+                      : "bg-background border-border hover:bg-muted/40",
+                  )}
+                >
+                  {o.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {(layout === "ppt-main-video-pip" || layout === "video-main-ppt-pip") && (
+            <div className="bg-background/60 border border-border/60 rounded-xl p-4 space-y-3">
+              <div className="text-sm font-medium">PIP 小窗设置</div>
+
+              <div>
+                <Label className="text-[11px] text-muted-foreground">快速定位</Label>
+                <div className="grid grid-cols-4 gap-1.5 mt-1">
+                  <Button size="sm" variant="outline" className="h-8 p-0" onClick={() => setCorner("tl")}>
+                    <CornerUpLeft className="size-3.5" />
+                  </Button>
+                  <Button size="sm" variant="outline" className="h-8 p-0" onClick={() => setCorner("tr")}>
+                    <CornerUpRight className="size-3.5" />
+                  </Button>
+                  <Button size="sm" variant="outline" className="h-8 p-0" onClick={() => setCorner("bl")}>
+                    <CornerDownLeft className="size-3.5" />
+                  </Button>
+                  <Button size="sm" variant="outline" className="h-8 p-0" onClick={() => setCorner("br")}>
+                    <CornerDownRight className="size-3.5" />
+                  </Button>
+                </div>
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <Label className="text-[11px] text-muted-foreground">小窗大小</Label>
+                  <span className="text-[11px] text-muted-foreground tabular-nums">{pipSize}%</span>
+                </div>
+                <Slider
+                  value={[pipSize]}
+                  min={15}
+                  max={50}
+                  step={1}
+                  onValueChange={(v) => setPipSize(v[0])}
+                />
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <Label className="text-[11px] text-muted-foreground">透明度</Label>
+                  <span className="text-[11px] text-muted-foreground tabular-nums">{pipOpacity}%</span>
+                </div>
+                <Slider
+                  value={[pipOpacity]}
+                  min={20}
+                  max={100}
+                  step={5}
+                  onValueChange={(v) => setPipOpacity(v[0])}
+                />
+              </div>
+
+              <div className="flex items-center justify-between text-xs">
+                <Label className="text-foreground/80">圆角</Label>
+                <Switch checked={pipRounded} onCheckedChange={setPipRounded} />
+              </div>
+              <div className="flex items-center justify-between text-xs">
+                <Label className="text-foreground/80">边框</Label>
+                <Switch checked={pipBorder} onCheckedChange={setPipBorder} />
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </section>
+  );
+}
