@@ -202,52 +202,48 @@ export function ElderWeeklyOverview(props: ElderOverviewProps) {
               <Editor value={edit.duty} editing={editing} onChange={(v) => setEdit({ ...edit, duty: v })} />
             </Block>
             <Block title="儿童事工">
-              <table className="bulletin-table w-full text-[14px]">
+              <table className="bulletin-table kids-table w-full">
                 <thead>
                   <tr>
-                    <th className="border px-1 py-0.5 text-center font-semibold">时间</th>
-                    <th className="border px-1 py-0.5 text-center font-semibold">年级 / 级别</th>
-                    <th className="border px-1 py-0.5 text-center font-semibold">教室</th>
-                    <th className="border px-1 py-0.5 text-center font-semibold">负责同工</th>
+                    <th className="border text-center font-semibold">时间</th>
+                    <th className="border text-center font-semibold">年级/级别</th>
+                    <th className="border text-center font-semibold">教室</th>
+                    <th className="border text-center font-semibold">负责同工</th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr>
-                    <td className="border px-1 py-0.5 text-center align-middle" rowSpan={5}>
-                      <div>11:00am–12:30pm</div>
-                      <div className="mt-0.5">儿童主日学聚会</div>
+                    <td className="border text-center align-middle whitespace-nowrap" rowSpan={5}>
+                      11:00am–12:30pm 儿童主日学
                     </td>
-                    <td className="border px-1 py-0.5">1.&nbsp;Nursery (0–2 岁)</td>
-                    <td className="border px-1 py-0.5 text-center">夏靖</td>
-                    <td className="border px-1 py-0.5 text-center">顾雨珊</td>
+                    <td className="border whitespace-nowrap">1. Nursery (0–2岁)</td>
+                    <td className="border text-center whitespace-nowrap">夏靖</td>
+                    <td className="border text-center whitespace-nowrap">顾雨珊</td>
                   </tr>
                   <tr>
-                    <td className="border px-1 py-0.5">2.&nbsp;Preschool (3–5 岁)</td>
-                    <td className="border px-1 py-0.5 text-center">吕小梅</td>
-                    <td className="border px-1 py-0.5 text-center">吕小梅</td>
+                    <td className="border whitespace-nowrap">2. Preschool (3–5岁)</td>
+                    <td className="border text-center whitespace-nowrap">吕小梅</td>
+                    <td className="border text-center whitespace-nowrap">吕小梅</td>
                   </tr>
                   <tr>
-                    <td className="border px-1 py-0.5">3.&nbsp;K/1st (K–1 年级)</td>
-                    <td className="border px-1 py-0.5 text-center">王允义</td>
-                    <td className="border px-1 py-0.5 text-center">吕小梅</td>
+                    <td className="border whitespace-nowrap">3. K/1st (K–1年级)</td>
+                    <td className="border text-center whitespace-nowrap">王允义</td>
+                    <td className="border text-center whitespace-nowrap">吕小梅</td>
                   </tr>
                   <tr>
-                    <td className="border px-1 py-0.5">4.&nbsp;2nd/3rd (2–3 年级)</td>
-                    <td className="border px-1 py-0.5 text-center">冯国富</td>
-                    <td className="border px-1 py-0.5 text-center">冯国富</td>
+                    <td className="border whitespace-nowrap">4. 2nd/3rd (2–3年级)</td>
+                    <td className="border text-center whitespace-nowrap">冯国富</td>
+                    <td className="border text-center whitespace-nowrap">冯国富</td>
                   </tr>
                   <tr>
-                    <td className="border px-1 py-0.5">5.&nbsp;4th/5th (4–5 年级)</td>
-                    <td className="border px-1 py-0.5 text-center">&nbsp;</td>
-                    <td className="border px-1 py-0.5 text-center">谢刚</td>
+                    <td className="border whitespace-nowrap">5. 4th/5th (4–5年级)</td>
+                    <td className="border text-center whitespace-nowrap">&nbsp;</td>
+                    <td className="border text-center whitespace-nowrap">谢刚</td>
                   </tr>
                   <tr>
-                    <td className="border px-1 py-0.5 text-center">
-                      <div>周五</div>
-                      <div>7:45–9:30pm</div>
-                    </td>
-                    <td className="border px-1 py-0.5 text-center" colSpan={2}>Awana</td>
-                    <td className="border px-1 py-0.5 text-center">故纪中</td>
+                    <td className="border text-center whitespace-nowrap">周五 7:45–9:30pm</td>
+                    <td className="border text-center whitespace-nowrap" colSpan={2}>Awana</td>
+                    <td className="border text-center whitespace-nowrap">故纪中</td>
                   </tr>
                 </tbody>
               </table>
@@ -355,6 +351,14 @@ export function ElderWeeklyOverview(props: ElderOverviewProps) {
           line-height: 1.45;
           padding: 4px 8px;
           border: 1px solid #000;
+          font-weight: 600;
+        }
+        #elder-bulletin .kids-table { table-layout: auto; }
+        #elder-bulletin .kids-table td,
+        #elder-bulletin .kids-table th {
+          font-size: 11px;
+          line-height: 1.3;
+          padding: 2px 3px;
           font-weight: 600;
         }
         #elder-bulletin .latin-text {
