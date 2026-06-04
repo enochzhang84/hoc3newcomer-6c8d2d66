@@ -261,6 +261,25 @@ export function ElderWeeklyOverview(props: ElderOverviewProps) {
     setByDate((prev) => ({ ...prev, [sundayISO]: { ...(prev[sundayISO] ?? {}), ...patch } }));
   };
 
+  const currentProgram: WorshipProgram = {
+    ...DEFAULT_WORSHIP_PROGRAM,
+    ...(editHeader.worshipProgram ?? {}),
+  };
+  const updateProgramField = (k: keyof WorshipProgram, v: string) => {
+    updateForDate(headerSunday, {
+      worshipProgram: { ...currentProgram, [k]: v },
+    });
+  };
+  const copyFromLastWeek = () => {
+    const prevISO = shiftSunday(headerSunday, -1);
+    const prev = byDate[prevISO]?.worshipProgram;
+    if (!prev) {
+      alert("上一个主日（" + prevISO + "）暂无敬拜程序数据");
+      return;
+    }
+    updateForDate(headerSunday, { worshipProgram: { ...DEFAULT_WORSHIP_PROGRAM, ...prev } });
+  };
+
   const headerDate = new Date(headerSunday + "T00:00:00");
   const wkStart = startOfWeek(headerDate);
 
