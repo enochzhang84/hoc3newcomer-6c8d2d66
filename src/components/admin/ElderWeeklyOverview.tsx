@@ -1,4 +1,8 @@
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useRef, useLayoutEffect } from "react";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Input } from "@/components/ui/input";
+import { CalendarIcon } from "lucide-react";
 
 /**
  * 长老总览 / 今日周报总览
@@ -54,7 +58,38 @@ type Editable = {
   newsletter: string;
   prayer: string;
   offerings: string;
+  worshipProgram?: WorshipProgram;
 };
+
+export type WorshipProgram = {
+  xuanzhao: string;   // 宣召
+  changshi: string;   // 唱诗
+  muqi: string;       // 牧祷
+  dujing: string;     // 读经
+  jiangdao: string;   // 讲道
+  huiyingshi: string; // 回应诗
+  zhufu: string;      // 祝福
+};
+
+const DEFAULT_WORSHIP_PROGRAM: WorshipProgram = {
+  xuanzhao: "",
+  changshi: "",
+  muqi: "",
+  dujing: "",
+  jiangdao: "",
+  huiyingshi: "",
+  zhufu: "",
+};
+
+const WORSHIP_FIELDS: { key: keyof WorshipProgram; label: string; role: string; placeholder: string }[] = [
+  { key: "xuanzhao", label: "宣召", role: "司会", placeholder: "诗篇 XX 篇" },
+  { key: "changshi", label: "唱诗", role: "会众", placeholder: "教会圣诗 XX 首" },
+  { key: "muqi", label: "牧祷", role: "牧师", placeholder: "牧师姓名" },
+  { key: "dujing", label: "读经", role: "会众", placeholder: "经文出处" },
+  { key: "jiangdao", label: "讲道", role: "牧师", placeholder: "讲道题目" },
+  { key: "huiyingshi", label: "回应诗", role: "会众", placeholder: "回应诗歌" },
+  { key: "zhufu", label: "祝福", role: "长老", placeholder: "祝福者" },
+];
 
 const DEFAULT_EDITABLE: Editable = {
   duty: [
