@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { CalendarIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { isCommunionSunday, splitPeople } from "@/lib/sunday-utils";
+import { SundayDutyEditorPanel } from "@/components/admin/SundayDutyEditorPanel";
 
 /**
  * 长老总览 / 今日周报总览
@@ -368,6 +369,65 @@ export function ElderWeeklyOverview(props: ElderOverviewProps) {
         </div>
       </div>
 
+      {editing && (
+        <div className="mb-6 space-y-6 bg-card border border-border/60 rounded-2xl p-5 print:hidden">
+          <div>
+            <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+              <div>
+                <h3 className="font-serif text-lg">① 主日日期</h3>
+                <p className="text-xs text-muted-foreground mt-0.5">选择目标主日，下方编辑项与周报预览将同步定位。</p>
+              </div>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button
+                    type="button"
+                    className="inline-flex items-center gap-1 text-[12px] px-2 py-1 border border-black/60 bg-white text-black hover:bg-neutral-100 rounded"
+                  >
+                    <CalendarIcon className="h-3 w-3" />
+                    {headerSunday}
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent align="end" className="w-auto p-0">
+                  <Calendar
+                    mode="single"
+                    selected={headerDate}
+                    onSelect={(d) => {
+                      if (!d) return;
+                      const s = toISO(currentSundayOf(d));
+                      setHeaderSunday(s); setDutySunday(s); setAttSunday(s); setCourseSunday(s); setFellowSunday(s);
+                    }}
+                    initialFocus
+                    className="pointer-events-auto"
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+          </div>
+
+          <div>
+            <h3 className="font-serif text-lg mb-1">② 中文堂主日敬拜程序</h3>
+            <p className="text-xs text-muted-foreground mb-3">仅需填写 7 项可变内容，其余项目（默祷 / 牧祷 / 三一颂 / 祝福 等）系统自动填充。</p>
+            <WorshipProgramEditor
+              program={currentProgram}
+              onChange={updateProgramField}
+              onCopyLastWeek={copyFromLastWeek}
+            />
+          </div>
+
+          <div>
+            <h3 className="font-serif text-lg mb-1">③ 圣工轮值录入</h3>
+            <p className="text-xs text-muted-foreground mb-3">
+              录入后周报「圣工轮值表」自动读取；未录入显示「待定」。
+            </p>
+            <SundayDutyEditorPanel sunday={dutySunday} onChangeSunday={setDutySunday} />
+          </div>
+
+          <div className="text-xs text-muted-foreground border-t border-border/60 pt-3">
+            ④ 下方为周报预览（实时同步），打印 / 导出 PDF 即用此版面。
+          </div>
+        </div>
+      )}
+
       <div
         id="elder-bulletin"
         className="bg-white text-black p-6 print:p-2"
@@ -442,11 +502,7 @@ export function ElderWeeklyOverview(props: ElderOverviewProps) {
               <div className="text-[14px] text-neutral-700 text-center mb-2">
                 {(() => { const d = new Date(dutySunday + "T00:00:00"); return `${d.getFullYear()} 年 ${d.getMonth() + 1} 月 ${d.getDate()} 日`; })()}
               </div>
-              {editing ? (
-                <DutyEditorNotice />
-              ) : (
-                <AutoDutyList sunday={dutySunday} data={dutyAuto} />
-              )}
+              <AutoDutyList sunday={dutySunday} data={dutyAuto} />
             </Block>
             {/* 与下方儿童事工保留约 1 个汉字高度的间距 */}
             <div className="flex-1 min-h-[1em]" aria-hidden />
@@ -528,15 +584,7 @@ export function ElderWeeklyOverview(props: ElderOverviewProps) {
               今日主日崇拜
             </h3>
             <div className="flex-1 flex flex-col">
-              {editing ? (
-                <WorshipProgramEditor
-                  program={currentProgram}
-                  onChange={updateProgramField}
-                  onCopyLastWeek={copyFromLastWeek}
-                />
-              ) : (
-                <WorshipProgramView program={currentProgram} />
-              )}
+              <WorshipProgramView program={currentProgram} />
             </div>
           </div>
 
