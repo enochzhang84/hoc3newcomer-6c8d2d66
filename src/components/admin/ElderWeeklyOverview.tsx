@@ -443,11 +443,7 @@ export function ElderWeeklyOverview(props: ElderOverviewProps) {
               <div className="text-[14px] text-neutral-700 text-center mb-2">
                 {(() => { const d = new Date(dutySunday + "T00:00:00"); return `${d.getFullYear()} 年 ${d.getMonth() + 1} 月 ${d.getDate()} 日`; })()}
               </div>
-              {editing ? (
-                <DutyEditorNotice />
-              ) : (
-                <AutoDutyList sunday={dutySunday} data={dutyAuto} />
-              )}
+              <AutoDutyList sunday={dutySunday} data={dutyAuto} />
             </Block>
             {/* 与下方儿童事工保留约 1 个汉字高度的间距 */}
             <div className="flex-1 min-h-[1em]" aria-hidden />
@@ -529,15 +525,7 @@ export function ElderWeeklyOverview(props: ElderOverviewProps) {
               今日主日崇拜
             </h3>
             <div className="flex-1 flex flex-col">
-              {editing ? (
-                <WorshipProgramEditor
-                  program={currentProgram}
-                  onChange={updateProgramField}
-                  onCopyLastWeek={copyFromLastWeek}
-                />
-              ) : (
-                <WorshipProgramView program={currentProgram} />
-              )}
+              <WorshipProgramView program={currentProgram} />
             </div>
           </div>
 
