@@ -64,31 +64,57 @@ type Editable = {
 export type WorshipProgram = {
   xuanzhao: string;   // 宣召
   changshi: string;   // 唱诗
-  muqi: string;       // 牧祷
-  dujing: string;     // 读经
-  jiangdao: string;   // 讲道
-  huiyingshi: string; // 回应诗
-  zhufu: string;      // 祝福
+  xianshi: string;    // 献诗
+  jingwen: string;    // 经文诵读
+  jingxun: string;    // 经训
+  xinxi: string;      // 信息
+  fengxian: string;   // 奉献诗歌
 };
 
 const DEFAULT_WORSHIP_PROGRAM: WorshipProgram = {
   xuanzhao: "",
   changshi: "",
-  muqi: "",
-  dujing: "",
-  jiangdao: "",
-  huiyingshi: "",
-  zhufu: "",
+  xianshi: "",
+  jingwen: "",
+  jingxun: "",
+  xinxi: "",
+  fengxian: "",
 };
 
 const WORSHIP_FIELDS: { key: keyof WorshipProgram; label: string; role: string; placeholder: string }[] = [
   { key: "xuanzhao", label: "宣召", role: "司会", placeholder: "诗篇 XX 篇" },
   { key: "changshi", label: "唱诗", role: "会众", placeholder: "教会圣诗 XX 首" },
-  { key: "muqi", label: "牧祷", role: "牧师", placeholder: "牧师姓名" },
-  { key: "dujing", label: "读经", role: "会众", placeholder: "经文出处" },
-  { key: "jiangdao", label: "讲道", role: "牧师", placeholder: "讲道题目" },
-  { key: "huiyingshi", label: "回应诗", role: "会众", placeholder: "回应诗歌" },
-  { key: "zhufu", label: "祝福", role: "长老", placeholder: "祝福者" },
+  { key: "xianshi", label: "献诗", role: "诗班", placeholder: "诗歌名称" },
+  { key: "jingwen", label: "经文诵读", role: "会众", placeholder: "经文出处" },
+  { key: "jingxun", label: "经训", role: "会众", placeholder: "经文出处" },
+  { key: "xinxi", label: "信息", role: "牧师", placeholder: "讲道题目" },
+  { key: "fengxian", label: "奉献诗歌", role: "会众", placeholder: "教会圣诗 XX 首" },
+];
+
+/** 固定模板：未列出的项目（默祷 / 牧祷 / 奉献祷告 / 三一颂 / 祝福 / 报告 等）由系统自动填充 */
+type ProgramLine =
+  | { kind: "section"; text: string }
+  | { kind: "fixed"; left: string; right: string }
+  | { kind: "editable"; key: keyof WorshipProgram; left: string; right: string };
+const PROGRAM_TEMPLATE: ProgramLine[] = [
+  { kind: "section", text: "安静默祷，俯心敬拜" },
+  { kind: "editable", key: "xuanzhao", left: "宣召", right: "司会" },
+  { kind: "fixed", left: "默祷", right: "会众" },
+  { kind: "section", text: "以颂赞来敬拜" },
+  { kind: "editable", key: "changshi", left: "唱诗", right: "会众" },
+  { kind: "fixed", left: "牧祷", right: "牧师" },
+  { kind: "section", text: "以领受来敬拜" },
+  { kind: "editable", key: "xianshi", left: "献诗", right: "诗班" },
+  { kind: "editable", key: "jingwen", left: "经文诵读", right: "会众" },
+  { kind: "editable", key: "jingxun", left: "经训", right: "会众" },
+  { kind: "editable", key: "xinxi", left: "信息", right: "牧师" },
+  { kind: "section", text: "以奉献来敬拜" },
+  { kind: "editable", key: "fengxian", left: "奉献诗歌", right: "会众" },
+  { kind: "fixed", left: "奉献祷告", right: "司会" },
+  { kind: "fixed", left: "三一颂", right: "会众" },
+  { kind: "fixed", left: "祝福", right: "长老" },
+  { kind: "fixed", left: "报告", right: "司会" },
+  { kind: "fixed", left: "默祷", right: "会众" },
 ];
 
 const DEFAULT_EDITABLE: Editable = {
