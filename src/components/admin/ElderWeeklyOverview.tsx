@@ -315,10 +315,13 @@ export function ElderWeeklyOverview(props: ElderOverviewProps) {
               onPrev={() => setDutySunday(shiftSunday(dutySunday, -1))}
               onNext={() => setDutySunday(shiftSunday(dutySunday, 1))}
             >
-              {byDate[dutySunday] || dutySunday === todaySundayISO || editing ? (
+              <div className="text-[12px] text-neutral-600 text-center mb-1">
+                {(() => { const d = parseISO(dutySunday); return `${d.getFullYear()} 年 ${d.getMonth() + 1} 月 ${d.getDate()} 日`; })()}
+              </div>
+              {editing ? (
                 <Editor value={editDuty.duty} editing={editing} onChange={(v) => updateForDate(dutySunday, { duty: v })} />
               ) : (
-                <div className="text-center text-[14px] py-2 text-neutral-500">暂无该主日圣工轮值资料</div>
+                <DutyList value={editDuty.duty} hasData={!!byDate[dutySunday]} />
               )}
             </Block>
             <div className="flex-1" aria-hidden />
