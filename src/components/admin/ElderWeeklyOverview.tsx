@@ -462,6 +462,18 @@ function BulletinBlock({ value }: { value: string }) {
             </div>
           );
         }
+        if (trimmed.startsWith(">")) {
+          const text = trimmed.replace(/^>\s*/, "");
+          return (
+            <div
+              key={i}
+              className="mt-3 leading-[1.6] text-[15px]"
+              style={{ fontWeight: 600 }}
+            >
+              {text}
+            </div>
+          );
+        }
         const parts = splitBulletinLine(ln);
         if (!parts) {
           return (
