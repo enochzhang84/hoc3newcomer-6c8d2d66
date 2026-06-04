@@ -514,12 +514,15 @@ export function ElderWeeklyOverview(props: ElderOverviewProps) {
               今日主日崇拜
             </h3>
             <div className="flex-1 flex flex-col">
-              <Editor
-                value={editHeader.worship}
-                editing={editing}
-                onChange={(v) => updateForDate(headerSunday, { worship: v })}
-                stretch
-              />
+              {editing ? (
+                <WorshipProgramEditor
+                  program={currentProgram}
+                  onChange={updateProgramField}
+                  onCopyLastWeek={copyFromLastWeek}
+                />
+              ) : (
+                <WorshipProgramView program={currentProgram} />
+              )}
             </div>
           </div>
 
