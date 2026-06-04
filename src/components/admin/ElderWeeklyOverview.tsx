@@ -86,6 +86,7 @@ const DEFAULT_EDITABLE: Editable = {
     "祝福……长老",
     "报告……司会",
     "默祷……会众",
+    "> 經訓：耶和華的道理潔淨，存到永遠；耶和華的典章真實，全然公義。都比金子可羨慕，且比極多的精金可羨慕，比蜜甘甜，且比蜂房下滴的蜜甘甜。（詩篇 19:9-10）",
   ].join("\n"),
   newsletter: "本周家讯：————",
   prayer: "祷告事项：————",
@@ -456,6 +457,18 @@ function BulletinBlock({ value }: { value: string }) {
               key={i}
               className="text-center my-2 tracking-[0.15em]"
               style={{ fontWeight: 700 }}
+            >
+              {text}
+            </div>
+          );
+        }
+        if (trimmed.startsWith(">")) {
+          const text = trimmed.replace(/^>\s*/, "");
+          return (
+            <div
+              key={i}
+              className="mt-3 leading-[1.6] text-[15px]"
+              style={{ fontWeight: 600 }}
             >
               {text}
             </div>
