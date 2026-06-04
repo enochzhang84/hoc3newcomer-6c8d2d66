@@ -68,14 +68,18 @@ const DEFAULT_EDITABLE: Editable = {
     "4th/5th (4-5年级)：————",
   ].join("\n"),
   worship: [
+    "# 安静默祷，俯心敬拜",
     "宣召……诗篇 ____……司会",
     "默祷……会众",
+    "# 以颂赞来敬拜",
     "唱诗……教会圣诗 ____……会众",
     "牧祷……牧师",
+    "# 以领受来敬拜",
     "献诗……当敬拜耶和华……诗班",
     "经文诵读……____……会众",
     "讲训……____……会众",
     "信息……____……牧师",
+    "# 以奉献来敬拜",
     "奉献诗歌……教会圣诗 ____……会众",
     "奉献祷告……司会",
     "三一颂……会众",
@@ -440,16 +444,38 @@ function BulletinLine({ left, mid, right }: { left: string; mid?: string; right:
 
 function BulletinBlock({ value }: { value: string }) {
   const lines = value.split("\n");
+  let n = 0;
   return (
     <div>
       {lines.map((ln, i) => {
+        const trimmed = ln.trim();
+        if (trimmed.startsWith("#")) {
+          const text = trimmed.replace(/^#+\s*/, "");
+          return (
+            <div
+              key={i}
+              className="text-center my-2 tracking-[0.15em]"
+              style={{ fontWeight: 700 }}
+            >
+              {text}
+            </div>
+          );
+        }
         const parts = splitBulletinLine(ln);
         if (!parts) {
           return (
             <div key={i} className="whitespace-pre-wrap">{ln || "\u00A0"}</div>
           );
         }
-        return <BulletinLine key={i} left={parts.left} mid={parts.mid} right={parts.right} />;
+        n += 1;
+        return (
+          <BulletinLine
+            key={i}
+            left={`${n}. ${parts.left}`}
+            mid={parts.mid}
+            right={parts.right}
+          />
+        );
       })}
     </div>
   );
