@@ -806,3 +806,65 @@ function Editor({ value, editing, onChange, stretch }: { value: string; editing:
   }
   return <BulletinBlock value={value} />;
 }
+
+/** 按 7 个固定项目拼装并以三段式（左 · 虚线 · 右）渲染敬拜程序 */
+function WorshipProgramView({ program }: { program: WorshipProgram }) {
+  return (
+    <div className="flex flex-col">
+      {WORSHIP_FIELDS.map((f, i) => {
+        const mid = (program[f.key] || "").trim() || "________";
+        return (
+          <BulletinLine
+            key={f.key}
+            left={`${i + 1}. ${f.label}`}
+            mid={mid}
+            right={f.role}
+          />
+        );
+      })}
+    </div>
+  );
+}
+
+/**
+ * 自动缩放字号以避免内容溢出父容器。
+ * 从 max 起逐 px 递减直到内容不再溢出或达到 min。
+ */
+function AutoFit({
+  children,
+  className,
+  min = 11,
+  max = 17,
+}: {
+  children: React.ReactNode;
+  className?: string;
+  min?: number;
+  max?: number;
+}) {
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const innerRef = useRef<HTMLDivElement>(null);
+  const [size, setSize] = useState<number>(max);
+
+  useLayoutEffect(() => {
+    const wrap = wrapRef.current;
+    const inner = innerRef.current;
+    if (!wrap || !inner) return;
+    let s = max;
+    inner.style.fontSize = s + "px";
+    // 多次量测，避免字体未渲染完导致结果不准。
+    let guard = 40;
+    while (s > min && inner.scrollHeight > wrap.clientHeight && guard-- > 0) {
+      s -= 1;
+      inner.style.fontSize = s + "px";
+    }
+    setSize(s);
+  }, [children, max, min]);
+
+  return (
+    <div ref={wrapRef} className={className} style={{ overflow: "hidden" }}>
+      <div ref={innerRef} style={{ fontSize: size + "px", lineHeight: 1.55 }}>
+        {children}
+      </div>
+    </div>
+  );
+}
