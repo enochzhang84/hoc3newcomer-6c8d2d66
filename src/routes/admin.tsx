@@ -25,6 +25,7 @@ import { format } from "date-fns";
 import { ScreenManager } from "@/components/admin/ScreenManager";
 import { AVMinistryWorkspace } from "@/components/admin/AVMinistryWorkspace";
 import LiveStreamMonitor from "@/components/admin/LiveStreamMonitor";
+import PipComposer from "@/components/admin/PipComposer";
 import { zhCN } from "date-fns/locale";
 import { listUsersWithRoles, setUserRole, deleteUser, createUserWithRole, updateUserWorkerName, setUserServiceArea, setUserDisabled, setUserPassword, setUserAnalyticsArea } from "@/lib/users.functions";
 import { useI18n, type TKey } from "@/lib/i18n";
@@ -3137,6 +3138,7 @@ function AdminPage() {
         {mediaSubTab === "live" && (
           <div className="space-y-8 mt-8">
           <LiveStreamMonitor />
+          <PipComposer />
           <div className="pt-2">
             <AVMinistryWorkspace />
           </div>
