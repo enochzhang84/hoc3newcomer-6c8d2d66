@@ -353,6 +353,14 @@ export function ElderWeeklyOverview(props: ElderOverviewProps) {
           border: 1px solid #000;
           font-weight: 600;
         }
+        #elder-bulletin .kids-table { table-layout: auto; }
+        #elder-bulletin .kids-table td,
+        #elder-bulletin .kids-table th {
+          font-size: 11px;
+          line-height: 1.3;
+          padding: 2px 3px;
+          font-weight: 600;
+        }
         #elder-bulletin .latin-text {
           font-family: 'Times New Roman','PMingLiU',serif;
           font-weight: 700;
