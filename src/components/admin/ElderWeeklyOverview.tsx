@@ -554,6 +554,35 @@ function Row({ k, v }: { k: string; v: string }) {
   );
 }
 
+const DUTY_LABELS = [
+  "讲员", "司会", "领诗", "司琴", "招待", "新人接待",
+  "圣餐服事", "餐前投影", "视频播放", "厨房服事", "堂务", "插花",
+];
+
+function isEmptyDutyValue(v: string) {
+  const t = v.trim();
+  if (!t) return true;
+  if (/^[—–\-_\s]+$/.test(t)) return true;
+  return false;
+}
+
+function DutyList({ value, hasData }: { value: string; hasData: boolean }) {
+  const map = new Map<string, string>();
+  value.split("\n").forEach((ln) => {
+    const m = ln.match(/^\s*([^：:]+)[：:](.*)$/);
+    if (m) map.set(m[1].trim(), m[2].trim());
+  });
+  return (
+    <div className="space-y-0.5">
+      {DUTY_LABELS.map((label) => {
+        const raw = map.get(label) ?? "";
+        const val = hasData && !isEmptyDutyValue(raw) ? raw : "待定";
+        return <BulletinLine key={label} left={label} right={`（${val}）`} />;
+      })}
+    </div>
+  );
+}
+
 /** Split a bulletin line into left / mid / right segments using common
  * separators found in printed church bulletins. */
 function splitBulletinLine(raw: string): { left: string; mid: string; right: string } | null {
