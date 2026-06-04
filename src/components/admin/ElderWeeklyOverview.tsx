@@ -421,8 +421,13 @@ function BulletinLine({ left, mid, right }: { left: string; mid?: string; right:
   return (
     <div className="bln-row">
       <span className="bln-left">{left}</span>
-      {mid ? <span className="bln-mid-text">{mid}</span> : null}
       <span className="bln-mid" aria-hidden />
+      {mid ? (
+        <>
+          <span className="bln-mid-text">{mid}</span>
+          <span className="bln-mid" aria-hidden />
+        </>
+      ) : null}
       <span className="bln-right">{right || "\u00A0"}</span>
     </div>
   );
