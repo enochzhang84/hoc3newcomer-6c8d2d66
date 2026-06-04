@@ -200,7 +200,7 @@ function NavArrows({ onPrev, onNext, children }: { onPrev: () => void; onNext: (
 }
 
 export function ElderWeeklyOverview(props: ElderOverviewProps) {
-  const { regs, attendance, sundayCheckins, fellowshipCheckins, courses, fellowships, mealPlans, onRefresh } = props;
+  const { regs, attendance, sundayCheckins, fellowshipCheckins, courses, fellowships, mealPlans, kidsClasses = [], onRefresh } = props;
   const today = useMemo(() => new Date(), []);
   const todaySunday = useMemo(() => currentSundayOf(today), [today]);
   const todaySundayISO = toISO(todaySunday);
