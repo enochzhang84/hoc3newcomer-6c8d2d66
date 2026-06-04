@@ -315,10 +315,13 @@ export function ElderWeeklyOverview(props: ElderOverviewProps) {
               onPrev={() => setDutySunday(shiftSunday(dutySunday, -1))}
               onNext={() => setDutySunday(shiftSunday(dutySunday, 1))}
             >
-              {byDate[dutySunday] || dutySunday === todaySundayISO || editing ? (
+              <div className="text-[12px] text-neutral-600 text-center mb-1">
+                {(() => { const d = new Date(dutySunday + "T00:00:00"); return `${d.getFullYear()} 年 ${d.getMonth() + 1} 月 ${d.getDate()} 日`; })()}
+              </div>
+              {editing ? (
                 <Editor value={editDuty.duty} editing={editing} onChange={(v) => updateForDate(dutySunday, { duty: v })} />
               ) : (
-                <div className="text-center text-[14px] py-2 text-neutral-500">暂无该主日圣工轮值资料</div>
+                <DutyList value={editDuty.duty} hasData={!!byDate[dutySunday]} />
               )}
             </Block>
             <div className="flex-1" aria-hidden />
@@ -548,6 +551,35 @@ function Row({ k, v }: { k: string; v: string }) {
       <td>{k}</td>
       <td className="text-right tabular-nums latin-text">{v}</td>
     </tr>
+  );
+}
+
+const DUTY_LABELS = [
+  "讲员", "司会", "领诗", "司琴", "招待", "新人接待",
+  "圣餐服事", "餐前投影", "视频播放", "厨房服事", "堂务", "插花",
+];
+
+function isEmptyDutyValue(v: string) {
+  const t = v.trim();
+  if (!t) return true;
+  if (/^[—–\-_\s]+$/.test(t)) return true;
+  return false;
+}
+
+function DutyList({ value, hasData }: { value: string; hasData: boolean }) {
+  const map = new Map<string, string>();
+  value.split("\n").forEach((ln) => {
+    const m = ln.match(/^\s*([^：:]+)[：:](.*)$/);
+    if (m) map.set(m[1].trim(), m[2].trim());
+  });
+  return (
+    <div className="space-y-0.5">
+      {DUTY_LABELS.map((label) => {
+        const raw = map.get(label) ?? "";
+        const val = hasData && !isEmptyDutyValue(raw) ? raw : "待定";
+        return <BulletinLine key={label} left={label} right={`（${val}）`} />;
+      })}
+    </div>
   );
 }
 
