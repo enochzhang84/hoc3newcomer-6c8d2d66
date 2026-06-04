@@ -418,12 +418,12 @@ export function ElderWeeklyOverview(props: ElderOverviewProps) {
               onPrev={() => setCourseSunday(shiftSunday(courseSunday, -1))}
               onNext={() => setCourseSunday(shiftSunday(courseSunday, 1))}
             >
-              {courses.length > 0 && courseSundayCheckins.length > 0 ? (
+              {courses.length > 0 ? (
                 <>
                   <div className="space-y-0.5">
                     {courses.slice(0, 12).map((c) => {
                       const cnt = courseSundayCheckins.filter((s) => s.course_name === c.name).length;
-                      return <BulletinLine key={c.id} left={c.name} right={cnt > 0 ? `${cnt} 人` : "—"} />;
+                      return <BulletinLine key={c.id} left={c.name} right={cnt > 0 ? `（${cnt}人）` : `（待统计）`} />;
                     })}
                   </div>
                   <BulletinLine left="该主日签到合计" right={`${courseSundayCheckins.length} 人`} />
@@ -447,14 +447,10 @@ export function ElderWeeklyOverview(props: ElderOverviewProps) {
                   const cnt = fellowshipCheckins.filter((c) => c.fellowship === f.name && fellowMatches(f.name, c.checkin_date)).length;
                   return { name: f.name, id: f.id, cnt };
                 });
-                const hasAny = rows.some((r) => r.cnt > 0);
-                if (!hasAny) {
-                  return <div className="text-center text-[14px] py-2 text-neutral-500">暂无该周团契 / 小组聚会资料</div>;
-                }
                 return (
                   <div className="space-y-0.5">
                     {rows.map((r) => (
-                      <BulletinLine key={r.id} left={r.name} right={r.cnt > 0 ? `${r.cnt} 人` : "—"} />
+                      <BulletinLine key={r.id} left={r.name} right={r.cnt > 0 ? `（${r.cnt}人）` : `（待统计）`} />
                     ))}
                   </div>
                 );
