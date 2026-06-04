@@ -814,17 +814,71 @@ function Editor({ value, editing, onChange, stretch }: { value: string; editing:
 function WorshipProgramView({ program }: { program: WorshipProgram }) {
   return (
     <div className="flex flex-col">
-      {WORSHIP_FIELDS.map((f, i) => {
-        const mid = (program[f.key] || "").trim() || "________";
-        return (
-          <BulletinLine
-            key={f.key}
-            left={`${i + 1}. ${f.label}`}
-            mid={mid}
-            right={f.role}
+      {(() => {
+        let n = 0;
+        return PROGRAM_TEMPLATE.map((row, i) => {
+          if (row.kind === "section") {
+            return (
+              <div
+                key={i}
+                className="text-center my-2 tracking-[0.15em]"
+                style={{ fontWeight: 700 }}
+              >
+                {row.text}
+              </div>
+            );
+          }
+          n += 1;
+          if (row.kind === "fixed") {
+            return <BulletinLine key={i} left={`${n}. ${row.left}`} right={row.right} />;
+          }
+          const mid = (program[row.key] || "").trim() || "________";
+          return <BulletinLine key={i} left={`${n}. ${row.left}`} mid={mid} right={row.right} />;
+        });
+      })()}
+    </div>
+  );
+}
+
+/** 后台编辑：仅 7 个可变项目，每项独立输入 + 复制上周内容 */
+function WorshipProgramEditor({
+  program,
+  onChange,
+  onCopyLastWeek,
+}: {
+  program: WorshipProgram;
+  onChange: (k: keyof WorshipProgram, v: string) => void;
+  onCopyLastWeek: () => void;
+}) {
+  return (
+    <div className="flex flex-col gap-2 p-2 border border-dashed border-black/30 bg-white print:hidden">
+      <div className="flex justify-end">
+        <button
+          type="button"
+          onClick={onCopyLastWeek}
+          className="text-[12px] px-2 py-0.5 border border-black/60 bg-white text-black hover:bg-neutral-100"
+        >
+          复制上周内容
+        </button>
+      </div>
+      {WORSHIP_FIELDS.map((f) => (
+        <div key={f.key} className="flex items-center gap-2">
+          <label className="text-[13px] w-20 shrink-0 text-right">{f.label}：</label>
+          <Input
+            defaultValue={program[f.key] ?? ""}
+            placeholder={f.placeholder}
+            onBlur={(e) => {
+              const v = e.target.value;
+              if (v !== (program[f.key] ?? "")) onChange(f.key, v);
+            }}
+            className="h-8 text-[13px]"
           />
-        );
-      })}
+          <span className="text-[12px] text-neutral-500 w-10 shrink-0">{f.role}</span>
+        </div>
+      ))}
+      <div className="text-[11px] text-neutral-500 mt-1">
+        其余固定项目（默祷 / 牧祷 / 奉献祷告 / 三一颂 / 祝福 / 报告 / 默祷）由系统自动填充，无需编辑。失焦自动保存。
+      </div>
     </div>
   );
 }
