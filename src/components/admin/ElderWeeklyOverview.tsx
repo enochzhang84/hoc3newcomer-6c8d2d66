@@ -264,7 +264,6 @@ export function ElderWeeklyOverview(props: ElderOverviewProps) {
                 </tbody>
               </table>
             </Block>
-            <div className="flex-1" aria-hidden />
             <Block title={`上周人数统计${latest ? `（${latest.record_date}）` : ""}`}>
               {latest ? (
                 <table className="bulletin-table w-full">
