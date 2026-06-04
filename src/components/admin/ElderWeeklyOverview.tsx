@@ -852,7 +852,7 @@ function Editor({ value, editing, onChange, stretch }: { value: string; editing:
 /** 按 7 个固定项目拼装并以三段式（左 · 虚线 · 右）渲染敬拜程序 */
 function WorshipProgramView({ program }: { program: WorshipProgram }) {
   return (
-    <div className="flex flex-col">
+    <div className="flex-1 flex flex-col justify-between h-full min-h-0">
       {(() => {
         let n = 0;
         return PROGRAM_TEMPLATE.map((row, i) => {
@@ -860,7 +860,7 @@ function WorshipProgramView({ program }: { program: WorshipProgram }) {
             return (
               <div
                 key={i}
-                className="text-center my-2 tracking-[0.15em]"
+                className="text-center tracking-[0.15em]"
                 style={{ fontWeight: 700 }}
               >
                 {row.text}
