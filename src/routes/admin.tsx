@@ -1905,9 +1905,6 @@ function AdminPage() {
                 mealPlans={mealPlans}
                 kidsClasses={kidsRows}
               />
-              <div className="mt-6">
-                <SundayDutyEditors />
-              </div>
             </section>
           );
         })()}
