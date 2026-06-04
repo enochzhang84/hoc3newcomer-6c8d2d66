@@ -225,18 +225,13 @@ export function ElderWeeklyOverview(props: ElderOverviewProps) {
   const attRecord = attendance.find((a) => a.record_date === attSunday) ?? null;
   const courseSundayCheckins = sundayCheckins.filter((c) => sameISO(c.checkin_date, courseSunday));
 
-  // 团契 / 小组：幸福聊天室 / 恩典茶经 按主日匹配；其它按 周三~周六 范围匹配
-  const SUNDAY_FELLOWSHIPS = ["幸福聊天室", "恩典茶经", "恩典茶经小组"];
-  const fellowWedStart = addDays(new Date(fellowSunday + "T00:00:00"), 3); // Wed
-  const fellowSatEnd = addDays(new Date(fellowSunday + "T00:00:00"), 6); // Sat
-  const inWedSatRange = (iso: string) => {
+  // 团契 / 小组：统一以 当周礼拜二 ~ 当周礼拜天（主日）为统计区间
+  const fellowRangeStart = addDays(new Date(fellowSunday + "T00:00:00"), -5); // Tue
+  const fellowRangeEnd = new Date(fellowSunday + "T00:00:00"); // Sun
+  const fellowMatches = (_f: string, iso: string) => {
     const d = new Date(iso);
     d.setHours(0, 0, 0, 0);
-    return d >= fellowWedStart && d <= fellowSatEnd;
-  };
-  const fellowMatches = (f: string, iso: string) => {
-    if (SUNDAY_FELLOWSHIPS.includes(f)) return sameISO(iso, fellowSunday);
-    return inWedSatRange(iso);
+    return d >= fellowRangeStart && d <= fellowRangeEnd;
   };
 
   return (
@@ -453,13 +448,13 @@ export function ElderWeeklyOverview(props: ElderOverviewProps) {
                 return (
                   <div className="space-y-0.5">
                     {rows.map((r) => (
-                      <BulletinLine key={r.id} left={r.name} right={r.cnt > 0 ? `（${r.cnt}人）` : `（待统计）`} />
+                      <BulletinLine key={r.id} left={r.name} right={r.cnt > 0 ? `（${r.cnt}人）` : `（本周无聚会）`} />
                     ))}
                   </div>
                 );
               })()}
               <div className="text-[12px] text-neutral-500 text-center mt-1">
-                {fellowSunday}（{toISO(fellowWedStart)} ~ {toISO(fellowSatEnd)}）
+                {fellowSunday}（{toISO(fellowRangeStart)} ~ {toISO(fellowRangeEnd)}）
               </div>
             </Block>
           </div>
