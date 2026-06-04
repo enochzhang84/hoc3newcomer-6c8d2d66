@@ -686,12 +686,50 @@ function DutyList({ value, hasData }: { value: string; hasData: boolean }) {
     if (m) map.set(m[1].trim(), m[2].trim());
   });
   return (
-    <div className="space-y-0.5">
+    <div className="space-y-1 text-[16px] leading-[1.7]">
       {DUTY_LABELS.map((label) => {
         const raw = map.get(label) ?? "";
         const val = hasData && !isEmptyDutyValue(raw) ? raw : "待定";
         return <BulletinLine key={label} left={label} right={`（${val}）`} />;
       })}
+    </div>
+  );
+}
+
+/** 后台编辑：12 项轮值，按字段独立输入；自动撑高、无滚动条 */
+function DutyEditor({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const map = new Map<string, string>();
+  value.split("\n").forEach((ln) => {
+    const m = ln.match(/^\s*([^：:]+)[：:](.*)$/);
+    if (m) map.set(m[1].trim(), m[2].trim());
+  });
+  const commit = (label: string, v: string) => {
+    const next = new Map(map);
+    next.set(label, v);
+    // 保留 DUTY_LABELS 顺序；额外字段附在末尾
+    const lines = DUTY_LABELS.map((l) => `${l}：${next.get(l) ?? ""}`);
+    for (const [k, val] of next) {
+      if (!DUTY_LABELS.includes(k)) lines.push(`${k}：${val}`);
+    }
+    onChange(lines.join("\n"));
+  };
+  return (
+    <div className="flex flex-col gap-1.5 p-2 border border-dashed border-black/30 bg-white print:hidden text-[15px]">
+      {DUTY_LABELS.map((label) => (
+        <div key={label} className="flex items-center gap-2">
+          <label className="w-24 shrink-0 text-right text-[15px] font-medium">{label}：</label>
+          <Input
+            defaultValue={map.get(label) ?? ""}
+            placeholder="待定"
+            onBlur={(e) => {
+              const v = e.target.value;
+              if (v !== (map.get(label) ?? "")) commit(label, v);
+            }}
+            className="h-9 text-[15px]"
+          />
+        </div>
+      ))}
+      <div className="text-[12px] text-neutral-500 mt-1">失焦自动保存</div>
     </div>
   );
 }
