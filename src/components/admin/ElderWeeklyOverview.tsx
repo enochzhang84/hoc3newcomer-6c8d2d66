@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { CalendarIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { isCommunionSunday, splitPeople } from "@/lib/sunday-utils";
+import { SundayDutyEditorPanel } from "@/components/admin/SundayDutyEditorPanel";
 
 /**
  * 长老总览 / 今日周报总览
