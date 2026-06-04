@@ -52,6 +52,7 @@ import { NewcomerAnalytics } from "@/components/admin/analytics/NewcomerAnalytic
 import { WelcomeAnalytics } from "@/components/admin/analytics/WelcomeAnalytics";
 import { MediaAnalytics } from "@/components/admin/analytics/MediaAnalytics";
 import { ElderWeeklyOverview } from "@/components/admin/ElderWeeklyOverview";
+import { SundayDutyEditors } from "@/components/admin/SundayDutyEditors";
 import {
   ServiceRankingBoard,
   isMediaServiceEntry,
@@ -1904,6 +1905,9 @@ function AdminPage() {
                 mealPlans={mealPlans}
                 kidsClasses={kidsRows}
               />
+              <div className="mt-6">
+                <SundayDutyEditors />
+              </div>
             </section>
           );
         })()}
