@@ -22,6 +22,15 @@ type FellowshipCheckin = Checkin & { fellowship: string };
 type Course = { id: string; name: string };
 type Fellowship = { id: string; name: string };
 type MealPlan = { id: string; plan_date: string; attendees: number; meal_type?: string | null };
+type KidsClass = {
+  id?: string;
+  track: string;
+  class_name: string | null;
+  course_name?: string | null;
+  teacher_name: string | null;
+  class_location: string | null;
+  sort_order: number;
+};
 
 export type ElderOverviewProps = {
   regs: Reg[];
@@ -31,6 +40,7 @@ export type ElderOverviewProps = {
   courses: Course[];
   fellowships: Fellowship[];
   mealPlans: MealPlan[];
+  kidsClasses?: KidsClass[];
   onRefresh?: () => void;
 };
 
@@ -190,7 +200,7 @@ function NavArrows({ onPrev, onNext, children }: { onPrev: () => void; onNext: (
 }
 
 export function ElderWeeklyOverview(props: ElderOverviewProps) {
-  const { regs, attendance, sundayCheckins, fellowshipCheckins, courses, fellowships, mealPlans, onRefresh } = props;
+  const { regs, attendance, sundayCheckins, fellowshipCheckins, courses, fellowships, mealPlans, kidsClasses = [], onRefresh } = props;
   const today = useMemo(() => new Date(), []);
   const todaySunday = useMemo(() => currentSundayOf(today), [today]);
   const todaySundayISO = toISO(todaySunday);
@@ -331,40 +341,38 @@ export function ElderWeeklyOverview(props: ElderOverviewProps) {
                   </tr>
                 </thead>
                 <tbody>
-                  <tr>
-                    <td className="border text-center align-middle whitespace-nowrap" rowSpan={5}>
-                      <div>11:00am–12:30pm</div>
-                      <div>儿童主日学</div>
-                    </td>
-                    <td className="border whitespace-nowrap">1. Nursery (0–2岁)</td>
-                    <td className="border text-center whitespace-nowrap">夏靖</td>
-                    <td className="border text-center whitespace-nowrap">顾雨珊</td>
-                  </tr>
-                  <tr>
-                    <td className="border whitespace-nowrap">2. Preschool (3–5岁)</td>
-                    <td className="border text-center whitespace-nowrap">吕小梅</td>
-                    <td className="border text-center whitespace-nowrap">吕小梅</td>
-                  </tr>
-                  <tr>
-                    <td className="border whitespace-nowrap">3. K/1st (K–1年级)</td>
-                    <td className="border text-center whitespace-nowrap">王允义</td>
-                    <td className="border text-center whitespace-nowrap">吕小梅</td>
-                  </tr>
-                  <tr>
-                    <td className="border whitespace-nowrap">4. 2nd/3rd (2–3年级)</td>
-                    <td className="border text-center whitespace-nowrap">冯国富</td>
-                    <td className="border text-center whitespace-nowrap">冯国富</td>
-                  </tr>
-                  <tr>
-                    <td className="border whitespace-nowrap">5. 4th/5th (4–5年级)</td>
-                    <td className="border text-center whitespace-nowrap">&nbsp;</td>
-                    <td className="border text-center whitespace-nowrap">谢刚</td>
-                  </tr>
-                  <tr>
-                    <td className="border text-center whitespace-nowrap">周五 7:45–9:30pm</td>
-                    <td className="border text-center whitespace-nowrap" colSpan={2}>Awana</td>
-                    <td className="border text-center whitespace-nowrap">故纪中</td>
-                  </tr>
+                  {(() => {
+                    const now = new Date(headerSunday + "T00:00:00");
+                    const year = now.getFullYear();
+                    // 1-8 月读取春季，9-12 月读取秋季
+                    const season = now.getMonth() + 1 <= 8 ? "spring" : "fall";
+                    const trackKey = `kids_${season}_${year}`;
+                    const rows = (kidsClasses ?? [])
+                      .filter((c) => c.track === trackKey)
+                      .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+                    if (rows.length === 0) {
+                      return (
+                        <tr>
+                          <td className="border text-center text-neutral-500 py-2" colSpan={4}>
+                            暂无{season === "spring" ? "春季" : "秋季"}儿童主日学班级数据
+                          </td>
+                        </tr>
+                      );
+                    }
+                    return rows.map((r, i) => (
+                      <tr key={r.id ?? i}>
+                        {i === 0 && (
+                          <td className="border text-center align-middle whitespace-nowrap" rowSpan={rows.length}>
+                            <div>11:00am–12:30pm</div>
+                            <div>儿童主日学</div>
+                          </td>
+                        )}
+                        <td className="border whitespace-nowrap">{r.class_name?.trim() || r.course_name?.trim() || "—"}</td>
+                        <td className="border text-center whitespace-nowrap">{r.class_location?.trim() || "—"}</td>
+                        <td className="border text-center whitespace-nowrap">{r.teacher_name?.trim() || "—"}</td>
+                      </tr>
+                    ));
+                  })()}
                 </tbody>
               </table>
             </Block>

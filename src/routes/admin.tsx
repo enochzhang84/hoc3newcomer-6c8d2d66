@@ -292,7 +292,8 @@ type KidsRow = {
   id: string;
   track: string;
   class_name: string | null;       // 班级 stored in class_name
-  teacher_name: string | null;     // 老师
+  course_name: string | null;      // 课程/年级（备用）
+  teacher_name: string | null;     // 负责同工（数据库字段名保留）
   class_location: string | null;   // 地点
   student_count: number | null;    // 人数（手动录入）
   sort_order: number;
@@ -1901,6 +1902,7 @@ function AdminPage() {
                 courses={courses}
                 fellowships={fellowships}
                 mealPlans={mealPlans}
+                kidsClasses={kidsRows}
               />
             </section>
           );
@@ -4167,7 +4169,7 @@ img{width:480px;height:480px;}@media print{@page{margin:1cm;}}</style></head>
                 const data = rows.map((r, i) => ({
                   "序号": i + 1,
                   "班级": r.class_name ?? "",
-                  "老师": r.teacher_name ?? "",
+                  "负责同工": r.teacher_name ?? "",
                   "地点": r.class_location ?? "",
                   "人数": r.student_count ?? 0,
                 }));
@@ -4185,7 +4187,7 @@ h1{font-size:20px;margin:0 0 16px;}table{width:100%;border-collapse:collapse;}
 th,td{border:1px solid #888;padding:8px 10px;text-align:left;font-size:14px;}
 th{background:#f4f4f5;}</style></head><body>
 <h1>${title}</h1>
-<table><thead><tr><th style="width:60px">序号</th><th>班级</th><th>老师</th><th>地点</th><th style="width:70px">人数</th></tr></thead>
+<table><thead><tr><th style="width:60px">序号</th><th>班级</th><th>负责同工</th><th>地点</th><th style="width:70px">人数</th></tr></thead>
 <tbody>${rows.map((r,i)=>`<tr><td>${i+1}</td><td>${r.class_name??""}</td><td>${r.teacher_name??""}</td><td>${r.class_location??""}</td><td>${r.student_count??0}</td></tr>`).join("")}
 ${rows.length===0?'<tr><td colspan="5" style="text-align:center;color:#888;padding:24px">暂无数据</td></tr>':""}
 </tbody></table>
@@ -4252,7 +4254,7 @@ ${rows.length===0?'<tr><td colspan="5" style="text-align:center;color:#888;paddi
                           >删除</button>
                         </div>
                         <div className="text-sm text-muted-foreground space-y-1">
-                          <div>👩‍🏫 老师：<span className="text-foreground">{r.teacher_name?.trim() || "—"}</span></div>
+                          <div>👩‍🏫 负责同工：<span className="text-foreground">{r.teacher_name?.trim() || "—"}</span></div>
                           <div>📍 地点：<span className="text-foreground">{r.class_location?.trim() || "—"}</span></div>
                           <div>👦 学生人数：<span className="text-foreground font-medium">{r.student_count ?? 0}</span> 人</div>
                         </div>
@@ -5477,12 +5479,12 @@ ${rows.length===0?'<tr><td colspan="5" style="text-align:center;color:#888;paddi
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-xs">老师</Label>
+                   <Label className="text-xs">负责同工</Label>
                   <Input
                     value={kidsEditRow.teacher_name ?? ""}
                     onChange={(e) => setKidsEditRow({ ...kidsEditRow, teacher_name: e.target.value })}
                     list="kids-edit-teachers"
-                    placeholder="老师姓名"
+                    placeholder="负责同工姓名"
                   />
                   <datalist id="kids-edit-teachers">
                     {sundayTeachers.filter((t) => t.is_active).map((t) => (
