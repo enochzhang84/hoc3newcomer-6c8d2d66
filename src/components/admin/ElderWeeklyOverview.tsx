@@ -488,12 +488,38 @@ export function ElderWeeklyOverview(props: ElderOverviewProps) {
               今日主日崇拜
             </h3>
             <div className="flex-1 flex flex-col">
-              <Editor
-                value={editHeader.worship}
-                editing={editing}
-                onChange={(v) => updateForDate(headerSunday, { worship: v })}
-                stretch
-              />
+              {editing ? (
+                <div className="print:hidden flex flex-col gap-2">
+                  <div className="flex justify-end mb-1">
+                    <button
+                      type="button"
+                      onClick={copyFromLastWeek}
+                      className="text-[12px] px-2 py-0.5 border border-black/60 bg-white text-black hover:bg-neutral-100"
+                    >
+                      复制上一周内容
+                    </button>
+                  </div>
+                  {WORSHIP_FIELDS.map((f) => (
+                    <div key={f.key} className="flex items-center gap-2">
+                      <label className="w-14 shrink-0 text-[14px] text-right">{f.label}</label>
+                      <Input
+                        value={currentProgram[f.key]}
+                        placeholder={f.placeholder}
+                        onChange={(e) => updateProgramField(f.key, e.target.value)}
+                        className="h-8 text-[14px] flex-1"
+                      />
+                      <span className="w-10 shrink-0 text-[12px] text-neutral-500">{f.role}</span>
+                    </div>
+                  ))}
+                  <div className="text-[12px] text-neutral-500 mt-1">
+                    每项输入后自动保存。前台周报按固定模板拼接显示。
+                  </div>
+                </div>
+              ) : (
+                <AutoFit className="flex-1 flex flex-col" min={11} max={17}>
+                  <WorshipProgramView program={currentProgram} />
+                </AutoFit>
+              )}
             </div>
           </div>
 
