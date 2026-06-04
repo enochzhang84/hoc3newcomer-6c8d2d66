@@ -363,6 +363,32 @@ export function ElderWeeklyOverview(props: ElderOverviewProps) {
             >
               主后 {headerDate.getFullYear()} 年 {headerDate.getMonth() + 1} 月 {headerDate.getDate()} 日　|　本周自 {fmtCN(wkStart)} 起
             </NavArrows>
+            <div className="mt-1 print:hidden flex justify-center">
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button
+                    type="button"
+                    className="inline-flex items-center gap-1 text-[12px] px-2 py-0.5 border border-black/60 bg-white text-black hover:bg-neutral-100"
+                  >
+                    <CalendarIcon className="h-3 w-3" />
+                    选择主日
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent align="center" className="w-auto p-0">
+                  <Calendar
+                    mode="single"
+                    selected={headerDate}
+                    onSelect={(d) => {
+                      if (!d) return;
+                      const s = toISO(currentSundayOf(d));
+                      setHeaderSunday(s); setDutySunday(s); setAttSunday(s); setCourseSunday(s); setFellowSunday(s);
+                    }}
+                    initialFocus
+                    className="pointer-events-auto"
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
           </div>
         </div>
 
