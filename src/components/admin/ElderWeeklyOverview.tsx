@@ -444,16 +444,38 @@ function BulletinLine({ left, mid, right }: { left: string; mid?: string; right:
 
 function BulletinBlock({ value }: { value: string }) {
   const lines = value.split("\n");
+  let n = 0;
   return (
     <div>
       {lines.map((ln, i) => {
+        const trimmed = ln.trim();
+        if (trimmed.startsWith("#")) {
+          const text = trimmed.replace(/^#+\s*/, "");
+          return (
+            <div
+              key={i}
+              className="text-center my-2 tracking-[0.15em]"
+              style={{ fontWeight: 700 }}
+            >
+              {text}
+            </div>
+          );
+        }
         const parts = splitBulletinLine(ln);
         if (!parts) {
           return (
             <div key={i} className="whitespace-pre-wrap">{ln || "\u00A0"}</div>
           );
         }
-        return <BulletinLine key={i} left={parts.left} mid={parts.mid} right={parts.right} />;
+        n += 1;
+        return (
+          <BulletinLine
+            key={i}
+            left={`${n}. ${parts.left}`}
+            mid={parts.mid}
+            right={parts.right}
+          />
+        );
       })}
     </div>
   );
