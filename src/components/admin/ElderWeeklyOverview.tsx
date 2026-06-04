@@ -447,14 +447,10 @@ export function ElderWeeklyOverview(props: ElderOverviewProps) {
                   const cnt = fellowshipCheckins.filter((c) => c.fellowship === f.name && fellowMatches(f.name, c.checkin_date)).length;
                   return { name: f.name, id: f.id, cnt };
                 });
-                const hasAny = rows.some((r) => r.cnt > 0);
-                if (!hasAny) {
-                  return <div className="text-center text-[14px] py-2 text-neutral-500">暂无该周团契 / 小组聚会资料</div>;
-                }
                 return (
                   <div className="space-y-0.5">
                     {rows.map((r) => (
-                      <BulletinLine key={r.id} left={r.name} right={r.cnt > 0 ? `${r.cnt} 人` : "—"} />
+                      <BulletinLine key={r.id} left={r.name} right={r.cnt > 0 ? `（${r.cnt}人）` : `（待统计）`} />
                     ))}
                   </div>
                 );
