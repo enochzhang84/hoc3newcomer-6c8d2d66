@@ -214,7 +214,8 @@ export function ElderWeeklyOverview(props: ElderOverviewProps) {
                 <tbody>
                   <tr>
                     <td className="border text-center align-middle whitespace-nowrap" rowSpan={5}>
-                      11:00am–12:30pm 儿童主日学
+                      <div>11:00am–12:30pm</div>
+                      <div>儿童主日学</div>
                     </td>
                     <td className="border whitespace-nowrap">1. Nursery (0–2岁)</td>
                     <td className="border text-center whitespace-nowrap">夏靖</td>
