@@ -17,12 +17,14 @@ import {
   CornerUpRight,
   CornerDownLeft,
   CornerDownRight,
+  Cable,
+  RefreshCw,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
-type VideoKind = "youtube" | "camera" | "url";
-type PptKind = "image" | "url";
+type VideoKind = "youtube" | "camera" | "capture" | "url";
+type PptKind = "image" | "url" | "capture";
 type Layout =
   | "ppt-main-video-pip"
   | "video-main-ppt-pip"
@@ -56,12 +58,14 @@ function VideoSourceView({
   youtubeUrl,
   videoUrl,
   cameraStream,
+  captureStream,
   className,
 }: {
   kind: VideoKind;
   youtubeUrl: string;
   videoUrl: string;
   cameraStream: MediaStream | null;
+  captureStream: MediaStream | null;
   className?: string;
 }) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -69,7 +73,10 @@ function VideoSourceView({
     if (kind === "camera" && videoRef.current && cameraStream) {
       videoRef.current.srcObject = cameraStream;
     }
-  }, [kind, cameraStream]);
+    if (kind === "capture" && videoRef.current && captureStream) {
+      videoRef.current.srcObject = captureStream;
+    }
+  }, [kind, cameraStream, captureStream]);
 
   if (kind === "youtube") {
     const id = ytId(youtubeUrl);
@@ -101,6 +108,24 @@ function VideoSourceView({
       />
     );
   }
+  if (kind === "capture") {
+    if (!captureStream) {
+      return (
+        <div className={cn("flex items-center justify-center text-xs text-white/60 bg-black", className)}>
+          未连接采集设备
+        </div>
+      );
+    }
+    return (
+      <video
+        ref={videoRef}
+        autoPlay
+        playsInline
+        muted
+        className={cn("bg-black object-contain", className)}
+      />
+    );
+  }
   if (kind === "url" && videoUrl) {
     return (
       <video src={videoUrl} autoPlay loop muted playsInline className={cn("bg-black object-cover", className)} />
@@ -117,13 +142,40 @@ function PptSourceView({
   kind,
   imageUrl,
   pageUrl,
+  captureStream,
   className,
 }: {
   kind: PptKind;
   imageUrl: string;
   pageUrl: string;
+  captureStream: MediaStream | null;
   className?: string;
 }) {
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  useEffect(() => {
+    if (kind === "capture" && videoRef.current && captureStream) {
+      videoRef.current.srcObject = captureStream;
+    }
+  }, [kind, captureStream]);
+
+  if (kind === "capture") {
+    if (!captureStream) {
+      return (
+        <div className={cn("flex items-center justify-center text-xs text-white/60 bg-neutral-900", className)}>
+          未连接 PPT 采集设备
+        </div>
+      );
+    }
+    return (
+      <video
+        ref={videoRef}
+        autoPlay
+        playsInline
+        muted
+        className={cn("bg-neutral-900 object-contain", className)}
+      />
+    );
+  }
   if (kind === "image") {
     if (!imageUrl) {
       return (
@@ -162,11 +214,18 @@ export default function PipComposer() {
   );
   const [videoUrl, setVideoUrl] = useState<string>("");
   const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
+  const [videoCaptureStream, setVideoCaptureStream] = useState<MediaStream | null>(null);
+  const [videoCaptureDeviceId, setVideoCaptureDeviceId] = useState<string>("");
 
   // PPT source
   const [pptKind, setPptKind] = useState<PptKind>("image");
   const [pptImage, setPptImage] = useState<string>("");
   const [pptUrl, setPptUrl] = useState<string>("");
+  const [pptCaptureStream, setPptCaptureStream] = useState<MediaStream | null>(null);
+  const [pptCaptureDeviceId, setPptCaptureDeviceId] = useState<string>("");
+
+  // Device list
+  const [videoDevices, setVideoDevices] = useState<MediaDeviceInfo[]>([]);
 
   // Layout & PIP
   const [layout, setLayout] = useState<Layout>("ppt-main-video-pip");
@@ -187,8 +246,71 @@ export default function PipComposer() {
   useEffect(() => {
     return () => {
       if (cameraStream) cameraStream.getTracks().forEach((t) => t.stop());
+      if (videoCaptureStream) videoCaptureStream.getTracks().forEach((t) => t.stop());
+      if (pptCaptureStream) pptCaptureStream.getTracks().forEach((t) => t.stop());
     };
-  }, [cameraStream]);
+  }, [cameraStream, videoCaptureStream, pptCaptureStream]);
+
+  const refreshDevices = async () => {
+    try {
+      // Need permission first to get device labels
+      try {
+        const tmp = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+        tmp.getTracks().forEach((t) => t.stop());
+      } catch {
+        // ignore — may still list devices without labels
+      }
+      const list = await navigator.mediaDevices.enumerateDevices();
+      const vids = list.filter((d) => d.kind === "videoinput");
+      setVideoDevices(vids);
+      toast.success(`检测到 ${vids.length} 个视频输入设备`);
+    } catch {
+      toast.error("无法枚举视频设备");
+    }
+  };
+
+  useEffect(() => {
+    if (!navigator.mediaDevices?.enumerateDevices) return;
+    navigator.mediaDevices.enumerateDevices().then((list) => {
+      setVideoDevices(list.filter((d) => d.kind === "videoinput"));
+    }).catch(() => {});
+  }, []);
+
+  const openCapture = async (target: "video" | "ppt", deviceId: string) => {
+    if (!deviceId) {
+      toast.error("请先选择采集设备");
+      return;
+    }
+    try {
+      const s = await navigator.mediaDevices.getUserMedia({
+        video: { deviceId: { exact: deviceId }, width: { ideal: 1920 }, height: { ideal: 1080 } },
+        audio: false,
+      });
+      if (target === "video") {
+        if (videoCaptureStream) videoCaptureStream.getTracks().forEach((t) => t.stop());
+        setVideoCaptureStream(s);
+        setVideoKind("capture");
+      } else {
+        if (pptCaptureStream) pptCaptureStream.getTracks().forEach((t) => t.stop());
+        setPptCaptureStream(s);
+        setPptKind("capture");
+      }
+      toast.success("采集设备已连接");
+    } catch {
+      toast.error("无法打开采集设备（请检查权限/占用）");
+    }
+  };
+
+  const closeCapture = (target: "video" | "ppt") => {
+    if (target === "video") {
+      if (videoCaptureStream) videoCaptureStream.getTracks().forEach((t) => t.stop());
+      setVideoCaptureStream(null);
+    } else {
+      if (pptCaptureStream) pptCaptureStream.getTracks().forEach((t) => t.stop());
+      setPptCaptureStream(null);
+    }
+    toast.message("采集设备已断开");
+  };
 
   const startCamera = async () => {
     try {
@@ -270,11 +392,18 @@ export default function PipComposer() {
         youtubeUrl={youtubeUrl}
         videoUrl={videoUrl}
         cameraStream={cameraStream}
+        captureStream={videoCaptureStream}
         className="w-full h-full"
       />
     );
     const ppt = (
-      <PptSourceView kind={pptKind} imageUrl={pptImage} pageUrl={pptUrl} className="w-full h-full" />
+      <PptSourceView
+        kind={pptKind}
+        imageUrl={pptImage}
+        pageUrl={pptUrl}
+        captureStream={pptCaptureStream}
+        className="w-full h-full"
+      />
     );
 
     if (layout === "side-by-side") {
@@ -330,8 +459,8 @@ export default function PipComposer() {
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
-    layout, videoKind, youtubeUrl, videoUrl, cameraStream,
-    pptKind, pptImage, pptUrl,
+    layout, videoKind, youtubeUrl, videoUrl, cameraStream, videoCaptureStream,
+    pptKind, pptImage, pptUrl, pptCaptureStream,
     pipPos.x, pipPos.y, pipSize, pipRounded, pipBorder, pipOpacity,
   ]);
 
@@ -369,10 +498,11 @@ export default function PipComposer() {
             <div className="text-sm font-medium flex items-center gap-2">
               <Video className="size-4 text-primary" /> 视频源
             </div>
-            <div className="grid grid-cols-3 gap-1.5">
+            <div className="grid grid-cols-2 gap-1.5">
               {([
                 { v: "youtube", label: "YouTube", icon: <Youtube className="size-3.5" /> },
                 { v: "camera", label: "摄像头", icon: <Camera className="size-3.5" /> },
+                { v: "capture", label: "采集卡", icon: <Cable className="size-3.5" /> },
                 { v: "url", label: "视频URL", icon: <Globe className="size-3.5" /> },
               ] as { v: VideoKind; label: string; icon: React.ReactNode }[]).map((o) => (
                 <button
@@ -420,16 +550,58 @@ export default function PipComposer() {
                 )}
               </div>
             )}
+            {videoKind === "capture" && (
+              <div className="space-y-2">
+                <div className="flex gap-1.5">
+                  <select
+                    value={videoCaptureDeviceId}
+                    onChange={(e) => setVideoCaptureDeviceId(e.target.value)}
+                    className="flex-1 text-xs border border-border rounded-md bg-background px-2 py-1.5 min-w-0"
+                  >
+                    <option value="">选择采集设备…</option>
+                    {videoDevices.map((d, i) => (
+                      <option key={d.deviceId || i} value={d.deviceId}>
+                        {d.label || `设备 ${i + 1}`}
+                      </option>
+                    ))}
+                  </select>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={refreshDevices}
+                    className="px-2"
+                    title="刷新设备列表"
+                  >
+                    <RefreshCw className="size-3.5" />
+                  </Button>
+                </div>
+                <div className="flex gap-2">
+                  {!videoCaptureStream ? (
+                    <Button size="sm" onClick={() => openCapture("video", videoCaptureDeviceId)} className="flex-1 gap-1">
+                      <Cable className="size-3.5" /> 连接采集卡
+                    </Button>
+                  ) : (
+                    <Button size="sm" variant="outline" onClick={() => closeCapture("video")} className="flex-1">
+                      断开采集卡
+                    </Button>
+                  )}
+                </div>
+                <p className="text-[10px] text-muted-foreground leading-snug">
+                  支持 USB / HDMI 视频采集卡。首次使用需授权摄像头权限以读取设备列表。
+                </p>
+              </div>
+            )}
           </div>
 
           <div className="bg-background/60 border border-border/60 rounded-xl p-4 space-y-3">
             <div className="text-sm font-medium flex items-center gap-2">
               <ImageIcon className="size-4 text-primary" /> PPT 源
             </div>
-            <div className="grid grid-cols-2 gap-1.5">
+            <div className="grid grid-cols-3 gap-1.5">
               {([
                 { v: "image", label: "图片" },
                 { v: "url", label: "网页" },
+                { v: "capture", label: "采集卡" },
               ] as { v: PptKind; label: string }[]).map((o) => (
                 <button
                   key={o.v}
@@ -475,6 +647,47 @@ export default function PipComposer() {
                 onChange={(e) => setPptUrl(e.target.value)}
                 className="text-sm"
               />
+            )}
+            {pptKind === "capture" && (
+              <div className="space-y-2">
+                <div className="flex gap-1.5">
+                  <select
+                    value={pptCaptureDeviceId}
+                    onChange={(e) => setPptCaptureDeviceId(e.target.value)}
+                    className="flex-1 text-xs border border-border rounded-md bg-background px-2 py-1.5 min-w-0"
+                  >
+                    <option value="">选择采集设备…</option>
+                    {videoDevices.map((d, i) => (
+                      <option key={d.deviceId || i} value={d.deviceId}>
+                        {d.label || `设备 ${i + 1}`}
+                      </option>
+                    ))}
+                  </select>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={refreshDevices}
+                    className="px-2"
+                    title="刷新设备列表"
+                  >
+                    <RefreshCw className="size-3.5" />
+                  </Button>
+                </div>
+                <div className="flex gap-2">
+                  {!pptCaptureStream ? (
+                    <Button size="sm" onClick={() => openCapture("ppt", pptCaptureDeviceId)} className="flex-1 gap-1">
+                      <Cable className="size-3.5" /> 连接 PPT 采集卡
+                    </Button>
+                  ) : (
+                    <Button size="sm" variant="outline" onClick={() => closeCapture("ppt")} className="flex-1">
+                      断开采集卡
+                    </Button>
+                  )}
+                </div>
+                <p className="text-[10px] text-muted-foreground leading-snug">
+                  可将另一台电脑的 PPT 通过 HDMI 采集卡接入，作为 PPT 源参与合成。
+                </p>
+              </div>
             )}
           </div>
         </div>
