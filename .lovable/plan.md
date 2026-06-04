@@ -1,93 +1,95 @@
-## 周报后台编辑界面改造计划
+# 圣工轮值表（今日）自动化方案
 
-针对 `src/components/admin/ElderWeeklyOverview.tsx` 进行 4 项修改。所有数据按日期持久化到 `localStorage`，不新增数据库表（除非必要）。
+把当前手工填写的 12 项轮值，改造为「按主日日期自动从各事工模块读取」。所有数据按日期保存，周报按当前主日自动读取，未录入显示「待定」。
 
----
+## 后台编辑器整体调整
 
-### 1. 成人主日学课程 / 团契聚会 —— 全自动读取
+「圣工轮值表（今日）」后台不再是单一文本/字段编辑器，而是一个**只读汇总视图**，展示当前主日各项岗位的自动读取结果，并在每行旁提供「去录入」按钮直达对应事工的月历编辑界面。仅圣餐主日显示「圣餐服事」行。
 
-**当前行为**：成人主日学课程与团契聚会已自动按 `sundayCheckins` / `fellowshipCheckins` 统计签到人数。后台没有编辑入口。
+字段重命名：`餐前投影` → `录音投影`。
 
-**改动**：
-- 成人主日学课程：优先读取 `sunday_class_schedule` 表对应课程的 `student_count`（若 > 0），否则按 `adult_class_checkins` 当主日签到统计。
-- 团契聚会：保持当周 (周二—周日) 区间 `fellowship_checkins` 自动计数（已是此逻辑）。
-- 后台不出现编辑控件（已是只读展示，确认无需变化）。
+## 数据源映射
 
-需要在 `admin.tsx` 把 `sunday_class_schedule` 现有 query 增加 `student_count` 字段（已存在）并传给 `ElderWeeklyOverview`。
-
----
-
-### 2. 圣工轮值表 —— 月历模式
-
-**当前**：每个板块用 `<` / `>` 翻页选择主日，数据按日期分别存 `localStorage`。
-
-**改动**：
-- 在「圣工轮值表（今日）」标题旁，新增一个日历按钮（`shadcn/ui` 的 `Calendar` + `Popover`）。
-- 日历只允许选择周日（其它日期 disabled），选定日期成为当前编辑/展示主日。
-- 保留 `<` / `>` 翻页箭头作为快捷方式。
-- 数据仍按 ISO 日期 key 存 `localStorage`（无需建表）。
-
----
-
-### 3. 中文堂主日敬拜程序 —— 固定 7 项
-
-**当前**：整段 textarea 自由文本，含 `#` 标题 / `>` 经训行。
-
-**改动 (后台编辑)**：
-- 新建 `WorshipProgram` 数据结构：
-  ```ts
-  type WorshipProgram = {
-    xuanzhao: string;   // 宣召（如 "诗篇 23 篇"）
-    changshi: string;   // 唱诗（如 "教会圣诗 100"）
-    muqi: string;       // 牧祷（如 "牧师"）
-    dujing: string;     // 读经（如 "约翰福音 3:16"）
-    jiangdao: string;   // 讲道（如 "信靠主"）
-    huiyingshi: string; // 回应诗
-    zhufu: string;      // 祝福
-  };
-  ```
-- 后台显示为 7 个 `Input`，每项独立 `onBlur` 保存到 `localStorage`（按主日日期 key）。
-- 顶部加「复制上周内容」按钮：把 上一个主日的程序整体复制到当前主日。
-- 同样接入第 2 项的月历日期选择器。
-
-**前台 (周报展示)**：
-按固定模板拼接显示：
-```
-1. 宣召 …… {xuanzhao} …… 司会
-2. 唱诗 …… {changshi} …… 会众
-3. 牧祷 …… {muqi} …… 牧师
-4. 读经 …… {dujing} …… 会众
-5. 讲道 …… {jiangdao} …… 牧师
-6. 回应诗 …… {huiyingshi} …… 会众
-7. 祝福 …… {zhufu} …… 长老
-```
-保持现有 `BulletinLine` 三段式视觉（左 / 虚线 / 右）。
-
-**迁移**：旧 `worship` 字段忽略不读，老数据废弃。新字段保存在 `byDate[iso].worshipProgram`。
-
----
-
-### 4. 版面自动适配
-
-- 中栏「敬拜程序」容器加 CSS：`overflow: hidden`，最长 `worshipProgram` 字段超过阈值时，整段字号从 17px 缩到 15px / 13px（用 `useLayoutEffect` 检测 `scrollHeight > clientHeight` 循环降字号）。
-- 实现一个轻量 `<AutoFit>` 包装组件：尝试 17→16→15→14→13 px，直到不溢出。
-- 打印样式不变。
-
----
-
-### 技术要点
-
-| 项 | 文件 | 操作 |
+| 周报项目 | 数据来源 | 取值规则 |
 |---|---|---|
-| 1 | `ElderWeeklyOverview.tsx` + `admin.tsx` | 传入 `kidsClasses`-like `classCounts: {course_name, student_count}[]`；课程渲染优先用 student_count |
-| 2 | `ElderWeeklyOverview.tsx` | 引入 `Calendar`+`Popover`，限定 weekday=0 可选 |
-| 3 | `ElderWeeklyOverview.tsx` | 新增 7 字段编辑 UI + 模板渲染；废弃 `worship` 自由文本 |
-| 4 | `ElderWeeklyOverview.tsx` | 新增 `AutoFit` 组件，应用于中栏敬拜程序 |
+| 讲员 / 司会 / 领诗 / 司琴 | 新表 `worship_service_roles` | 按主日日期录入 |
+| 招待 | 现有 `hospitality_ministry_entries`（接待事工 → 轮值表） | 该日 `迎宾接待 / 后门` |
+| 新人接待 | 同上 | 该日 `新人接待 / 前门` |
+| 圣餐服事 1/2 | 新表 `communion_service` | 仅每月第 1 个主日显示 |
+| 录音投影 | 现有 `duty_schedules`（影音投影 → 主日 PPT 岗位） | 该日 PPT 人员 |
+| 视频播放 | 现有 `duty_schedules`（影音投影 → 直播 / 直播1） | 两人同时显示 |
+| 厨房服事 | 新表 `kitchen_duty` | 按主日日期录入 |
+| 堂务 | 新表 `custodial_duty` | 按主日日期录入 |
+| 插花 | 新表 `flower_duty` | 按主日日期录入 |
 
-不需要数据库迁移；不修改其它模块代码。
+未录入统一显示「待定」。
 
----
+## 主页「服侍统计人数」
 
-### 需用户确认 1 个点
+汇总当天「圣工轮值表（今日）」+「儿童事工（教师）」所有人员，按人名去重后计数，显示在主页。
 
-第 1 项「记录中有总数」是否指 `sunday_class_schedule.student_count`（每课程在班级管理录入的报名人数）？如果是其他含义请告知。如果没有特别指示，我将按此实现。
+## 圣餐主日判定
+
+工具函数 `isCommunionSunday(date)`：当 `date` 为该月份的第 1 个星期日时返回 `true`。
+
+## 新增数据库表（共 5 个，统一结构）
+
+每张表都按主日日期唯一保存，结构：
+
+```text
+worship_service_roles
+  service_date date PK, preacher text, host text, song_leader text, pianist text
+
+communion_service
+  service_date date PK, worker_1 text, worker_2 text
+
+kitchen_duty
+  service_date date PK, workers text   -- 多人用顿号/换行分隔
+
+custodial_duty
+  service_date date PK, workers text
+
+flower_duty
+  service_date date PK, workers text
+```
+
+每张表：
+- `GRANT` 给 `authenticated` / `service_role`；`anon` 只读（周报公开页需要）
+- RLS：`anon/authenticated` SELECT 允许；admin/super_admin 全权管理
+- 加 `created_at` / `updated_at` + `set_updated_at` trigger
+
+## 新增后台编辑器
+
+5 个轮值录入面板，统一「月历模式」交互（参考现有 `HospitalityCalendar.tsx`）：
+
+1. `WorshipRolesCalendar` — 讲员/司会/领诗/司琴
+2. `CommunionCalendar` — 仅每月第一主日可编辑两位人员
+3. `KitchenDutyCalendar` — 单一「人员」文本域
+4. `CustodialDutyCalendar` — 同上
+5. `FlowerDutyCalendar` — 同上
+
+挂入管理后台 ElderWeeklyOverview 所在页面（与现有「接待事工」「影音投影」入口并列）。
+
+## `ElderWeeklyOverview` 改造
+
+- 新增 `useEffect` 拉取当前 `dutySunday` 对应 5 张新表 + hospitality + duty_schedules。
+- 移除现有手写 `editDuty.duty` 文本字段；`DutyEditor` 改为只读汇总 + 跳转按钮。
+- `WeeklyDutyView`（周报视图）按上方映射拼装，缺值显示「待定」；非圣餐主日跳过「圣餐服事」行。
+- 主页服侍统计人数：新增 helper 统计去重人数（影响首页 `HomePage` 已有的"服侍人数"位置；如果当前没有这块 UI，留 TODO 不动主页）。
+
+## 技术细节
+
+- 新表的 `service_date` 使用 `date` 类型，主键即日期，方便 upsert。
+- 多人字段统一用换行分隔，前端 split 显示。
+- 圣餐主日 helper 放在 `src/lib/sunday-utils.ts`。
+- 数据读取在 `ElderWeeklyOverview` 中合并到现有 `byDate` state，避免破坏现有 SWR 行为。
+
+## 范围说明
+
+本次提交只覆盖：
+1. 数据库迁移（5 张表 + 权限 + RLS + trigger）
+2. 5 个新的月历编辑器组件 + 后台入口
+3. `ElderWeeklyOverview` 中「圣工轮值表（今日）」与周报视图改造
+4. `isCommunionSunday` + 服侍人数去重 helper
+
+主页「服侍统计人数」UI 如果现有首页没有该区块，将仅导出 helper 不强行加 UI；若有则替换其数据源。请确认是否要本轮一并接入主页 UI。

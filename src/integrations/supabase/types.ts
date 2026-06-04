@@ -292,6 +292,30 @@ export type Database = {
         }
         Relationships: []
       }
+      communion_service: {
+        Row: {
+          created_at: string
+          service_date: string
+          updated_at: string
+          worker_1: string | null
+          worker_2: string | null
+        }
+        Insert: {
+          created_at?: string
+          service_date: string
+          updated_at?: string
+          worker_1?: string | null
+          worker_2?: string | null
+        }
+        Update: {
+          created_at?: string
+          service_date?: string
+          updated_at?: string
+          worker_1?: string | null
+          worker_2?: string | null
+        }
+        Relationships: []
+      }
       contacts: {
         Row: {
           address: string | null
@@ -334,6 +358,27 @@ export type Database = {
           updated_at?: string
           wechat?: string | null
           zip?: string | null
+        }
+        Relationships: []
+      }
+      custodial_duty: {
+        Row: {
+          created_at: string
+          service_date: string
+          updated_at: string
+          workers: string | null
+        }
+        Insert: {
+          created_at?: string
+          service_date: string
+          updated_at?: string
+          workers?: string | null
+        }
+        Update: {
+          created_at?: string
+          service_date?: string
+          updated_at?: string
+          workers?: string | null
         }
         Relationships: []
       }
@@ -780,6 +825,27 @@ export type Database = {
         }
         Relationships: []
       }
+      flower_duty: {
+        Row: {
+          created_at: string
+          service_date: string
+          updated_at: string
+          workers: string | null
+        }
+        Insert: {
+          created_at?: string
+          service_date: string
+          updated_at?: string
+          workers?: string | null
+        }
+        Update: {
+          created_at?: string
+          service_date?: string
+          updated_at?: string
+          workers?: string | null
+        }
+        Relationships: []
+      }
       home_page_settings: {
         Row: {
           id: string
@@ -945,6 +1011,27 @@ export type Database = {
           to_class?: string | null
           updated_at?: string
           year?: number
+        }
+        Relationships: []
+      }
+      kitchen_duty: {
+        Row: {
+          created_at: string
+          service_date: string
+          updated_at: string
+          workers: string | null
+        }
+        Insert: {
+          created_at?: string
+          service_date: string
+          updated_at?: string
+          workers?: string | null
+        }
+        Update: {
+          created_at?: string
+          service_date?: string
+          updated_at?: string
+          workers?: string | null
         }
         Relationships: []
       }
@@ -1764,6 +1851,36 @@ export type Database = {
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
+        }
+        Relationships: []
+      }
+      worship_service_roles: {
+        Row: {
+          created_at: string
+          host: string | null
+          pianist: string | null
+          preacher: string | null
+          service_date: string
+          song_leader: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          host?: string | null
+          pianist?: string | null
+          preacher?: string | null
+          service_date: string
+          song_leader?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          host?: string | null
+          pianist?: string | null
+          preacher?: string | null
+          service_date?: string
+          song_leader?: string | null
+          updated_at?: string
         }
         Relationships: []
       }
