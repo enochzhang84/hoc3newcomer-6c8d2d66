@@ -22,6 +22,15 @@ type FellowshipCheckin = Checkin & { fellowship: string };
 type Course = { id: string; name: string };
 type Fellowship = { id: string; name: string };
 type MealPlan = { id: string; plan_date: string; attendees: number; meal_type?: string | null };
+type KidsClass = {
+  id?: string;
+  track: string;
+  class_name: string | null;
+  course_name?: string | null;
+  teacher_name: string | null;
+  class_location: string | null;
+  sort_order: number;
+};
 
 export type ElderOverviewProps = {
   regs: Reg[];
@@ -31,6 +40,7 @@ export type ElderOverviewProps = {
   courses: Course[];
   fellowships: Fellowship[];
   mealPlans: MealPlan[];
+  kidsClasses?: KidsClass[];
   onRefresh?: () => void;
 };
 
