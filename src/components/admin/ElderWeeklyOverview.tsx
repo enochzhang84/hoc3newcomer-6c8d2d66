@@ -426,16 +426,17 @@ export function ElderWeeklyOverview(props: ElderOverviewProps) {
               onPrev={() => setDutySunday(shiftSunday(dutySunday, -1))}
               onNext={() => setDutySunday(shiftSunday(dutySunday, 1))}
             >
-              <div className="text-[12px] text-neutral-600 text-center mb-1">
+              <div className="text-[14px] text-neutral-700 text-center mb-2">
                 {(() => { const d = new Date(dutySunday + "T00:00:00"); return `${d.getFullYear()} 年 ${d.getMonth() + 1} 月 ${d.getDate()} 日`; })()}
               </div>
               {editing ? (
-                <Editor value={editDuty.duty} editing={editing} onChange={(v) => updateForDate(dutySunday, { duty: v })} />
+                <DutyEditor value={editDuty.duty} onChange={(v) => updateForDate(dutySunday, { duty: v })} />
               ) : (
                 <DutyList value={editDuty.duty} hasData={!!byDate[dutySunday]} />
               )}
             </Block>
-            <div className="flex-1" aria-hidden />
+            {/* 与下方儿童事工保留约 1 个汉字高度的间距 */}
+            <div className="flex-1 min-h-[1em]" aria-hidden />
             <Block title="儿童事工">
               <table className="bulletin-table kids-table w-full">
                 <thead>
