@@ -278,6 +278,17 @@ export function ElderWeeklyOverview(props: ElderOverviewProps) {
   const [byDate, setByDate] = useState<ByDateStore>(() => loadByDate());
   const [editing, setEditing] = useState(false);
 
+  // 自动汇总数据：按 dutySunday 从各事工模块读取
+  const [dutyAuto, setDutyAuto] = useState<DutyAuto>(emptyDutyAuto);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const next = await loadDutyAuto(dutySunday);
+      if (!cancelled) setDutyAuto(next);
+    })();
+    return () => { cancelled = true; };
+  }, [dutySunday]);
+
   useEffect(() => {
     try { localStorage.setItem(LS_KEY_BYDATE, JSON.stringify(byDate)); } catch {}
   }, [byDate]);
@@ -432,9 +443,9 @@ export function ElderWeeklyOverview(props: ElderOverviewProps) {
                 {(() => { const d = new Date(dutySunday + "T00:00:00"); return `${d.getFullYear()} 年 ${d.getMonth() + 1} 月 ${d.getDate()} 日`; })()}
               </div>
               {editing ? (
-                <DutyEditor value={editDuty.duty} onChange={(v) => updateForDate(dutySunday, { duty: v })} />
+                <DutyEditorNotice />
               ) : (
-                <DutyList value={editDuty.duty} hasData={!!byDate[dutySunday]} />
+                <AutoDutyList sunday={dutySunday} data={dutyAuto} />
               )}
             </Block>
             {/* 与下方儿童事工保留约 1 个汉字高度的间距 */}
