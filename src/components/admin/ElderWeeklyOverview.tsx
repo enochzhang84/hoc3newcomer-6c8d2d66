@@ -316,7 +316,7 @@ export function ElderWeeklyOverview(props: ElderOverviewProps) {
               onNext={() => setDutySunday(shiftSunday(dutySunday, 1))}
             >
               <div className="text-[12px] text-neutral-600 text-center mb-1">
-                {(() => { const d = parseISO(dutySunday); return `${d.getFullYear()} 年 ${d.getMonth() + 1} 月 ${d.getDate()} 日`; })()}
+                {(() => { const d = new Date(dutySunday + "T00:00:00"); return `${d.getFullYear()} 年 ${d.getMonth() + 1} 月 ${d.getDate()} 日`; })()}
               </div>
               {editing ? (
                 <Editor value={editDuty.duty} editing={editing} onChange={(v) => updateForDate(dutySunday, { duty: v })} />
