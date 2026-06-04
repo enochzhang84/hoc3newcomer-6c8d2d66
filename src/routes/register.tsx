@@ -24,6 +24,15 @@ function RegisterPage() {
   const [eventName, setEventName] = useState<string>("");
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const todayStr = () => {
+    const d = new Date();
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${y}-${m}-${day}`;
+  };
+  const [entryDate, setEntryDate] = useState<string>(todayStr());
 
   const [form, setForm] = useState({
     name: "",
@@ -66,6 +75,28 @@ function RegisterPage() {
       });
   }, [eventToken]);
 
+  // Detect admin/super_admin so manual backfill UI only shows for them
+  useEffect(() => {
+    if (eventToken) return; // QR mode never shows admin UI
+    let active = true;
+    (async () => {
+      const { data: u } = await supabase.auth.getUser();
+      if (!u.user) return;
+      const { data: roles } = await (supabase as any)
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", u.user.id);
+      if (!active) return;
+      const has = (roles ?? []).some(
+        (r: { role: string }) => r.role === "admin" || r.role === "super_admin",
+      );
+      setIsAdmin(has);
+    })();
+    return () => {
+      active = false;
+    };
+  }, [eventToken]);
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!form.name.trim()) {
@@ -73,7 +104,9 @@ function RegisterPage() {
       return;
     }
     setSubmitting(true);
-    const { error } = await supabase.from("registrations").insert({
+    const isBackfill =
+      isAdmin && !eventToken && entryDate && entryDate !== todayStr();
+    const payload: Record<string, unknown> = {
       event_id: eventId,
       name: form.name.trim(),
       name_en: form.name_en.trim() || null,
@@ -98,7 +131,12 @@ function RegisterPage() {
       wants_info: form.wants_info,
       notes: form.notes.trim() || null,
       source: eventToken ? "qr" : "manual",
-    });
+    };
+    if (isBackfill) {
+      // Store as local noon on selected date to avoid TZ rollover in date-only queries
+      payload.created_at = new Date(`${entryDate}T12:00:00`).toISOString();
+    }
+    const { error } = await supabase.from("registrations").insert(payload as never);
     setSubmitting(false);
     if (error) {
       toast.error("提交失败:" + error.message);
@@ -152,6 +190,23 @@ function RegisterPage() {
         </div>
 
         <form onSubmit={handleSubmit} className="bg-card border border-border/50 rounded-2xl p-6 md:p-8 space-y-5 shadow-sm">
+          {isAdmin && !eventToken && (
+            <div className="rounded-xl border border-primary/30 bg-primary/5 p-4 space-y-2">
+              <Label className="text-sm font-medium">
+                登记日期（管理员补录）
+              </Label>
+              <Input
+                type="date"
+                value={entryDate}
+                max={todayStr()}
+                onChange={(e) => setEntryDate(e.target.value || todayStr())}
+                className="w-full sm:w-56"
+              />
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                默认为今天，可修改为历史日期以补录当天遗漏的登记。仅超级管理员 / 管理员可见，数据将与扫码登记统一进入统计。
+              </p>
+            </div>
+          )}
           <div className="grid sm:grid-cols-2 gap-4">
             <Field label="姓名(中文)">
               <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
