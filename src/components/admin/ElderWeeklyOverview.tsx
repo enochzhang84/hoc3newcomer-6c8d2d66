@@ -35,6 +35,7 @@ export type ElderOverviewProps = {
 };
 
 const LS_KEY = "elder.weekly.overview.v1";
+const LS_KEY_BYDATE = "elder.weekly.overview.byDate.v1";
 
 type Editable = {
   duty: string;
@@ -93,25 +94,35 @@ const DEFAULT_EDITABLE: Editable = {
   offerings: "Check：$ ____\nZelle：$ ____\nAR：$ ____\nCash：$ ____\nTotal：$ ____",
 };
 
-function loadEditable(): Editable {
-  if (typeof window === "undefined") return DEFAULT_EDITABLE;
+/** 按主日存储 Editable 字段 */
+type ByDateStore = Record<string, Partial<Editable>>;
+function loadByDate(): ByDateStore {
+  if (typeof window === "undefined") return {};
   try {
-    const raw = localStorage.getItem(LS_KEY);
-    if (!raw) return DEFAULT_EDITABLE;
-    const merged = { ...DEFAULT_EDITABLE, ...(JSON.parse(raw) as Partial<Editable>) };
-    // 迁移：旧版 worship 缺少分组标题或經訓段落 → 重置为最新默认
-    if (
-      !merged.worship.includes("# 以颂赞来敬拜") ||
-      !merged.worship.includes("# 以领受来敬拜") ||
-      !merged.worship.includes("# 以奉献来敬拜") ||
-      !merged.worship.includes("經訓")
-    ) {
-      merged.worship = DEFAULT_EDITABLE.worship;
+    const raw = localStorage.getItem(LS_KEY_BYDATE);
+    if (raw) return JSON.parse(raw) as ByDateStore;
+    // 迁移：旧版单一存储 → 作为当前主日默认
+    const legacy = localStorage.getItem(LS_KEY);
+    if (legacy) {
+      const old = JSON.parse(legacy) as Partial<Editable>;
+      const sunday = toISO(currentSundayOf(new Date()));
+      return { [sunday]: old };
     }
-    return merged;
+    return {};
   } catch {
-    return DEFAULT_EDITABLE;
+    return {};
   }
+}
+function getEditableFor(store: ByDateStore, sundayISO: string): Editable {
+  const partial = store[sundayISO] ?? {};
+  const merged = { ...DEFAULT_EDITABLE, ...partial };
+  if (
+    !merged.worship.includes("# 以颂赞来敬拜") ||
+    !merged.worship.includes("經訓")
+  ) {
+    merged.worship = DEFAULT_EDITABLE.worship;
+  }
+  return merged;
 }
 
 function fmtCN(d: Date) {
@@ -124,34 +135,109 @@ function startOfWeek(d = new Date()) {
   x.setHours(0, 0, 0, 0);
   return x;
 }
+/** 返回 d 所在周的礼拜天（周日）日期，时区取本地 */
+function currentSundayOf(d: Date) {
+  const x = new Date(d);
+  x.setHours(0, 0, 0, 0);
+  const day = x.getDay(); // 0=Sun
+  // 取本周日：若今天就是周日，返回今天；否则取下一个 Sunday? 用户要求"如果当前日期不是礼拜天，也要自动定位到本周主日"
+  // 解读为本周已过的主日（上一个周日）。
+  x.setDate(x.getDate() - day);
+  return x;
+}
+function addDays(d: Date, n: number) {
+  const x = new Date(d);
+  x.setDate(x.getDate() + n);
+  return x;
+}
+function toISO(d: Date) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
 function sameLocalDate(iso: string, day: Date) {
   const d = new Date(iso);
   return d.getFullYear() === day.getFullYear() && d.getMonth() === day.getMonth() && d.getDate() === day.getDate();
 }
+function sameISO(iso: string, sundayISO: string) {
+  return iso.startsWith(sundayISO);
+}
+
+/** 简单 < > 翻页箭头（纸质风格） */
+function NavArrows({ onPrev, onNext, children }: { onPrev: () => void; onNext: () => void; children: React.ReactNode }) {
+  return (
+    <div className="flex items-center justify-center gap-2">
+      <button
+        type="button"
+        onClick={onPrev}
+        className="px-1 text-[18px] leading-none hover:opacity-60 print:hidden"
+        aria-label="上一个主日"
+      >
+        ‹
+      </button>
+      <span>{children}</span>
+      <button
+        type="button"
+        onClick={onNext}
+        className="px-1 text-[18px] leading-none hover:opacity-60 print:hidden"
+        aria-label="下一个主日"
+      >
+        ›
+      </button>
+    </div>
+  );
+}
 
 export function ElderWeeklyOverview(props: ElderOverviewProps) {
   const { regs, attendance, sundayCheckins, fellowshipCheckins, courses, fellowships, mealPlans, onRefresh } = props;
-  const [edit, setEdit] = useState<Editable>(() => loadEditable());
+  const today = useMemo(() => new Date(), []);
+  const todaySunday = useMemo(() => currentSundayOf(today), [today]);
+  const todaySundayISO = toISO(todaySunday);
+
+  // 各板块独立的主日（默认本周主日）
+  const [headerSunday, setHeaderSunday] = useState<string>(todaySundayISO);
+  const [dutySunday, setDutySunday] = useState<string>(todaySundayISO);
+  const [attSunday, setAttSunday] = useState<string>(todaySundayISO);
+  const [courseSunday, setCourseSunday] = useState<string>(todaySundayISO);
+  const [fellowSunday, setFellowSunday] = useState<string>(todaySundayISO);
+
+  const [byDate, setByDate] = useState<ByDateStore>(() => loadByDate());
   const [editing, setEditing] = useState(false);
 
   useEffect(() => {
-    try { localStorage.setItem(LS_KEY, JSON.stringify(edit)); } catch {}
-  }, [edit]);
+    try { localStorage.setItem(LS_KEY_BYDATE, JSON.stringify(byDate)); } catch {}
+  }, [byDate]);
 
-  const today = useMemo(() => new Date(), []);
-  const wkStart = useMemo(() => startOfWeek(today), [today]);
+  // 当前 header 主日对应的可编辑模板
+  const editHeader = getEditableFor(byDate, headerSunday);
+  const editDuty = getEditableFor(byDate, dutySunday);
+  const updateForDate = (sundayISO: string, patch: Partial<Editable>) => {
+    setByDate((prev) => ({ ...prev, [sundayISO]: { ...(prev[sundayISO] ?? {}), ...patch } }));
+  };
 
-  // 今日新人
-  const todayNewcomers = regs.filter((r) => sameLocalDate(r.created_at, today));
-  // 上周人数统计：取最近一条 attendance
-  const latest = attendance[0];
-  // 本周饭食
-  const weekMeals = mealPlans.filter((m) => new Date(m.plan_date) >= wkStart);
-  const weekMealCount = weekMeals.reduce((s, m) => s + (m.attendees ?? 0), 0);
-  // 主日学今日签到
-  const todaySS = sundayCheckins.filter((c) => sameLocalDate(c.checkin_date, today));
-  // 团契本周参与
-  const weekFellow = fellowshipCheckins.filter((c) => new Date(c.checkin_date) >= wkStart);
+  const headerDate = new Date(headerSunday + "T00:00:00");
+  const wkStart = startOfWeek(headerDate);
+
+  const shiftSunday = (iso: string, weeks: number) => toISO(addDays(new Date(iso + "T00:00:00"), weeks * 7));
+
+  // 板块数据：按所选主日精确匹配
+  const attRecord = attendance.find((a) => a.record_date === attSunday) ?? null;
+  const courseSundayCheckins = sundayCheckins.filter((c) => sameISO(c.checkin_date, courseSunday));
+
+  // 团契 / 小组：幸福聊天室 / 恩典茶经 按主日匹配；其它按 周三~周六 范围匹配
+  const SUNDAY_FELLOWSHIPS = ["幸福聊天室", "恩典茶经", "恩典茶经小组"];
+  const fellowWedStart = addDays(new Date(fellowSunday + "T00:00:00"), 3); // Wed
+  const fellowSatEnd = addDays(new Date(fellowSunday + "T00:00:00"), 6); // Sat
+  const inWedSatRange = (iso: string) => {
+    const d = new Date(iso);
+    d.setHours(0, 0, 0, 0);
+    return d >= fellowWedStart && d <= fellowSatEnd;
+  };
+  const fellowMatches = (f: string, iso: string) => {
+    if (SUNDAY_FELLOWSHIPS.includes(f)) return sameISO(iso, fellowSunday);
+    return inWedSatRange(iso);
+  };
 
   return (
     <section className="mt-8 print:mt-0">
@@ -206,15 +292,34 @@ export function ElderWeeklyOverview(props: ElderOverviewProps) {
             className="text-[14px] mt-1 tracking-widest"
             style={{ fontFamily: "'Times New Roman','PMingLiU',serif" }}
           >
-            主后 {today.getFullYear()} 年 {today.getMonth() + 1} 月 {today.getDate()} 日　|　本周自 {fmtCN(wkStart)} 起
+            <NavArrows
+              onPrev={() => {
+                const s = shiftSunday(headerSunday, -1);
+                setHeaderSunday(s); setDutySunday(s); setAttSunday(s); setCourseSunday(s); setFellowSunday(s);
+              }}
+              onNext={() => {
+                const s = shiftSunday(headerSunday, 1);
+                setHeaderSunday(s); setDutySunday(s); setAttSunday(s); setCourseSunday(s); setFellowSunday(s);
+              }}
+            >
+              主后 {headerDate.getFullYear()} 年 {headerDate.getMonth() + 1} 月 {headerDate.getDate()} 日　|　本周自 {fmtCN(wkStart)} 起
+            </NavArrows>
           </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-x-6 print:grid-cols-3 text-[17px] leading-[1.55] items-stretch">
           {/* 左栏 */}
           <div className="break-inside-avoid md:pr-4 flex flex-col h-full gap-4">
-            <Block title="圣工轮值表（今日）">
-              <Editor value={edit.duty} editing={editing} onChange={(v) => setEdit({ ...edit, duty: v })} />
+            <Block
+              title="圣工轮值表（今日）"
+              onPrev={() => setDutySunday(shiftSunday(dutySunday, -1))}
+              onNext={() => setDutySunday(shiftSunday(dutySunday, 1))}
+            >
+              {byDate[dutySunday] || dutySunday === todaySundayISO || editing ? (
+                <Editor value={editDuty.duty} editing={editing} onChange={(v) => updateForDate(dutySunday, { duty: v })} />
+              ) : (
+                <div className="text-center text-[14px] py-2 text-neutral-500">暂无该主日圣工轮值资料</div>
+              )}
             </Block>
             <div className="flex-1" aria-hidden />
             <Block title="儿童事工">
@@ -266,17 +371,21 @@ export function ElderWeeklyOverview(props: ElderOverviewProps) {
               </table>
             </Block>
             <div className="flex-1" aria-hidden />
-            <Block title={`上周人数统计${latest ? `（${latest.record_date}）` : ""}`}>
-              {latest ? (
+            <Block
+              title={`上周人数统计（${attSunday}）`}
+              onPrev={() => setAttSunday(shiftSunday(attSunday, -1))}
+              onNext={() => setAttSunday(shiftSunday(attSunday, 1))}
+            >
+              {attRecord ? (
                 <table className="bulletin-table w-full">
                   <tbody>
-                    <Row k="大堂敬拜" v={String(latest.worship_count)} />
-                    <Row k="儿童学生" v={String(latest.children_students)} />
-                    <Row k="儿童老师" v={String(latest.children_teachers)} />
-                    <Row k="总数" v={String(latest.worship_count + latest.children_students + latest.children_teachers)} />
+                    <Row k="大堂敬拜" v={String(attRecord.worship_count)} />
+                    <Row k="儿童学生" v={String(attRecord.children_students)} />
+                    <Row k="儿童老师" v={String(attRecord.children_teachers)} />
+                    <Row k="总数" v={String(attRecord.worship_count + attRecord.children_students + attRecord.children_teachers)} />
                   </tbody>
                 </table>
-              ) : <div>暂无数据</div>}
+              ) : <div className="text-center text-[14px] py-2 text-neutral-500">暂无该主日人数统计</div>}
             </Block>
             <div className="flex-1" aria-hidden />
           </div>
@@ -294,9 +403,9 @@ export function ElderWeeklyOverview(props: ElderOverviewProps) {
             </h3>
             <div className="flex-1 flex flex-col">
               <Editor
-                value={edit.worship}
+                value={editHeader.worship}
                 editing={editing}
-                onChange={(v) => setEdit({ ...edit, worship: v })}
+                onChange={(v) => updateForDate(headerSunday, { worship: v })}
                 stretch
               />
             </div>
@@ -304,27 +413,55 @@ export function ElderWeeklyOverview(props: ElderOverviewProps) {
 
           {/* 右栏 */}
           <div className="space-y-4 break-inside-avoid md:pl-4 flex flex-col h-full">
-            <Block title="成人主日学课程">
-              {courses.length > 0 ? (
-                <div className="space-y-0.5">
-                  {courses.slice(0, 12).map((c) => {
-                    const cnt = todaySS.filter((s) => s.course_name === c.name).length;
-                    return <BulletinLine key={c.id} left={c.name} right={cnt > 0 ? `今日 ${cnt} 人` : "—"} />;
-                  })}
-                </div>
-              ) : <div>暂无课程</div>}
-              <BulletinLine left="今日主日学签到合计" right={`${todaySS.length} 人`} />
+            <Block
+              title="成人主日学课程"
+              onPrev={() => setCourseSunday(shiftSunday(courseSunday, -1))}
+              onNext={() => setCourseSunday(shiftSunday(courseSunday, 1))}
+            >
+              {courses.length > 0 && courseSundayCheckins.length > 0 ? (
+                <>
+                  <div className="space-y-0.5">
+                    {courses.slice(0, 12).map((c) => {
+                      const cnt = courseSundayCheckins.filter((s) => s.course_name === c.name).length;
+                      return <BulletinLine key={c.id} left={c.name} right={cnt > 0 ? `${cnt} 人` : "—"} />;
+                    })}
+                  </div>
+                  <BulletinLine left="该主日签到合计" right={`${courseSundayCheckins.length} 人`} />
+                </>
+              ) : (
+                <div className="text-center text-[14px] py-2 text-neutral-500">暂无该主日成人主日学课程</div>
+              )}
+              <div className="text-[12px] text-neutral-500 text-center mt-1">{courseSunday}</div>
             </Block>
             <div className="flex-1" aria-hidden />
-            <Block title="团契 / 小组聚会">
-              {fellowships.length > 0 ? (
-                <div className="space-y-0.5">
-                  {fellowships.slice(0, 14).map((f) => {
-                    const cnt = weekFellow.filter((c) => c.fellowship === f.name).length;
-                    return <BulletinLine key={f.id} left={f.name} right={cnt > 0 ? `本周 ${cnt} 人` : "—"} />;
-                  })}
-                </div>
-              ) : <div>暂无团契</div>}
+            <Block
+              title="团契 / 小组聚会"
+              onPrev={() => setFellowSunday(shiftSunday(fellowSunday, -1))}
+              onNext={() => setFellowSunday(shiftSunday(fellowSunday, 1))}
+            >
+              {(() => {
+                if (fellowships.length === 0) {
+                  return <div className="text-center text-[14px] py-2 text-neutral-500">暂无该周团契 / 小组聚会资料</div>;
+                }
+                const rows = fellowships.slice(0, 14).map((f) => {
+                  const cnt = fellowshipCheckins.filter((c) => c.fellowship === f.name && fellowMatches(f.name, c.checkin_date)).length;
+                  return { name: f.name, id: f.id, cnt };
+                });
+                const hasAny = rows.some((r) => r.cnt > 0);
+                if (!hasAny) {
+                  return <div className="text-center text-[14px] py-2 text-neutral-500">暂无该周团契 / 小组聚会资料</div>;
+                }
+                return (
+                  <div className="space-y-0.5">
+                    {rows.map((r) => (
+                      <BulletinLine key={r.id} left={r.name} right={r.cnt > 0 ? `${r.cnt} 人` : "—"} />
+                    ))}
+                  </div>
+                );
+              })()}
+              <div className="text-[12px] text-neutral-500 text-center mt-1">
+                {fellowSunday}（{toISO(fellowWedStart)} ~ {toISO(fellowSatEnd)}）
+              </div>
             </Block>
           </div>
         </div>
@@ -396,11 +533,13 @@ export function ElderWeeklyOverview(props: ElderOverviewProps) {
   );
 }
 
-function Block({ title, children }: { title: string; children: React.ReactNode }) {
+function Block({ title, children, onPrev, onNext }: { title: string; children: React.ReactNode; onPrev?: () => void; onNext?: () => void }) {
   return (
     <section className="break-inside-avoid">
       <h3 className="section-title text-[20px] tracking-[0.1em] text-center pb-0.5 mb-1.5">
-        {title}
+        {onPrev && onNext ? (
+          <NavArrows onPrev={onPrev} onNext={onNext}>{title}</NavArrows>
+        ) : title}
       </h3>
       <div>{children}</div>
     </section>
