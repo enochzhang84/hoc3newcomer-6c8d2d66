@@ -521,10 +521,10 @@ function Editor({ value, editing, onChange, stretch }: { value: string; editing:
   if (stretch) {
     return (
       <div
-        className="flex-1 flex flex-col justify-between text-[17px] leading-[1.55]"
+        className="flex-1 flex flex-col text-[17px] leading-[1.55]"
         style={{ fontFamily: "inherit", minHeight: "100%" }}
       >
-        <BulletinBlock value={value} />
+        <BulletinBlock value={value} stretch />
       </div>
     );
   }
