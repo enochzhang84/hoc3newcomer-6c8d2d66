@@ -98,7 +98,17 @@ function loadEditable(): Editable {
   try {
     const raw = localStorage.getItem(LS_KEY);
     if (!raw) return DEFAULT_EDITABLE;
-    return { ...DEFAULT_EDITABLE, ...(JSON.parse(raw) as Partial<Editable>) };
+    const merged = { ...DEFAULT_EDITABLE, ...(JSON.parse(raw) as Partial<Editable>) };
+    // 迁移：旧版 worship 缺少分组标题或經訓段落 → 重置为最新默认
+    if (
+      !merged.worship.includes("# 以颂赞来敬拜") ||
+      !merged.worship.includes("# 以领受来敬拜") ||
+      !merged.worship.includes("# 以奉献来敬拜") ||
+      !merged.worship.includes("經訓")
+    ) {
+      merged.worship = DEFAULT_EDITABLE.worship;
+    }
+    return merged;
   } catch {
     return DEFAULT_EDITABLE;
   }
