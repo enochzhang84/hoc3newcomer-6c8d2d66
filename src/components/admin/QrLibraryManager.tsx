@@ -11,29 +11,13 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import {
-  ContextMenu,
-  ContextMenuTrigger,
-  ContextMenuContent,
-  ContextMenuItem,
-  ContextMenuSeparator,
-  ContextMenuSub,
-  ContextMenuSubTrigger,
-  ContextMenuSubContent,
-} from "@/components/ui/context-menu";
 import { toast } from "sonner";
 import {
-  FolderIcon,
-  FolderPlus,
   Pencil,
   Trash2,
   Plus,
-  LayoutGrid,
-  List,
   Download,
   Printer,
-  Link2,
-  Star,
   QrCode,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
