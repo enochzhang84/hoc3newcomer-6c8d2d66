@@ -448,13 +448,13 @@ export function ElderWeeklyOverview(props: ElderOverviewProps) {
                 return (
                   <div className="space-y-0.5">
                     {rows.map((r) => (
-                      <BulletinLine key={r.id} left={r.name} right={r.cnt > 0 ? `（${r.cnt}人）` : `（待统计）`} />
+                      <BulletinLine key={r.id} left={r.name} right={r.cnt > 0 ? `（${r.cnt}人）` : `（本周无聚会）`} />
                     ))}
                   </div>
                 );
               })()}
               <div className="text-[12px] text-neutral-500 text-center mt-1">
-                {fellowSunday}（{toISO(fellowWedStart)} ~ {toISO(fellowSatEnd)}）
+                {fellowSunday}（{toISO(fellowRangeStart)} ~ {toISO(fellowRangeEnd)}）
               </div>
             </Block>
           </div>
