@@ -682,67 +682,117 @@ function Row({ k, v }: { k: string; v: string }) {
 
 const DUTY_LABELS = [
   "讲员", "司会", "领诗", "司琴", "招待", "新人接待",
-  "圣餐服事", "餐前投影", "视频播放", "厨房服事", "堂务", "插花",
+  "圣餐服事", "录音投影", "视频播放", "厨房服事", "堂务", "插花",
 ];
 
-function isEmptyDutyValue(v: string) {
-  const t = v.trim();
-  if (!t) return true;
-  if (/^[—–\-_\s]+$/.test(t)) return true;
-  return false;
+/* ---------------- 自动汇总：圣工轮值表（今日） ---------------- */
+export type DutyAuto = {
+  preacher: string; host: string; song_leader: string; pianist: string;
+  greeter_back: string;   // 招待（后门）
+  greeter_front: string;  // 新人接待（前门）
+  communion_1: string; communion_2: string;
+  ppt: string;            // 录音投影
+  live: string;           // 视频播放（直播 + 直播1）
+  kitchen: string; custodial: string; flower: string;
+};
+export const emptyDutyAuto: DutyAuto = {
+  preacher: "", host: "", song_leader: "", pianist: "",
+  greeter_back: "", greeter_front: "",
+  communion_1: "", communion_2: "",
+  ppt: "", live: "",
+  kitchen: "", custodial: "", flower: "",
+};
+
+export async function loadDutyAuto(sunday: string): Promise<DutyAuto> {
+  const sb = supabase as any;
+  const [worship, communion, kitchen, custodial, flower, hospitality, av] = await Promise.all([
+    sb.from("worship_service_roles").select("*").eq("service_date", sunday).maybeSingle(),
+    sb.from("communion_service").select("*").eq("service_date", sunday).maybeSingle(),
+    sb.from("kitchen_duty").select("workers").eq("service_date", sunday).maybeSingle(),
+    sb.from("custodial_duty").select("workers").eq("service_date", sunday).maybeSingle(),
+    sb.from("flower_duty").select("workers").eq("service_date", sunday).maybeSingle(),
+    sb.from("hospitality_ministry_entries").select("location,worker,service_item").eq("service_date", sunday),
+    sb.from("duty_schedules").select("ppt_person,live_person,live_person_2").eq("schedule_type", "sunday").eq("slot_time", sunday),
+  ]);
+
+  const hosp = (hospitality.data ?? []) as Array<{ location: string | null; worker: string | null; service_item: string | null }>;
+  const front = hosp.find((r) => r.location === "前门" || r.service_item === "新人接待")?.worker ?? "";
+  const back = hosp.find((r) => r.location === "后门" || r.service_item === "迎宾接待")?.worker ?? "";
+
+  const avRows = (av.data ?? []) as Array<{ ppt_person: string | null; live_person: string | null; live_person_2: string | null }>;
+  const ppt = avRows.map((r) => r.ppt_person).filter(Boolean).join("、");
+  const liveSet = new Set<string>();
+  avRows.forEach((r) => {
+    [r.live_person, r.live_person_2].forEach((p) => { if (p) p.split(/[、,，/／\s]+/).filter(Boolean).forEach((n) => liveSet.add(n)); });
+  });
+
+  return {
+    preacher: worship.data?.preacher ?? "",
+    host: worship.data?.host ?? "",
+    song_leader: worship.data?.song_leader ?? "",
+    pianist: worship.data?.pianist ?? "",
+    greeter_back: back ?? "",
+    greeter_front: front ?? "",
+    communion_1: communion.data?.worker_1 ?? "",
+    communion_2: communion.data?.worker_2 ?? "",
+    ppt: ppt ?? "",
+    live: Array.from(liveSet).join("、"),
+    kitchen: kitchen.data?.workers ?? "",
+    custodial: custodial.data?.workers ?? "",
+    flower: flower.data?.workers ?? "",
+  };
 }
 
-function DutyList({ value, hasData }: { value: string; hasData: boolean }) {
-  const map = new Map<string, string>();
-  value.split("\n").forEach((ln) => {
-    const m = ln.match(/^\s*([^：:]+)[：:](.*)$/);
-    if (m) map.set(m[1].trim(), m[2].trim());
-  });
+function valOr(v: string | null | undefined): string {
+  const s = (v ?? "").trim();
+  return s ? s : "待定";
+}
+
+function AutoDutyList({ sunday, data }: { sunday: string; data: DutyAuto }) {
+  const communion = isCommunionSunday(sunday);
+  const rows: { label: string; value: string }[] = [
+    { label: "讲员", value: valOr(data.preacher) },
+    { label: "司会", value: valOr(data.host) },
+    { label: "领诗", value: valOr(data.song_leader) },
+    { label: "司琴", value: valOr(data.pianist) },
+    { label: "招待", value: valOr(data.greeter_back) },
+    { label: "新人接待", value: valOr(data.greeter_front) },
+  ];
+  if (communion) {
+    const c1 = (data.communion_1 ?? "").trim();
+    const c2 = (data.communion_2 ?? "").trim();
+    const combined = [c1, c2].filter(Boolean).join("、");
+    rows.push({ label: "圣餐服事", value: combined || "待定" });
+  }
+  rows.push(
+    { label: "录音投影", value: valOr(data.ppt) },
+    { label: "视频播放", value: valOr(data.live) },
+    { label: "厨房服事", value: valOr(data.kitchen) },
+    { label: "堂务", value: valOr(data.custodial) },
+    { label: "插花", value: valOr(data.flower) },
+  );
   return (
     <div className="space-y-1 text-[16px] leading-[1.7]">
-      {DUTY_LABELS.map((label) => {
-        const raw = map.get(label) ?? "";
-        const val = hasData && !isEmptyDutyValue(raw) ? raw : "待定";
-        return <BulletinLine key={label} left={label} right={`（${val}）`} />;
-      })}
+      {rows.map((r) => (
+        <BulletinLine key={r.label} left={r.label} right={`（${r.value}）`} />
+      ))}
     </div>
   );
 }
 
-/** 后台编辑：12 项轮值，按字段独立输入；自动撑高、无滚动条 */
-function DutyEditor({ value, onChange }: { value: string; onChange: (v: string) => void }) {
-  const map = new Map<string, string>();
-  value.split("\n").forEach((ln) => {
-    const m = ln.match(/^\s*([^：:]+)[：:](.*)$/);
-    if (m) map.set(m[1].trim(), m[2].trim());
-  });
-  const commit = (label: string, v: string) => {
-    const next = new Map(map);
-    next.set(label, v);
-    // 保留 DUTY_LABELS 顺序；额外字段附在末尾
-    const lines = DUTY_LABELS.map((l) => `${l}：${next.get(l) ?? ""}`);
-    for (const [k, val] of next) {
-      if (!DUTY_LABELS.includes(k)) lines.push(`${k}：${val}`);
-    }
-    onChange(lines.join("\n"));
-  };
+function DutyEditorNotice() {
   return (
-    <div className="flex flex-col gap-1.5 p-2 border border-dashed border-black/30 bg-white print:hidden text-[15px]">
-      {DUTY_LABELS.map((label) => (
-        <div key={label} className="flex items-center gap-2">
-          <label className="w-24 shrink-0 text-right text-[15px] font-medium">{label}：</label>
-          <Input
-            defaultValue={map.get(label) ?? ""}
-            placeholder="待定"
-            onBlur={(e) => {
-              const v = e.target.value;
-              if (v !== (map.get(label) ?? "")) commit(label, v);
-            }}
-            className="h-9 text-[15px]"
-          />
-        </div>
-      ))}
-      <div className="text-[12px] text-neutral-500 mt-1">失焦自动保存</div>
+    <div className="p-3 border border-dashed border-black/30 bg-neutral-50 text-[13px] leading-[1.7] print:hidden">
+      <div className="font-medium mb-1">此处内容由系统自动汇总</div>
+      <ul className="list-disc pl-5 space-y-0.5 text-neutral-700">
+        <li>讲员 / 司会 / 领诗 / 司琴 → 管理后台「主日轮值录入 · 主日敬拜服侍」</li>
+        <li>招待（后门）/ 新人接待（前门）→ 「接待事工 · 轮值表」</li>
+        <li>圣餐服事（仅每月第 1 主日）→ 「主日轮值录入 · 圣餐服事」</li>
+        <li>录音投影 → 「影音投影 · 主日轮值 · 主日 PPT」</li>
+        <li>视频播放 → 「影音投影 · 主日轮值 · 直播 / 直播1」</li>
+        <li>厨房服事 / 堂务 / 插花 → 「主日轮值录入」对应分页</li>
+      </ul>
+      <div className="text-[12px] text-neutral-500 mt-1">未录入字段在周报中统一显示「待定」。</div>
     </div>
   );
 }
