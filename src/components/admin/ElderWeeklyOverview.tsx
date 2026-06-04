@@ -3,6 +3,8 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Input } from "@/components/ui/input";
 import { CalendarIcon } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { isCommunionSunday, splitPeople } from "@/lib/sunday-utils";
 
 /**
  * 长老总览 / 今日周报总览
@@ -126,7 +128,7 @@ const DEFAULT_EDITABLE: Editable = {
     "招待：————",
     "新人接待：————",
     "圣餐服事：————",
-    "餐前投影：————",
+    "录音投影：————",
     "视频播放：————",
     "厨房服事：————",
     "堂务：————",
