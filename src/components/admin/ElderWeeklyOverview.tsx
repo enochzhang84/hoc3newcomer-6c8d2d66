@@ -1,4 +1,8 @@
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useRef, useLayoutEffect } from "react";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Input } from "@/components/ui/input";
+import { CalendarIcon } from "lucide-react";
 
 /**
  * 长老总览 / 今日周报总览
@@ -54,7 +58,38 @@ type Editable = {
   newsletter: string;
   prayer: string;
   offerings: string;
+  worshipProgram?: WorshipProgram;
 };
+
+export type WorshipProgram = {
+  xuanzhao: string;   // 宣召
+  changshi: string;   // 唱诗
+  muqi: string;       // 牧祷
+  dujing: string;     // 读经
+  jiangdao: string;   // 讲道
+  huiyingshi: string; // 回应诗
+  zhufu: string;      // 祝福
+};
+
+const DEFAULT_WORSHIP_PROGRAM: WorshipProgram = {
+  xuanzhao: "",
+  changshi: "",
+  muqi: "",
+  dujing: "",
+  jiangdao: "",
+  huiyingshi: "",
+  zhufu: "",
+};
+
+const WORSHIP_FIELDS: { key: keyof WorshipProgram; label: string; role: string; placeholder: string }[] = [
+  { key: "xuanzhao", label: "宣召", role: "司会", placeholder: "诗篇 XX 篇" },
+  { key: "changshi", label: "唱诗", role: "会众", placeholder: "教会圣诗 XX 首" },
+  { key: "muqi", label: "牧祷", role: "牧师", placeholder: "牧师姓名" },
+  { key: "dujing", label: "读经", role: "会众", placeholder: "经文出处" },
+  { key: "jiangdao", label: "讲道", role: "牧师", placeholder: "讲道题目" },
+  { key: "huiyingshi", label: "回应诗", role: "会众", placeholder: "回应诗歌" },
+  { key: "zhufu", label: "祝福", role: "长老", placeholder: "祝福者" },
+];
 
 const DEFAULT_EDITABLE: Editable = {
   duty: [
@@ -226,6 +261,25 @@ export function ElderWeeklyOverview(props: ElderOverviewProps) {
     setByDate((prev) => ({ ...prev, [sundayISO]: { ...(prev[sundayISO] ?? {}), ...patch } }));
   };
 
+  const currentProgram: WorshipProgram = {
+    ...DEFAULT_WORSHIP_PROGRAM,
+    ...(editHeader.worshipProgram ?? {}),
+  };
+  const updateProgramField = (k: keyof WorshipProgram, v: string) => {
+    updateForDate(headerSunday, {
+      worshipProgram: { ...currentProgram, [k]: v },
+    });
+  };
+  const copyFromLastWeek = () => {
+    const prevISO = shiftSunday(headerSunday, -1);
+    const prev = byDate[prevISO]?.worshipProgram;
+    if (!prev) {
+      alert("上一个主日（" + prevISO + "）暂无敬拜程序数据");
+      return;
+    }
+    updateForDate(headerSunday, { worshipProgram: { ...DEFAULT_WORSHIP_PROGRAM, ...prev } });
+  };
+
   const headerDate = new Date(headerSunday + "T00:00:00");
   const wkStart = startOfWeek(headerDate);
 
@@ -309,6 +363,32 @@ export function ElderWeeklyOverview(props: ElderOverviewProps) {
             >
               主后 {headerDate.getFullYear()} 年 {headerDate.getMonth() + 1} 月 {headerDate.getDate()} 日　|　本周自 {fmtCN(wkStart)} 起
             </NavArrows>
+            <div className="mt-1 print:hidden flex justify-center">
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button
+                    type="button"
+                    className="inline-flex items-center gap-1 text-[12px] px-2 py-0.5 border border-black/60 bg-white text-black hover:bg-neutral-100"
+                  >
+                    <CalendarIcon className="h-3 w-3" />
+                    选择主日
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent align="center" className="w-auto p-0">
+                  <Calendar
+                    mode="single"
+                    selected={headerDate}
+                    onSelect={(d) => {
+                      if (!d) return;
+                      const s = toISO(currentSundayOf(d));
+                      setHeaderSunday(s); setDutySunday(s); setAttSunday(s); setCourseSunday(s); setFellowSunday(s);
+                    }}
+                    initialFocus
+                    className="pointer-events-auto"
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
           </div>
         </div>
 
@@ -408,12 +488,38 @@ export function ElderWeeklyOverview(props: ElderOverviewProps) {
               今日主日崇拜
             </h3>
             <div className="flex-1 flex flex-col">
-              <Editor
-                value={editHeader.worship}
-                editing={editing}
-                onChange={(v) => updateForDate(headerSunday, { worship: v })}
-                stretch
-              />
+              {editing ? (
+                <div className="print:hidden flex flex-col gap-2">
+                  <div className="flex justify-end mb-1">
+                    <button
+                      type="button"
+                      onClick={copyFromLastWeek}
+                      className="text-[12px] px-2 py-0.5 border border-black/60 bg-white text-black hover:bg-neutral-100"
+                    >
+                      复制上一周内容
+                    </button>
+                  </div>
+                  {WORSHIP_FIELDS.map((f) => (
+                    <div key={f.key} className="flex items-center gap-2">
+                      <label className="w-14 shrink-0 text-[14px] text-right">{f.label}</label>
+                      <Input
+                        value={currentProgram[f.key]}
+                        placeholder={f.placeholder}
+                        onChange={(e) => updateProgramField(f.key, e.target.value)}
+                        className="h-8 text-[14px] flex-1"
+                      />
+                      <span className="w-10 shrink-0 text-[12px] text-neutral-500">{f.role}</span>
+                    </div>
+                  ))}
+                  <div className="text-[12px] text-neutral-500 mt-1">
+                    每项输入后自动保存。前台周报按固定模板拼接显示。
+                  </div>
+                </div>
+              ) : (
+                <AutoFit className="flex-1 flex flex-col" min={11} max={17}>
+                  <WorshipProgramView program={currentProgram} />
+                </AutoFit>
+              )}
             </div>
           </div>
 
@@ -699,4 +805,66 @@ function Editor({ value, editing, onChange, stretch }: { value: string; editing:
     );
   }
   return <BulletinBlock value={value} />;
+}
+
+/** 按 7 个固定项目拼装并以三段式（左 · 虚线 · 右）渲染敬拜程序 */
+function WorshipProgramView({ program }: { program: WorshipProgram }) {
+  return (
+    <div className="flex flex-col">
+      {WORSHIP_FIELDS.map((f, i) => {
+        const mid = (program[f.key] || "").trim() || "________";
+        return (
+          <BulletinLine
+            key={f.key}
+            left={`${i + 1}. ${f.label}`}
+            mid={mid}
+            right={f.role}
+          />
+        );
+      })}
+    </div>
+  );
+}
+
+/**
+ * 自动缩放字号以避免内容溢出父容器。
+ * 从 max 起逐 px 递减直到内容不再溢出或达到 min。
+ */
+function AutoFit({
+  children,
+  className,
+  min = 11,
+  max = 17,
+}: {
+  children: React.ReactNode;
+  className?: string;
+  min?: number;
+  max?: number;
+}) {
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const innerRef = useRef<HTMLDivElement>(null);
+  const [size, setSize] = useState<number>(max);
+
+  useLayoutEffect(() => {
+    const wrap = wrapRef.current;
+    const inner = innerRef.current;
+    if (!wrap || !inner) return;
+    let s = max;
+    inner.style.fontSize = s + "px";
+    // 多次量测，避免字体未渲染完导致结果不准。
+    let guard = 40;
+    while (s > min && inner.scrollHeight > wrap.clientHeight && guard-- > 0) {
+      s -= 1;
+      inner.style.fontSize = s + "px";
+    }
+    setSize(s);
+  }, [children, max, min]);
+
+  return (
+    <div ref={wrapRef} className={className} style={{ overflow: "hidden" }}>
+      <div ref={innerRef} style={{ fontSize: size + "px", lineHeight: 1.55 }}>
+        {children}
+      </div>
+    </div>
+  );
 }
