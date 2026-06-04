@@ -357,7 +357,7 @@ export function ElderWeeklyOverview(props: ElderOverviewProps) {
         #elder-bulletin .kids-table { table-layout: auto; }
         #elder-bulletin .kids-table td,
         #elder-bulletin .kids-table th {
-          font-size: 11px;
+          font-size: 8px;
           line-height: 1.3;
           padding: 2px 3px;
           font-weight: 600;
