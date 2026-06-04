@@ -1902,6 +1902,7 @@ function AdminPage() {
                 courses={courses}
                 fellowships={fellowships}
                 mealPlans={mealPlans}
+                kidsClasses={kidsRows}
               />
             </section>
           );
