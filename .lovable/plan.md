@@ -1,143 +1,93 @@
+## 周报后台编辑界面改造计划
 
-# 模块内统计分析权限 + 左右分区布局
+针对 `src/components/admin/ElderWeeklyOverview.tsx` 进行 4 项修改。所有数据按日期持久化到 `localStorage`，不新增数据库表（除非必要）。
 
-## 1. 目标与边界
+---
 
-- **不扩大权限**：worker 仍然只能进入自己 `service_area` 对应的模块。
-- **不做全局统计中心**：所有统计严格限定在「本模块」内。
-- **每个模块内部**：左边=本模块统计分析，右边=本模块正常功能。
-- **统计区显示条件**：用户拥有该模块功能权限 **且** 拥有该模块统计分析权限。
-- super_admin / admin 默认拥有全部统计权限。
+### 1. 成人主日学课程 / 团契聚会 —— 全自动读取
 
-## 2. 数据库改动（一次 migration）
+**当前行为**：成人主日学课程与团契聚会已自动按 `sundayCheckins` / `fellowshipCheckins` 统计签到人数。后台没有编辑入口。
 
-### 2.1 新增表 `user_module_analytics`
-存储 worker 对应模块的「统计分析」开关。super_admin / admin 不需要写入，函数判断里直接放行。
+**改动**：
+- 成人主日学课程：优先读取 `sunday_class_schedule` 表对应课程的 `student_count`（若 > 0），否则按 `adult_class_checkins` 当主日签到统计。
+- 团契聚会：保持当周 (周二—周日) 区间 `fellowship_checkins` 自动计数（已是此逻辑）。
+- 后台不出现编辑控件（已是只读展示，确认无需变化）。
 
-```sql
-CREATE TABLE public.user_module_analytics (
-  id uuid PK,
-  user_id uuid NOT NULL,
-  service_area text NOT NULL,  -- newcomer/kitchen/sunday_school/...
-  enabled boolean DEFAULT true,
-  created_at timestamptz, updated_at timestamptz,
-  UNIQUE(user_id, service_area)
-);
+需要在 `admin.tsx` 把 `sunday_class_schedule` 现有 query 增加 `student_count` 字段（已存在）并传给 `ElderWeeklyOverview`。
+
+---
+
+### 2. 圣工轮值表 —— 月历模式
+
+**当前**：每个板块用 `<` / `>` 翻页选择主日，数据按日期分别存 `localStorage`。
+
+**改动**：
+- 在「圣工轮值表（今日）」标题旁，新增一个日历按钮（`shadcn/ui` 的 `Calendar` + `Popover`）。
+- 日历只允许选择周日（其它日期 disabled），选定日期成为当前编辑/展示主日。
+- 保留 `<` / `>` 翻页箭头作为快捷方式。
+- 数据仍按 ISO 日期 key 存 `localStorage`（无需建表）。
+
+---
+
+### 3. 中文堂主日敬拜程序 —— 固定 7 项
+
+**当前**：整段 textarea 自由文本，含 `#` 标题 / `>` 经训行。
+
+**改动 (后台编辑)**：
+- 新建 `WorshipProgram` 数据结构：
+  ```ts
+  type WorshipProgram = {
+    xuanzhao: string;   // 宣召（如 "诗篇 23 篇"）
+    changshi: string;   // 唱诗（如 "教会圣诗 100"）
+    muqi: string;       // 牧祷（如 "牧师"）
+    dujing: string;     // 读经（如 "约翰福音 3:16"）
+    jiangdao: string;   // 讲道（如 "信靠主"）
+    huiyingshi: string; // 回应诗
+    zhufu: string;      // 祝福
+  };
+  ```
+- 后台显示为 7 个 `Input`，每项独立 `onBlur` 保存到 `localStorage`（按主日日期 key）。
+- 顶部加「复制上周内容」按钮：把 上一个主日的程序整体复制到当前主日。
+- 同样接入第 2 项的月历日期选择器。
+
+**前台 (周报展示)**：
+按固定模板拼接显示：
 ```
-GRANT + RLS：authenticated 可读自己行；super_admin/admin 可读写全部。
-
-### 2.2 安全函数
-```sql
-public.can_view_analytics(_uid uuid, _area text) returns boolean
--- super_admin/admin → true
--- worker → user_profiles.service_area = _area 且 user_module_analytics(enabled=true)
+1. 宣召 …… {xuanzhao} …… 司会
+2. 唱诗 …… {changshi} …… 会众
+3. 牧祷 …… {muqi} …… 牧师
+4. 读经 …… {dujing} …… 会众
+5. 讲道 …… {jiangdao} …… 牧师
+6. 回应诗 …… {huiyingshi} …… 会众
+7. 祝福 …… {zhufu} …… 长老
 ```
+保持现有 `BulletinLine` 三段式视觉（左 / 虚线 / 右）。
 
-### 2.3 数据相关 RLS 收紧（核心）
-目前所有业务表的 SELECT 都是 `has_role(...,'admin')`，意味着 worker 即便登录后端也读不到任何业务数据。需要按模块放开「同一 service_area 的 worker」读权限：
+**迁移**：旧 `worship` 字段忽略不读，老数据废弃。新字段保存在 `byDate[iso].worshipProgram`。
 
-| 模块 | 业务表 | 统计来源表 |
-|------|--------|-----------|
-| kitchen | meal_plans, meal_types, event_meal_notes | meal_plans, attendance_records |
-| sunday_school | sunday_school_courses/teachers/checkins, sunday_class_schedule, kids_class_enrollment_snapshots | 同左 |
-| newcomer | registrations, events | registrations |
-| retreat | retreat_registrations | 同 |
-| welcome | hospitality_ministry_entries, duty_*, fellowships | 同 |
-| media (av) | av_notes, av_broadcasts, display_* | 同 |
-| tv_display | display_screens/playlists/posters | 同 |
+---
 
-为每张相关表新增一条策略：
-```
-USING ( get_service_area(auth.uid()) = '<area>' )
-```
-统计数据走相同的表 + `can_view_analytics` 在 serverFn 里再校验一次。
+### 4. 版面自动适配
 
-## 3. 前端权限层（src/lib/permissions.ts 扩展）
+- 中栏「敬拜程序」容器加 CSS：`overflow: hidden`，最长 `worshipProgram` 字段超过阈值时，整段字号从 17px 缩到 15px / 13px（用 `useLayoutEffect` 检测 `scrollHeight > clientHeight` 循环降字号）。
+- 实现一个轻量 `<AutoFit>` 包装组件：尝试 17→16→15→14→13 px，直到不溢出。
+- 打印样式不变。
 
-新增：
-```ts
-export function canAccessModuleAnalytics(
-  role, area, target, analyticsMap: Record<ServiceArea, boolean>
-): boolean
-```
-规则：admin/super_admin 永远 true；worker 必须 `area===target && analyticsMap[target]===true`。
+---
 
-新增 hook `useCurrentPermissions()`：一次性返回 `{ role, serviceArea, analytics: Record<ServiceArea, boolean> }`，admin 页 + 各模块页共用。
+### 技术要点
 
-## 4. 用户管理 UI（admin.tsx 内 UserManagementPanel）
+| 项 | 文件 | 操作 |
+|---|---|---|
+| 1 | `ElderWeeklyOverview.tsx` + `admin.tsx` | 传入 `kidsClasses`-like `classCounts: {course_name, student_count}[]`；课程渲染优先用 student_count |
+| 2 | `ElderWeeklyOverview.tsx` | 引入 `Calendar`+`Popover`，限定 weekday=0 可选 |
+| 3 | `ElderWeeklyOverview.tsx` | 新增 7 字段编辑 UI + 模板渲染；废弃 `worship` 自由文本 |
+| 4 | `ElderWeeklyOverview.tsx` | 新增 `AutoFit` 组件，应用于中栏敬拜程序 |
 
-每行用户在「角色 / 所属事工」之后加一组复选框：
+不需要数据库迁移；不修改其它模块代码。
 
-```
-可查看统计分析：
-☐ 新人登记  ☐ 厨房  ☐ 主日学  ☐ 退修会
-☐ 迎宾  ☐ 影音  ☐ TV 屏幕  ☐ 同工聊天
-```
+---
 
-- 只对 role=worker 用户显示，其他角色显示「全部统计（默认）」。
-- 勾选/取消立即 upsert/delete `user_module_analytics`。
-- 仅 super_admin 可改。
+### 需用户确认 1 个点
 
-新增 serverFn：
-- `listUserAnalyticsAreas(userId)` → string[]
-- `setUserAnalyticsArea(userId, area, enabled)`（super_admin 限定）
-
-## 5. 模块页面布局（左统计 / 右功能）
-
-统一 layout 组件 `ModuleSplitLayout`：
-
-```
-<ResizablePanelGroup direction="horizontal">
-  {showAnalytics && (
-    <ResizablePanel defaultSize={32} minSize={22}>
-      <AnalyticsPane area={area} />
-    </ResizablePanel>
-  )}
-  <ResizableHandle withHandle />
-  <ResizablePanel>{children /* 原功能区 */}</ResizablePanel>
-</ResizablePanelGroup>
-```
-
-`showAnalytics` 由 `canAccessModuleAnalytics()` 决定，false 时整个左栏 + 把手不渲染。
-
-每个模块一个统计组件：
-- `KitchenAnalytics` — 就餐人数/趋势/儿童·老师·大堂/每周变化/导出
-- `SundaySchoolAnalytics` — 学生/班级/老师/出勤率/年度趋势
-- `NewcomerAnalytics` — 来源/城市/年龄/信仰/跟进/月度年度趋势
-- `RetreatAnalytics`, `HospitalityAnalytics`, `MediaAnalytics`, `TVDisplayAnalytics`
-
-每个组件内部都用 `createServerFn` 调用「该模块专属」统计接口；接口内：
-```ts
-.middleware([requireSupabaseAuth])
-.handler(({context, data}) => {
-  assertCanViewAnalytics(context, 'kitchen')  // 服务端二次校验
-  ...
-})
-```
-
-## 6. admin.tsx Tabs 过滤
-
-继续按 `service_area` 过滤 Tabs（worker 只看到一个 Tab）。在每个 Tab 内容外套 `ModuleSplitLayout`。super_admin 仍看到「用户管理」「全局统计（如果有）」。
-
-> 现有「全局数据统计/data-preview」页面仅 super_admin/admin 可访问 —— 不改入口，但确保 worker 直接访问 URL 时被 redirect。
-
-## 7. 现有路由保护
-
-- `/data-preview`：增加 role 检查，非 admin/super_admin → `/`。
-- `/admin`：维持 `_authenticated` 守卫；内部按 service_area 过滤 Tab。
-
-## 8. 实施顺序
-
-1. migration：`user_module_analytics` + `can_view_analytics` + 模块业务表 worker SELECT 策略
-2. serverFn：`getCurrentPermissions`、`listUserAnalyticsAreas`、`setUserAnalyticsArea` + 各模块统计 fn
-3. `permissions.ts` 扩展 + `useCurrentPermissions` hook
-4. `ModuleSplitLayout` + 7 个 `<XxxAnalytics>` 组件（先骨架，再补图表）
-5. `admin.tsx`：Tabs 外套 layout；用户管理面板加复选框
-6. `/data-preview` 加 role 守卫
-7. 手测：worker(kitchen) 只看到厨房 Tab + 左侧统计；取消统计勾选后左栏消失；直接访问 `/data-preview` 被踢回首页
-
-## 9. 不在范围
-
-- 不新增「全局数据中心」入口
-- 不动现有 `service_projects[]` 字段（保留向后兼容）
-- 「同工聊天」「TV 屏幕管理」的统计先放骨架（人数/在线时长占位），后续按需求扩展
+第 1 项「记录中有总数」是否指 `sunday_class_schedule.student_count`（每课程在班级管理录入的报名人数）？如果是其他含义请告知。如果没有特别指示，我将按此实现。
