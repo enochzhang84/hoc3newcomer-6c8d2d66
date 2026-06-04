@@ -455,11 +455,11 @@ function BulletinLine({ left, mid, right }: { left: string; mid?: string; right:
   );
 }
 
-function BulletinBlock({ value }: { value: string }) {
+function BulletinBlock({ value, stretch }: { value: string; stretch?: boolean }) {
   const lines = value.split("\n");
   let n = 0;
   return (
-    <div>
+    <div className={stretch ? "flex flex-col justify-between h-full" : undefined}>
       {lines.map((ln, i) => {
         const trimmed = ln.trim();
         if (trimmed.startsWith("#")) {
